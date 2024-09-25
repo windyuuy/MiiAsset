@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8defc00ea41afd941bc01258451689f3, type: 3}
+  m_Name: AAPathConfig
+  m_EditorClassIdentifier: 
+  paths:
+  - title: AA
+    path: Assets/Bundles/AA/
+    groupName: aa
+    groupRoot: '{0}*'
+    scanRoot: Assets/Bundles/AA
+    tags: 
+    isOffline: 0
+  - title: BB
+    path: Assets/Bundles/BB/
+    groupName: bb
+    groupRoot: '{0}*'
+    scanRoot: Assets/Bundles/BB
+    tags: 
+    isOffline: 0
+  - title: CC
+    path: Assets/Bundles/CC/
+    groupName: cc
+    groupRoot: '{0}*'
+    scanRoot: Assets/Bundles/CC
+    tags: 
+    isOffline: 0
+  excludeExtensions: []
+  excludePaths: []
+  isShaderGroupOffline: 1
+  isMyBuiltinShaderGroupOffline: 1

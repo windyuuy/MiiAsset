@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: AAX
+  m_EditorClassIdentifier: 
+  m_GroupName: AAX
+  m_Data:
+    m_SerializedData: []
+  m_GUID: cc70f7381e302a240874cb517144b5b3
+  m_SerializeEntries:
+  - m_GUID: 9181ab364409aad4594539a62b10ef43
+    m_Address: Assets/Bundles/CC/New Scene.unity
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 08c403f9905aba14fa7204c8b70b796b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 1223c9e2ba2e12b4cb39ec875b577638, type: 2}
+    - {fileID: 11400000, guid: 4e50fc3a7d756344aa58791a6b173e86, type: 2}
