@@ -7,6 +7,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Framework.MiiAsset.Runtime;
+using Framework.MiiAsset.Runtime.AssetUtils;
+using Lang.Encoding;
 using UnityEditor;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -97,7 +99,8 @@ namespace U3DUdpater.Editor
 			public HashSet<string> Guids = new();
 			public string[] Tags;
 			public string TagsUKey;
-			public string BundleName => $"{GetTagsKey()}_{BuildInfo.Hash}.bundle";
+			public string BundleFileName => $"{GetTagsKey()}_{BuildInfo.Hash}.bundle";
+			public HashSet<string> DepTagNames = new();
 			public HashSet<string> Deps = new();
 			public BundleDetails BuildInfo;
 
@@ -123,7 +126,7 @@ namespace U3DUdpater.Editor
 
 			public string GetBundlePathWithHash(string dir)
 			{
-				return $"{dir}/{this.BundleName}";
+				return $"{dir}/{this.BundleFileName}";
 			}
 		}
 
@@ -150,6 +153,7 @@ namespace U3DUdpater.Editor
 			Dictionary<string, TagBundle> tagBundleMap = new();
 			Dictionary<string, int> tagOrderMap = new();
 			Dictionary<string, TagBundle> guidBundleMap = new();
+			Dictionary<string, TagBundle> tagsNameBundleMap = new();
 			int tagOrderAcc = 0;
 
 			string ToTagsKey(string[] tags)
@@ -208,6 +212,8 @@ namespace U3DUdpater.Editor
 				}
 			}
 
+			var tagBundles = tagBundleMap.Values.ToArray();
+
 			// // analyze deps
 			// var tempDir = "./Library/MiiAssets/CompiledPlayerScriptsData/";
 			// if (!Directory.Exists(tempDir))
@@ -237,7 +243,6 @@ namespace U3DUdpater.Editor
 			// }
 
 			// build content
-			var tagBundles = tagBundleMap.Values.ToArray();
 			var bundleBuilds = tagBundles.Select(tagBundle =>
 			{
 				var build = new AssetBundleBuild
@@ -282,7 +287,7 @@ namespace U3DUdpater.Editor
 
 						foreach (var dep in item.Value.Dependencies)
 						{
-							tagBundle.Deps.Add(dep);
+							tagBundle.DepTagNames.Add(dep);
 						}
 					}
 					else
@@ -293,7 +298,7 @@ namespace U3DUdpater.Editor
 							Guids = new(),
 							Tags = tags,
 							TagsUKey = ToTagsKey(tags),
-							Deps = new(),
+							DepTagNames = new(),
 							BuildInfo = item.Value
 						};
 						tagBundleMap.Add(builtinBundleInfo.TagsUKey, builtinBundleInfo);
@@ -301,6 +306,21 @@ namespace U3DUdpater.Editor
 				}
 
 				tagBundles = tagBundleMap.Values.ToArray();
+				foreach (var tagBundle in tagBundles)
+				{
+					tagsNameBundleMap[tagBundle.GetTagsKey()] = tagBundle;
+				}
+
+				foreach (var tagBundle in tagBundles)
+				{
+					var deps = tagBundle.DepTagNames;
+					foreach (var dep in deps)
+					{
+						var depTagBundle = tagsNameBundleMap[dep];
+						var depFileName = depTagBundle.BundleFileName;
+						tagBundle.Deps.Add(depFileName);
+					}
+				}
 
 				// prepare out folder
 				if (!Directory.Exists(folderPath))
@@ -309,7 +329,7 @@ namespace U3DUdpater.Editor
 				}
 
 				var writeListFilePath = $"{folderPath}/WriteList.txt";
-				if(File.Exists(writeListFilePath))
+				if (File.Exists(writeListFilePath))
 				{
 					var writeListContent = File.ReadAllText(writeListFilePath, Encoding.UTF8);
 					var writeRecords = JsonUtility.FromJson<WriteRecords>(writeListContent);
@@ -320,6 +340,7 @@ namespace U3DUdpater.Editor
 							File.Delete(record);
 						}
 					}
+
 					File.Delete(writeListFilePath);
 				}
 
@@ -356,10 +377,12 @@ namespace U3DUdpater.Editor
 					var resultsBundleInfo = tagBundle.BuildInfo;
 					return new AssetBundleInfo
 					{
-						bundleName = tagBundle.BundleName,
+						bundleName = tagBundle.GetTagsKey(),
+						fileName = tagBundle.BundleFileName,
 						crc = resultsBundleInfo.Crc,
 						hash128 = resultsBundleInfo.Hash,
 						deps = tagBundle.Deps.ToArray(),
+						tags = tagBundle.Tags.ToArray(),
 						entries = tagBundle.GetAssetNames(),
 					};
 				}).ToArray();
@@ -370,7 +393,7 @@ namespace U3DUdpater.Editor
 				var catalogContent = JsonUtility.ToJson(catalog);
 				var catalogFilePath = $"{folderPath}/catalog_{options.UpdateTunnel}.zip".Replace("_.", ".");
 				var catalogHashFilePath = Path.ChangeExtension(catalogFilePath, "hash");
-				var bytes = System.Text.Encoding.UTF8.GetBytes(catalogContent);
+				var bytes = Encoding.UTF8.GetBytes(catalogContent);
 				using (var ms = new FileStream(catalogFilePath, FileMode.Create))
 				using (ZipArchive arch = new ZipArchive(ms, ZipArchiveMode.Create))
 				{
@@ -385,7 +408,26 @@ namespace U3DUdpater.Editor
 					byte[] hashByte = hash.ComputeHash(bytes);
 					stream.Close();
 					var hash128Str = BitConverter.ToString(hashByte).Replace("-", "").ToLower();
-					File.WriteAllText(catalogHashFilePath, hash128Str, Encoding.UTF8);
+					File.WriteAllText(catalogHashFilePath, hash128Str, EncodingExt.UTF8WithoutBom);
+				}
+
+				// update internal file
+				// var internalHashFilePath = AssetHelper.GetInternalBuildPath() + "catalog.hash";
+				// File.Copy(catalogHashFilePath, internalHashFilePath, true);
+				// var internalCatalogFilePath = AssetHelper.GetInternalBuildPath() + "catalog.zip";
+				// File.Copy(catalogFilePath, internalCatalogFilePath, true);
+				var internalBuildPath = AssetHelper.GetInternalBuildPath();
+				var curFiles = Directory.GetFiles(internalBuildPath);
+				foreach (var curFile in curFiles)
+				{
+					File.Delete(curFile);
+				}
+
+				var files = Directory.GetFiles(folderPath);
+				foreach (var file in files)
+				{
+					var destFilePath = $"{internalBuildPath}{Path.GetRelativePath(folderPath, file)}";
+					File.Copy(file, destFilePath, true);
 				}
 
 				// add file records
@@ -397,7 +439,7 @@ namespace U3DUdpater.Editor
 
 				writeList.records.Add(catalogFilePath);
 				writeList.records.Add(catalogHashFilePath);
-				
+
 				if (File.Exists(buildlogDestPath))
 				{
 					writeList.records.Add(buildlogDestPath);
@@ -405,11 +447,48 @@ namespace U3DUdpater.Editor
 
 				{
 					var writeListContent = JsonUtility.ToJson(writeList);
-					File.WriteAllText(writeListFilePath, writeListContent, Encoding.UTF8);
+					File.WriteAllText(writeListFilePath, writeListContent, EncodingExt.UTF8WithoutBom);
 				}
 
 				// gen code hint
-				var codeOutputDir = "Assets/Bundles/GameConfigs/AABundleConfig/";
+				var codeOutputDir = "Assets/Bundles/GameConfigs/MiiConfigs/";
+				var codeFileName = "MiiAssetHint.cs";
+				var codeFilePath = $"{codeOutputDir}/{codeFileName}";
+				if (!Directory.Exists(codeOutputDir))
+				{
+					Directory.CreateDirectory(codeOutputDir);
+				}
+
+				string ToFirstUpperCase(string tag)
+				{
+					var key = char.ToUpper(tag[0]) + tag[1..];
+					return key;
+				}
+
+				var assetTags = string.Join("", tagOrderMap.Keys.Select(tag => $@"		public static string {ToFirstUpperCase(tag)} = ""{tag}"";
+"));
+				// var sceneKeys = string.Join("",tagBundles.Where(tagBundle=>tagBundle.Tags.Contains("scene")).Select(tagBundle=>tagBundle.))
+				var content = @$"
+namespace MiiAssetHint
+{{
+	public interface AssetTags
+	{{
+{assetTags}
+	}}
+
+	public interface SceneKeys
+	{{
+	}}
+}}
+";
+				var content0 = File.ReadAllText(codeFilePath, Encoding.UTF8);
+				if (content0 != content)
+				{
+					File.WriteAllText(codeFilePath, content, EncodingExt.UTF8WithoutBom);
+				}
+
+				// refersh
+				AssetDatabase.Refresh();
 			}
 
 			return new BuildAssetBundlesResult
@@ -424,6 +503,7 @@ namespace U3DUdpater.Editor
 		internal static void BuildAssetBundlesWithPathInfo1()
 		{
 			BuildAssetBundlesWithPathInfo();
+			Debug.Log("Build Done.");
 		}
 
 		public static BuildAssetBundlesResult BuildAssetBundlesWithPathInfo()
