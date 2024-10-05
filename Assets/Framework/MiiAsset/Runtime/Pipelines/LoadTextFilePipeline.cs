@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
@@ -14,9 +15,12 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public LoadTextFilePipeline Init(string uri)
 		{
 			Uri = uri;
+			this.Result = new();
 			this.Build();
 			return this;
 		}
+
+		public PipelineResult Result { get; set; }
 
 		public void Build()
 		{
@@ -24,12 +28,24 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public string Text { get; set; }
 
-		public async Task Run()
+		public async Task<PipelineResult> Run()
 		{
 			if (Text == null)
 			{
-				Text = await IOManager.LocalIOProto.ReadAllTextAsync(Uri, Encoding.UTF8);
+				try
+				{
+					Text = await IOManager.LocalIOProto.ReadAllTextAsync(Uri, Encoding.UTF8);
+					Result.IsOk = true;
+				}
+				catch (Exception ex)
+				{
+					Debug.LogException(ex);
+					Result.ErrorType = PipelineErrorType.FileSystemError;
+					Result.Exception = ex;
+				}
 			}
+
+			return Result;
 		}
 
 		public bool IsCached()

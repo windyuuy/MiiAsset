@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
@@ -11,7 +12,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 	{
 		protected UnityWebRequest Uwr;
 		protected DownloadHandler DownloadHandler;
-		protected TaskCompletionSource<bool> Ts;
+		protected TaskCompletionSource<PipelineResult> Ts;
 
 		protected string Uri;
 		protected string CacheUri;
@@ -20,6 +21,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		{
 			Uri = uri;
 			CacheUri = cacheUri;
+			Result = new();
 			this.Build();
 			return this;
 		}
@@ -28,13 +30,15 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		{
 		}
 
+		public PipelineResult Result { get; set; }
+
 		public void Build()
 		{
 		}
 
 		public string Text { get; set; }
 
-		public Task Run()
+		public Task<PipelineResult> Run()
 		{
 			if (Ts == null)
 			{
@@ -54,11 +58,30 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 					Uwr.Dispose();
 					Uwr = null;
-					
-					IOManager.LocalIOProto.EnsureFileDirectory(CacheUri);
-					await IOManager.LocalIOProto.WriteAllTextAsync(CacheUri, Text, EncodingExt.UTF8WithoutBom);
 
-					Ts.SetResult(code == 200);
+					Result.Code = (int)code;
+					Result.IsOk = code == 200;
+					Result.Msg = msg;
+					if (!Result.IsOk)
+					{
+						Result.ErrorType = PipelineErrorType.NetError;
+					}
+					else
+					{
+						try
+						{
+							IOManager.LocalIOProto.EnsureFileDirectory(CacheUri);
+							await IOManager.LocalIOProto.WriteAllTextAsync(CacheUri, Text, EncodingExt.UTF8WithoutBom);
+							Result.IsOk = true;
+						}
+						catch (Exception exception)
+						{
+							Result.ErrorType = PipelineErrorType.FileSystemError;
+							Result.Exception = exception;
+						}
+					}
+
+					Ts.SetResult(Result);
 				}
 
 				_ = ReadInternal();

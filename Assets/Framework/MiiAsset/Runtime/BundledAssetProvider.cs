@@ -18,8 +18,11 @@ namespace Framework.MiiAsset.Runtime
 		public string ExternalBaseUri;
 		public string RemoteBaseUri;
 
+		public PipelineResult Result;
+
 		public IAssetProvider Init(string internalBaseUri, string externalBaseUri)
 		{
+			Result = new();
 #if UNITY_EDITOR
 			this.InternalBaseUri = AssetHelper.GetInternalBuildPath();
 #else
@@ -29,29 +32,31 @@ namespace Framework.MiiAsset.Runtime
 			return this;
 		}
 
-		protected TaskCompletionSource<bool> LoadCatalogTask;
+		protected Task<PipelineResult> LoadCatalogTask;
 
-		public Task UpdateCatalog(string remoteBaseUri, string catalogName)
+		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
 		{
 			if (LoadCatalogTask == null)
 			{
 				this.RemoteBaseUri = remoteBaseUri;
 				this.CatalogName = catalogName;
 
-				this.LoadCatalogTask = new();
-
-				async Task LoadCatalogTask()
+				async Task<PipelineResult> LoadCatalogInternal()
 				{
 					using var pipeline = new UpdateCatalogPipeline().Init(CatalogName, InternalBaseUri, ExternalBaseUri, RemoteBaseUri);
-					await pipeline.Run();
-					HandleCatalog(pipeline.InternalCatalog, pipeline.ExternalCatalog, pipeline.SourceUri);
-					this.LoadCatalogTask.SetResult(true);
+					Result = await pipeline.Run();
+					if (Result.IsOk)
+					{
+						HandleCatalog(pipeline.InternalCatalog, pipeline.ExternalCatalog, pipeline.SourceUri);
+					}
+
+					return Result;
 				}
 
-				_ = LoadCatalogTask();
+				LoadCatalogTask = LoadCatalogInternal();
 			}
 
-			return LoadCatalogTask.Task;
+			return LoadCatalogTask;
 		}
 
 		protected CatalogInfo CatalogInfo = new();
@@ -59,30 +64,54 @@ namespace Framework.MiiAsset.Runtime
 		private void HandleCatalog(CatalogConfig internalCatalog, CatalogConfig externalCatalog, string sourceUri)
 		{
 			var cacheDir = $"{Application.persistentDataPath}/hotres/";
-			IOManager.LocalIOProto.EnsureDirectory(cacheDir);
-			if (externalCatalog != null)
+			var isDirReady = false;
+			try
 			{
-				var loadSource = new ResourceLoadSource(sourceUri, cacheDir);
-				LoadCatalogInfo(externalCatalog, loadSource);
+				IOManager.LocalIOProto.EnsureDirectory(cacheDir);
+				isDirReady = true;
+			}
+			catch (Exception exception)
+			{
+				Result.Exception = exception;
+				Result.ErrorType = PipelineErrorType.FileSystemError;
+			}
 
-				// merge internal catalog
-				var internalSource = new ResourceLoadSource(InternalBaseUri, null);
-				foreach (var bundleInfo in internalCatalog.bundleInfos)
+			if (isDirReady)
+			{
+				try
 				{
-					if (CatalogInfo.BundleLoadSourceMap.ContainsKey(bundleInfo.fileName))
+					if (externalCatalog != null)
 					{
-						CatalogInfo.BundleLoadSourceMap[bundleInfo.fileName] = internalSource;
+						var loadSource = new ResourceLoadSource(sourceUri, cacheDir);
+						LoadCatalogInfo(externalCatalog, loadSource);
+
+						// merge internal catalog
+						var internalSource = new ResourceLoadSource(InternalBaseUri, null);
+						foreach (var bundleInfo in internalCatalog.bundleInfos)
+						{
+							if (CatalogInfo.BundleLoadSourceMap.ContainsKey(bundleInfo.fileName))
+							{
+								CatalogInfo.BundleLoadSourceMap[bundleInfo.fileName] = internalSource;
+							}
+							else
+							{
+								CatalogInfo.BundlesToClean.Add(bundleInfo.fileName, internalSource);
+							}
+						}
 					}
 					else
 					{
-						CatalogInfo.BundlesToClean.Add(bundleInfo.fileName, internalSource);
+						var loadSource = new ResourceLoadSource(sourceUri, null);
+						LoadCatalogInfo(internalCatalog, loadSource);
 					}
+
+					Result.IsOk = true;
 				}
-			}
-			else
-			{
-				var loadSource = new ResourceLoadSource(sourceUri, null);
-				LoadCatalogInfo(internalCatalog, loadSource);
+				catch (Exception exception)
+				{
+					Result.Exception = exception;
+					Result.ErrorType = PipelineErrorType.DataIncorrect;
+				}
 			}
 		}
 
@@ -131,31 +160,65 @@ namespace Framework.MiiAsset.Runtime
 		public async Task<T> LoadAsset<T>(string address)
 		{
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
-			await CatalogStatus.LoadBundles(deps, CatalogInfo);
-			var asset = await LoadAssetJust<T>(address);
-			return asset;
+			var results = await CatalogStatus.LoadBundles(deps, CatalogInfo);
+			if (results.All(result => result.IsOk))
+			{
+				var asset = await LoadAssetJust<T>(address);
+				return asset;
+			}
+			else
+			{
+				foreach (var result in results)
+				{
+					result.Print();
+				}
+
+				return default(T);
+			}
 		}
 
 		public async Task UnLoadAsset(string address)
 		{
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
-			await CatalogStatus.LoadBundles(deps, CatalogInfo);
+			await CatalogStatus.GetLoadingBundleTasks(deps, CatalogInfo);
 			await UnloadAssetJust(address);
 		}
 
-		public async Task LoadScene(string sceneAddress, LoadSceneParameters parameters)
+		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters)
 		{
 			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
-			await CatalogStatus.LoadBundles(deps, CatalogInfo);
-			var op = SceneManager.LoadSceneAsync(sceneAddress, parameters);
-			await op.GetTask();
+			var results = await CatalogStatus.LoadBundles(deps, CatalogInfo);
+			if (results.All(result => result.IsOk))
+			{
+				var op = SceneManager.LoadSceneAsync(sceneAddress, parameters);
+				await op.GetTask();
+				var scene = SceneManager.GetSceneByPath(sceneAddress);
+				return scene;
+			}
+			else
+			{
+				foreach (var result in results)
+				{
+					result.Print();
+				}
+
+				return default;
+			}
 		}
 
 		public async Task UnLoadScene(string sceneAddress)
 		{
-			var op = SceneManager.UnloadSceneAsync(sceneAddress);
-			await op.GetTask();
-			await UnLoadAsset(sceneAddress);
+			var scene = SceneManager.GetSceneByPath(sceneAddress);
+			var op = SceneManager.UnloadSceneAsync(scene);
+			if (op != null)
+			{
+				await op.GetTask();
+				await UnLoadAsset(sceneAddress);
+			}
+			else
+			{
+				Debug.LogError($"cannot unload the scene: {sceneAddress}");
+			}
 		}
 
 		protected CatalogAddressStatus CatalogAddressStatus = new();

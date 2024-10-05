@@ -14,6 +14,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		{
 			this.RemoteCatalogUri = remoteCatalogUri;
 			this.InternalCatalogUri = internalCatalogUri;
+			this.Result = new();
 			this.Build();
 			return this;
 		}
@@ -22,22 +23,36 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		{
 		}
 
+		public PipelineResult Result { get; set; }
+
 		public void Build()
 		{
 		}
 
-		public async Task Run()
+		public async Task<PipelineResult> Run()
 		{
+			var isCached = true;
 			if (!IsCached() && InternalCatalogUri != null)
 			{
 				using var downloadPipeline = new DownloadPipeline().Init(RemoteCatalogUri, InternalCatalogUri);
-				var task = downloadPipeline.Run();
-				await task;
+				Result = await downloadPipeline.Run();
+				isCached = false;
 			}
 
-			using var loadPipeline = new LoadCatalogPkgPipeline().Init(InternalCatalogUri);
-			await loadPipeline.Run();
-			Text = loadPipeline.Text;
+			if (isCached || Result.IsOk)
+			{
+				using var loadPipeline = new LoadCatalogPkgPipeline().Init(InternalCatalogUri);
+				Result = await loadPipeline.Run();
+				Text = loadPipeline.Text;
+
+				if (string.IsNullOrWhiteSpace(Text))
+				{
+					Result.IsOk = false;
+					Result.ErrorType = PipelineErrorType.DataIncorrect;
+				}
+			}
+
+			return Result;
 		}
 
 		public bool IsCached()

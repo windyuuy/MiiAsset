@@ -12,7 +12,7 @@ namespace Framework.MiiAsset.Runtime
 			Consumer.Init();
 		}
 
-		public static Task UpdateCatalog(string remoteBaseUri, string catalogName)
+		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
 		{
 			return Consumer.UpdateCatalog(remoteBaseUri, catalogName);
 		}

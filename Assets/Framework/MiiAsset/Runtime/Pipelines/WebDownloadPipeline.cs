@@ -5,7 +5,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 {
 	public class WebDownloadPipeline : IPipeline
 	{
-		protected TaskCompletionSource<bool> Ts;
+		protected TaskCompletionSource<PipelineResult> Ts;
 
 		protected string Uri;
 		public byte[] Bytes;
@@ -13,10 +13,11 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 		public WebDownloadPipeline Init(string uri)
 		{
 			Uri = uri;
+			this.Result = new();
 			return this;
 		}
 
-		public Task Run()
+		public Task<PipelineResult> Run()
 		{
 			if (Ts == null)
 			{
@@ -35,7 +36,15 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 					uwr.Dispose();
 					uwr = null;
 
-					Ts.SetResult(code == 200);
+					Result.Code = (int)code;
+					Result.IsOk = code == 200;
+					Result.Msg = msg;
+					if (!Result.IsOk)
+					{
+						Result.ErrorType = PipelineErrorType.NetError;
+					}
+
+					Ts.SetResult(Result);
 				}
 
 				_ = ReadInternal();
@@ -48,6 +57,8 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 		{
 			Ts = null;
 		}
+
+		public PipelineResult Result { get; set; }
 
 		public void Build()
 		{

@@ -22,16 +22,34 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			DownloadPipeline.Dispose();
 		}
 
+		public PipelineResult Result { get; set; }
+
 		public void Build()
 		{
 			DownloadPipeline = new WebDownloadPipeline().Init(RemoteUri);
 		}
 
-		public async Task Run()
+		public async Task<PipelineResult> Run()
 		{
-			await DownloadPipeline.Run();
-			var bytes = DownloadPipeline.Bytes;
-			this.AssetBundle = AssetBundle.LoadFromMemory(bytes);
+			Result = await DownloadPipeline.Run();
+			if (Result.IsOk)
+			{
+				var bytes = DownloadPipeline.Bytes;
+				this.AssetBundle = AssetBundle.LoadFromMemory(bytes);
+
+				if (this.AssetBundle == null)
+				{
+					Result = new()
+					{
+						IsOk = false,
+						Code = 0,
+						Msg = "invalid bundle data",
+						ErrorType = PipelineErrorType.DataIncorrect,
+					};
+				}
+			}
+
+			return Result;
 		}
 
 		public bool IsCached()

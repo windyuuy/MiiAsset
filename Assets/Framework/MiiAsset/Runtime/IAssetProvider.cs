@@ -8,7 +8,7 @@ namespace Framework.MiiAsset.Runtime
 	{
 		public IAssetProvider Init(string internalBaseUri, string externalBaseUri);
 
-		public Task UpdateCatalog(string remoteBaseUri, string catalogName);
+		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName);
 
 		public bool AllowTags(string[] tags);
 
@@ -27,7 +27,7 @@ namespace Framework.MiiAsset.Runtime
 
 		public Task UnLoadAssetByRefer(string address);
 
-		public Task LoadScene(string sceneAddress, LoadSceneParameters parameters);
+		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters);
 
 		public Task UnLoadScene(string sceneAddress);
 

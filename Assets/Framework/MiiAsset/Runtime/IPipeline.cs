@@ -4,11 +4,12 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime
 {
-	public interface IPipeline: IDisposable
+	public interface IPipeline : IDisposable
 	{
+		public PipelineResult Result { get; }
 		public void Build();
 
-		public Task Run();
+		public Task<PipelineResult> Run();
 
 		public bool IsCached();
 		// void Abort();
@@ -18,6 +19,7 @@ namespace Framework.MiiAsset.Runtime
 	{
 		public string Text { get; }
 	}
+
 	public interface ILoadAssetBundlePipeline : IPipeline
 	{
 		public AssetBundle AssetBundle { get; }

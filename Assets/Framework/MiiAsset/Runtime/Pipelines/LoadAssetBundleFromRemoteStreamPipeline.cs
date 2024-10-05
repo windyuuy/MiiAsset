@@ -34,6 +34,8 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			}
 		}
 
+		public PipelineResult Result { get; set; }
+
 		public void Build()
 		{
 			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri);
@@ -42,10 +44,15 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public AssetBundle AssetBundle => LoadAssetBundlePipeline.AssetBundle;
 
-		public async Task Run()
+		public async Task<PipelineResult> Run()
 		{
-			await DownloadPipeline.Run();
-			await LoadAssetBundlePipeline.Run();
+			Result = await DownloadPipeline.Run();
+			if (Result.IsOk)
+			{
+				Result = await LoadAssetBundlePipeline.Run();
+			}
+
+			return Result;
 		}
 
 		public bool IsCached()

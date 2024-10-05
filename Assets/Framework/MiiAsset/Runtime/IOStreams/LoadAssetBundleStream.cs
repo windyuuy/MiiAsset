@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.IOStreams
 {
-	public class AssetBundleStream : Stream, IRandomWritePumpStream
+	public class LoadAssetBundleStream : Stream, IRandomWritePumpStream
 	{
 		public override void Flush()
 		{

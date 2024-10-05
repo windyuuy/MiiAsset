@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.IOStreams;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
@@ -19,24 +20,27 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			return this;
 		}
 
+		public PipelineResult Result { get; set; }
+
 		public void Build()
 		{
-			DownloadStream = new WebDownloadPumpStream().Init(Uri);
-			WriteStream = new WriteFileStream().Init(WriteUri);
-			DownloadStream.BindReadStream(WriteStream);
+			if (!IOManager.LocalIOProto.Exists(WriteUri))
+			{
+				WriteStream = new WriteFileStream().Init(WriteUri);
+				DownloadStream = new WebDownloadPumpStream().Init(Uri);
+				DownloadStream.BindReadStream(WriteStream);
+			}
 		}
 
-		public Task Run()
+		public async Task<PipelineResult> Run()
 		{
-			if (WriteStream is ICacheableStream cacheableStream && cacheableStream.Exist())
+			Result = await DownloadStream.Start();
+			if (Result.IsOk)
 			{
-				return Task.CompletedTask;
+				Result = await WriteStream.WaitDone();
 			}
-			else
-			{
-				DownloadStream.Start();
-				return WriteStream.WaitDone();
-			}
+
+			return Result;
 		}
 
 		public bool IsCached()

@@ -33,6 +33,7 @@ namespace Framework.MiiAsset.Runtime
 		public string Msg;
 		public bool IsOk;
 		public int Capability;
+		public IPumpStream PumpStream;
 	}
 
 	public static class PumpStreamExt
@@ -62,7 +63,7 @@ namespace Framework.MiiAsset.Runtime
 
 	public interface IPumpStream : IDisposable
 	{
-		public Task Start();
+		public Task<PipelineResult> Start();
 		public void Abort();
 		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 		public Action<StreamCtrlEvent> OnCtrl { get; set; }
@@ -72,7 +73,7 @@ namespace Framework.MiiAsset.Runtime
 	{
 		public int Write(byte[] data, int offset, int len);
 		public void OnCtrl(StreamCtrlEvent evt);
-		public Task WaitDone();
+		public Task<PipelineResult> WaitDone();
 	}
 
 	public interface IRandomReadStream : ISeekableStream, ICacheableStream

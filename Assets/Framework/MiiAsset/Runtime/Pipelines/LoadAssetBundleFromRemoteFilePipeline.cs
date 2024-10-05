@@ -3,13 +3,15 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
-	public class LoadAssetBundleFromRemoteFilePipeline: IPipeline
+	public class LoadAssetBundleFromRemoteFilePipeline : IPipeline
 	{
 		protected DownloadPipeline DownloadPipeline;
 		protected LoadAssetBundleFromFilePipeline LoadAssetBundlePipeline;
 
 		protected string RemoteUri;
 		protected string LocalUri;
+		public PipelineResult Result { get; set; }
+
 		public LoadAssetBundleFromRemoteFilePipeline Init(string remoteUri, string localUri)
 		{
 			RemoteUri = remoteUri;
@@ -17,6 +19,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			this.Build();
 			return this;
 		}
+
 		public void Dispose()
 		{
 			DownloadPipeline.Dispose();
@@ -32,11 +35,16 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		}
 
 		public AssetBundle AssetBundle => LoadAssetBundlePipeline.AssetBundle;
-		
-		public async Task Run()
+
+		public async Task<PipelineResult> Run()
 		{
-			await DownloadPipeline.Run();
-			await LoadAssetBundlePipeline.Run();
+			Result = await DownloadPipeline.Run();
+			if (Result.IsOk)
+			{
+				Result = await LoadAssetBundlePipeline.Run();
+			}
+
+			return Result;
 		}
 
 		public bool IsCached()

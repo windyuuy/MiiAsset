@@ -34,18 +34,20 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 	{
 		protected UnityWebRequest Uwr;
 		protected DownloadHandlerNotify DownloadHandler;
-		protected TaskCompletionSource<bool> Ts;
+		protected TaskCompletionSource<PipelineResult> Ts;
 
 		protected string Uri;
+		public PipelineResult Result;
 
 		public WebDownloadPumpStream Init(string uri)
 		{
 			Uri = uri;
 			DownloadHandler = new();
+			Result = new();
 			return this;
 		}
 
-		public Task Start()
+		public Task<PipelineResult> Start()
 		{
 			if (Ts == null)
 			{
@@ -58,6 +60,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 					OnCtrl?.Invoke(new StreamCtrlEvent()
 					{
 						Event = StreamEvent.Begin,
+						PumpStream = this,
 					});
 
 					var op = Uwr.SendWebRequest();
@@ -72,8 +75,16 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 						Msg = msg,
 						IsOk = code == 200,
 					};
+					Result.Code = (int)code;
+					Result.Msg = msg;
+					Result.IsOk = evt.IsOk;
+					if (!Result.IsOk)
+					{
+						Result.ErrorType = PipelineErrorType.NetError;
+					}
+
 					DownloadHandler.OnCtrl?.Invoke(evt);
-					Ts.SetResult(evt.IsOk);
+					Ts.SetResult(Result);
 				}
 
 				_ = ReadInternal();

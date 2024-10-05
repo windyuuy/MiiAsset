@@ -17,11 +17,23 @@ public class NewBehaviourScript : MonoBehaviour
 		AppDomain.CurrentDomain.UnhandledException += (s, args) => { Debug.LogError((Exception)args.ExceptionObject); };
 		LoomMG.Init();
 		AssetLoader.Init();
-		await AssetLoader.UpdateCatalog("http://127.0.0.1:8080/", "catalog.zip");
-		_ = AssetLoader.LoadTag(AssetTags.Cc, AssetTags.Bb);
-		await AssetLoader.LoadScene("Assets/Bundles/CC/New Scene.unity");
-		var capsulePrefab = await AssetLoader.LoadAsset<GameObject>("Assets/Bundles/BB/Capsule.prefab");
-		var capsule = GameObject.Instantiate(capsulePrefab);
-		Debug.Log("lwkje");
+		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
+		if (result.IsOk)
+		{
+			_ = AssetLoader.LoadTag(AssetTags.Cc, AssetTags.Bb);
+			var sceneAddress = "Assets/Bundles/CC/New Scene.unity";
+			await AssetLoader.LoadScene(sceneAddress, new LoadSceneParameters
+			{
+				loadSceneMode = LoadSceneMode.Additive,
+			});
+			var capsulePrefab = await AssetLoader.LoadAsset<GameObject>("Assets/Bundles/BB/Capsule.prefab");
+			var capsule = GameObject.Instantiate(capsulePrefab);
+			await AssetLoader.UnLoadScene(sceneAddress);
+			Debug.Log("done");
+		}
+		else
+		{
+			result.Print();
+		}
 	}
 }

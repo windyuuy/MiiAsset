@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
-	public class LoadAssetBundlePipeline: IPipeline
+	public class LoadAssetBundlePipeline : IPipeline
 	{
-		protected AssetBundleStream LoadStream;
+		protected LoadAssetBundleStream LoadStream;
 		protected IRandomReadStream ReadStream;
 
 		protected string Uri;
@@ -14,31 +14,55 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public LoadAssetBundlePipeline Init(string uri)
 		{
 			Uri = uri;
+			Result = new();
 			this.Build();
 			return this;
 		}
 
 		public void Dispose()
 		{
-			LoadStream.UnBindWriteStream(ReadStream);
-			LoadStream.Dispose();
-			ReadStream.Dispose();
-			LoadStream = null;
-			ReadStream = null;
+			if (LoadStream != null && ReadStream != null)
+			{
+				LoadStream.UnBindWriteStream(ReadStream);
+			}
+
+			if (LoadStream != null)
+			{
+				LoadStream.Dispose();
+				LoadStream = null;
+			}
+
+			if (ReadStream != null)
+			{
+				ReadStream.Dispose();
+				ReadStream = null;
+			}
 		}
+
+		public PipelineResult Result { get; set; }
 
 		public void Build()
 		{
-			LoadStream = new AssetBundleStream();
+			LoadStream = new LoadAssetBundleStream();
 			ReadStream = new ReadFileStream().Init(Uri);
 			LoadStream.BindWriteStream(ReadStream);
 		}
 
 		public AssetBundle AssetBundle;
-		public Task Run()
+
+		public Task<PipelineResult> Run()
 		{
 			AssetBundle = AssetBundle.LoadFromStream(LoadStream);
-			return Task.FromResult(AssetBundle);
+			if (AssetBundle != null)
+			{
+				Result.IsOk = true;
+			}
+			else
+			{
+				Result.ErrorType = PipelineErrorType.DataIncorrect;
+			}
+
+			return Task.FromResult(Result);
 		}
 
 		public bool IsCached()

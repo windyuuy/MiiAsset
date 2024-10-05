@@ -31,7 +31,7 @@ namespace Framework.MiiAsset.Runtime
 			return this;
 		}
 
-		public Task UpdateCatalog(string remoteBaseUri, string catalogName)
+		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
 		{
 			return Provider.UpdateCatalog(remoteBaseUri, catalogName);
 		}
@@ -81,7 +81,7 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UnLoadAssetByRefer(address);
 		}
 
-		public Task LoadScene(string sceneAddress, LoadSceneParameters parameters)
+		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters)
 		{
 			return Provider.LoadScene(sceneAddress,parameters);
 		}

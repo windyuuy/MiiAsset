@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
+using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.IOStreams
 {
@@ -9,56 +10,80 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 	{
 		// protected IPumpStream ReadStream;
 		protected string Uri;
-
+		public PipelineResult Result;
 
 		public WriteFileStream Init(string uri)
 		{
 			this.Uri = uri;
-			IOManager.LocalIOProto.EnsureFileDirectory(uri);
+			this.Result = new();
 			this.Ts = new();
 			return this;
 		}
 
 		protected FileStream FileStream;
-		protected TaskCompletionSource<bool> Ts;
+		protected TaskCompletionSource<PipelineResult> Ts;
 
 		public int Write(byte[] data, int offset, int len)
 		{
-			FileStream.Write(data, offset, len);
-			return len;
+			if (FileStream != null)
+			{
+				FileStream.Write(data, offset, len);
+				return len;
+			}
+			else
+			{
+				return 0;
+			}
 		}
 
 		public void OnCtrl(StreamCtrlEvent evt)
 		{
 			if (evt.Event == StreamEvent.End)
 			{
+				Result.IsOk = evt.IsOk;
 				if (!evt.IsOk)
 				{
+					Result.ErrorType = PipelineErrorType.FileSystemError;
 					FileStream.Close();
-					File.Delete(Uri);
+					try
+					{
+						File.Delete(Uri);
+					}
+					catch (Exception exception)
+					{
+						Debug.LogException(exception);
+					}
 				}
-				Ts.SetResult(evt.IsOk);
+
+				Ts.SetResult(Result);
 			}
 			else if (evt.Event == StreamEvent.Begin)
 			{
-				FileStream = new FileStream(Uri, FileMode.OpenOrCreate);
+				try
+				{
+					IOManager.LocalIOProto.EnsureFileDirectory(Uri);
+					FileStream = new FileStream(Uri, FileMode.OpenOrCreate);
+				}
+				catch (Exception exception)
+				{
+					Result.Exception = exception;
+					Result.ErrorType = PipelineErrorType.FileSystemError;
+					Ts.SetResult(Result);
+					if (evt.PumpStream != null)
+					{
+						evt.PumpStream.Abort();
+					}
+				}
 			}
 		}
 
-		public Task WaitDone()
+		public Task<PipelineResult> WaitDone()
 		{
 			return Ts.Task;
 		}
 
 		public void Dispose()
 		{
-			// if (ReadStream != null)
-			// {
-			// 	ReadStream.OnReceivedData -= Write;
-			// 	ReadStream.OnCtrl -= OnCtrl;
-			// 	ReadStream = null;
-			// }
-
 			if (FileStream != null)
 			{
 				FileStream.Dispose();
@@ -75,7 +100,14 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 
 		public int Read(byte[] data, int offset, int len)
 		{
-			return FileStream.Read(data, offset, len);
+			if (FileStream != null)
+			{
+				return FileStream.Read(data, offset, len);
+			}
+			else
+			{
+				return 0;
+			}
 		}
 	}
 }

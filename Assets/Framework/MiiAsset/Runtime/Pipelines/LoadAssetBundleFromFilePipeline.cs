@@ -5,18 +5,21 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
-	public class LoadAssetBundleFromFilePipeline: IPipeline
+	public class LoadAssetBundleFromFilePipeline : IPipeline
 	{
 		protected string Uri;
+		public PipelineResult Result { get; set; }
 
 		public LoadAssetBundleFromFilePipeline Init(string uri)
 		{
 			Uri = uri;
+			Result = new();
 			this.Build();
 			return this;
 		}
 
 		public AssetBundle AssetBundle;
+
 		public void Dispose()
 		{
 			AssetBundle.Unload(true);
@@ -25,13 +28,28 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Build()
 		{
-			
 		}
 
-		public Task Run()
+		public Task<PipelineResult> Run()
 		{
-			AssetBundle = AssetBundle.LoadFromFile(Uri);
-			return Task.FromResult(AssetBundle);
+			if (File.Exists(Uri))
+			{
+				AssetBundle = AssetBundle.LoadFromFile(Uri);
+				if (AssetBundle != null)
+				{
+					Result.IsOk = true;
+				}
+				else
+				{
+					Result.ErrorType = PipelineErrorType.DataIncorrect;
+				}
+			}
+			else
+			{
+				Result.ErrorType = PipelineErrorType.FileSystemError;
+			}
+
+			return Task.FromResult(Result);
 		}
 
 		public bool IsCached()

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime;
 using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime
@@ -48,10 +47,10 @@ namespace Framework.MiiAsset.Runtime
 
 	public interface IAssetBundleLoadStatus
 	{
-		public Task Task { get; }
+		public Task<PipelineResult> Task { get; }
 		public int RefCount { get; set; }
 		public AssetBundle AssetBundle { get; }
-		Task Load(CatalogInfo catalogInfo);
+		Task<PipelineResult> Load(CatalogInfo catalogInfo);
 		Task UnLoad();
 		Task<T> LoadAssetJust<T>(string address);
 		Task<T> LoadAssetByRefer<T>(string address);
@@ -75,26 +74,57 @@ namespace Framework.MiiAsset.Runtime
 			this.BundleName = bundleName;
 		}
 
-		internal TaskCompletionSource<AssetBundle> Ts = new();
-		public Task Task => Ts.Task;
+		public Task<PipelineResult> Task { get; set; } = null;
 		public int RefCount { get; set; }
 
 		internal ILoadAssetBundlePipeline LoadAssetBundlePipeline;
 
 		public AssetBundle AssetBundle { get; set; }
 
-		public Task Load(CatalogInfo catalogInfo)
+		public Task<PipelineResult> Load(CatalogInfo catalogInfo)
 		{
 			Debug.Assert(RefCount > 0, $"Bundle is not allowed: {this.BundleName}");
 			if (AssetBundle == null)
 			{
-				if ((LoadAssetBundlePipeline == null && !Task.IsCompleted) || (Task.IsCompleted && !Task.IsCompletedSuccessfully))
+				if (Task == null || (Task.IsCompleted && !Task.IsCompletedSuccessfully))
 				{
-					_ = LoadInternal(catalogInfo);
+					Task = LoadInternal(catalogInfo);
 				}
 			}
 
 			return Task;
+		}
+
+		public PipelineResult Result = new();
+
+		async Task<PipelineResult> LoadInternal(CatalogInfo catalogInfo)
+		{
+			var unloadTask = UnloadTask;
+			if (unloadTask != null)
+			{
+				await unloadTask;
+			}
+
+			var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
+			var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
+			using (var loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource))
+			{
+				this.LoadAssetBundlePipeline = loadAssetBundlePipeline;
+
+				var result = await loadAssetBundlePipeline.Run();
+				Result.Merge(result);
+				var assetBundle = loadAssetBundlePipeline.AssetBundle;
+				Debug.Assert(this.AssetBundle == null, $"this.AssetBundle==null, {this.BundleName}");
+				this.AssetBundle = assetBundle;
+				this.LoadAssetBundlePipeline = null;
+			}
+
+			if (this.AssetBundle == null)
+			{
+				Debug.LogError($"invalid assetbundle: {BundleName}");
+			}
+
+			return Result;
 		}
 
 		internal Task UnloadTask;
@@ -102,10 +132,6 @@ namespace Framework.MiiAsset.Runtime
 		public async Task UnLoad()
 		{
 			Debug.Assert(RefCount == 0);
-			// if (this.LoadAssetBundlePipeline != null)
-			// {
-			// 	this.LoadAssetBundlePipeline.Abort();
-			// }
 			if (LoadAssetBundlePipeline != null)
 			{
 				await Task;
@@ -125,6 +151,7 @@ namespace Framework.MiiAsset.Runtime
 			{
 				throw new Exception($"assetbundle not load yet: {BundleName}, cannot load by asset key: {address}");
 			}
+
 			var op = AssetBundle.LoadAssetAsync<T>(address);
 			var task = op.GetTask();
 			await task;
@@ -140,7 +167,7 @@ namespace Framework.MiiAsset.Runtime
 
 		public Task UnLoadAssetJust(string address)
 		{
-			return Task.CompletedTask;
+			return System.Threading.Tasks.Task.CompletedTask;
 		}
 
 		protected Dictionary<string, LoadAssetStatus> AssetStatusMap = new();
@@ -181,40 +208,7 @@ namespace Framework.MiiAsset.Runtime
 		{
 			var status = GetOrCreateAssetStatus(address);
 			--status.RefCount;
-			return Task.CompletedTask;
-		}
-
-		async Task LoadInternal(CatalogInfo catalogInfo)
-		{
-			var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
-			var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
-			using (var loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource))
-			{
-				this.LoadAssetBundlePipeline = loadAssetBundlePipeline;
-				var unloadTask = UnloadTask;
-				if (unloadTask != null)
-				{
-					await unloadTask;
-				}
-
-				await loadAssetBundlePipeline.Run();
-				var assetBundle = loadAssetBundlePipeline.AssetBundle;
-				Debug.Assert(this.AssetBundle == null, $"this.AssetBundle==null, {this.BundleName}");
-				this.AssetBundle = assetBundle;
-				this.LoadAssetBundlePipeline = null;
-			}
-
-			if (this.AssetBundle == null)
-			{
-				Debug.LogError($"invalid assetbundle: {BundleName}");
-			}
-
-			Ts.SetResult(this.AssetBundle);
-		}
-
-		public void SetResult(AssetBundle assetBundle)
-		{
-			Ts.SetResult(assetBundle);
+			return System.Threading.Tasks.Task.CompletedTask;
 		}
 	}
 
@@ -318,7 +312,7 @@ namespace Framework.MiiAsset.Runtime
 			return Task.WhenAll(tasks);
 		}
 
-		public Task LoadBundles(HashSet<string> deps, CatalogInfo catalogInfo)
+		public Task<PipelineResult[]> LoadBundles(HashSet<string> deps, CatalogInfo catalogInfo)
 		{
 			if (deps != null)
 			{
@@ -330,14 +324,35 @@ namespace Framework.MiiAsset.Runtime
 				return task;
 			}
 
-			return Task.CompletedTask;
+			return Task.FromResult(Array.Empty<PipelineResult>());
+		}
+
+		public Task<PipelineResult[]> GetLoadingBundleTasks(HashSet<string> deps, CatalogInfo catalogInfo)
+		{
+			if (deps != null)
+			{
+				var task = Task.WhenAll(deps
+					.Select(dep =>
+					{
+						var loadStatus = GetOrCreateLoadStatus(dep);
+						return loadStatus.Task;
+					})
+					.Where(task => task != null));
+				return task;
+			}
+
+			return Task.FromResult(Array.Empty<PipelineResult>());
 		}
 
 		public Task UnLoadBundles(HashSet<string> deps)
 		{
 			if (deps != null)
 			{
-				var task = Task.WhenAll(deps.Select(dep => GetOrCreateLoadStatus(dep).UnLoad()));
+				var task = Task.WhenAll(deps.Select(dep =>
+				{
+					var loadStatus = GetOrCreateLoadStatus(dep);
+					return loadStatus.UnLoad();
+				}));
 				return task;
 			}
 
