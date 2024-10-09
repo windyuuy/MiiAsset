@@ -44,5 +44,6 @@ namespace Framework.MiiAsset.Runtime
 		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadSceneByRefer(string sceneAddress);
+		public Task<PipelineResult> CleanUpOldVersionFiles();
 	}
 }

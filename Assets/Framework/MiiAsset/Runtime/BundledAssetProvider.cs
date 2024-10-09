@@ -95,10 +95,8 @@ namespace Framework.MiiAsset.Runtime
 							{
 								CatalogInfo.BundleLoadSourceMap[bundleInfo.fileName] = internalSource;
 							}
-							else
-							{
-								CatalogInfo.BundlesToClean.Add(bundleInfo.fileName, internalSource);
-							}
+
+							CatalogInfo.InternalBundles.Add(bundleInfo.fileName, internalSource);
 						}
 					}
 					else
@@ -314,6 +312,58 @@ namespace Framework.MiiAsset.Runtime
 			await opStand.GetTask();
 			// await UnLoadAssetByRefer(sceneAddress);
 			await CatalogStatus.UnLoadBundlesByRefer(deps);
+		}
+
+		public Task<PipelineResult> CleanUpOldVersionFiles()
+		{
+			var cacheDir = IOManager.LocalIOProto.CacheDir;
+
+			var failedList = new List<string>();
+			var files = IOManager.LocalIOProto.ReadDir(cacheDir);
+			CatalogInfo.BundlesToClean.Clear();
+			foreach (var filePath in files)
+			{
+				var fileName = Path.GetFileName(filePath);
+				if (!CatalogInfo.BundleLoadSourceMap.ContainsKey(fileName))
+				{
+					CatalogInfo.BundlesToClean.Add(fileName);
+
+					try
+					{
+						IOManager.LocalIOProto.Delete(filePath);
+					}
+					catch (Exception exception)
+					{
+						Debug.LogException(exception);
+						failedList.Add(filePath);
+					}
+				}
+
+				if (CatalogInfo.InternalBundles.ContainsKey(fileName))
+				{
+					CatalogInfo.BundlesToClean.Add(fileName);
+
+					try
+					{
+						IOManager.LocalIOProto.Delete(filePath);
+					}
+					catch (Exception exception)
+					{
+						Debug.LogException(exception);
+						failedList.Add(filePath);
+					}
+				}
+			}
+
+			var result = new PipelineResult();
+			result.IsOk = failedList.Count == 0;
+			if (!result.IsOk)
+			{
+				result.Msg = $"delete failed list: {string.Join(",", failedList)}";
+			}
+
+			result.Status = PipelineStatus.Done;
+			return Task.FromResult(result);
 		}
 	}
 }

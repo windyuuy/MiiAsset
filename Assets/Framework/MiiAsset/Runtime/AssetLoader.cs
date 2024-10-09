@@ -20,6 +20,11 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UpdateCatalog(remoteBaseUri, catalogName);
 		}
 
+		public static Task<PipelineResult> CleanUpOldVersionFiles()
+		{
+			return Consumer.CleanUpOldVersionFiles();
+		}
+
 		public static bool AllowTags(string[] tags)
 		{
 			return Consumer.AllowTags(tags);

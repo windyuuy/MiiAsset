@@ -171,6 +171,7 @@ public class NewBehaviourScript : MonoBehaviour
 		{
 			var downloadSize = AssetLoader.GetDownloadSize(AssetTags.Cc, AssetTags.Bb);
 			Debug.Log($"DownloadSize: {downloadSize}");
+			await AssetLoader.CleanUpOldVersionFiles();
 
 			var sceneAddress = "Assets/Bundles/CC/New Scene.unity";
 

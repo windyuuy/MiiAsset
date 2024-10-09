@@ -513,6 +513,12 @@ namespace MiiAssetHint
 
 		public static BuildAssetBundlesResult BuildAssetBundlesWithPathInfo()
 		{
+			if (Application.isPlaying)
+			{
+				Debug.LogError("cannot build on playmode");
+				return null;
+			}
+			
 			ScriptCompilationSettings scriptCompilationSettings = new()
 			{
 				target = EditorUserBuildSettings.activeBuildTarget,

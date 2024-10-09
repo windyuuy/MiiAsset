@@ -122,5 +122,10 @@ namespace Framework.MiiAsset.Runtime
 		{
 			return Provider.UnLoadSceneByRefer(sceneAddress);
 		}
+
+		public Task<PipelineResult> CleanUpOldVersionFiles()
+		{
+			return Provider.CleanUpOldVersionFiles();
+		}
 	}
 }

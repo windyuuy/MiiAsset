@@ -63,6 +63,16 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		{
 			return File.Exists(CacheDir + bundleName) || File.Exists(InternalDir + bundleName);
 		}
+
+		public void Delete(string filePath)
+		{
+			File.Delete(filePath);
+		}
+
+		public string[] ReadDir(string readDir)
+		{
+			return Directory.GetFiles(readDir);
+		}
 	}
 
 	public class IOManager

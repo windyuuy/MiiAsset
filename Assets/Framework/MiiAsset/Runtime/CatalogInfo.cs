@@ -15,8 +15,9 @@ namespace Framework.MiiAsset.Runtime
 		public Dictionary<string, HashSet<string>> TagFlatBundlesMap = new();
 
 		public Dictionary<string, IResourceLoadSource> BundleLoadSourceMap = new();
+		public Dictionary<string, IResourceLoadSource> InternalBundles = new();
 		// TODO: clean bundle before update
-		public Dictionary<string, IResourceLoadSource> BundlesToClean = new();
+		public List<string> BundlesToClean = new();
 
 		public void GetTagsDependBundles(IEnumerable<string> tags, HashSet<string> depBundles)
 		{
