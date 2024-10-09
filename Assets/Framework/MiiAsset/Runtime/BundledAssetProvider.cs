@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.AssetUtils;
 using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Pipelines;
+using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -28,6 +29,7 @@ namespace Framework.MiiAsset.Runtime
 #else
 			this.InternalBaseUri = Application.dataPath + "/" + internalBaseUri;
 #endif
+			IOManager.LocalIOProto.InternalDir = this.InternalBaseUri;
 			this.ExternalBaseUri = Application.persistentDataPath + "/" + externalBaseUri;
 			return this;
 		}
@@ -63,7 +65,7 @@ namespace Framework.MiiAsset.Runtime
 
 		private void HandleCatalog(CatalogConfig internalCatalog, CatalogConfig externalCatalog, string sourceUri)
 		{
-			var cacheDir = $"{Application.persistentDataPath}/hotres/";
+			var cacheDir = IOManager.LocalIOProto.CacheDir;
 			var isDirReady = false;
 			try
 			{
@@ -133,10 +135,16 @@ namespace Framework.MiiAsset.Runtime
 			return true;
 		}
 
-		public Task LoadTags(string[] tags)
+		public Task LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			AllowTags(tags);
-			var task = CatalogStatus.LoadTags(tags, CatalogInfo);
+			var task = CatalogStatus.LoadTags(tags, CatalogInfo, loadStatus);
+			return task;
+		}
+
+		public Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		{
+			var task = CatalogStatus.DownloadTags(tags, CatalogInfo, loadStatus);
 			return task;
 		}
 
@@ -145,10 +153,32 @@ namespace Framework.MiiAsset.Runtime
 			return CatalogStatus.UnloadTags(tags, CatalogInfo);
 		}
 
-		public Task<T> LoadAssetJust<T>(string address)
+		public long GetDownloadSize(IEnumerable<string> tags)
+		{
+			return CatalogStatus.GetDownloadSize(tags, CatalogInfo);
+		}
+
+		public bool IsAddressInTags(string address, IEnumerable<string> tags)
+		{
+			return CatalogStatus.IsAddressInTags(address, tags, CatalogInfo);
+		}
+
+		public bool IsBundleInTags(string bundleFileName, IEnumerable<string> tags)
+		{
+			return CatalogStatus.IsAddressInTags(bundleFileName, tags, CatalogInfo);
+		}
+
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
+		{
+			var subStatus = loadStatus?.AllocAsyncOperationStatus();
+			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
+			return bundleLoadStatus.LoadAssetJust<T>(address, subStatus);
+		}
+
+		protected Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus)
 		{
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
-			return bundleLoadStatus.LoadAssetJust<T>(address);
+			return bundleLoadStatus.LoadAssetJust<T>(address, loadStatus);
 		}
 
 		public async Task UnloadAssetJust(string address)
@@ -157,13 +187,14 @@ namespace Framework.MiiAsset.Runtime
 			await bundleLoadStatus.UnLoadAssetJust(address);
 		}
 
-		public async Task<T> LoadAsset<T>(string address)
+		public async Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
+			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
-			var results = await CatalogStatus.LoadBundles(deps, CatalogInfo);
+			var results = await CatalogStatus.LoadBundles(deps, CatalogInfo, loadStatus);
 			if (results.All(result => result.IsOk))
 			{
-				var asset = await LoadAssetJust<T>(address);
+				var asset = await LoadAssetJust<T>(address, subStatus);
 				return asset;
 			}
 			else
@@ -180,17 +211,19 @@ namespace Framework.MiiAsset.Runtime
 		public async Task UnLoadAsset(string address)
 		{
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
-			await CatalogStatus.GetLoadingBundleTasks(deps, CatalogInfo);
+			await CatalogStatus.GetLoadingBundlesTasks(deps, CatalogInfo);
 			await UnloadAssetJust(address);
 		}
 
-		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters)
+		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
+			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
-			var results = await CatalogStatus.LoadBundles(deps, CatalogInfo);
+			var results = await CatalogStatus.LoadBundles(deps, CatalogInfo, loadStatus);
 			if (results.All(result => result.IsOk))
 			{
 				var op = SceneManager.LoadSceneAsync(sceneAddress, parameters);
+				subStatus?.Set(op);
 				await op.GetTask();
 				var scene = SceneManager.GetSceneByPath(sceneAddress);
 				return scene;
@@ -199,7 +232,10 @@ namespace Framework.MiiAsset.Runtime
 			{
 				foreach (var result in results)
 				{
-					result.Print();
+					if (!result.IsOk)
+					{
+						result.Print();
+					}
 				}
 
 				return default;
@@ -223,18 +259,19 @@ namespace Framework.MiiAsset.Runtime
 
 		protected CatalogAddressStatus CatalogAddressStatus = new();
 
-		public Task<T> LoadAssetByRefer<T>(string address)
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
-			var task = LoadInternal<T>(address);
+			var task = LoadByReferInternal<T>(address, loadStatus);
 			CatalogAddressStatus.RegisterAddress(address, task);
 			return task;
 		}
 
-		async Task<T> LoadInternal<T>(string address)
+		protected async Task<T> LoadByReferInternal<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
+			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
-			await CatalogStatus.LoadBundlesByRefer(deps, CatalogInfo);
-			var asset = await LoadAssetJust<T>(address);
+			await CatalogStatus.LoadBundlesByRefer(deps, CatalogInfo, loadStatus);
+			var asset = await LoadAssetJust<T>(address, subStatus);
 			CatalogAddressStatus.RegisterAsset(address, asset);
 			return asset;
 		}
@@ -242,22 +279,41 @@ namespace Framework.MiiAsset.Runtime
 		public async Task UnLoadAssetByRefer(string address)
 		{
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
-			await CatalogAddressStatus.UnAddress(address);
+			await CatalogAddressStatus.UnRegisterAsset(address);
 			await CatalogStatus.UnLoadBundlesByRefer(deps);
 		}
 
-		public async Task LoadSceneByRefer(string sceneAddress)
+		public async Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
-			await LoadAssetByRefer<object>(sceneAddress);
-			var op = SceneManager.LoadSceneAsync(sceneAddress);
+			// await LoadAssetByRefer<UnityEngine.Object>(sceneAddress);
+			var task = LoadSceneInternal(sceneAddress, parameters, loadStatus);
+			CatalogAddressStatus.RegisterAddress(sceneAddress, task);
+			var opStand = await task;
+			CatalogAddressStatus.RegisterAsset(sceneAddress, opStand);
+
+			var scene = SceneManager.GetSceneByPath(sceneAddress);
+			return scene;
+		}
+
+		private async Task<AsyncOperation> LoadSceneInternal(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		{
+			var subStatus = loadStatus?.AllocAsyncOperationStatus();
+			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
+			await CatalogStatus.LoadBundlesByRefer(deps, CatalogInfo, loadStatus);
+			var op = SceneManager.LoadSceneAsync(sceneAddress, parameters);
+			subStatus?.Set(op);
 			await op.GetTask();
+			return op;
 		}
 
 		public async Task UnLoadSceneByRefer(string sceneAddress)
 		{
-			var op = SceneManager.UnloadSceneAsync(sceneAddress);
-			await op.GetTask();
-			await UnLoadAssetByRefer(sceneAddress);
+			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
+			await CatalogAddressStatus.UnRegisterAsset(sceneAddress);
+			var opStand = SceneManager.UnloadSceneAsync(sceneAddress);
+			await opStand.GetTask();
+			// await UnLoadAssetByRefer(sceneAddress);
+			await CatalogStatus.UnLoadBundlesByRefer(deps);
 		}
 	}
 }

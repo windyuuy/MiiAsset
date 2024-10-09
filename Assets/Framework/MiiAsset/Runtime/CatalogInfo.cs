@@ -15,9 +15,10 @@ namespace Framework.MiiAsset.Runtime
 		public Dictionary<string, HashSet<string>> TagFlatBundlesMap = new();
 
 		public Dictionary<string, IResourceLoadSource> BundleLoadSourceMap = new();
+		// TODO: clean bundle before update
 		public Dictionary<string, IResourceLoadSource> BundlesToClean = new();
 
-		public void GetTagsDependBundles(IEnumerable<string> tags, HashSet<string> deps)
+		public void GetTagsDependBundles(IEnumerable<string> tags, HashSet<string> depBundles)
 		{
 			foreach (var tag in tags)
 			{
@@ -25,7 +26,7 @@ namespace Framework.MiiAsset.Runtime
 				{
 					foreach (var se in deps1)
 					{
-						deps.Add(se);
+						depBundles.Add(se);
 					}
 				}
 			}
@@ -109,6 +110,7 @@ namespace Framework.MiiAsset.Runtime
 				if (!flatRelationMap.TryGetValue(bundleInfo.fileName, out var deps))
 				{
 					deps = new HashSet<string>();
+					deps.Add(bundleInfo.fileName);
 					flatRelationMap.Add(bundleInfo.fileName, deps);
 				}
 
@@ -150,6 +152,18 @@ namespace Framework.MiiAsset.Runtime
 			if (NameBundleMap.TryGetValue(bundleName, out var bundleInfo))
 			{
 				return bundleInfo;
+			}
+			else
+			{
+				throw new Exception($"invalid bundle not exist: {bundleName}");
+			}
+		}
+
+		public long GetFileSize(string bundleName)
+		{
+			if (NameBundleMap.TryGetValue(bundleName, out var bundleInfo))
+			{
+				return bundleInfo.size;
 			}
 			else
 			{

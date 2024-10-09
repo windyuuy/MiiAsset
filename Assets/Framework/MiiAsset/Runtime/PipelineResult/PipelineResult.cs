@@ -3,14 +3,23 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime
 {
+	public enum PipelineStatus
+	{
+		Init,
+		Running,
+		Done,
+	}
+
 	public class PipelineResult
 	{
 		public virtual bool IsOk { get; set; } = false;
+		public bool IsDone => Status == PipelineStatus.Done;
 		public Exception Exception;
 
 		public int Code;
 		public string Msg;
 		public PipelineErrorType ErrorType;
+		public PipelineStatus Status = PipelineStatus.Init;
 
 		public void Print()
 		{
@@ -31,6 +40,7 @@ namespace Framework.MiiAsset.Runtime
 
 		public void Merge(PipelineResult result)
 		{
+			this.Status = result.Status;
 			this.IsOk = result.IsOk;
 			this.Exception = result.Exception;
 			this.ErrorType = result.ErrorType;

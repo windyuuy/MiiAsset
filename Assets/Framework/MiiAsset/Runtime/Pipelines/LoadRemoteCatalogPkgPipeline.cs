@@ -8,12 +8,14 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 	public class LoadRemoteCatalogPkgPipeline : ILoadTextAssetPipeline
 	{
 		public string RemoteCatalogUri;
-		public string InternalCatalogUri;
+		public string ExternalCatalogUri;
+		public bool Overwrite;
 
-		public LoadRemoteCatalogPkgPipeline Init(string remoteCatalogUri, string internalCatalogUri)
+		public LoadRemoteCatalogPkgPipeline Init(string remoteCatalogUri, string externalCatalogUri, bool overwrite)
 		{
 			this.RemoteCatalogUri = remoteCatalogUri;
-			this.InternalCatalogUri = internalCatalogUri;
+			this.ExternalCatalogUri = externalCatalogUri;
+			this.Overwrite = overwrite;
 			this.Result = new();
 			this.Build();
 			return this;
@@ -32,16 +34,16 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public async Task<PipelineResult> Run()
 		{
 			var isCached = true;
-			if (!IsCached() && InternalCatalogUri != null)
+			if (!IsCached() && ExternalCatalogUri != null)
 			{
-				using var downloadPipeline = new DownloadPipeline().Init(RemoteCatalogUri, InternalCatalogUri);
+				using var downloadPipeline = new DownloadPipeline().Init(RemoteCatalogUri, ExternalCatalogUri, Overwrite);
 				Result = await downloadPipeline.Run();
 				isCached = false;
 			}
 
 			if (isCached || Result.IsOk)
 			{
-				using var loadPipeline = new LoadCatalogPkgPipeline().Init(InternalCatalogUri);
+				using var loadPipeline = new LoadCatalogPkgPipeline().Init(ExternalCatalogUri);
 				Result = await loadPipeline.Run();
 				Text = loadPipeline.Text;
 
@@ -57,7 +59,12 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public bool IsCached()
 		{
-			return IOManager.LocalIOProto.Exists(InternalCatalogUri);
+			return !this.Overwrite && IOManager.LocalIOProto.Exists(ExternalCatalogUri);
+		}
+
+		public PipelineProgress GetProgress()
+		{
+			return new PipelineProgress().Set01Progress(Result.IsOk);
 		}
 
 		public string Text { get; set; }

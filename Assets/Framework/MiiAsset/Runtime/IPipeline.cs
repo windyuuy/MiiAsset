@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.IOStreams;
 using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime
@@ -13,6 +14,40 @@ namespace Framework.MiiAsset.Runtime
 
 		public bool IsCached();
 		// void Abort();
+
+		public PipelineProgress GetProgress();
+	}
+
+	public interface IDownloadPipeline : IPipeline
+	{
+		
+	}
+
+	public static class PipelineExt
+	{
+		public static PipelineProgress CombineProgress(this IPipeline pipeline1, IPipeline pipeline2)
+		{
+			var progress1 = pipeline1.GetProgress();
+			var progress2 = pipeline2.GetProgress();
+			return progress1.Combine(progress2);
+		}
+
+		public static PipelineProgress CombineProgress(this IPipeline pipeline1, params IPipeline[] pipelines)
+		{
+			var progress1 = pipeline1.GetProgress();
+			var pipelineProgress = new PipelineProgress()
+			{
+				Total = progress1.Total,
+				Count = progress1.Count,
+			};
+			foreach (var pipeline in pipelines)
+			{
+				var progress2 = pipeline.GetProgress();
+				pipelineProgress = pipelineProgress.Combine(progress2);
+			}
+
+			return pipelineProgress;
+		}
 	}
 
 	public interface ILoadTextAssetPipeline : IPipeline

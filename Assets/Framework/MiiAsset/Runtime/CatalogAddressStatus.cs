@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime
 {
@@ -39,13 +40,18 @@ namespace Framework.MiiAsset.Runtime
 			AddressLoadMap[address].Asset = asset;
 		}
 
-		public async Task UnAddress(string address)
+		public async Task UnRegisterAsset(string address)
 		{
 			if (AddressLoadMap.TryGetValue(address, out var status))
 			{
-				await status.Task;
-				var asset = status.Asset;
-				
+				--status.ReferCount;
+				Debug.Assert(status.ReferCount==0,"status.ReferCount==0");
+				if (status.ReferCount <= 0)
+				{
+					AddressLoadMap.Remove(address);
+					await status.Task;
+					// var asset = status.Asset;
+				}
 			}
 		}
 	}

@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,26 +14,34 @@ namespace Framework.MiiAsset.Runtime
 
 		public bool AllowTags(string[] tags);
 
-		public Task LoadTags(string[] tags);
+		public Task LoadTags(string[] tags, AssetLoadStatusGroup loadStatus);
+		public Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadTags(string[] tags);
-		public Task<T> LoadAssetJust<T>(string address);
+
+		public long GetDownloadSize(IEnumerable<string> tags);
+
+		public bool IsAddressInTags(string address, IEnumerable<string> tags);
+
+		public bool IsBundleInTags(string bundleFileName, IEnumerable<string> tags);
+
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus);
 
 		public Task UnloadAssetJust(string address);
 
-		public Task<T> LoadAsset<T>(string address);
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadAsset(string address);
 
-		public Task<T> LoadAssetByRefer<T>(string address);
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadAssetByRefer(string address);
 
-		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters);
+		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadScene(string sceneAddress);
 
-		public Task LoadSceneByRefer(string sceneAddress);
+		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadSceneByRefer(string sceneAddress);
 	}

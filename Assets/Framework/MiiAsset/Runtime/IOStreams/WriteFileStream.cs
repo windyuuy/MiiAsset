@@ -54,6 +54,23 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 						Debug.LogException(exception);
 					}
 				}
+				else
+				{
+					try
+					{
+						FileStream.Close();
+						IOManager.LocalIOProto.Move(ToTempPath(Uri), Uri);
+					}
+					catch (Exception exception)
+					{
+						Result.Exception = exception;
+						Result.ErrorType = PipelineErrorType.FileSystemError;
+						Result.IsOk = false;
+						// Debug.LogException(exception);
+					}
+				}
+
+				Result.Status = PipelineStatus.Done;
 
 				Ts.SetResult(Result);
 			}
@@ -62,7 +79,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 				try
 				{
 					IOManager.LocalIOProto.EnsureFileDirectory(Uri);
-					FileStream = new FileStream(Uri, FileMode.OpenOrCreate);
+					FileStream = new FileStream(ToTempPath(Uri), FileMode.OpenOrCreate);
 				}
 				catch (Exception exception)
 				{
@@ -77,9 +94,19 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			}
 		}
 
+		private string ToTempPath(string uri)
+		{
+			return uri + "__temp";
+		}
+
 		public Task<PipelineResult> WaitDone()
 		{
 			return Ts.Task;
+		}
+
+		public PipelineProgress GetProgress()
+		{
+			return new PipelineProgress().Set01Progress(Result.IsOk);
 		}
 
 		public void Dispose()
@@ -89,8 +116,6 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 				FileStream.Dispose();
 				FileStream = null;
 			}
-
-			Ts = null;
 		}
 
 		public bool Exist()

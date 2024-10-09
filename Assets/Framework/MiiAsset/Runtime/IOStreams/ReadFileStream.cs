@@ -12,7 +12,6 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 		public ReadFileStream Init(string uri)
 		{
 			this.Uri = uri;
-			this.FileStream = IOManager.LocalIOProto.OpenRead(uri);
 			return this;
 		}
 
@@ -26,6 +25,11 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 		public int Read(byte[] data, int offset, int len)
 		{
 			return FileStream.Read(data, offset, len);
+		}
+
+		public void Run()
+		{
+			this.FileStream = IOManager.LocalIOProto.OpenRead(Uri);
 		}
 
 		public void Dispose()

@@ -73,6 +73,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			return false;
 		}
 
+		public PipelineProgress GetProgress()
+		{
+			return new PipelineProgress().Set01Progress(Result.IsOk);
+		}
+
 		public string Text { get; set; }
 	}
 }

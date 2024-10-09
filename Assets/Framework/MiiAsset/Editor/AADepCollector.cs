@@ -98,11 +98,22 @@ namespace U3DUdpater.Editor
 		{
 			public HashSet<string> Guids = new();
 			public string[] Tags;
+
+			/// <summary>
+			/// for debug
+			/// </summary>
+			public string[] Addresses => Guids.Select(guid => AssetDatabase.GUIDToAssetPath(guid)).ToArray();
+
 			public string TagsUKey;
 			public string BundleFileName => $"{GetTagsKey()}_{BuildInfo.Hash}.bundle";
 			public HashSet<string> DepTagNames = new();
 			public HashSet<string> Deps = new();
 			public BundleDetails BuildInfo;
+			public bool IsOffline = false;
+			/// <summary>
+			/// 多少byte
+			/// </summary>
+			public long FileSize;
 
 			public string GetTagsKey()
 			{
@@ -201,6 +212,7 @@ namespace U3DUdpater.Editor
 						tagBundleMap.Add(tagsKey, tagBundle);
 					}
 
+					tagBundle.IsOffline |= !groupNameInfo.IsRemote;
 					tagBundle.Guids.Add(groupNameInfo.Guid);
 
 					if (guidBundleMap.TryGetValue(groupNameInfo.Guid, out var exist))
@@ -213,34 +225,6 @@ namespace U3DUdpater.Editor
 			}
 
 			var tagBundles = tagBundleMap.Values.ToArray();
-
-			// // analyze deps
-			// var tempDir = "./Library/MiiAssets/CompiledPlayerScriptsData/";
-			// if (!Directory.Exists(tempDir))
-			// {
-			// 	Directory.CreateDirectory(tempDir);
-			// }
-			// ScriptCompilationResult scriptCompilationResult = PlayerBuildInterface.CompilePlayerScripts(scriptCompilationSettings, tempDir);
-			// foreach (var item in tagBundleMap)
-			// {
-			// 	var tagBundle = item.Value;
-			// 	foreach (var guid in tagBundle.Guids)
-			// 	{
-			// 		var vGuid = new GUID(guid);
-			// 		
-			// 		var includedObjects = ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(vGuid, scriptCompilationSettings.target);
-			// 		var referencedObjects =
-			// 			ContentBuildInterface.GetPlayerDependenciesForObjects(includedObjects, scriptCompilationSettings.target, scriptCompilationResult.typeDB,
-			// 				DependencyType.ValidReferences);
-			// 		foreach (var referencedObject in referencedObjects)
-			// 		{
-			// 			if (guidBundleMap.TryGetValue(referencedObject.guid.ToString(), out var refTagBundle))
-			// 			{
-			// 				tagBundle.Deps.Add(refTagBundle.TagsUKey);
-			// 			}
-			// 		}
-			// 	}
-			// }
 
 			// build content
 			var bundleBuilds = tagBundles.Select(tagBundle =>
@@ -281,9 +265,11 @@ namespace U3DUdpater.Editor
 				foreach (var item in bundleInfos)
 				{
 					var tagBundle = tagBundles.FirstOrDefault(tagBundle => tagBundle.GetBundleName() == item.Key);
+					var fileSize = new FileInfo(item.Value.FileName).Length;
 					if (tagBundle != null)
 					{
 						tagBundle.BuildInfo = item.Value;
+						tagBundle.FileSize = fileSize;
 
 						foreach (var dep in item.Value.Dependencies)
 						{
@@ -299,7 +285,8 @@ namespace U3DUdpater.Editor
 							Tags = tags,
 							TagsUKey = ToTagsKey(tags),
 							DepTagNames = new(),
-							BuildInfo = item.Value
+							BuildInfo = item.Value,
+							FileSize = fileSize,
 						};
 						tagBundleMap.Add(builtinBundleInfo.TagsUKey, builtinBundleInfo);
 					}
@@ -384,38 +371,21 @@ namespace U3DUdpater.Editor
 						deps = tagBundle.Deps.ToArray(),
 						tags = tagBundle.Tags.ToArray(),
 						entries = tagBundle.GetAssetNames(),
+						IsOffline = tagBundle.IsOffline,
+						size = tagBundle.FileSize,
 					};
 				}).ToArray();
 				var catalog = new CatalogConfig
 				{
 					bundleInfos = catalogBundleInfos,
 				};
-				var catalogContent = JsonUtility.ToJson(catalog);
 				var catalogFilePath = $"{folderPath}/catalog_{options.UpdateTunnel}.zip".Replace("_.", ".");
 				var catalogHashFilePath = Path.ChangeExtension(catalogFilePath, "hash");
-				var bytes = Encoding.UTF8.GetBytes(catalogContent);
-				using (var ms = new FileStream(catalogFilePath, FileMode.Create))
-				using (ZipArchive arch = new ZipArchive(ms, ZipArchiveMode.Create))
-				{
-					var entry = arch.CreateEntry("catalog.json");
-					var stream = entry.Open();
-					stream.Write(bytes);
-				}
+				var bytes = SaveCatalog(catalog, catalogFilePath);
 
-				var hash = SHA256.Create();
-				using (var stream = new FileStream(catalogFilePath, FileMode.Open, FileAccess.Read))
-				{
-					byte[] hashByte = hash.ComputeHash(bytes);
-					stream.Close();
-					var hash128Str = BitConverter.ToString(hashByte).Replace("-", "").ToLower();
-					File.WriteAllText(catalogHashFilePath, hash128Str, EncodingExt.UTF8WithoutBom);
-				}
+				SaveCatalogHash(catalogFilePath, catalogHashFilePath);
 
 				// update internal file
-				// var internalHashFilePath = AssetHelper.GetInternalBuildPath() + "catalog.hash";
-				// File.Copy(catalogHashFilePath, internalHashFilePath, true);
-				// var internalCatalogFilePath = AssetHelper.GetInternalBuildPath() + "catalog.zip";
-				// File.Copy(catalogFilePath, internalCatalogFilePath, true);
 				var internalBuildPath = AssetHelper.GetInternalBuildPath();
 				var curFiles = Directory.GetFiles(internalBuildPath);
 				foreach (var curFile in curFiles)
@@ -423,11 +393,22 @@ namespace U3DUdpater.Editor
 					File.Delete(curFile);
 				}
 
-				var files = Directory.GetFiles(folderPath);
-				foreach (var file in files)
+				var internalCatalog = new CatalogConfig
 				{
-					var destFilePath = $"{internalBuildPath}{Path.GetRelativePath(folderPath, file)}";
-					File.Copy(file, destFilePath, true);
+					bundleInfos = catalogBundleInfos.Where(info => info.IsOffline).ToArray(),
+					EntryBundleMap = null
+				};
+				var internalCatalogFilePath = $"{internalBuildPath}{Path.GetRelativePath(folderPath, catalogFilePath)}";
+				SaveCatalog(internalCatalog, internalCatalogFilePath);
+				var internalCatalogHashFilePath = Path.ChangeExtension(internalCatalogFilePath, "hash");
+				SaveCatalogHash(internalCatalogFilePath, internalCatalogHashFilePath);
+
+				foreach (var bundleInfo in internalCatalog.bundleInfos)
+				{
+					var fileName = bundleInfo.fileName;
+					var sourceFilePath = $"{folderPath}/{fileName}";
+					var destFilePath = $"{internalBuildPath}{fileName}";
+					File.Copy(sourceFilePath, destFilePath, true);
 				}
 
 				// add file records
@@ -497,6 +478,30 @@ namespace MiiAssetHint
 				Msg = "",
 				Code = buildResult.ExitCode
 			};
+		}
+
+		private static void SaveCatalogHash(string catalogFilePath, string catalogHashFilePath)
+		{
+			var hash = SHA256.Create();
+			using var stream = new FileStream(catalogFilePath, FileMode.Open, FileAccess.Read);
+			byte[] hashByte = hash.ComputeHash(stream);
+			var hash128Str = BitConverter.ToString(hashByte).Replace("-", "").ToLower();
+			File.WriteAllText(catalogHashFilePath, hash128Str, EncodingExt.UTF8WithoutBom);
+		}
+
+		private static byte[] SaveCatalog(CatalogConfig catalog, string catalogFilePath)
+		{
+			var catalogContent = JsonUtility.ToJson(catalog);
+			var bytes = Encoding.UTF8.GetBytes(catalogContent);
+			using (var ms = new FileStream(catalogFilePath, FileMode.Create))
+			using (ZipArchive arch = new ZipArchive(ms, ZipArchiveMode.Create))
+			{
+				var entry = arch.CreateEntry("catalog.json");
+				var stream = entry.Open();
+				stream.Write(bytes);
+			}
+
+			return bytes;
 		}
 
 		[MenuItem("Tools/BuildAssetBundlesWithPathInfo")]

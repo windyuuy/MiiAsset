@@ -47,6 +47,10 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 						ErrorType = PipelineErrorType.DataIncorrect,
 					};
 				}
+				// else
+				// {
+				// 	Debug.Log($"bundle-loaded: {RemoteUri}");
+				// }
 			}
 
 			return Result;
@@ -55,6 +59,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public bool IsCached()
 		{
 			return false;
+		}
+
+		public PipelineProgress GetProgress()
+		{
+			return DownloadPipeline.GetProgress().Combine(new PipelineProgress().Set01Progress(Result.IsOk));
 		}
 
 		public AssetBundle AssetBundle { get; set; }

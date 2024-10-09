@@ -67,6 +67,7 @@ namespace Framework.MiiAsset.Runtime
 		public void Abort();
 		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 		public Action<StreamCtrlEvent> OnCtrl { get; set; }
+		public PipelineProgress GetProgress();
 	}
 
 	public interface IWriteStream : IDisposable
@@ -74,10 +75,12 @@ namespace Framework.MiiAsset.Runtime
 		public int Write(byte[] data, int offset, int len);
 		public void OnCtrl(StreamCtrlEvent evt);
 		public Task<PipelineResult> WaitDone();
+		public PipelineProgress GetProgress();
 	}
 
 	public interface IRandomReadStream : ISeekableStream, ICacheableStream
 	{
+		void Run();
 	}
 
 	public interface IRandomWritePumpStream : IDisposable

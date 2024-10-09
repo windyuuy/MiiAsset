@@ -1,21 +1,25 @@
 ﻿using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.IOStreams;
+using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
-	public class DownloadPipeline : IPipeline
+	public class DownloadPipeline : IDownloadPipeline
 	{
 		protected IPumpStream DownloadStream;
 		protected IWriteStream WriteStream;
 
 		protected string Uri;
 		protected string WriteUri;
+		public bool Overwrite;
 
-		public DownloadPipeline Init(string uri, string writeUri)
+		public DownloadPipeline Init(string uri, string writeUri, bool overwrite)
 		{
+			Debug.Assert(writeUri != null, "writeUri!=null");
 			Uri = uri;
 			WriteUri = writeUri;
+			Overwrite = overwrite;
 			this.Build();
 			return this;
 		}
@@ -24,28 +28,70 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Build()
 		{
-			if (!IOManager.LocalIOProto.Exists(WriteUri))
+			if (Overwrite || !IOManager.LocalIOProto.Exists(WriteUri))
 			{
-				WriteStream = new WriteFileStream().Init(WriteUri);
 				DownloadStream = new WebDownloadPumpStream().Init(Uri);
+				WriteStream = new WriteFileStream().Init(WriteUri);
 				DownloadStream.BindReadStream(WriteStream);
+			}
+			else
+			{
+				Result = new PipelineResult
+				{
+					IsOk = true,
+					Status = PipelineStatus.Done,
+				};
 			}
 		}
 
 		public async Task<PipelineResult> Run()
 		{
-			Result = await DownloadStream.Start();
-			if (Result.IsOk)
+			if (Result is not { Status: PipelineStatus.Done })
 			{
-				Result = await WriteStream.WaitDone();
+				var result = await DownloadStream.Start();
+				if (result.IsOk)
+				{
+					if (Result is not { Status: PipelineStatus.Done })
+					{
+						Result = await WriteStream.WaitDone();
+						UpdateProgress();
+					}
+				}
+				else
+				{
+					Result = result;
+				}
+			}
+			else
+			{
+				Progress = new PipelineProgress().SetDownloadedProgress(true);
 			}
 
 			return Result;
 		}
 
+		private void UpdateProgress()
+		{
+			Progress = this.GetProgress();
+		}
+
 		public bool IsCached()
 		{
 			return false;
+		}
+
+		protected PipelineProgress Progress = new PipelineProgress();
+
+		public PipelineProgress GetProgress()
+		{
+			if (DownloadStream != null && WriteStream != null)
+			{
+				return DownloadStream.GetProgress().Combine(WriteStream.GetProgress());
+			}
+			else
+			{
+				return Progress;
+			}
 		}
 
 		public void Dispose()
@@ -60,7 +106,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			if (WriteStream != null)
 			{
 				WriteStream.Dispose();
-				this.WriteStream = null;
+				WriteStream = null;
 			}
 		}
 	}

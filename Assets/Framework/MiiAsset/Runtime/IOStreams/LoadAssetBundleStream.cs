@@ -59,5 +59,13 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 		}
 
 		public IRandomReadStream ReadStream { get; set; }
+
+		public LoadAssetBundleStream Init(string uri)
+		{
+			this.Uri = uri;
+			return this;
+		}
+
+		protected string Uri;
 	}
 }

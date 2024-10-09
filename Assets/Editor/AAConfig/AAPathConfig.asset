@@ -26,7 +26,7 @@ MonoBehaviour:
     groupRoot: '{0}*'
     scanRoot: Assets/Bundles/BB
     tags: 
-    isOffline: 0
+    isOffline: 1
   - title: CC
     path: Assets/Bundles/CC/
     groupName: cc

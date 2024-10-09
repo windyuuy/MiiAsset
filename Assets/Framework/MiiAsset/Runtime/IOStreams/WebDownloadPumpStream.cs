@@ -6,6 +6,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 {
 	public class DownloadHandlerNotify : DownloadHandlerScript
 	{
+		public ulong TotalBytes = int.MaxValue;
 		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 
 		public Action<StreamCtrlEvent> OnCtrl { get; set; }
@@ -26,6 +27,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 				IsOk = true,
 				Capability = (int)contentLength,
 			});
+			TotalBytes = contentLength;
 			base.ReceiveContentLengthHeader(contentLength);
 		}
 	}
@@ -53,6 +55,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			{
 				async Task ReadInternal()
 				{
+					Result.Status = PipelineStatus.Running;
 					Ts = new();
 					Uwr = new UnityWebRequest(this.Uri);
 					Uwr.downloadHandler = DownloadHandler;
@@ -83,6 +86,8 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 						Result.ErrorType = PipelineErrorType.NetError;
 					}
 
+					Result.Status = PipelineStatus.Done;
+
 					DownloadHandler.OnCtrl?.Invoke(evt);
 					Ts.SetResult(Result);
 				}
@@ -111,6 +116,35 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 		{
 			get { return DownloadHandler.OnCtrl; }
 			set { DownloadHandler.OnCtrl = value; }
+		}
+
+		protected PipelineProgress Progress = new PipelineProgress();
+
+		public PipelineProgress GetProgress()
+		{
+			if (Result.Status == PipelineStatus.Init)
+			{
+				Progress.Set01Progress(false);
+			}
+			else if (Result.Status == PipelineStatus.Done)
+			{
+				Progress.Complete();
+			}
+			else
+			{
+				UpdateProgress();
+			}
+
+			return Progress;
+		}
+
+		private void UpdateProgress()
+		{
+			Progress = new()
+			{
+				Total = DownloadHandler.TotalBytes,
+				Count = Uwr.downloadedBytes,
+			};
 		}
 
 		public void Dispose()

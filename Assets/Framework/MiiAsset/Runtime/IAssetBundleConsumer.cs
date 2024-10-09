@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -41,9 +43,14 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.AllowTags(tags);
 		}
 
-		public Task LoadTags(string[] tags)
+		public Task LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.LoadTags(tags);
+			return Provider.LoadTags(tags, loadStatus);
+		}
+
+		public Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		{
+			return Provider.DownloadTags(tags, loadStatus);
 		}
 
 		public Task UnLoadTags(string[] tags)
@@ -51,9 +58,24 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UnLoadTags(tags);
 		}
 
-		public Task<T> LoadAssetJust<T>(string address)
+		public long GetDownloadSize(IEnumerable<string> tags)
 		{
-			return Provider.LoadAssetJust<T>(address);
+			return Provider.GetDownloadSize(tags);
+		}
+
+		public bool IsAddressInTags(string address, IEnumerable<string> tags)
+		{
+			return Provider.IsAddressInTags(address, tags);
+		}
+
+		public bool IsBundleInTags(string bundleFileName, IEnumerable<string> tags)
+		{
+			return Provider.IsBundleInTags(bundleFileName, tags);
+		}
+
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
+		{
+			return Provider.LoadAssetJust<T>(address, loadStatus);
 		}
 
 		public Task UnloadAssetJust(string address)
@@ -61,9 +83,9 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UnloadAssetJust(address);
 		}
 
-		public Task<T> LoadAsset<T>(string address)
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.LoadAsset<T>(address);
+			return Provider.LoadAsset<T>(address, loadStatus);
 		}
 
 		public Task UnLoadAsset(string address)
@@ -71,9 +93,9 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UnLoadAsset(address);
 		}
 
-		public Task<T> LoadAssetByRefer<T>(string address)
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.LoadAssetByRefer<T>(address);
+			return Provider.LoadAssetByRefer<T>(address, loadStatus);
 		}
 
 		public Task UnLoadAssetByRefer(string address)
@@ -81,9 +103,9 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UnLoadAssetByRefer(address);
 		}
 
-		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters)
+		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.LoadScene(sceneAddress,parameters);
+			return Provider.LoadScene(sceneAddress, parameters, loadStatus);
 		}
 
 		public Task UnLoadScene(string sceneAddress)
@@ -91,9 +113,9 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UnLoadScene(sceneAddress);
 		}
 
-		public Task LoadSceneByRefer(string sceneAddress)
+		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.LoadSceneByRefer(sceneAddress);
+			return Provider.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 		}
 
 		public Task UnLoadSceneByRefer(string sceneAddress)

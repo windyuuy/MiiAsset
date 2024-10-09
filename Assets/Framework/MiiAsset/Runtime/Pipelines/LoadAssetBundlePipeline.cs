@@ -43,7 +43,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Build()
 		{
-			LoadStream = new LoadAssetBundleStream();
+			LoadStream = new LoadAssetBundleStream().Init(Uri);
 			ReadStream = new ReadFileStream().Init(Uri);
 			LoadStream.BindWriteStream(ReadStream);
 		}
@@ -52,15 +52,26 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public Task<PipelineResult> Run()
 		{
-			AssetBundle = AssetBundle.LoadFromStream(LoadStream);
-			if (AssetBundle != null)
+			if (AssetBundle == null)
 			{
-				Result.IsOk = true;
+				ReadStream.Run();
+				AssetBundle = AssetBundle.LoadFromStream(LoadStream);
+				if (AssetBundle != null)
+				{
+					Result.IsOk = true;
+					// Debug.Log($"bundle-loaded: {Uri}");
+				}
+				else
+				{
+					Result.ErrorType = PipelineErrorType.DataIncorrect;
+				}
 			}
 			else
 			{
-				Result.ErrorType = PipelineErrorType.DataIncorrect;
+				Result.IsOk = true;
 			}
+
+			Result.Status = PipelineStatus.Done;
 
 			return Task.FromResult(Result);
 		}
@@ -68,6 +79,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public bool IsCached()
 		{
 			return ReadStream.Exist();
+		}
+
+		public PipelineProgress GetProgress()
+		{
+			return new PipelineProgress().Set01Progress(Result.IsOk);
 		}
 	}
 }

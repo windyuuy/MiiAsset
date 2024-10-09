@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.Status;
 using UnityEngine.SceneManagement;
 
 namespace Framework.MiiAsset.Runtime
@@ -27,14 +30,24 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.AllowTags(tags);
 		}
 
-		public static Task LoadTags(string[] tags)
+		public static Task LoadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadTags(tags);
+			if (tags is not string[] tags1)
+			{
+				tags1 = tags.ToArray();
+			}
+
+			return Consumer.LoadTags(tags1, loadStatus);
 		}
 
-		public static Task LoadTag(params string[] tags)
+		public static Task LoadTags(params string[] tags)
 		{
-			return Consumer.LoadTags(tags);
+			return Consumer.LoadTags(tags, null);
+		}
+
+		public static Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus = null)
+		{
+			return Consumer.DownloadTags(tags, loadStatus);
 		}
 
 		public static Task UnLoadTags(string[] tags)
@@ -47,9 +60,29 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnLoadTags(tags);
 		}
 
-		public static Task<T> LoadAssetJust<T>(string address)
+		public static long GetDownloadSize(IEnumerable<string> tags)
 		{
-			return Consumer.LoadAssetJust<T>(address);
+			return Consumer.GetDownloadSize(tags);
+		}
+
+		public static long GetDownloadSize(params string[] tags)
+		{
+			return Consumer.GetDownloadSize(tags);
+		}
+
+		public static bool IsAddressInTags(string address, IEnumerable<string> tags)
+		{
+			return Consumer.IsAddressInTags(address, tags);
+		}
+
+		public static bool IsBundleInTags(string bundleFileName, IEnumerable<string> tags)
+		{
+			return Consumer.IsBundleInTags(bundleFileName, tags);
+		}
+
+		public static Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		{
+			return Consumer.LoadAssetJust<T>(address, loadStatus);
 		}
 
 		public static Task UnloadAssetJust(string address)
@@ -57,9 +90,9 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnloadAssetJust(address);
 		}
 
-		public static Task<T> LoadAsset<T>(string address)
+		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadAsset<T>(address);
+			return Consumer.LoadAsset<T>(address, loadStatus);
 		}
 
 		public static Task UnLoadAsset(string address)
@@ -67,9 +100,9 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnLoadAsset(address);
 		}
 
-		public static Task<T> LoadAssetByRefer<T>(string address)
+		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadAssetByRefer<T>(address);
+			return Consumer.LoadAssetByRefer<T>(address, loadStatus);
 		}
 
 		public static Task UnLoadAssetByRefer(string address)
@@ -77,9 +110,9 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnLoadAssetByRefer(address);
 		}
 
-		public static Task LoadScene(string sceneAddress, LoadSceneParameters parameters = new())
+		public static Task LoadScene(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadScene(sceneAddress, parameters);
+			return Consumer.LoadScene(sceneAddress, parameters, loadStatus);
 		}
 
 		public static Task UnLoadScene(string sceneAddress)
@@ -87,14 +120,30 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnLoadScene(sceneAddress);
 		}
 
-		public static Task LoadSceneByRefer(string sceneAddress)
+		public static Task LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadSceneByRefer(sceneAddress);
+			return Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 		}
 
 		public static Task UnLoadSceneByRefer(string sceneAddress)
 		{
 			return Consumer.UnLoadSceneByRefer(sceneAddress);
+		}
+
+		public static TagsBundleSet GetTagsBundleSet(params string[] tags)
+		{
+			return GetTagsBundleSet(tags, false);
+		}
+
+		public static TagsBundleSet GetTagsBundleSet(IEnumerable<string> tags, bool allowTags = false)
+		{
+			var tagsBundleSet = new TagsBundleSet(Consumer, tags);
+			if (allowTags)
+			{
+				tagsBundleSet.AllowTags();
+			}
+
+			return tagsBundleSet;
 		}
 	}
 }

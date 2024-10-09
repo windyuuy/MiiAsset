@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
+using Lang.Encoding;
 using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
@@ -18,9 +20,14 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			InternalBaseUri = internalBaseUri;
 			ExternalBaseUri = externalBaseUri;
 			RemoteBaseUri = remoteBaseUri;
+			IsHashLoaded = false;
 			this.Build();
 			return this;
 		}
+
+		protected bool IsHashLoaded;
+		protected IPipeline LoadInternalCatalogPipeline;
+		protected IPipeline LoadExternalCatalogPipeline;
 
 		public CatalogConfig InternalCatalog;
 		public CatalogConfig ExternalCatalog;
@@ -39,10 +46,10 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 				? new LoadRemoteTextFilePipeline().Init(ToHashFileName(internalCatalogUri), null)
 				: new LoadTextFilePipeline().Init(ToHashFileName(internalCatalogUri));
 			;
-			using var loadRemoteHashPipeline = new LoadRemoteTextFilePipeline().Init(ToHashFileName(remoteCatalogUri), externalHashUri);
+			using var loadRemoteHashPipeline = new LoadRemoteTextFilePipeline().Init(ToHashFileName(remoteCatalogUri), null);
 
 			using ILoadTextAssetPipeline loadInternalCatalogPipeline = AssetBundlePipelineHelper.IsWebUri(internalCatalogUri)
-				? new LoadRemoteCatalogPkgPipeline().Init(internalCatalogUri, null)
+				? new LoadRemoteCatalogPkgPipeline().Init(internalCatalogUri, null, false)
 				: new LoadCatalogPkgPipeline().Init(internalCatalogUri);
 
 			LoadTextFilePipeline loadExternalHashPipeline = null;
@@ -64,9 +71,12 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 				);
 			}
 
+			LoadInternalCatalogPipeline = loadInternalCatalogPipeline;
 			var loadInternalCatalogTask = loadInternalCatalogPipeline.Run();
 
 			await loadHashPipelinesTask;
+
+			IsHashLoaded = true;
 
 			if (loadInternalHashPipeline.Result.IsOk == false)
 			{
@@ -88,25 +98,28 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 			ILoadTextAssetPipeline loadExternalCatalogPipeline;
 			string sourceUri;
-			if ((loadExternalHashPipeline == null && loadInternalHashPipeline.Text != loadRemoteHashPipeline.Text) ||
-			    (loadExternalHashPipeline != null && loadExternalHashPipeline.Text != loadRemoteHashPipeline.Text))
+			sourceUri = RemoteBaseUri;
+			var remoteHash = loadRemoteHashPipeline.Text;
+			var needUpdateCatalog = false;
+			if ((loadExternalHashPipeline == null && loadInternalHashPipeline.Text != remoteHash) ||
+			    (loadExternalHashPipeline != null && loadExternalHashPipeline.Text != remoteHash))
 			{
 				// load from remote
-				sourceUri = RemoteBaseUri;
-				loadExternalCatalogPipeline = new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri);
+				needUpdateCatalog = true;
+				loadExternalCatalogPipeline = new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true);
 			}
-			else if (loadExternalHashPipeline != null && loadExternalHashPipeline.Text == loadRemoteHashPipeline.Text)
+			else if (loadExternalHashPipeline != null && loadExternalHashPipeline.Text == remoteHash)
 			{
 				// load from cache
-				sourceUri = ExternalBaseUri;
 				loadExternalCatalogPipeline = new LoadCatalogPkgPipeline().Init(externalCatalogUri);
 			}
 			else
 			{
 				// load from internal
-				sourceUri = InternalBaseUri;
 				loadExternalCatalogPipeline = null;
 			}
+
+			LoadExternalCatalogPipeline = loadExternalCatalogPipeline;
 
 			if (loadExternalCatalogPipeline != null)
 			{
@@ -169,6 +182,12 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 				externalCatalog = null;
 			}
 
+			// update hash file
+			if (needUpdateCatalog)
+			{
+				_ = IOManager.LocalIOProto.WriteAllTextAsync(externalHashUri, remoteHash, EncodingExt.UTF8WithoutBom);
+			}
+
 			this.HandleCatalog(internalCatalog, externalCatalog, sourceUri);
 
 			loadExternalHashPipeline?.Dispose();
@@ -225,6 +244,24 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public bool IsCached()
 		{
 			return false;
+		}
+
+		public PipelineProgress GetProgress()
+		{
+			if (LoadInternalCatalogPipeline == null || LoadExternalCatalogPipeline == null)
+			{
+				var pipelineProgress = new PipelineProgress().Set01Progress(false);
+				if (IsHashLoaded)
+				{
+					pipelineProgress.Count = 1;
+				}
+
+				return pipelineProgress;
+			}
+			else
+			{
+				return LoadInternalCatalogPipeline.CombineProgress(LoadExternalCatalogPipeline);
+			}
 		}
 	}
 }

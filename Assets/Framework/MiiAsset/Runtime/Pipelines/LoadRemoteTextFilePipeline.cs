@@ -44,6 +44,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			{
 				async Task ReadInternal()
 				{
+					Result.Status = PipelineStatus.Running;
 					Ts = new();
 					Uwr = UnityWebRequest.Get(this.Uri);
 					DownloadHandler = Uwr.downloadHandler;
@@ -81,6 +82,8 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 						}
 					}
 
+					Result.Status = PipelineStatus.Done;
+
 					Ts.SetResult(Result);
 				}
 
@@ -93,6 +96,32 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public bool IsCached()
 		{
 			return false;
+		}
+
+		protected PipelineProgress Progress = new PipelineProgress();
+
+		public PipelineProgress GetProgress()
+		{
+			if (Result.Status == PipelineStatus.Init)
+			{
+				Progress.Set01Progress(false);
+			}
+			else if (Result.Status == PipelineStatus.Done)
+			{
+				Progress.Complete();
+			}
+			else
+			{
+				var uwrDownloadedBytes = Uwr.downloadedBytes;
+				ulong waitDoneAddition = 100;
+				Progress = new()
+				{
+					Total = Math.Max(uwrDownloadedBytes, (ulong)(uwrDownloadedBytes / Uwr.downloadProgress)) + waitDoneAddition,
+					Count = uwrDownloadedBytes,
+				};
+			}
+
+			return Progress;
 		}
 	}
 }

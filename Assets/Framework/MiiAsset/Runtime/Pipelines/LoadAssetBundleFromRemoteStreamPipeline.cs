@@ -1,11 +1,12 @@
 ﻿using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.IOStreams;
 using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
 	public class LoadAssetBundleFromRemoteStreamPipeline : ILoadAssetBundlePipeline
 	{
-		protected DownloadPipeline DownloadPipeline;
+		public IDownloadPipeline DownloadPipeline;
 		protected LoadAssetBundlePipeline LoadAssetBundlePipeline;
 
 		protected string RemoteUri;
@@ -38,7 +39,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Build()
 		{
-			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri);
+			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false);
 			LoadAssetBundlePipeline = new LoadAssetBundlePipeline().Init(LocalUri);
 		}
 
@@ -58,6 +59,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public bool IsCached()
 		{
 			return LoadAssetBundlePipeline.IsCached();
+		}
+
+		public PipelineProgress GetProgress()
+		{
+			return DownloadPipeline.CombineProgress(LoadAssetBundlePipeline);
 		}
 	}
 }

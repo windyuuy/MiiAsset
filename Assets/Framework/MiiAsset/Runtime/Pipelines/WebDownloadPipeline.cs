@@ -1,9 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using UnityEngine.Networking;
 
 namespace Framework.MiiAsset.Runtime.IOStreams
 {
-	public class WebDownloadPipeline : IPipeline
+	public class WebDownloadPipeline : IDownloadPipeline
 	{
 		protected TaskCompletionSource<PipelineResult> Ts;
 
@@ -17,14 +18,17 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			return this;
 		}
 
+		protected UnityWebRequest Uwr;
 		public Task<PipelineResult> Run()
 		{
 			if (Ts == null)
 			{
 				async Task ReadInternal()
 				{
+					Result.Status = PipelineStatus.Running;
 					Ts = new();
 					var uwr = UnityWebRequest.Get(this.Uri);
+					Uwr = uwr;
 
 					var op = uwr.SendWebRequest();
 					await op.GetTask();
@@ -43,6 +47,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 					{
 						Result.ErrorType = PipelineErrorType.NetError;
 					}
+					Result.Status = PipelineStatus.Done;
 
 					Ts.SetResult(Result);
 				}
@@ -55,7 +60,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 
 		public void Dispose()
 		{
-			Ts = null;
+			Bytes = null;
 		}
 
 		public PipelineResult Result { get; set; }
@@ -67,6 +72,32 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 		public bool IsCached()
 		{
 			return false;
+		}
+
+		protected PipelineProgress Progress = new PipelineProgress();
+
+		public PipelineProgress GetProgress()
+		{
+			if (Result.Status == PipelineStatus.Init)
+			{
+				Progress.Set01Progress(false);
+			}
+			else if (Result.Status == PipelineStatus.Done)
+			{
+				Progress.Complete();
+			}
+			else
+			{
+				var uwrDownloadedBytes = Uwr.downloadedBytes;
+				ulong waitDoneAddition = 100;
+				Progress = new()
+				{
+					Total = Math.Max(uwrDownloadedBytes, (ulong)(uwrDownloadedBytes / Uwr.downloadProgress)) + waitDoneAddition,
+					Count = uwrDownloadedBytes,
+				};
+			}
+
+			return Progress;
 		}
 	}
 }

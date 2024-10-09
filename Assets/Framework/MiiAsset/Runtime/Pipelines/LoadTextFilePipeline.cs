@@ -53,6 +53,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			return IOManager.LocalIOProto.Exists(Uri);
 		}
 
+		public PipelineProgress GetProgress()
+		{
+			return new PipelineProgress().Set01Progress(Result.IsOk);
+		}
+
 		public void Dispose()
 		{
 		}

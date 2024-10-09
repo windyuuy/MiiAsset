@@ -30,7 +30,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Build()
 		{
-			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri);
+			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false);
 			LoadAssetBundlePipeline = new LoadAssetBundleFromFilePipeline().Init(LocalUri);
 		}
 
@@ -50,6 +50,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public bool IsCached()
 		{
 			return LoadAssetBundlePipeline.IsCached();
+		}
+
+		public PipelineProgress GetProgress()
+		{
+			return DownloadPipeline.CombineProgress(LoadAssetBundlePipeline);
 		}
 	}
 }
