@@ -7,6 +7,7 @@ using Framework.MiiAsset.Runtime;
 using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Status;
 using GameLib.MonoUtils;
+using lang.time;
 using MiiAssetHint;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,7 +20,10 @@ public class NewBehaviourScript : MonoBehaviour
 		TaskScheduler.UnobservedTaskException += (s, e) => { Debug.LogException(e.Exception); };
 		AppDomain.CurrentDomain.UnhandledException += (s, args) => { Debug.LogError((Exception)args.ExceptionObject); };
 		LoomMG.Init();
+		var dt1 = Date.Now();
 		await TestProgress();
+		var dt2 = Date.Now();
+		Debug.Log($"test-timecost: {dt2-dt1}");
 	}
 
 	private static async Task Test1_1()
@@ -165,13 +169,18 @@ public class NewBehaviourScript : MonoBehaviour
 		// }
 
 		var loadStatus = new AssetLoadStatusGroup();
+		var dt1 = Date.Now();
 		AssetLoader.Init();
+		var dt2 = Date.Now();
 		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
+		var dt3 = Date.Now();
 		if (result.IsOk)
 		{
 			var downloadSize = AssetLoader.GetDownloadSize(AssetTags.Cc, AssetTags.Bb);
+			var dt4 = Date.Now();
 			Debug.Log($"DownloadSize: {downloadSize}");
 			await AssetLoader.CleanUpOldVersionFiles();
+			var dt5 = Date.Now();
 
 			var sceneAddress = "Assets/Bundles/CC/New Scene.unity";
 
@@ -202,6 +211,7 @@ public class NewBehaviourScript : MonoBehaviour
 			{
 				loadSceneMode = LoadSceneMode.Additive,
 			}, loadStatus);
+			var dt6 = Date.Now();
 
 			async Task Load1()
 			{
@@ -210,11 +220,15 @@ public class NewBehaviourScript : MonoBehaviour
 			}
 
 			_ = Load1();
+			var dt7 = Date.Now();
 			var task1 = AssetLoader.UnLoadSceneByRefer(sceneAddress);
 			var task2 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
+			var dt8 = Date.Now();
 			_ = Load1();
+			var dt9 = Date.Now();
 			var task3 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
-			Debug.Log("done");
+			var dt10 = Date.Now();
+			Debug.Log($"done: {dt2-dt1}, {dt3-dt2}, {dt4-dt3}, {dt5-dt4}, {dt6-dt5}, {dt7-dt6}, {dt8-dt7}, {dt9-dt8}, {dt10-dt9}");
 		}
 		else
 		{
