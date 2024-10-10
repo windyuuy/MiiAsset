@@ -4,128 +4,128 @@ using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.SceneManagement;
+
 namespace Framework.MiiAsset.Runtime
 {
-	public interface IAssetBundleConsumer : IAssetProvider
+	public class EditorAssetProvider : IAssetProvider
 	{
-		public void Init();
-	}
-
-	public class AssetBundleConsumer : IAssetBundleConsumer
-	{
-		protected IAssetProvider Provider;
-
-		public void Init()
-		{
-			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
-			this.Init(config);
-			Resources.UnloadAsset(config);
-		}
-
-		public void Init(AssetConsumerConfig config)
-		{
-			Provider = new BundledAssetProvider().Init(config.internalBaseUri, config.externalBaseUri);
-		}
-
 		public IAssetProvider Init(string internalBaseUri, string externalBaseUri)
 		{
-			Provider.Init(internalBaseUri, externalBaseUri);
 			return this;
 		}
 
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
 		{
-			return Provider.UpdateCatalog(remoteBaseUri, catalogName);
+			return Task.FromResult(new PipelineResult
+			{
+				IsOk = true,
+				Status = PipelineStatus.Done,
+			});
 		}
 
 		public bool AllowTags(string[] tags)
 		{
-			return Provider.AllowTags(tags);
+			return true;
 		}
 
 		public Task LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.LoadTags(tags, loadStatus);
+			return Task.CompletedTask;
 		}
 
 		public Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.DownloadTags(tags, loadStatus);
+			return Task.CompletedTask;
 		}
 
 		public Task UnLoadTags(string[] tags)
 		{
-			return Provider.UnLoadTags(tags);
+			return Task.CompletedTask;
 		}
 
 		public long GetDownloadSize(IEnumerable<string> tags)
 		{
-			return Provider.GetDownloadSize(tags);
+			return 0;
 		}
 
 		public bool IsAddressInTags(string address, IEnumerable<string> tags)
 		{
-			return Provider.IsAddressInTags(address, tags);
+			return true;
 		}
 
 		public bool IsBundleInTags(string bundleFileName, IEnumerable<string> tags)
 		{
-			return Provider.IsBundleInTags(bundleFileName, tags);
+			return true;
 		}
 
 		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
 		{
-			return Provider.LoadAssetJust<T>(address, loadStatus);
+			var data = AssetDatabase.LoadAssetAtPath<T>(address);
+			loadStatus?.Add(new AssetDatabaseOpStatus(data != null));
+			return Task.FromResult(data);
 		}
 
 		public Task UnloadAssetJust(string address)
 		{
-			return Provider.UnloadAssetJust(address);
+			return Task.CompletedTask;
 		}
 
 		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
 		{
-			return Provider.LoadAsset<T>(address, loadStatus);
+			return LoadAssetJust<T>(address, loadStatus);
 		}
 
 		public Task UnLoadAsset(string address)
 		{
-			return Provider.UnLoadAsset(address);
+			return Task.CompletedTask;
 		}
 
 		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
 		{
-			return Provider.LoadAssetByRefer<T>(address, loadStatus);
+			return LoadAssetJust<T>(address, loadStatus);
 		}
 
 		public Task UnLoadAssetByRefer(string address)
 		{
-			return Provider.UnLoadAssetByRefer(address);
+			return Task.CompletedTask;
 		}
 
-		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.LoadScene(sceneAddress, parameters, loadStatus);
+			var op = EditorSceneManager.LoadSceneAsyncInPlayMode(sceneAddress, parameters);
+			loadStatus?.AddAsyncOperationStatus(op);
+			await op.GetTask();
+			var scene = SceneManager.GetSceneByName(sceneAddress);
+			return scene;
 		}
 
 		public Task UnLoadScene(string sceneAddress, UnloadSceneOptions options)
 		{
-			return Provider.UnLoadScene(sceneAddress, options);
+			var op = SceneManager.UnloadSceneAsync(sceneAddress, options);
+			return op.GetTask();
 		}
 
 		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
-			return Provider.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			return LoadScene(sceneAddress, parameters, loadStatus);
 		}
 
 		public Task UnLoadSceneByRefer(string sceneAddress, UnloadSceneOptions options)
 		{
-			return Provider.UnLoadSceneByRefer(sceneAddress, options);
+			return UnLoadScene(sceneAddress, options);
 		}
 
 		public Task<PipelineResult> CleanUpOldVersionFiles()
 		{
-			return Provider.CleanUpOldVersionFiles();
+			return Task.FromResult(new PipelineResult
+			{
+				IsOk = true,
+				Status = PipelineStatus.Done,
+			});
 		}
 	}
 }
+#endif

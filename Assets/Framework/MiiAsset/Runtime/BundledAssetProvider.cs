@@ -166,7 +166,7 @@ namespace Framework.MiiAsset.Runtime
 			return CatalogStatus.IsAddressInTags(bundleFileName, tags, CatalogInfo);
 		}
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
@@ -185,7 +185,7 @@ namespace Framework.MiiAsset.Runtime
 			await bundleLoadStatus.UnLoadAssetJust(address);
 		}
 
-		public async Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
+		public async Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
@@ -240,10 +240,10 @@ namespace Framework.MiiAsset.Runtime
 			}
 		}
 
-		public async Task UnLoadScene(string sceneAddress)
+		public async Task UnLoadScene(string sceneAddress, UnloadSceneOptions options)
 		{
-			var scene = SceneManager.GetSceneByPath(sceneAddress);
-			var op = SceneManager.UnloadSceneAsync(scene);
+			// var scene = SceneManager.GetSceneByPath(sceneAddress);
+			var op = SceneManager.UnloadSceneAsync(sceneAddress, options);
 			if (op != null)
 			{
 				await op.GetTask();
@@ -257,7 +257,7 @@ namespace Framework.MiiAsset.Runtime
 
 		protected CatalogAddressStatus CatalogAddressStatus = new();
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			var task = LoadByReferInternal<T>(address, loadStatus);
 			CatalogAddressStatus.RegisterAddress(address, task);
@@ -304,10 +304,10 @@ namespace Framework.MiiAsset.Runtime
 			return op;
 		}
 
-		public async Task UnLoadSceneByRefer(string sceneAddress)
+		public async Task UnLoadSceneByRefer(string sceneAddress, UnloadSceneOptions options)
 		{
 			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
-			var opStand = SceneManager.UnloadSceneAsync(sceneAddress);
+			var opStand = SceneManager.UnloadSceneAsync(sceneAddress, options);
 			await opStand.GetTask();
 			// await UnLoadAssetByRefer(sceneAddress);
 			await CatalogAddressStatus.UnRegisterAsset(sceneAddress);

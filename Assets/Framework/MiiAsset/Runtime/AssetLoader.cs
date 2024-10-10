@@ -10,7 +10,11 @@ namespace Framework.MiiAsset.Runtime
 	public static class AssetLoader
 	{
 		// private static readonly AssetBundleConsumer Consumer = new();
-		private static BundledAssetProvider Consumer = new();
+#if UNITY_EDITOR
+		private static readonly EditorAssetProvider Consumer = new();
+#else
+		private static readonly BundledAssetProvider Consumer = new();
+#endif
 
 		public static void Init()
 		{
@@ -21,7 +25,7 @@ namespace Framework.MiiAsset.Runtime
 
 		public static void Init(AssetConsumerConfig config)
 		{
-			Consumer = new BundledAssetProvider().Init(config.internalBaseUri, config.externalBaseUri) as BundledAssetProvider;
+			Consumer.Init(config.internalBaseUri, config.externalBaseUri);
 		}
 		//
 		// public static void Init()
@@ -109,7 +113,7 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.IsBundleInTags(bundleFileName, tags);
 		}
 
-		public static Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		public static Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			return Consumer.LoadAssetJust<T>(address, loadStatus);
 		}
@@ -119,7 +123,7 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnloadAssetJust(address);
 		}
 
-		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			return Consumer.LoadAsset<T>(address, loadStatus);
 		}
@@ -129,7 +133,7 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnLoadAsset(address);
 		}
 
-		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			return Consumer.LoadAssetByRefer<T>(address, loadStatus);
 		}
@@ -144,9 +148,9 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.LoadScene(sceneAddress, parameters, loadStatus);
 		}
 
-		public static Task UnLoadScene(string sceneAddress)
+		public static Task UnLoadScene(string sceneAddress, UnloadSceneOptions options = UnloadSceneOptions.None)
 		{
-			return Consumer.UnLoadScene(sceneAddress);
+			return Consumer.UnLoadScene(sceneAddress, options);
 		}
 
 		public static Task LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
@@ -154,9 +158,9 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 		}
 
-		public static Task UnLoadSceneByRefer(string sceneAddress)
+		public static Task UnLoadSceneByRefer(string sceneAddress, UnloadSceneOptions options = UnloadSceneOptions.None)
 		{
-			return Consumer.UnLoadSceneByRefer(sceneAddress);
+			return Consumer.UnLoadSceneByRefer(sceneAddress, options);
 		}
 
 		public static TagsBundleSet GetTagsBundleSet(params string[] tags)

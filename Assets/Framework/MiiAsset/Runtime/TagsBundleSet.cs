@@ -50,7 +50,7 @@ namespace Framework.MiiAsset.Runtime
 			return AssetProvider.GetDownloadSize(Tags);
 		}
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			if (AssetProvider.IsAddressInTags(address, Tags))
 			{
@@ -79,9 +79,9 @@ namespace Framework.MiiAsset.Runtime
 			}
 		}
 
-		public Task UnLoadScene(string sceneAddress)
+		public Task UnLoadScene(string sceneAddress, UnloadSceneOptions options = UnloadSceneOptions.None)
 		{
-			return AssetProvider.UnLoadScene(sceneAddress);
+			return AssetProvider.UnLoadScene(sceneAddress, options);
 		}
 
 		public Task DownloadTags(AssetLoadStatusGroup loadStatus = null)

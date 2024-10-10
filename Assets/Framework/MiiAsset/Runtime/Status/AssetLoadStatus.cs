@@ -46,6 +46,35 @@ namespace Framework.MiiAsset.Runtime.Status
 		public long DownloadSize => 0;
 	}
 
+	public class AssetDatabaseOpStatus : IAssetLoadStatus
+	{
+		public bool IsDone;
+
+		public AssetDatabaseOpStatus()
+		{
+		}
+
+		public AssetDatabaseOpStatus(bool isDone)
+		{
+			IsDone = isDone;
+		}
+
+		public PipelineProgress Progress
+		{
+			get { return new PipelineProgress().Set01Progress(IsDone); }
+		}
+
+		public PipelineProgress DownloadProgress
+		{
+			get { return new PipelineProgress().SetDownloadedProgress(IsDone); }
+		}
+
+		public long DownloadSize
+		{
+			get { return 0; }
+		}
+	}
+
 	public class AssetLoadStatusGroup : IAssetLoadStatus
 	{
 		protected List<IAssetLoadStatus> StatusList = new();

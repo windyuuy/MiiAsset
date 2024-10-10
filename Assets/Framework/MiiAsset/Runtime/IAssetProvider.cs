@@ -25,25 +25,25 @@ namespace Framework.MiiAsset.Runtime
 
 		public bool IsBundleInTags(string bundleFileName, IEnumerable<string> tags);
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus);
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object;
 
 		public Task UnloadAssetJust(string address);
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus);
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object;
 
 		public Task UnLoadAsset(string address);
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus);
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object;
 
 		public Task UnLoadAssetByRefer(string address);
 
 		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus);
 
-		public Task UnLoadScene(string sceneAddress);
+		public Task UnLoadScene(string sceneAddress, UnloadSceneOptions options);
 
 		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus);
 
-		public Task UnLoadSceneByRefer(string sceneAddress);
+		public Task UnLoadSceneByRefer(string sceneAddress, UnloadSceneOptions options);
 		public Task<PipelineResult> CleanUpOldVersionFiles();
 	}
 }
