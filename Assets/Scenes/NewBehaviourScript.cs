@@ -213,6 +213,7 @@ public class NewBehaviourScript : MonoBehaviour
 			var task1 = AssetLoader.UnLoadSceneByRefer(sceneAddress);
 			var task2 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
 			_ = Load1();
+			var task3 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
 			Debug.Log("done");
 		}
 		else

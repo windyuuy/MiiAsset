@@ -2,18 +2,32 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.Status;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Framework.MiiAsset.Runtime
 {
 	public static class AssetLoader
 	{
-		private static readonly AssetBundleConsumer Consumer = new();
+		// private static readonly AssetBundleConsumer Consumer = new();
+		private static BundledAssetProvider Consumer = new();
 
 		public static void Init()
 		{
-			Consumer.Init();
+			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
+			Init(config);
+			Resources.UnloadAsset(config);
 		}
+
+		public static void Init(AssetConsumerConfig config)
+		{
+			Consumer = new BundledAssetProvider().Init(config.internalBaseUri, config.externalBaseUri) as BundledAssetProvider;
+		}
+		//
+		// public static void Init()
+		// {
+		// 	Consumer.Init();
+		// }
 
 		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
 		{
@@ -25,12 +39,17 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.CleanUpOldVersionFiles();
 		}
 
-		public static bool AllowTags(string[] tags)
+		public static bool AllowTags(IEnumerable<string> tags)
 		{
-			return Consumer.AllowTags(tags);
+			if (tags is not string[] tags1)
+			{
+				tags1 = tags.ToArray();
+			}
+
+			return Consumer.AllowTags(tags1);
 		}
 
-		public static bool AllowTag(params string[] tags)
+		public static bool AllowTags(params string[] tags)
 		{
 			return Consumer.AllowTags(tags);
 		}
@@ -55,12 +74,17 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.DownloadTags(tags, loadStatus);
 		}
 
-		public static Task UnLoadTags(string[] tags)
+		public static Task UnLoadTags(IEnumerable<string> tags)
 		{
-			return Consumer.UnLoadTags(tags);
+			if (tags is not string[] tags1)
+			{
+				tags1 = tags.ToArray();
+			}
+
+			return Consumer.UnLoadTags(tags1);
 		}
 
-		public static Task UnLoadTag(params string[] tags)
+		public static Task UnLoadTags(params string[] tags)
 		{
 			return Consumer.UnLoadTags(tags);
 		}

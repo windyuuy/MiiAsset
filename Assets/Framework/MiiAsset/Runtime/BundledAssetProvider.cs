@@ -307,10 +307,10 @@ namespace Framework.MiiAsset.Runtime
 		public async Task UnLoadSceneByRefer(string sceneAddress)
 		{
 			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
-			await CatalogAddressStatus.UnRegisterAsset(sceneAddress);
 			var opStand = SceneManager.UnloadSceneAsync(sceneAddress);
 			await opStand.GetTask();
 			// await UnLoadAssetByRefer(sceneAddress);
+			await CatalogAddressStatus.UnRegisterAsset(sceneAddress);
 			await CatalogStatus.UnLoadBundlesByRefer(deps);
 		}
 

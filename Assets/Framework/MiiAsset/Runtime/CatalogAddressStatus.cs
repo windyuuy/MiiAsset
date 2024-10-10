@@ -31,6 +31,7 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
+				status.Task = task;
 				++status.ReferCount;
 			}
 		}
@@ -44,12 +45,15 @@ namespace Framework.MiiAsset.Runtime
 		{
 			if (AddressLoadMap.TryGetValue(address, out var status))
 			{
-				--status.ReferCount;
-				Debug.Assert(status.ReferCount==0,"status.ReferCount==0");
-				if (status.ReferCount <= 0)
+				// if (status.ReferCount <= 0)
 				{
-					AddressLoadMap.Remove(address);
 					await status.Task;
+					--status.ReferCount;
+					if (status.ReferCount <= 0)
+					{
+						Debug.Assert(status.ReferCount == 0, "status.ReferCount==0");
+						AddressLoadMap.Remove(address);
+					}
 					// var asset = status.Asset;
 				}
 			}
