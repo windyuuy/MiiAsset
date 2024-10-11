@@ -7,6 +7,17 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 {
 	public class LoadAssetBundleStream : Stream, IRandomWritePumpStream
 	{
+		protected override void Dispose(bool disposing)
+		{
+			if (ReadStream != null)
+			{
+				ReadStream.Dispose();
+				ReadStream = null;
+			}
+
+			base.Dispose(disposing);
+		}
+
 		public override void Flush()
 		{
 			Debug.LogError("NotImplementException");

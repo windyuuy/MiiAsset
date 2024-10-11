@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.Status;
@@ -11,7 +12,8 @@ namespace Framework.MiiAsset.Runtime
 	{
 		// private static readonly AssetBundleConsumer Consumer = new();
 #if UNITY_EDITOR
-		private static readonly EditorAssetProvider Consumer = new();
+		// private static readonly EditorAssetProvider Consumer = new();
+		private static IAssetProvider Consumer;
 #else
 		private static readonly BundledAssetProvider Consumer = new();
 #endif
@@ -25,7 +27,22 @@ namespace Framework.MiiAsset.Runtime
 
 		public static void Init(AssetConsumerConfig config)
 		{
+#if UNITY_EDITOR
+			if (config.loadType == AssetConsumerConfig.LoadType.LoadFromBundle)
+			{
+				Consumer = new BundledAssetProvider().Init(config.internalBaseUri, config.externalBaseUri);
+			}
+			else if (config.loadType == AssetConsumerConfig.LoadType.LoadFromEditor)
+			{
+				Consumer = new EditorAssetProvider().Init(config.internalBaseUri, config.externalBaseUri);
+			}
+			else
+			{
+				throw new ArgumentException($"loadType: {config.loadType}");
+			}
+#else
 			Consumer.Init(config.internalBaseUri, config.externalBaseUri);
+#endif
 		}
 		//
 		// public static void Init()

@@ -219,16 +219,21 @@ public class NewBehaviourScript : MonoBehaviour
 				var capsule = GameObject.Instantiate(capsulePrefab);
 			}
 
-			_ = Load1();
+			var unloadTask1 = Load1();
 			var dt7 = Date.Now();
 			var task1 = AssetLoader.UnLoadSceneByRefer(sceneAddress);
 			var task2 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
 			var dt8 = Date.Now();
-			_ = Load1();
+			var unloadTask2 = Load1();
 			var dt9 = Date.Now();
 			var task3 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
 			var dt10 = Date.Now();
 			Debug.Log($"done: {dt2-dt1}, {dt3-dt2}, {dt4-dt3}, {dt5-dt4}, {dt6-dt5}, {dt7-dt6}, {dt8-dt7}, {dt9-dt8}, {dt10-dt9}");
+
+			await Task.WhenAll(task1, task2, task3, unloadTask1, unloadTask2);
+
+			await Load1();
+			await AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
 		}
 		else
 		{

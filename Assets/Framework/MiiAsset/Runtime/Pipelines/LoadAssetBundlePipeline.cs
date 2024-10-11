@@ -1,16 +1,18 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOStreams;
 using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
-	public class LoadAssetBundlePipeline : IPipeline
+	public class LoadAssetBundlePipeline : ILoadAssetBundlePipeline
 	{
 		protected LoadAssetBundleStream LoadStream;
 		protected IRandomReadStream ReadStream;
 
 		protected string Uri;
 
+		// TODO: support crc check
 		public LoadAssetBundlePipeline Init(string uri)
 		{
 			Uri = uri;
@@ -21,22 +23,25 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
-			if (LoadStream != null && ReadStream != null)
-			{
-				LoadStream.UnBindWriteStream(ReadStream);
-			}
+			// if (LoadStream != null && ReadStream != null)
+			// {
+			// 	LoadStream.UnBindWriteStream(ReadStream);
+			// }
+			//
+			// if (LoadStream != null)
+			// {
+			// 	LoadStream.Dispose();
+			// 	LoadStream = null;
+			// }
+			//
+			// if (ReadStream != null)
+			// {
+			// 	ReadStream.Dispose();
+			// 	ReadStream = null;
+			// }
 
-			if (LoadStream != null)
-			{
-				LoadStream.Dispose();
-				LoadStream = null;
-			}
-
-			if (ReadStream != null)
-			{
-				ReadStream.Dispose();
-				ReadStream = null;
-			}
+			LoadStream = null;
+			ReadStream = null;
 		}
 
 		public PipelineResult Result { get; set; }
@@ -48,7 +53,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			LoadStream.BindWriteStream(ReadStream);
 		}
 
-		public AssetBundle AssetBundle;
+		public AssetBundle AssetBundle { get; set; }
+		public IDisposable GetDisposable()
+		{
+			return LoadStream;
+		}
 
 		public Task<PipelineResult> Run()
 		{

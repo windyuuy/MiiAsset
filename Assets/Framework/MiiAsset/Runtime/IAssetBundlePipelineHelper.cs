@@ -12,14 +12,27 @@ namespace Framework.MiiAsset.Runtime
 
 			var remoteUri = loadSource.GetSourceUri(assetBundleInfo.fileName);
 			var cacheUri = loadSource.GetCacheUri(assetBundleInfo.fileName);
-			if (!IsWebUri(remoteUri))
-			{
-				remoteUri = "file://" + remoteUri;
-			}
+			// if (!IsWebUri(remoteUri))
+			// {
+			// 	remoteUri = "file://" + remoteUri;
+			// }
 
 			if (cacheUri == null)
 			{
-				pipeline = new LoadAssetBundleFromRemoteMemoryStreamPipeline().Init(remoteUri);
+				if (remoteUri.StartsWith("jar:"))
+				{
+					pipeline = new LoadAssetBundleFromRemoteMemoryStreamPipeline().Init(remoteUri);
+				}
+				else if (Application.platform == RuntimePlatform.WebGLPlayer)
+				{
+					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
+					pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri);
+				}
+				else
+				{
+					pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri);
+					// pipeline = new LoadAssetBundlePipeline().Init(remoteUri);
+				}
 			}
 			else
 			{

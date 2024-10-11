@@ -45,6 +45,7 @@ namespace Framework.MiiAsset.Runtime
 		public int RefCount { get; set; }
 
 		internal IPipeline LoadPipeline;
+		internal IDisposable Disposable;
 
 		public AssetBundle AssetBundle { get; set; }
 
@@ -166,7 +167,7 @@ namespace Framework.MiiAsset.Runtime
 		/// </summary>
 		public int IsDownloaded = 0;
 
-		async Task<PipelineResult> LoadInternal(CatalogInfo catalogInfo, bool autoLoad)
+		protected async Task<PipelineResult> LoadInternal(CatalogInfo catalogInfo, bool autoLoad)
 		{
 			FileSize = catalogInfo.GetFileSize(this.BundleName);
 			var unloadTask = UnloadTask;
@@ -179,6 +180,7 @@ namespace Framework.MiiAsset.Runtime
 			var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
 			if (autoLoad)
 			{
+				// download with loading assetbundle
 				using var loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource);
 				if (this.LoadPipeline is DownloadPipeline downloadPipeline
 				    && loadAssetBundlePipeline is LoadAssetBundleFromRemoteStreamPipeline loadAssetBundleFromRemoteStreamPipeline)
@@ -187,6 +189,7 @@ namespace Framework.MiiAsset.Runtime
 				}
 
 				this.LoadPipeline = loadAssetBundlePipeline;
+				this.Disposable = loadAssetBundlePipeline.GetDisposable();
 
 				var result = await loadAssetBundlePipeline.Run();
 				_progress = loadAssetBundlePipeline.GetProgress();
@@ -219,6 +222,7 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
+				// download only
 				PipelineResult downloadResult;
 				if (this.LoadPipeline is LoadAssetBundleFromRemoteStreamPipeline loadAssetBundleFromRemoteStreamPipeline)
 				{
@@ -296,6 +300,14 @@ namespace Framework.MiiAsset.Runtime
 			if (AssetBundle != null)
 			{
 				UnloadTask = this.AssetBundle.UnloadAsync(true).GetTask();
+				if (Disposable != null)
+				{
+					Disposable.Dispose();
+					Disposable = null;
+				}
+
+				Task = null;
+
 				await UnloadTask;
 				UnloadTask = null;
 				Debug.Log($"AssetBundle-unloaded: {this.BundleName}");

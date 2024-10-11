@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOStreams;
 using UnityEngine;
 
@@ -44,6 +45,10 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		}
 
 		public AssetBundle AssetBundle => LoadAssetBundlePipeline.AssetBundle;
+		public IDisposable GetDisposable()
+		{
+			return LoadAssetBundlePipeline.GetDisposable();
+		}
 
 		public async Task<PipelineResult> Run()
 		{

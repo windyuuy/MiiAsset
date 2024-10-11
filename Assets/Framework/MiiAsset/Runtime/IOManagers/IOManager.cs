@@ -73,6 +73,11 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		{
 			return Directory.GetFiles(readDir);
 		}
+
+		public Task<byte[]> ReadAllBytesAsync(string uri)
+		{
+			return Task.FromResult(File.ReadAllBytes(uri));
+		}
 	}
 
 	public class IOManager

@@ -58,5 +58,6 @@ namespace Framework.MiiAsset.Runtime
 	public interface ILoadAssetBundlePipeline : IPipeline
 	{
 		public AssetBundle AssetBundle { get; }
+		public IDisposable GetDisposable();
 	}
 }
