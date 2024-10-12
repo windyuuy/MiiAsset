@@ -10,10 +10,12 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 	{
 		protected string RemoteUri;
 		protected WebDownloadToMemoryPipeline DownloadToMemoryPipeline;
+		protected uint Crc;
 
-		public LoadAssetBundleFromRemoteMemoryStreamPipeline Init(string remoteUri)
+		public LoadAssetBundleFromRemoteMemoryStreamPipeline Init(string remoteUri, uint crc)
 		{
 			RemoteUri = remoteUri;
+			this.Crc = crc;
 			this.Build();
 			return this;
 		}
@@ -36,7 +38,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			if (Result.IsOk)
 			{
 				var bytes = DownloadToMemoryPipeline.Bytes;
-				this.AssetBundle = AssetBundle.LoadFromMemory(bytes);
+				this.AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
 
 				if (this.AssetBundle == null)
 				{

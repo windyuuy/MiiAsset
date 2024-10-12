@@ -253,7 +253,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 				Debug.Log($"EnsureStreamingAssets-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
 			}
 
-			// TODO: 有可能还是旧的，但是不是新的没关系, 在就行
+			// 有可能还是旧的，但是不是新的没关系, 在就行
 			await AsyncUtils.WaitUntil(() => Exists(InternalDir + fileName));
 
 			return isOk;
@@ -293,6 +293,8 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 
 		public void SetUwr(UnityWebRequest uwr)
 		{
+			Debug.Log($"request-begin: {uwr.url}");
+			
 			if (CertificateHandler != null)
 			{
 				uwr.certificateHandler = CertificateHandler;

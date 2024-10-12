@@ -38,6 +38,7 @@ namespace Framework.MiiAsset.Runtime
 		}
 
 		public long FileSize = -1;
+		public uint Crc;
 
 		public Task<PipelineResult> Task { get; set; } = null;
 		public int RefCount { get; set; }
@@ -147,7 +148,9 @@ namespace Framework.MiiAsset.Runtime
 			if (FileSize < 0)
 			{
 				// 判断是否内部文件
-				FileSize = catalogInfo.GetFileSize(BundleName);
+				var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
+				FileSize = bundleInfo.size;
+				Crc = bundleInfo.crc;
 				IsInternalBundle = catalogInfo.IsInternalBundle(BundleName);
 			}
 		}
@@ -181,7 +184,7 @@ namespace Framework.MiiAsset.Runtime
 			{
 				var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
 				var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
-				loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource);
+				loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource, Crc);
 				this.LoadPipeline = loadAssetBundlePipeline;
 				this.Disposable = loadAssetBundlePipeline.GetDisposable();
 			}

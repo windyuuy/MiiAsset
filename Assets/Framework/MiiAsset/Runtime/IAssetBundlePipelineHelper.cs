@@ -7,7 +7,7 @@ namespace Framework.MiiAsset.Runtime
 {
 	public static class AssetBundlePipelineHelper
 	{
-		public static ILoadAssetBundlePipeline GetLoadAssetBundlePipeline(this AssetBundleInfo assetBundleInfo, IResourceLoadSource loadSource)
+		public static ILoadAssetBundlePipeline GetLoadAssetBundlePipeline(this AssetBundleInfo assetBundleInfo, IResourceLoadSource loadSource, uint crc)
 		{
 			ILoadAssetBundlePipeline pipeline;
 
@@ -22,22 +22,22 @@ namespace Framework.MiiAsset.Runtime
 			{
 				if (remoteUri.StartsWith("jar:"))
 				{
-					pipeline = new LoadAssetBundleFromRemoteMemoryStreamPipeline().Init(remoteUri);
+					pipeline = new LoadAssetBundleFromRemoteMemoryStreamPipeline().Init(remoteUri, crc);
 				}
 				else if (Application.platform == RuntimePlatform.WebGLPlayer)
 				{
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
-					pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri);
+					pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri, crc);
 				}
 				else
 				{
 					// pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri);
-					pipeline = new LoadAssetBundlePipeline().Init(remoteUri);
+					pipeline = new LoadAssetBundlePipeline().Init(remoteUri, crc);
 				}
 			}
 			else
 			{
-				pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri);
+				pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri, crc);
 			}
 
 			return pipeline;

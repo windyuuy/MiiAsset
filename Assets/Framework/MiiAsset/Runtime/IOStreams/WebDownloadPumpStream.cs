@@ -59,7 +59,6 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 					Result.Status = PipelineStatus.Running;
 					Ts = new();
 					Uwr = new UnityWebRequest(this.Uri);
-					IOManager.LocalIOProto.SetUwr(Uwr);
 					Uwr.downloadHandler = DownloadHandler;
 
 					OnCtrl?.Invoke(new StreamCtrlEvent()
@@ -68,6 +67,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 						PumpStream = this,
 					});
 
+					IOManager.LocalIOProto.SetUwr(Uwr);
 					var op = Uwr.SendWebRequest();
 					await op.GetTask();
 					var code = Uwr.responseCode;

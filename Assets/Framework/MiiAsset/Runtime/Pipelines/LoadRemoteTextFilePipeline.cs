@@ -49,8 +49,8 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 					Ts = new();
 					Debug.Log($"download: {Uri}");
 					Uwr = UnityWebRequest.Get(this.Uri);
-					IOManager.LocalIOProto.SetUwr(Uwr);
 					DownloadHandler = Uwr.downloadHandler;
+					IOManager.LocalIOProto.SetUwr(Uwr);
 					var op = Uwr.SendWebRequest();
 					await op.GetTask();
 					var code = Uwr.responseCode;

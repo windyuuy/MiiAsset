@@ -29,9 +29,9 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 					Result.Status = PipelineStatus.Running;
 					Ts = new();
 					var uwr = UnityWebRequest.Get(this.Uri);
-					IOManager.LocalIOProto.SetUwr(Uwr);
 					Uwr = uwr;
 
+					IOManager.LocalIOProto.SetUwr(Uwr);
 					var op = uwr.SendWebRequest();
 					await op.GetTask();
 					var code = uwr.responseCode;

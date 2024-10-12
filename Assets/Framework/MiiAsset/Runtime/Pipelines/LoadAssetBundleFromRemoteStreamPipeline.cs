@@ -12,11 +12,13 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		protected string RemoteUri;
 		protected string LocalUri;
+		protected uint Crc;
 
-		public LoadAssetBundleFromRemoteStreamPipeline Init(string remoteUri, string localUri)
+		public LoadAssetBundleFromRemoteStreamPipeline Init(string remoteUri, string localUri, uint crc)
 		{
 			RemoteUri = remoteUri;
 			LocalUri = localUri;
+			this.Crc = crc;
 			this.Build();
 			return this;
 		}
@@ -41,7 +43,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public void Build()
 		{
 			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false);
-			LoadAssetBundlePipeline = new LoadAssetBundlePipeline().Init(LocalUri);
+			LoadAssetBundlePipeline = new LoadAssetBundlePipeline().Init(LocalUri, Crc);
 		}
 
 		public AssetBundle AssetBundle => LoadAssetBundlePipeline.AssetBundle;

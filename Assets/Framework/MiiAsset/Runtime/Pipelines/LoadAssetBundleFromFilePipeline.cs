@@ -8,11 +8,13 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 	public class LoadAssetBundleFromFilePipeline : IPipeline
 	{
 		protected string Uri;
+		protected uint Crc;
 		public PipelineResult Result { get; set; }
 
-		public LoadAssetBundleFromFilePipeline Init(string uri)
+		public LoadAssetBundleFromFilePipeline Init(string uri, uint crc)
 		{
 			Uri = uri;
+			Crc = crc;
 			Result = new();
 			this.Build();
 			return this;
@@ -34,7 +36,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		{
 			if (IOManager.LocalIOProto.Exists(Uri))
 			{
-				AssetBundle = AssetBundle.LoadFromFile(Uri);
+				AssetBundle = AssetBundle.LoadFromFile(Uri, Crc);
 				if (AssetBundle != null)
 				{
 					Result.IsOk = true;

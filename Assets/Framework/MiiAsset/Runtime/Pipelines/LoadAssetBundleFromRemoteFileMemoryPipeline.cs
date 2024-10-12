@@ -11,11 +11,13 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		protected string RemoteUri;
 		protected string LocalUri;
+		protected uint Crc;
 
-		public LoadAssetBundleFromRemoteFileMemoryPipeline Init(string remoteUri, string localUri)
+		public LoadAssetBundleFromRemoteFileMemoryPipeline Init(string remoteUri, string localUri, uint crc)
 		{
 			RemoteUri = remoteUri;
 			LocalUri = localUri;
+			Crc = crc;
 			this.Build();
 			return this;
 		}

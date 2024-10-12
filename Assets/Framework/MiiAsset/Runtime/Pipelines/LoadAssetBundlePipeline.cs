@@ -11,11 +11,12 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		protected IRandomReadStream ReadStream;
 
 		protected string Uri;
+		protected uint Crc;
 
-		// TODO: support crc check
-		public LoadAssetBundlePipeline Init(string uri)
+		public LoadAssetBundlePipeline Init(string uri, uint crc)
 		{
 			Uri = uri;
+			Crc = crc;
 			Result = new();
 			this.Build();
 			return this;
@@ -69,7 +70,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			if (AssetBundle == null)
 			{
 				ReadStream.Run();
-				AssetBundle = AssetBundle.LoadFromStream(LoadStream);
+				AssetBundle = AssetBundle.LoadFromStream(LoadStream,Crc);
 				if (AssetBundle != null)
 				{
 					Result.IsOk = true;

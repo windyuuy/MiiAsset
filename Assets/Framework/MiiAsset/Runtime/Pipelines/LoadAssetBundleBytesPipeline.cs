@@ -8,10 +8,12 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 	public class LoadAssetBundleBytesPipeline : ILoadAssetBundlePipeline
 	{
 		protected string Uri;
+		protected uint Crc;
 
-		public LoadAssetBundleBytesPipeline Init(string uri)
+		public LoadAssetBundleBytesPipeline Init(string uri, uint crc)
 		{
 			Uri = uri;
+			Crc = crc;
 			Result = new();
 			this.Build();
 			return this;
@@ -43,7 +45,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			if (AssetBundle == null)
 			{
 				var bytes = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
-				AssetBundle = AssetBundle.LoadFromMemory(bytes);
+				AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
 				if (AssetBundle != null)
 				{
 					Result.IsOk = true;
