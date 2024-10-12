@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.Adapter;
+using Framework.MiiAsset.Runtime.CertificateHandlers;
 using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
@@ -24,6 +25,7 @@ namespace Framework.MiiAsset.Runtime
 		public static async Task<bool> Init()
 		{
 			AdapterInternal.AdaptDefault();
+			RegisterCertificateHandler(new AcceptAllCertificate());
 
 			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
 			var result = await Init(config);

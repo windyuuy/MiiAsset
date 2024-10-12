@@ -286,7 +286,17 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 				}
 				else
 				{
-					EnsureBundle(bundleName);
+					var maxTimes = 100;
+					// 有可能还是旧的，但是不是新的没关系, 在就行
+					await AsyncUtils.WaitUntil(() =>
+					{
+						if (--maxTimes <= 0)
+						{
+							return true;
+						}
+
+						return EnsureBundle(bundleName);;
+					});
 				}
 
 				return isOk;
