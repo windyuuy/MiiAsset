@@ -37,6 +37,11 @@ namespace Framework.MiiAsset.Runtime
 
 		public GroupScanInfo GetScanRootInfo()
 		{
+			if (Application.isPlaying)
+			{
+				throw new NotImplementedException();
+			}
+			
 			var groupInfo = new GroupScanInfo();
 			var m2 = new Regex(@"^([a-zA-Z_\/]*)[\/]").Match(this.path);
 			if (m2.Success)

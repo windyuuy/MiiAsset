@@ -1,4 +1,5 @@
-﻿using Framework.MiiAsset.Runtime.Pipelines;
+﻿using System.Text.RegularExpressions;
+using Framework.MiiAsset.Runtime.Pipelines;
 using UnityEngine;
 using Application = UnityEngine.Device.Application;
 
@@ -30,8 +31,8 @@ namespace Framework.MiiAsset.Runtime
 				}
 				else
 				{
-					pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri);
-					// pipeline = new LoadAssetBundlePipeline().Init(remoteUri);
+					// pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri);
+					pipeline = new LoadAssetBundlePipeline().Init(remoteUri);
 				}
 			}
 			else
@@ -42,9 +43,5 @@ namespace Framework.MiiAsset.Runtime
 			return pipeline;
 		}
 
-		public static bool IsWebUri(string uri)
-		{
-			return uri.Contains("://");
-		}
 	}
 }

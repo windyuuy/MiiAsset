@@ -32,7 +32,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public Task<PipelineResult> Run()
 		{
-			if (File.Exists(Uri))
+			if (IOManager.LocalIOProto.Exists(Uri))
 			{
 				AssetBundle = AssetBundle.LoadFromFile(Uri);
 				if (AssetBundle != null)

@@ -8,7 +8,7 @@ namespace Framework.MiiAsset.Runtime
 {
 	public interface IAssetProvider
 	{
-		public IAssetProvider Init(string internalBaseUri, string externalBaseUri);
+		public Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir);
 
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName);
 

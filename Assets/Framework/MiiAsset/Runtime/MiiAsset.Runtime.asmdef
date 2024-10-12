@@ -1,0 +1,18 @@
+{
+    "name": "MiiAsset.Runtime",
+    "rootNamespace": "",
+    "references": [
+        "GUID:890b253146385e54b9b4cff5c8dea58b",
+        "GUID:6a5755abd07c03b43979d9a2f6b82cca",
+        "GUID:2ad8be1357a00fe40aa378204df22159"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

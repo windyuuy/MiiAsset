@@ -50,6 +50,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			return LoadAssetBundlePipeline.GetDisposable();
 		}
 
+		public IDownloadPipeline GetDownloadPipeline()
+		{
+			return DownloadPipeline;
+		}
+
 		public async Task<PipelineResult> Run()
 		{
 			Result = await DownloadPipeline.Run();

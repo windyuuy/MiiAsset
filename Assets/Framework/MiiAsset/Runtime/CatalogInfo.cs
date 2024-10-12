@@ -14,6 +14,9 @@ namespace Framework.MiiAsset.Runtime
 		public Dictionary<string, HashSet<string>> BundleFlatRelationMap = new();
 		public Dictionary<string, HashSet<string>> TagFlatBundlesMap = new();
 
+		/// <summary>
+		/// 合并后的bundle加载清单
+		/// </summary>
 		public Dictionary<string, IResourceLoadSource> BundleLoadSourceMap = new();
 		public Dictionary<string, IResourceLoadSource> InternalBundles = new();
 		// TODO: clean bundle before update
@@ -170,6 +173,11 @@ namespace Framework.MiiAsset.Runtime
 			{
 				throw new Exception($"invalid bundle not exist: {bundleName}");
 			}
+		}
+
+		public bool IsInternalBundle(string bundleName)
+		{
+			return this.InternalBundles.ContainsKey(bundleName);
 		}
 	}
 }

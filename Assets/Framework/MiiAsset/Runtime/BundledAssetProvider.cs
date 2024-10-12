@@ -21,17 +21,14 @@ namespace Framework.MiiAsset.Runtime
 
 		public PipelineResult Result;
 
-		public IAssetProvider Init(string internalBaseUri, string externalBaseUri)
+		public async Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir)
 		{
 			Result = new();
-#if UNITY_EDITOR
-			this.InternalBaseUri = AssetHelper.GetInternalBuildPath();
-#else
-			this.InternalBaseUri = Application.dataPath + "/" + internalBaseUri;
-#endif
-			IOManager.LocalIOProto.InternalDir = this.InternalBaseUri;
-			this.ExternalBaseUri = Application.persistentDataPath + "/" + externalBaseUri;
-			return this;
+			var result = await IOManager.LocalIOProto.Init(internalBaseUri, externalBaseUri, bundleCacheDir);
+			this.InternalBaseUri = IOManager.LocalIOProto.InternalDir;
+			this.ExternalBaseUri = IOManager.LocalIOProto.ExternalDir;
+
+			return result;
 		}
 
 		protected Task<PipelineResult> LoadCatalogTask;
@@ -60,6 +57,12 @@ namespace Framework.MiiAsset.Runtime
 
 			return LoadCatalogTask;
 		}
+		//
+		// private async Task<bool> EnsureStreamingAssets()
+		// {
+		// 	var results = await Task.WhenAll(CatalogInfo.BundleLoadSourceMap.Select(item => IOManager.LocalIOProto.EnsureStreamingAssets(item.Key)));
+		// 	return results.All(r => r);
+		// }
 
 		protected CatalogInfo CatalogInfo = new();
 
@@ -316,41 +319,74 @@ namespace Framework.MiiAsset.Runtime
 
 		public Task<PipelineResult> CleanUpOldVersionFiles()
 		{
-			var cacheDir = IOManager.LocalIOProto.CacheDir;
-
 			var failedList = new List<string>();
-			var files = IOManager.LocalIOProto.ReadDir(cacheDir);
-			CatalogInfo.BundlesToClean.Clear();
-			foreach (var filePath in files)
 			{
-				var fileName = Path.GetFileName(filePath);
-				if (!CatalogInfo.BundleLoadSourceMap.ContainsKey(fileName))
+				var cacheDir = IOManager.LocalIOProto.CacheDir;
+				var files = IOManager.LocalIOProto.ReadDir(cacheDir);
+				CatalogInfo.BundlesToClean.Clear();
+				foreach (var filePath in files)
 				{
-					CatalogInfo.BundlesToClean.Add(fileName);
+					var fileName = Path.GetFileName(filePath);
+					if (!CatalogInfo.BundleLoadSourceMap.ContainsKey(fileName))
+					{
+						CatalogInfo.BundlesToClean.Add(fileName);
 
-					try
-					{
-						IOManager.LocalIOProto.Delete(filePath);
+						try
+						{
+							IOManager.LocalIOProto.Delete(filePath);
+						}
+						catch (Exception exception)
+						{
+							Debug.LogException(exception);
+							failedList.Add(filePath);
+						}
 					}
-					catch (Exception exception)
+
+					if (CatalogInfo.InternalBundles.ContainsKey(fileName))
 					{
-						Debug.LogException(exception);
-						failedList.Add(filePath);
+						CatalogInfo.BundlesToClean.Add(fileName);
+
+						try
+						{
+							IOManager.LocalIOProto.Delete(filePath);
+						}
+						catch (Exception exception)
+						{
+							Debug.LogException(exception);
+							failedList.Add(filePath);
+						}
 					}
 				}
+			}
 
-				if (CatalogInfo.InternalBundles.ContainsKey(fileName))
+			if (IOManager.LocalIOProto.IsInternalDirUpdating)
+			{
+				var internalDir = IOManager.LocalIOProto.InternalDir;
+				var files = IOManager.LocalIOProto.ReadDir(internalDir);
+				foreach (var filePath in files)
 				{
-					CatalogInfo.BundlesToClean.Add(fileName);
-
-					try
+					if (!filePath.EndsWith(".bundle"))
 					{
-						IOManager.LocalIOProto.Delete(filePath);
+						continue;
 					}
-					catch (Exception exception)
+
+					var fileName = Path.GetFileName(filePath);
+					if (!CatalogInfo.BundleLoadSourceMap.ContainsKey(fileName))
 					{
-						Debug.LogException(exception);
-						failedList.Add(filePath);
+						try
+						{
+							if (IOManager.LocalIOProto.Exists(filePath))
+							{
+								CatalogInfo.BundlesToClean.Add(fileName);
+
+								IOManager.LocalIOProto.Delete(filePath);
+							}
+						}
+						catch (Exception exception)
+						{
+							Debug.LogException(exception);
+							failedList.Add(filePath);
+						}
 					}
 				}
 			}

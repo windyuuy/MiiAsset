@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
-using Framework.MiiAsset.Runtime.Pipelines;
 using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Framework.MiiAsset.Runtime
 {
@@ -44,7 +42,7 @@ namespace Framework.MiiAsset.Runtime
 		public Task<PipelineResult> Task { get; set; } = null;
 		public int RefCount { get; set; }
 
-		internal IPipeline LoadPipeline;
+		internal ILoadAssetBundlePipeline LoadPipeline;
 		internal IDisposable Disposable;
 
 		public AssetBundle AssetBundle { get; set; }
@@ -84,20 +82,7 @@ namespace Framework.MiiAsset.Runtime
 					return _downloadProgress;
 				}
 
-				IDownloadPipeline downloadPipeline0;
-				if (this.LoadPipeline is DownloadPipeline downloadPipeline)
-				{
-					downloadPipeline0 = downloadPipeline;
-				}
-				else if (this.LoadPipeline is LoadAssetBundleFromRemoteStreamPipeline loadAssetBundleFromRemoteStreamPipeline)
-				{
-					downloadPipeline0 = loadAssetBundleFromRemoteStreamPipeline.DownloadPipeline;
-				}
-				else
-				{
-					downloadPipeline0 = null;
-				}
-
+				var downloadPipeline0 = this.LoadPipeline?.GetDownloadPipeline();
 				if (downloadPipeline0 != null)
 				{
 					return downloadPipeline0.GetProgress();
@@ -113,7 +98,7 @@ namespace Framework.MiiAsset.Runtime
 		{
 			get
 			{
-				if (IsDownloaded > 0)
+				if (IsInternalBundle || IsDownloaded > 0)
 				{
 					IsFileExist = true;
 				}
@@ -152,12 +137,19 @@ namespace Framework.MiiAsset.Runtime
 
 		public long GetDownloadSize(CatalogInfo catalogInfo)
 		{
-			if (FileSize < 0)
-			{
-				FileSize = catalogInfo.GetFileSize(BundleName);
-			}
+			UpdateFileSizeInfo(catalogInfo);
 
 			return DownloadSize;
+		}
+
+		private void UpdateFileSizeInfo(CatalogInfo catalogInfo)
+		{
+			if (FileSize < 0)
+			{
+				// 判断是否内部文件
+				FileSize = catalogInfo.GetFileSize(BundleName);
+				IsInternalBundle = catalogInfo.IsInternalBundle(BundleName);
+			}
 		}
 
 		public PipelineResult Result = new();
@@ -167,29 +159,40 @@ namespace Framework.MiiAsset.Runtime
 		/// </summary>
 		public int IsDownloaded = 0;
 
+		public bool IsInternalBundle;
+
 		protected async Task<PipelineResult> LoadInternal(CatalogInfo catalogInfo, bool autoLoad)
 		{
-			FileSize = catalogInfo.GetFileSize(this.BundleName);
+			UpdateFileSizeInfo(catalogInfo);
+
 			var unloadTask = UnloadTask;
 			if (unloadTask != null)
 			{
 				await unloadTask;
 			}
 
-			var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
-			var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
+			if (IsInternalBundle)
+			{
+				await IOManager.LocalIOProto.EnsureStreamingBundles(this.BundleName);
+			}
+
+			ILoadAssetBundlePipeline loadAssetBundlePipeline;
+			if (this.LoadPipeline == null)
+			{
+				var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
+				var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
+				loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource);
+				this.LoadPipeline = loadAssetBundlePipeline;
+				this.Disposable = loadAssetBundlePipeline.GetDisposable();
+			}
+			else
+			{
+				loadAssetBundlePipeline = this.LoadPipeline;
+			}
+
 			if (autoLoad)
 			{
 				// download with loading assetbundle
-				using var loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource);
-				if (this.LoadPipeline is DownloadPipeline downloadPipeline
-				    && loadAssetBundlePipeline is LoadAssetBundleFromRemoteStreamPipeline loadAssetBundleFromRemoteStreamPipeline)
-				{
-					loadAssetBundleFromRemoteStreamPipeline.DownloadPipeline = downloadPipeline;
-				}
-
-				this.LoadPipeline = loadAssetBundlePipeline;
-				this.Disposable = loadAssetBundlePipeline.GetDisposable();
 
 				var result = await loadAssetBundlePipeline.Run();
 				_progress = loadAssetBundlePipeline.GetProgress();
@@ -198,15 +201,16 @@ namespace Framework.MiiAsset.Runtime
 				this.AssetBundle = assetBundle;
 				Result.Merge(result);
 
-				if (loadAssetBundlePipeline is LoadAssetBundleFromRemoteStreamPipeline loadAssetBundleFromRemoteStreamPipeline2)
-				{
-					IsDownloaded = loadAssetBundleFromRemoteStreamPipeline2.DownloadPipeline.Result.IsOk ? 1 : 0;
-					_downloadProgress = loadAssetBundleFromRemoteStreamPipeline2.DownloadPipeline.GetProgress();
-				}
-				else if (Result.IsOk)
+				if (IsInternalBundle)
 				{
 					_downloadProgress = new PipelineProgress().SetDownloadedProgress(true);
 					IsDownloaded = 2;
+				}
+				else if (Result.IsOk)
+				{
+					var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
+					IsDownloaded = downloadPipeline.Result.IsOk ? 1 : 0;
+					_downloadProgress = downloadPipeline.GetProgress();
 				}
 
 				this.LoadPipeline = null;
@@ -218,22 +222,17 @@ namespace Framework.MiiAsset.Runtime
 				else
 				{
 					Debug.Log($"AssetBundle-loaded: {this.BundleName}");
+					IOManager.LocalIOProto.EnsureBundle(this.BundleName);
 				}
+
+				loadAssetBundlePipeline.Dispose();
 			}
 			else
 			{
 				// download only
 				PipelineResult downloadResult;
-				if (this.LoadPipeline is LoadAssetBundleFromRemoteStreamPipeline loadAssetBundleFromRemoteStreamPipeline)
-				{
-					var loadAssetBundlePipeline = loadAssetBundleFromRemoteStreamPipeline.DownloadPipeline;
-					downloadResult = await loadAssetBundlePipeline.Run();
-				}
-				else if (this.LoadPipeline is DownloadPipeline downloadPipeline)
-				{
-					downloadResult = await downloadPipeline.Run();
-				}
-				else if (this.LoadPipeline is LoadAssetBundleFromRemoteMemoryStreamPipeline memoryStreamPipeline)
+				var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
+				if (IsInternalBundle || downloadPipeline == null)
 				{
 					downloadResult = new PipelineResult
 					{
@@ -246,33 +245,8 @@ namespace Framework.MiiAsset.Runtime
 				}
 				else
 				{
-					Debug.Assert(this.LoadPipeline == null, "this.LoadPipeline ==null");
-					var cacheUri = loadSource.GetCacheUri(bundleInfo.fileName);
-					if (cacheUri != null)
-					{
-						var remoteUri = loadSource.GetSourceUri(bundleInfo.fileName);
-						using var loadAssetBundlePipeline = new DownloadPipeline().Init(remoteUri, cacheUri, false);
-						this.LoadPipeline = loadAssetBundlePipeline;
-
-						downloadResult = await loadAssetBundlePipeline.Run();
-						if (this.LoadPipeline == loadAssetBundlePipeline)
-						{
-							_progress = loadAssetBundlePipeline.GetProgress();
-							this.LoadPipeline = null;
-						}
-					}
-					else
-					{
-						// cache not support, load from internal
-						downloadResult = new PipelineResult
-						{
-							IsOk = true,
-							Exception = null,
-							Code = 0,
-							Msg = null,
-							Status = PipelineStatus.Done,
-						};
-					}
+					downloadResult = await downloadPipeline.Run();
+					_progress = loadAssetBundlePipeline.GetProgress();
 				}
 
 				IsDownloaded = 1;
@@ -292,7 +266,7 @@ namespace Framework.MiiAsset.Runtime
 		public async Task UnLoad()
 		{
 			Debug.Assert(RefCount == 0);
-			if (LoadPipeline is ILoadAssetBundlePipeline)
+			if (LoadPipeline != null && Task != null)
 			{
 				await Task;
 			}
@@ -355,45 +329,6 @@ namespace Framework.MiiAsset.Runtime
 			}
 
 			return status;
-		}
-
-		public async Task<T> LoadAssetByRefer<T>(string address)
-		{
-			var status = GetOrCreateAssetStatus(address);
-			AssetBundleRequest op;
-			if (status.RefCount > 0)
-			{
-				op = status.Op;
-			}
-			else
-			{
-				op = AssetBundle.LoadAssetAsync<T>(address);
-				status.Op = op;
-			}
-
-			var task = op.GetTask();
-			++status.RefCount;
-			await task;
-			if (op.asset is T asset)
-			{
-				return asset;
-			}
-			else
-			{
-				throw new InvalidCastException($"invalid asset Type<{nameof(T)}> to load: {address}");
-			}
-		}
-
-		public Task UnLoadAssetByRefer(string address)
-		{
-			var status = GetOrCreateAssetStatus(address);
-			if (status.RefCount > 0)
-			{
-				--status.RefCount;
-				return status.Task;
-			}
-
-			return System.Threading.Tasks.Task.CompletedTask;
 		}
 	}
 }

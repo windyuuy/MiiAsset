@@ -8,29 +8,30 @@ namespace Framework.MiiAsset.Runtime
 {
 	public interface IAssetBundleConsumer : IAssetProvider
 	{
-		public void Init();
+		public Task Init();
 	}
 
 	public class AssetBundleConsumer : IAssetBundleConsumer
 	{
 		protected IAssetProvider Provider;
 
-		public void Init()
+		public async Task Init()
 		{
 			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
-			this.Init(config);
+			await this.Init(config);
 			Resources.UnloadAsset(config);
 		}
 
-		public void Init(AssetConsumerConfig config)
+		public async Task Init(AssetConsumerConfig config)
 		{
-			Provider = new BundledAssetProvider().Init(config.internalBaseUri, config.externalBaseUri);
+			Provider = new BundledAssetProvider();
+			await Provider.Init(config.internalBaseUri, config.externalBaseUri, config.bundleCacheDir);
 		}
 
-		public IAssetProvider Init(string internalBaseUri, string externalBaseUri)
+		public async Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir)
 		{
-			Provider.Init(internalBaseUri, externalBaseUri);
-			return this;
+			Provider = new BundledAssetProvider();
+			return await Provider.Init(internalBaseUri, externalBaseUri, bundleCacheDir);
 		}
 
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)

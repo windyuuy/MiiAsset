@@ -59,6 +59,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			return LoadStream;
 		}
 
+		public IDownloadPipeline GetDownloadPipeline()
+		{
+			return null;
+		}
+
 		public Task<PipelineResult> Run()
 		{
 			if (AssetBundle == null)

@@ -9,7 +9,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 	public class LoadAssetBundleFromRemoteMemoryStreamPipeline : ILoadAssetBundlePipeline
 	{
 		protected string RemoteUri;
-		protected WebDownloadPipeline DownloadPipeline;
+		protected WebDownloadToMemoryPipeline DownloadToMemoryPipeline;
 
 		public LoadAssetBundleFromRemoteMemoryStreamPipeline Init(string remoteUri)
 		{
@@ -20,22 +20,22 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
-			DownloadPipeline.Dispose();
+			DownloadToMemoryPipeline.Dispose();
 		}
 
 		public PipelineResult Result { get; set; }
 
 		public void Build()
 		{
-			DownloadPipeline = new WebDownloadPipeline().Init(RemoteUri);
+			DownloadToMemoryPipeline = new WebDownloadToMemoryPipeline().Init(RemoteUri);
 		}
 
 		public async Task<PipelineResult> Run()
 		{
-			Result = await DownloadPipeline.Run();
+			Result = await DownloadToMemoryPipeline.Run();
 			if (Result.IsOk)
 			{
-				var bytes = DownloadPipeline.Bytes;
+				var bytes = DownloadToMemoryPipeline.Bytes;
 				this.AssetBundle = AssetBundle.LoadFromMemory(bytes);
 
 				if (this.AssetBundle == null)
@@ -64,13 +64,18 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public PipelineProgress GetProgress()
 		{
-			return DownloadPipeline.GetProgress().Combine(new PipelineProgress().Set01Progress(Result.IsOk));
+			return DownloadToMemoryPipeline.GetProgress().Combine(new PipelineProgress().Set01Progress(Result.IsOk));
 		}
 
 		public AssetBundle AssetBundle { get; set; }
 		public IDisposable GetDisposable()
 		{
 			return null;
+		}
+
+		public IDownloadPipeline GetDownloadPipeline()
+		{
+			return DownloadToMemoryPipeline;
 		}
 	}
 }

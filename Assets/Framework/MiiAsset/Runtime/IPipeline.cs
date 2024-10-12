@@ -59,5 +59,6 @@ namespace Framework.MiiAsset.Runtime
 	{
 		public AssetBundle AssetBundle { get; }
 		public IDisposable GetDisposable();
+		IDownloadPipeline GetDownloadPipeline();
 	}
 }

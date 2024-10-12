@@ -20,7 +20,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			return IOManager.LocalIOProto.Exists(this.Uri);
 		}
 
-		protected FileStream FileStream;
+		protected Stream FileStream;
 
 		public int Read(byte[] data, int offset, int len)
 		{

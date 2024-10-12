@@ -12,6 +12,11 @@ namespace Framework.MiiAsset.Runtime
 
 	public class PipelineResult
 	{
+		public PipelineResult()
+		{
+			
+		}
+
 		public virtual bool IsOk { get; set; } = false;
 		public bool IsDone => Status == PipelineStatus.Done;
 		public Exception Exception;

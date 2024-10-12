@@ -2,47 +2,59 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.Adapter;
+using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 namespace Framework.MiiAsset.Runtime
 {
 	public static class AssetLoader
 	{
-		// private static readonly AssetBundleConsumer Consumer = new();
-#if UNITY_EDITOR
-		// private static readonly EditorAssetProvider Consumer = new();
 		private static IAssetProvider Consumer;
-#else
-		private static readonly BundledAssetProvider Consumer = new();
-#endif
+		private static readonly AdapterInternal AdapterInternal = new();
 
-		public static void Init()
+		public static void Adapt(IAdapter adapter)
 		{
-			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
-			Init(config);
-			Resources.UnloadAsset(config);
+			AdapterInternal.Adapt(adapter);
 		}
 
-		public static void Init(AssetConsumerConfig config)
+		public static async Task<bool> Init()
+		{
+			AdapterInternal.AdaptDefault();
+			
+			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
+			var result = await Init(config);
+			Resources.UnloadAsset(config);
+			return result;
+		}
+
+		public static void RegisterCertificateHandler(CertificateHandler certificateHandler)
+		{
+			IOManager.LocalIOProto.RegisterCertificateHandler(certificateHandler);
+		}
+
+		public static async Task<bool> Init(AssetConsumerConfig config)
 		{
 #if UNITY_EDITOR
 			if (config.loadType == AssetConsumerConfig.LoadType.LoadFromBundle)
 			{
-				Consumer = new BundledAssetProvider().Init(config.internalBaseUri, config.externalBaseUri);
+				Consumer = new BundledAssetProvider();
 			}
 			else if (config.loadType == AssetConsumerConfig.LoadType.LoadFromEditor)
 			{
-				Consumer = new EditorAssetProvider().Init(config.internalBaseUri, config.externalBaseUri);
+				Consumer = new EditorAssetProvider();
 			}
 			else
 			{
 				throw new ArgumentException($"loadType: {config.loadType}");
 			}
 #else
-			Consumer.Init(config.internalBaseUri, config.externalBaseUri);
+			Consumer = new BundledAssetProvider();
 #endif
+			return await Consumer.Init(config.internalBaseUri, config.externalBaseUri, config.bundleCacheDir);
 		}
 		//
 		// public static void Init()

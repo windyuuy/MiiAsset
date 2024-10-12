@@ -42,14 +42,14 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			var remoteCatalogUri = RemoteBaseUri + catalogName;
 			var externalCatalogUri = ExternalBaseUri + catalogName;
 			var externalHashUri = ToHashFileName(externalCatalogUri);
-			using ILoadTextAssetPipeline loadInternalHashPipeline = AssetBundlePipelineHelper.IsWebUri(internalCatalogUri)
+			using ILoadTextAssetPipeline loadInternalHashPipeline = IOManager.LocalIOProto.IsWebUri(internalCatalogUri)
 				? new LoadRemoteTextFilePipeline().Init(ToHashFileName(internalCatalogUri), null)
 				: new LoadTextFilePipeline().Init(ToHashFileName(internalCatalogUri));
 			;
 			using var loadRemoteHashPipeline = new LoadRemoteTextFilePipeline().Init(ToHashFileName(remoteCatalogUri), null);
 
-			using ILoadTextAssetPipeline loadInternalCatalogPipeline = AssetBundlePipelineHelper.IsWebUri(internalCatalogUri)
-				? new LoadRemoteCatalogPkgPipeline().Init(internalCatalogUri, null, false)
+			using ILoadTextAssetPipeline loadInternalCatalogPipeline = IOManager.LocalIOProto.IsWebUri(internalCatalogUri)
+				? new LoadRemoteCatalogPkgFromMemoryPipeline().Init(internalCatalogUri)
 				: new LoadCatalogPkgPipeline().Init(internalCatalogUri);
 
 			LoadTextFilePipeline loadExternalHashPipeline = null;
@@ -215,7 +215,9 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		private static string ToHashFileName(string internalCatalogUri)
 		{
-			return internalCatalogUri.Replace(".json", ".hash").Replace(".zip", ".hash");
+			var hashFileName = internalCatalogUri.Replace(".json", ".hash").Replace(".zip", ".hash");
+			Debug.Log($"ToHashFileName: {internalCatalogUri}->{hashFileName}");
+			return hashFileName;
 		}
 
 		private void HandleCatalog(CatalogConfig internalCatalog, CatalogConfig externalCatalog, string sourceUri)

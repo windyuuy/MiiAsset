@@ -20,7 +20,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			return this;
 		}
 
-		protected FileStream FileStream;
+		protected Stream FileStream;
 		protected TaskCompletionSource<PipelineResult> Ts;
 
 		public int Write(byte[] data, int offset, int len)
@@ -47,7 +47,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 					FileStream.Close();
 					try
 					{
-						File.Delete(Uri);
+						IOManager.LocalIOProto.Delete(Uri);
 					}
 					catch (Exception exception)
 					{
@@ -79,7 +79,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 				try
 				{
 					IOManager.LocalIOProto.EnsureFileDirectory(Uri);
-					FileStream = new FileStream(ToTempPath(Uri), FileMode.OpenOrCreate);
+					FileStream = IOManager.LocalIOProto.OpenWrite(ToTempPath(Uri));
 				}
 				catch (Exception exception)
 				{

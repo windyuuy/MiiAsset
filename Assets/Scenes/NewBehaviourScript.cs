@@ -1,16 +1,13 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime;
-using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Status;
 using GameLib.MonoUtils;
 using lang.time;
 using MiiAssetHint;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.U2D;
 
 public class NewBehaviourScript : MonoBehaviour
 {
@@ -20,15 +17,16 @@ public class NewBehaviourScript : MonoBehaviour
 		TaskScheduler.UnobservedTaskException += (s, e) => { Debug.LogException(e.Exception); };
 		AppDomain.CurrentDomain.UnhandledException += (s, args) => { Debug.LogError((Exception)args.ExceptionObject); };
 		LoomMG.Init();
+		await AsyncUtils.WaitForFrames(1);
 		var dt1 = Date.Now();
 		await TestProgress();
 		var dt2 = Date.Now();
-		Debug.Log($"test-timecost: {dt2-dt1}");
+		Debug.Log($"test-timecost: {dt2 - dt1}");
 	}
 
 	private static async Task Test1_1()
 	{
-		AssetLoader.Init();
+		await AssetLoader.Init();
 		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
 		if (result.IsOk)
 		{
@@ -53,7 +51,7 @@ public class NewBehaviourScript : MonoBehaviour
 
 	private static async Task Test1_2()
 	{
-		AssetLoader.Init();
+		await AssetLoader.Init();
 		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
 		if (result.IsOk)
 		{
@@ -80,7 +78,7 @@ public class NewBehaviourScript : MonoBehaviour
 
 	private static async Task Test2()
 	{
-		AssetLoader.Init();
+		await AssetLoader.Init();
 		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
 		if (result.IsOk)
 		{
@@ -105,7 +103,7 @@ public class NewBehaviourScript : MonoBehaviour
 
 	private static async Task Test3()
 	{
-		AssetLoader.Init();
+		await AssetLoader.Init();
 		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
 		if (result.IsOk)
 		{
@@ -132,7 +130,7 @@ public class NewBehaviourScript : MonoBehaviour
 
 	private static async Task Test4()
 	{
-		AssetLoader.Init();
+		await AssetLoader.Init();
 		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
 		if (result.IsOk)
 		{
@@ -170,7 +168,13 @@ public class NewBehaviourScript : MonoBehaviour
 
 		var loadStatus = new AssetLoadStatusGroup();
 		var dt1 = Date.Now();
-		AssetLoader.Init();
+		var isInitOk = await AssetLoader.Init();
+		if (!isInitOk)
+		{
+			Debug.LogError("init failed");
+			return;
+		}
+
 		var dt2 = Date.Now();
 		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
 		var dt3 = Date.Now();
@@ -228,12 +232,17 @@ public class NewBehaviourScript : MonoBehaviour
 			var dt9 = Date.Now();
 			var task3 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
 			var dt10 = Date.Now();
-			Debug.Log($"done: {dt2-dt1}, {dt3-dt2}, {dt4-dt3}, {dt5-dt4}, {dt6-dt5}, {dt7-dt6}, {dt8-dt7}, {dt9-dt8}, {dt10-dt9}");
+			Debug.Log($"done: {dt2 - dt1}, {dt3 - dt2}, {dt4 - dt3}, {dt5 - dt4}, {dt6 - dt5}, {dt7 - dt6}, {dt8 - dt7}, {dt9 - dt8}, {dt10 - dt9}");
 
 			await Task.WhenAll(task1, task2, task3, unloadTask1, unloadTask2);
 
 			await Load1();
 			await AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
+
+			var atlas = await AssetLoader.LoadAssetByRefer<SpriteAtlas>("Assets/Bundles/BB/jfew/FVE.spriteatlasv2");
+			var sprite = atlas.GetSprite("login_btn_kanjian1");
+			Debug.Assert(sprite != null);
+			await AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/jfew/FVE.spriteatlasv2");
 		}
 		else
 		{

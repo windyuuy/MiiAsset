@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
 using UnityEngine;
+using WeChatWASM;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
@@ -31,16 +32,11 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public async Task<PipelineResult> Run()
 		{
-			if (File.Exists(CatalogUri))
+			if (IOManager.LocalIOProto.Exists(CatalogUri))
 			{
 				try
 				{
-					var stream = IOManager.LocalIOProto.OpenRead(CatalogUri);
-					using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
-					var entry = zipArchive.GetEntry("catalog.json");
-					Debug.Assert(entry != null, "entry!=null");
-					using var streamReader = new StreamReader(entry.Open());
-					var text = await streamReader.ReadToEndAsync();
+					var text = await IOManager.LocalIOProto.ReadCatalog(CatalogUri);
 					Text = text;
 
 					if (string.IsNullOrWhiteSpace(text))
@@ -62,7 +58,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			else
 			{
 				Result.ErrorType = PipelineErrorType.FileSystemError;
-				Result.Msg = $"file not exist: {CatalogUri}";
+				Result.Msg = $"file not exist2: [{CatalogUri}]";
 			}
 
 			return Result;

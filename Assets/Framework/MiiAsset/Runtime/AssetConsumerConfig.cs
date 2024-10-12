@@ -15,6 +15,7 @@ namespace Framework.MiiAsset.Runtime
 
 		public string internalBaseUri = "mii/";
 		public string externalBaseUri = "mii/";
+		public string bundleCacheDir = "hotres/";
 		public LoadType loadType;
 	}
 }

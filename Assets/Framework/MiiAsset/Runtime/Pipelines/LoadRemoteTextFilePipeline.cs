@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
+using Game.Diagnostics;
 using Lang.Encoding;
 using UnityEngine.Networking;
 
@@ -46,7 +47,9 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 				{
 					Result.Status = PipelineStatus.Running;
 					Ts = new();
+					Debug.Log($"download: {Uri}");
 					Uwr = UnityWebRequest.Get(this.Uri);
+					IOManager.LocalIOProto.SetUwr(Uwr);
 					DownloadHandler = Uwr.downloadHandler;
 					var op = Uwr.SendWebRequest();
 					await op.GetTask();

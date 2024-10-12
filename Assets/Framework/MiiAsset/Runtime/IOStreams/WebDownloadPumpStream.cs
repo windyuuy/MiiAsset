@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.IOManagers;
 using UnityEngine.Networking;
 
 namespace Framework.MiiAsset.Runtime.IOStreams
@@ -58,6 +59,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 					Result.Status = PipelineStatus.Running;
 					Ts = new();
 					Uwr = new UnityWebRequest(this.Uri);
+					IOManager.LocalIOProto.SetUwr(Uwr);
 					Uwr.downloadHandler = DownloadHandler;
 
 					OnCtrl?.Invoke(new StreamCtrlEvent()

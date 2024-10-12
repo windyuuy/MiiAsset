@@ -5,16 +5,18 @@ using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using Framework.MiiAsset.Runtime;
 using Framework.MiiAsset.Runtime.AssetUtils;
+using Framework.MiiAsset.Runtime.IOManagers;
 using Lang.Encoding;
 using UnityEditor;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Player;
+using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.Build.Pipeline;
+using UnityEngine.U2D;
 using AssetBundleInfo = Framework.MiiAsset.Runtime.AssetBundleInfo;
 
 namespace U3DUdpater.Editor
@@ -110,6 +112,7 @@ namespace U3DUdpater.Editor
 			public HashSet<string> Deps = new();
 			public BundleDetails BuildInfo;
 			public bool IsOffline = false;
+
 			/// <summary>
 			/// 多少byte
 			/// </summary>
@@ -183,10 +186,30 @@ namespace U3DUdpater.Editor
 				return tagKey;
 			}
 
+			// collect sprites in spriteatlas
+			var filterMap = new HashSet<string>();
+
+			void CollectSpriteAtlas(HashSet<string> filterMap)
+			{
+				var guids = AssetDatabase.FindAssets("t:spriteatlas", new string[] { "Assets" });
+				foreach (var guid in guids)
+				{
+					var spriteatlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(guid));
+					var objs = spriteatlas.GetPackables();
+					foreach (var o in objs)
+					{
+						filterMap.Add(AssetDatabase.GetAssetPath(o));
+					}
+				}
+			}
+
+			CollectSpriteAtlas(filterMap);
+
 			foreach (var scanInfo in pathInfo.GetScanRootInfos())
 			{
 				var guids = AssetDatabase.FindAssets("", new[] { scanInfo.ScanRoot });
 				var validGroupNameInfo = guids.Select(guid => (guid, assetPath: AssetDatabase.GUIDToAssetPath(guid)))
+					.Where(item => !filterMap.Contains(item.assetPath))
 					.Where(item => IsValidAsset(item.assetPath, pathInfo))
 					.Select(item =>
 					{
@@ -246,8 +269,22 @@ namespace U3DUdpater.Editor
 				Directory.Delete(outPath, true);
 			}
 
+			BuildCompression bundleCompression;
+
+			if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL)
+			{
+				bundleCompression = BuildCompression.LZ4;
+			}
+			else
+			{
+				bundleCompression = BuildCompression.LZMA;
+			}
+
 			IBundleBuildParameters buildParams =
-				new BundleBuildParameters(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, outPath);
+				new BundleBuildParameters(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, outPath)
+				{
+					BundleCompression = bundleCompression,
+				};
 			buildParams.TempOutputFolder = tmpPath;
 
 			var buildOptions = new BuildOptions
@@ -314,6 +351,28 @@ namespace U3DUdpater.Editor
 				{
 					Directory.CreateDirectory(folderPath);
 				}
+
+				var internalBuildPath = AssetHelper.GetInternalBuildPath();
+
+				// collect link.xml
+				var m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
+				m_Linker.AddAssemblies(new[] { typeof(AssetLoader).Assembly, typeof(IOManager).Assembly, typeof(WXAdapter).Assembly });
+
+				foreach (var r in buildResult.Results.WriteResults)
+				{
+					var resultValue = r.Value;
+					m_Linker.AddTypes(resultValue.includedTypes);
+#if UNITY_2021_1_OR_NEWER
+					m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
+#else
+                        if (resultValue.GetType().GetProperty("includedSerializeReferenceFQN") != null)
+                            m_Linker.AddSerializedClass(resultValue.GetType().GetProperty("includedSerializeReferenceFQN").GetValue(resultValue) as System.Collections.Generic.IEnumerable<string>);
+#endif
+				}
+
+				m_Linker.AddTypes(typeof(AssetLoader));
+				Directory.CreateDirectory(internalBuildPath + "/Link/");
+				m_Linker.Save(internalBuildPath + "/Link/link.xml");
 
 				var writeListFilePath = $"{folderPath}/WriteList.txt";
 				if (File.Exists(writeListFilePath))
@@ -386,7 +445,6 @@ namespace U3DUdpater.Editor
 				SaveCatalogHash(catalogFilePath, catalogHashFilePath);
 
 				// update internal file
-				var internalBuildPath = AssetHelper.GetInternalBuildPath();
 				var curFiles = Directory.GetFiles(internalBuildPath);
 				foreach (var curFile in curFiles)
 				{
@@ -518,7 +576,7 @@ namespace MiiAssetHint
 				Debug.LogError("cannot build on playmode");
 				return null;
 			}
-			
+
 			ScriptCompilationSettings scriptCompilationSettings = new()
 			{
 				target = EditorUserBuildSettings.activeBuildTarget,
