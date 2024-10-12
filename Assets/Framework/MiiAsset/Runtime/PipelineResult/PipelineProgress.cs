@@ -130,9 +130,13 @@ namespace Framework.MiiAsset.Runtime
 			return progress1;
 		}
 
-		public PipelineProgress Complete()
+		public PipelineProgress Complete(bool isOk = true)
 		{
-			this.Count = this.Total;
+			if (isOk)
+			{
+				this.Count = this.Total;
+			}
+
 			return this;
 		}
 

@@ -39,6 +39,8 @@ namespace Framework.MiiAsset.Runtime
 			{
 				pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri, crc);
 			}
+			
+			// Debug.Log($"userpipeline {pipeline.GetType().Name} for {assetBundleInfo.fileName}");
 
 			return pipeline;
 		}

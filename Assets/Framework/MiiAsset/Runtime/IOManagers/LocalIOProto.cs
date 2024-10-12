@@ -71,9 +71,9 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			return text;
 		}
 
-		public Task<bool> EnsureStreamingBundles(string bundleName)
+		public Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleName)
 		{
-			return Task.FromResult(true);
+			return Task.FromResult(EnsureStreamingBundlesResult.Exist);
 		}
 
 		public Stream OpenWrite(string filePath)

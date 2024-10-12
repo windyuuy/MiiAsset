@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.IOStreams;
 using UnityEngine;
@@ -86,11 +87,19 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		{
 			if (DownloadStream != null && WriteStream != null)
 			{
-				return DownloadStream.GetProgress().Combine(WriteStream.GetProgress());
+				return DownloadStream.GetProgress().Combine(new PipelineProgress().SetDownloadedProgress(Result?.IsOk ?? false));
 			}
 			else
 			{
 				return Progress;
+			}
+		}
+
+		public void PresetDownloadSize(long fileSize)
+		{
+			if (DownloadStream != null)
+			{
+				DownloadStream.PresetDownloadSize(fileSize);
 			}
 		}
 

@@ -174,9 +174,11 @@ namespace Framework.MiiAsset.Runtime
 				await unloadTask;
 			}
 
+			var isInternalBundleExist = false;
 			if (IsInternalBundle)
 			{
-				await IOManager.LocalIOProto.EnsureStreamingBundles(this.BundleName);
+				var result = await IOManager.LocalIOProto.EnsureStreamingBundles(this.BundleName);
+				isInternalBundleExist = result == EnsureStreamingBundlesResult.Exist;
 			}
 
 			ILoadAssetBundlePipeline loadAssetBundlePipeline;
@@ -185,6 +187,8 @@ namespace Framework.MiiAsset.Runtime
 				var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
 				var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
 				loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource, Crc);
+				var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
+				downloadPipeline?.PresetDownloadSize(FileSize);
 				this.LoadPipeline = loadAssetBundlePipeline;
 				this.Disposable = loadAssetBundlePipeline.GetDisposable();
 			}
@@ -206,14 +210,34 @@ namespace Framework.MiiAsset.Runtime
 
 				if (IsInternalBundle)
 				{
-					_downloadProgress = new PipelineProgress().SetDownloadedProgress(true);
+					if (isInternalBundleExist)
+					{
+						_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
+						// Debug.Log($"downloadprogress1: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+					}
+					else
+					{
+						_downloadProgress = new PipelineProgress((ulong)FileSize, 0).Complete(Result.IsOk);
+						// Debug.Log($"downloadprogress2: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+					}
+
 					IsDownloaded = 2;
 				}
 				else if (Result.IsOk)
 				{
 					var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
-					IsDownloaded = downloadPipeline.Result.IsOk ? 1 : 0;
-					_downloadProgress = downloadPipeline.GetProgress();
+					if (downloadPipeline != null)
+					{
+						IsDownloaded = downloadPipeline.Result.IsOk ? 1 : 0;
+						_downloadProgress = downloadPipeline.GetProgress();
+						// Debug.Log($"downloadprogress3: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+					}
+					else
+					{
+						IsDownloaded = 1;
+						_downloadProgress = new PipelineProgress((ulong)FileSize, (ulong)FileSize);
+						// Debug.Log($"downloadprogress4: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+					}
 				}
 
 				this.LoadPipeline = null;

@@ -20,7 +20,7 @@ namespace Framework.MiiAsset.Runtime
 
 	public interface IDownloadPipeline : IPipeline
 	{
-		
+		void PresetDownloadSize(long fileSize);
 	}
 
 	public static class PipelineExt

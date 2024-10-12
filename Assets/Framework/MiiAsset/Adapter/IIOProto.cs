@@ -12,6 +12,14 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		public string BundleCacheDir { get; }
 		public string CatalogName { get; }
 	}
+
+	public enum EnsureStreamingBundlesResult
+	{
+		Failed = 0,
+		Exist = 1,
+		Downloaded = 2,
+	}
+
 	public interface IIOProto
 	{
 		public string CacheDir { get; }
@@ -51,7 +59,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		public bool IsWebUri(string uri);
 
 		public Task<string> ReadCatalog(string uri);
-		public Task<bool> EnsureStreamingBundles(string bundleName);
+		public Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleName);
 		public void RegisterCertificateHandler(CertificateHandler certificateHandler);
 		public void SetUwr(UnityWebRequest uwr);
 	}

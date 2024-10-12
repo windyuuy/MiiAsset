@@ -78,11 +78,19 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 
 		protected PipelineProgress Progress = new PipelineProgress();
 
+		protected long PresetSize = -1;
 		public PipelineProgress GetProgress()
 		{
 			if (Result.Status == PipelineStatus.Init)
 			{
-				Progress.Set01Progress(false);
+				if (PresetSize >= 0)
+				{
+					Progress = new((ulong)PresetSize, 0);
+				}
+				else
+				{
+					Progress.Set01Progress(false);
+				}
 			}
 			else if (Result.Status == PipelineStatus.Done)
 			{
@@ -100,6 +108,11 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			}
 
 			return Progress;
+		}
+
+		public void PresetDownloadSize(long fileSize)
+		{
+			PresetSize = fileSize;
 		}
 	}
 }

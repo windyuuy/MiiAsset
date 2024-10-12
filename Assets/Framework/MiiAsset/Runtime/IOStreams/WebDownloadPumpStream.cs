@@ -7,13 +7,19 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 {
 	public class DownloadHandlerNotify : DownloadHandlerScript
 	{
-		public ulong TotalBytes = int.MaxValue;
+		public ulong TotalBytes = 0;
+		protected bool IsTotalBytesUnkown = true;
 		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 
 		public Action<StreamCtrlEvent> OnCtrl { get; set; }
 
 		protected override bool ReceiveData(byte[] data0, int dataLength)
 		{
+			if (IsTotalBytesUnkown)
+			{
+				TotalBytes += (ulong)data0.Length;
+			}
+
 			OnReceivedData(data0, 0, dataLength);
 			return base.ReceiveData(data0, dataLength);
 		}
@@ -29,6 +35,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 				Capability = (int)contentLength,
 			});
 			TotalBytes = contentLength;
+			IsTotalBytesUnkown = false;
 			base.ReceiveContentLengthHeader(contentLength);
 		}
 	}
@@ -130,6 +137,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			}
 			else if (Result.Status == PipelineStatus.Done)
 			{
+				UpdateProgress();
 				Progress.Complete();
 			}
 			else
@@ -138,6 +146,14 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			}
 
 			return Progress;
+		}
+
+		public void PresetDownloadSize(long fileSize)
+		{
+			if (DownloadHandler != null)
+			{
+				DownloadHandler.TotalBytes = (ulong)fileSize;
+			}
 		}
 
 		private void UpdateProgress()

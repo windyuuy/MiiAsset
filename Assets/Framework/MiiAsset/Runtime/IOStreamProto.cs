@@ -68,6 +68,7 @@ namespace Framework.MiiAsset.Runtime
 		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 		public Action<StreamCtrlEvent> OnCtrl { get; set; }
 		public PipelineProgress GetProgress();
+		void PresetDownloadSize(long fileSize);
 	}
 
 	public interface IWriteStream : IDisposable

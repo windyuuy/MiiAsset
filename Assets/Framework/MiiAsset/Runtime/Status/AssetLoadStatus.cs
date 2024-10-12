@@ -112,6 +112,7 @@ namespace Framework.MiiAsset.Runtime.Status
 
 		public void Add(IAssetLoadStatus status)
 		{
+			// Debug.Assert(!this.StatusList.Contains(status), "!this.StatusList.Contains(status)");
 			this.StatusList.Add(status);
 		}
 

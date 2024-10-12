@@ -270,9 +270,10 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			return isOk;
 		}
 
-		public async Task<bool> EnsureStreamingBundles(string bundleName)
+		public async Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleName)
 		{
-			if (!ExistsBundle(bundleName))
+			var existsBundle = ExistsBundle(bundleName);
+			if (!existsBundle)
 			{
 				var uri2 = $"{StreamingRemoteAssetPath}{bundleName}";
 				Debug.Log($"EnsureStreamingBundles: {uri2}");
@@ -295,14 +296,17 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 							return true;
 						}
 
-						return EnsureBundle(bundleName);;
+						return EnsureBundle(bundleName);
+						;
 					});
 				}
 
-				return isOk;
+				return isOk ? EnsureStreamingBundlesResult.Downloaded : EnsureStreamingBundlesResult.Failed;
 			}
-
-			return true;
+			else
+			{
+				return EnsureStreamingBundlesResult.Exist;
+			}
 		}
 
 		protected CertificateHandler CertificateHandler;

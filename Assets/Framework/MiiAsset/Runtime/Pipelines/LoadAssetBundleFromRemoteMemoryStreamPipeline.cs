@@ -66,7 +66,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public PipelineProgress GetProgress()
 		{
-			return DownloadToMemoryPipeline.GetProgress().Combine(new PipelineProgress().Set01Progress(Result.IsOk));
+			return DownloadToMemoryPipeline.GetProgress().Combine(new PipelineProgress().SetDownloadedProgress(Result.IsOk));
 		}
 
 		public AssetBundle AssetBundle { get; set; }
