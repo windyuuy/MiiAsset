@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,9 +9,13 @@ namespace Framework.MiiAsset.Runtime
 {
 	public interface IAssetProvider
 	{
-		public Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir);
+		public interface IProviderInitOptions : IIOProtoInitOptions
+		{
+		}
 
-		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName);
+		public Task<bool> Init(IProviderInitOptions options);
+
+		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri);
 
 		public bool AllowTags(string[] tags);
 

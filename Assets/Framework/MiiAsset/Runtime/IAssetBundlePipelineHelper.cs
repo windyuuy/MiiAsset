@@ -42,6 +42,5 @@ namespace Framework.MiiAsset.Runtime
 
 			return pipeline;
 		}
-
 	}
 }

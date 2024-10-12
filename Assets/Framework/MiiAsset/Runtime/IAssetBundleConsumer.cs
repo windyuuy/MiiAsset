@@ -25,18 +25,18 @@ namespace Framework.MiiAsset.Runtime
 		public async Task Init(AssetConsumerConfig config)
 		{
 			Provider = new BundledAssetProvider();
-			await Provider.Init(config.internalBaseUri, config.externalBaseUri, config.bundleCacheDir);
+			await Provider.Init(config);
 		}
 
-		public async Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir)
+		public async Task<bool> Init(IAssetProvider.IProviderInitOptions options)
 		{
 			Provider = new BundledAssetProvider();
-			return await Provider.Init(internalBaseUri, externalBaseUri, bundleCacheDir);
+			return await Provider.Init(options);
 		}
 
-		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
+		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
-			return Provider.UpdateCatalog(remoteBaseUri, catalogName);
+			return Provider.UpdateCatalog(remoteBaseUri);
 		}
 
 		public bool AllowTags(string[] tags)

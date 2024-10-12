@@ -21,24 +21,24 @@ namespace Framework.MiiAsset.Runtime
 
 		public PipelineResult Result;
 
-		public async Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir)
+		public async Task<bool> Init(IAssetProvider.IProviderInitOptions options)
 		{
 			Result = new();
-			var result = await IOManager.LocalIOProto.Init(internalBaseUri, externalBaseUri, bundleCacheDir);
+			var result = await IOManager.LocalIOProto.Init(options);
 			this.InternalBaseUri = IOManager.LocalIOProto.InternalDir;
 			this.ExternalBaseUri = IOManager.LocalIOProto.ExternalDir;
+			this.CatalogName = IOManager.LocalIOProto.CatalogName;
 
 			return result;
 		}
 
 		protected Task<PipelineResult> LoadCatalogTask;
 
-		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
+		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
 			if (LoadCatalogTask == null)
 			{
 				this.RemoteBaseUri = remoteBaseUri;
-				this.CatalogName = catalogName;
 
 				async Task<PipelineResult> LoadCatalogInternal()
 				{

@@ -30,30 +30,32 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		public string CacheDir { get; set; }
 		public string InternalDir { get; set; }
 		public string ExternalDir { get; set; }
+		public string CatalogName { get; set; }
 		public bool IsInternalDirUpdating => true;
 		public static string StreamingCacheAssetPath = $"{WX.env.USER_DATA_PATH}/__GAME_FILE_CACHE/StreamingAssets/";
 		public static string StreamingRemoteAssetPath;
 
 		protected WXFileSystemManager FileSystemManager;
 
-		public async Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir)
+		public async Task<bool> Init(IIOProtoInitOptions options)
 		{
 #if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 #else
-			this.InternalDir = $"{StreamingCacheAssetPath}{internalBaseUri}";
+			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
 #endif
 			var persistentDataPath = WX.env.USER_DATA_PATH;
-			this.CacheDir = $"{persistentDataPath}/{bundleCacheDir}";
-			this.ExternalDir = $"{persistentDataPath}/{externalBaseUri}";
-			StreamingRemoteAssetPath = $"{Application.streamingAssetsPath}/{internalBaseUri}";
+			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
+			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
+			StreamingRemoteAssetPath = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
+			this.CatalogName = options.CatalogName;
 
 			Debug.Log($"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
 			FileSystemManager = WX.GetFileSystemManager();
 			var results = await Task.WhenAll(
 				EnsureStreamingAssets("catalog.hash"),
-				EnsureStreamingAssets("catalog.zip")
+				EnsureStreamingAssets(CatalogName)
 			);
 
 			var isOk = results.All(r => r);
@@ -253,8 +255,17 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 				Debug.Log($"EnsureStreamingAssets-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
 			}
 
+			var maxTimes = 100;
 			// 有可能还是旧的，但是不是新的没关系, 在就行
-			await AsyncUtils.WaitUntil(() => Exists(InternalDir + fileName));
+			await AsyncUtils.WaitUntil(() =>
+			{
+				if (--maxTimes <= 0)
+				{
+					return true;
+				}
+
+				return Exists(InternalDir + fileName);
+			});
 
 			return isOk;
 		}
@@ -294,7 +305,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		public void SetUwr(UnityWebRequest uwr)
 		{
 			Debug.Log($"request-begin: {uwr.url}");
-			
+
 			if (CertificateHandler != null)
 			{
 				uwr.certificateHandler = CertificateHandler;

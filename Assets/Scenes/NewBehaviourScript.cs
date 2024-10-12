@@ -27,7 +27,7 @@ public class NewBehaviourScript : MonoBehaviour
 	private static async Task Test1_1()
 	{
 		await AssetLoader.Init();
-		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
+		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/");
 		if (result.IsOk)
 		{
 			var bundleSet = AssetLoader.GetTagsBundleSet(AssetTags.Cc, AssetTags.Bb);
@@ -52,7 +52,7 @@ public class NewBehaviourScript : MonoBehaviour
 	private static async Task Test1_2()
 	{
 		await AssetLoader.Init();
-		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
+		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/");
 		if (result.IsOk)
 		{
 			var bundleSet = AssetLoader.GetTagsBundleSet(AssetTags.Cc, AssetTags.Bb);
@@ -79,7 +79,7 @@ public class NewBehaviourScript : MonoBehaviour
 	private static async Task Test2()
 	{
 		await AssetLoader.Init();
-		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
+		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/");
 		if (result.IsOk)
 		{
 			var sceneAddress = "Assets/Bundles/CC/New Scene.unity";
@@ -104,7 +104,7 @@ public class NewBehaviourScript : MonoBehaviour
 	private static async Task Test3()
 	{
 		await AssetLoader.Init();
-		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
+		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/");
 		if (result.IsOk)
 		{
 			var sceneAddress = "Assets/Bundles/CC/New Scene.unity";
@@ -131,7 +131,7 @@ public class NewBehaviourScript : MonoBehaviour
 	private static async Task Test4()
 	{
 		await AssetLoader.Init();
-		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
+		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/");
 		if (result.IsOk)
 		{
 			var sceneAddress = "Assets/Bundles/CC/New Scene.unity";
@@ -176,7 +176,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 
 		var dt2 = Date.Now();
-		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/", "catalog.zip");
+		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/");
 		var dt3 = Date.Now();
 		if (result.IsOk)
 		{

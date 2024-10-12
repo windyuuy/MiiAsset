@@ -5,14 +5,22 @@ using UnityEngine.Networking;
 
 namespace Framework.MiiAsset.Runtime.IOManagers
 {
+	public interface IIOProtoInitOptions
+	{
+		public string InternalBaseUri { get; }
+		public string ExternalBaseUri { get; }
+		public string BundleCacheDir { get; }
+		public string CatalogName { get; }
+	}
 	public interface IIOProto
 	{
 		public string CacheDir { get; }
 		public string InternalDir { get; }
 		public string ExternalDir { get; }
+		public string CatalogName { get; }
 		public bool IsInternalDirUpdating { get; }
 
-		public Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir);
+		public Task<bool> Init(IIOProtoInitOptions options);
 
 		public bool Exists(string uri);
 

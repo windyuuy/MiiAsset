@@ -13,18 +13,20 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		public string CacheDir { get; set; }
 		public string InternalDir { get; set; }
 		public string ExternalDir { get; set; }
+		public string CatalogName { get; set; }
 		public bool IsInternalDirUpdating => false;
 
-		public Task<bool> Init(string internalBaseUri, string externalBaseUri, string bundleCacheDir)
+		public Task<bool> Init(IIOProtoInitOptions options)
 		{
 #if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 #else
-			this.InternalDir = Application.dataPath + "/" + internalBaseUri;
+			this.InternalDir = Application.dataPath + "/" + options.InternalBaseUri;
 #endif
 			var persistentDataPath = Application.persistentDataPath;
-			this.CacheDir = $"{persistentDataPath}/{bundleCacheDir}/";
-			this.ExternalDir = persistentDataPath + "/" + externalBaseUri;
+			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}/";
+			this.ExternalDir = persistentDataPath + "/" + options.ExternalBaseUri;
+			this.CatalogName = options.CatalogName;
 
 			return Task.FromResult(true);
 		}

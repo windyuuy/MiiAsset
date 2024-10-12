@@ -14,7 +14,7 @@ namespace Framework.MiiAsset.Runtime.Adapter
 			}
 
 			IsAdaptDefaultDone = true;
-#if UNITY_WEBGL
+#if UNITY_WEBGL && !UNITY_EDITOR
 			this.Adapt(new WXAdapter());
 #endif
 		}

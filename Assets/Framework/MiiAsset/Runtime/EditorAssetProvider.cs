@@ -12,12 +12,12 @@ namespace Framework.MiiAsset.Runtime
 {
 	public class EditorAssetProvider : IAssetProvider
 	{
-		public Task<bool> Init(string internalBaseUri, string externalBaseUri, string configBundleCacheDir)
+		public Task<bool> Init(IAssetProvider.IProviderInitOptions options)
 		{
 			return Task.FromResult(true);
 		}
 
-		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
+		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
 			return Task.FromResult(new PipelineResult
 			{

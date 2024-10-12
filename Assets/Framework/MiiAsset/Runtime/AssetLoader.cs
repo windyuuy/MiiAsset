@@ -24,7 +24,7 @@ namespace Framework.MiiAsset.Runtime
 		public static async Task<bool> Init()
 		{
 			AdapterInternal.AdaptDefault();
-			
+
 			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
 			var result = await Init(config);
 			Resources.UnloadAsset(config);
@@ -54,7 +54,7 @@ namespace Framework.MiiAsset.Runtime
 #else
 			Consumer = new BundledAssetProvider();
 #endif
-			return await Consumer.Init(config.internalBaseUri, config.externalBaseUri, config.bundleCacheDir);
+			return await Consumer.Init(config);
 		}
 		//
 		// public static void Init()
@@ -62,9 +62,9 @@ namespace Framework.MiiAsset.Runtime
 		// 	Consumer.Init();
 		// }
 
-		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
+		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
-			return Consumer.UpdateCatalog(remoteBaseUri, catalogName);
+			return Consumer.UpdateCatalog(remoteBaseUri);
 		}
 
 		public static Task<PipelineResult> CleanUpOldVersionFiles()
