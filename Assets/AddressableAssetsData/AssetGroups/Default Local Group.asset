@@ -16,7 +16,12 @@ MonoBehaviour:
   m_Data:
     m_SerializedData: []
   m_GUID: 309795f918ca36a47a03f1b316bc9dcc
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 00eeef59dfc488d4983ed9dc4d97d38b
+    m_Address: Assets/Bundles/BB/jfew/FVE.spriteatlasv2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 08c403f9905aba14fa7204c8b70b796b, type: 2}
   m_SchemaSet:

@@ -17,5 +17,5 @@ MonoBehaviour:
   bundleCacheDir: hotres/
   catalogName: catalog
   catalogType: zip
-  updateTunnel: test2
-  loadType: 1
+  updateTunnel: test4
+  loadType: 0

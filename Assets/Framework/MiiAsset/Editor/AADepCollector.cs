@@ -607,7 +607,7 @@ namespace MiiAssetHint
 				options = ScriptCompilationOptions.DevelopmentBuild,
 			};
 
-			var configGuids = AssetDatabase.FindAssets("t:AssetConsumerConfig", new[] { "Assets" });
+			var configGuids = AssetDatabase.FindAssets("t:AssetConsumerConfig", new[] { "Assets", "Packages/windy.miiasset" });
 			var tunnel = "";
 			var catalogType = "";
 			if (configGuids.Length > 0)
@@ -616,6 +616,11 @@ namespace MiiAssetHint
 				var config = AssetDatabase.LoadAssetAtPath<AssetConsumerConfig>(AssetDatabase.GUIDToAssetPath(configGuid));
 				tunnel = config.updateTunnel;
 				catalogType = config.catalogType;
+			}
+			else
+			{
+				Debug.LogError("no consumer config found");
+				return null;
 			}
 
 			var pathInfo = AAPathConfigLoader.LoadDefaultConfigs();

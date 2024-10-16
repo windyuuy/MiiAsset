@@ -38,16 +38,17 @@ MonoBehaviour:
     m_Id: 12039d7e29019f64ea7a628e955bc9f3
   m_RemoteCatalogLoadPath:
     m_Id: 
-  m_ContentStateBuildPathProfileVariableName: 
+  m_ContentStateBuildPathProfileVariableName: <default settings path>
   m_CustomContentStateBuildPath: 
   m_ContentStateBuildPath: 
-  m_BuildAddressablesWithPlayerBuild: 0
+  m_BuildAddressablesWithPlayerBuild: 2
   m_overridePlayerVersion: '[UnityEditor.PlayerSettings.bundleVersion]'
   m_GroupAssets:
   - {fileID: 11400000, guid: 6ec83cf80d8aba947a580b0f15e34211, type: 2}
   - {fileID: 11400000, guid: c051f219d4cd2a5419e9f0fd38445948, type: 2}
   - {fileID: 11400000, guid: ae4498304c820de4c950c8a6fd401997, type: 2}
   - {fileID: 11400000, guid: f193d069cee46ec45b1dd2c6a86747fe, type: 2}
+  - {fileID: 11400000, guid: ff22b4116b88d2b42b3bab1d5992d53e, type: 2}
   m_BuildSettings:
     m_CompileScriptsInVirtualMode: 0
     m_CleanupStreamingAssetsAfterBuilds: 1
