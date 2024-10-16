@@ -243,7 +243,7 @@ namespace Framework.MiiAsset.Runtime
 					else
 					{
 						IsDownloaded = 1;
-						_downloadProgress = new PipelineProgress((ulong)FileSize, (ulong)FileSize);
+						_downloadProgress = new PipelineProgress().SetDownloadedProgress(true);
 						// Debug.Log($"downloadprogress4: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
 					}
 				}
@@ -287,7 +287,14 @@ namespace Framework.MiiAsset.Runtime
 				IsDownloaded = 1;
 				if (IsDownloaded > 0)
 				{
-					_downloadProgress = new PipelineProgress((ulong)FileSize, (ulong)FileSize);
+					if (downloadPipeline != null)
+					{
+						_downloadProgress = downloadPipeline.GetProgress();
+					}
+					else
+					{
+						_downloadProgress = new PipelineProgress().SetDownloadedProgress(true);
+					}
 				}
 
 				return downloadResult;
