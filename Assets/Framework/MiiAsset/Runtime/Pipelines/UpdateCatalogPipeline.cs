@@ -35,6 +35,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		protected Task<PipelineResult> LoadCatalogTask;
 
+		// TODO: support load from local mode
 		async Task<PipelineResult> LoadCatalogTaskInternal()
 		{
 			var catalogName = CatalogName;
@@ -42,43 +43,69 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			var remoteCatalogUri = RemoteBaseUri + catalogName;
 			var externalCatalogUri = ExternalBaseUri + catalogName;
 			var externalHashUri = ToHashFileName(externalCatalogUri);
-			using ILoadTextAssetPipeline loadInternalHashPipeline = IOManager.LocalIOProto.IsWebUri(internalCatalogUri)
-				? new LoadRemoteTextFilePipeline().Init(ToHashFileName(internalCatalogUri), null)
-				: new LoadTextFilePipeline().Init(ToHashFileName(internalCatalogUri));
+			var isInternalAsWebUri = IOManager.LocalIOProto.IsWebUri(internalCatalogUri);
+			// 暂时仅判断catalog文件是否存在来判定, 已经足够
+			var isInternalCatalogExist = isInternalAsWebUri || IOManager.LocalIOProto.Exists(internalCatalogUri);
+			using ILoadTextAssetPipeline loadInternalHashPipeline = isInternalCatalogExist
+				? (isInternalAsWebUri
+					? new LoadRemoteTextFilePipeline().Init(ToHashFileName(internalCatalogUri), null)
+					: new LoadTextFilePipeline().Init(ToHashFileName(internalCatalogUri)))
+				: null;
 			;
 			using var loadRemoteHashPipeline = new LoadRemoteTextFilePipeline().Init(ToHashFileName(remoteCatalogUri), null);
 
-			using ILoadTextAssetPipeline loadInternalCatalogPipeline = IOManager.LocalIOProto.IsWebUri(internalCatalogUri)
-				? new LoadRemoteCatalogPkgFromMemoryPipeline().Init(internalCatalogUri)
-				: new LoadCatalogPkgPipeline().Init(internalCatalogUri);
+			using ILoadTextAssetPipeline loadInternalCatalogPipeline = isInternalCatalogExist
+				? (isInternalAsWebUri
+					? new LoadRemoteCatalogPkgFromMemoryPipeline().Init(internalCatalogUri)
+					: new LoadCatalogPkgPipeline().Init(internalCatalogUri))
+				: null;
 
 			LoadTextFilePipeline loadExternalHashPipeline = null;
 			Task loadHashPipelinesTask;
 			if (IOManager.LocalIOProto.Exists(externalHashUri) && IOManager.LocalIOProto.Exists(externalCatalogUri))
 			{
 				loadExternalHashPipeline = new LoadTextFilePipeline().Init(externalHashUri);
-				loadHashPipelinesTask = Task.WhenAll(
-					loadInternalHashPipeline.Run(),
-					loadExternalHashPipeline.Run(),
-					loadRemoteHashPipeline.Run()
-				);
+				if (loadInternalHashPipeline != null)
+				{
+					loadHashPipelinesTask = Task.WhenAll(
+						loadInternalHashPipeline.Run(),
+						loadExternalHashPipeline.Run(),
+						loadRemoteHashPipeline.Run()
+					);
+				}
+				else
+				{
+					loadHashPipelinesTask = Task.WhenAll(
+						loadExternalHashPipeline.Run(),
+						loadRemoteHashPipeline.Run()
+					);
+				}
 			}
 			else
 			{
-				loadHashPipelinesTask = Task.WhenAll(
-					loadInternalHashPipeline.Run(),
-					loadRemoteHashPipeline.Run()
-				);
+				if (loadInternalHashPipeline != null)
+				{
+					loadHashPipelinesTask = Task.WhenAll(
+						loadInternalHashPipeline.Run(),
+						loadRemoteHashPipeline.Run()
+					);
+				}
+				else
+				{
+					loadHashPipelinesTask = Task.WhenAll(
+						loadRemoteHashPipeline.Run()
+					);
+				}
 			}
 
 			LoadInternalCatalogPipeline = loadInternalCatalogPipeline;
-			var loadInternalCatalogTask = loadInternalCatalogPipeline.Run();
+			var loadInternalCatalogTask = loadInternalCatalogPipeline?.Run();
 
 			await loadHashPipelinesTask;
 
 			IsHashLoaded = true;
 
-			if (loadInternalHashPipeline.Result.IsOk == false)
+			if (loadInternalHashPipeline != null && loadInternalHashPipeline.Result.IsOk == false)
 			{
 				Result = loadInternalHashPipeline.Result;
 				return Result;
@@ -101,14 +128,16 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			sourceUri = RemoteBaseUri;
 			var remoteHash = loadRemoteHashPipeline.Text;
 			var needUpdateCatalog = false;
-			if ((loadExternalHashPipeline == null && loadInternalHashPipeline.Text != remoteHash) ||
+			var internalHash = loadInternalHashPipeline?.Text;
+			if ((loadExternalHashPipeline == null && internalHash != remoteHash) ||
 			    (loadExternalHashPipeline != null && loadExternalHashPipeline.Text != remoteHash))
 			{
 				// load from remote
 				needUpdateCatalog = true;
 				loadExternalCatalogPipeline = new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true);
 			}
-			else if (loadExternalHashPipeline != null && loadExternalHashPipeline.Text == remoteHash)
+			else if (loadExternalHashPipeline != null
+			         && loadExternalHashPipeline.Text == remoteHash && loadExternalHashPipeline.Text != internalHash)
 			{
 				// load from cache
 				loadExternalCatalogPipeline = new LoadCatalogPkgPipeline().Init(externalCatalogUri);
@@ -123,14 +152,21 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 			if (loadExternalCatalogPipeline != null)
 			{
-				await Task.WhenAll(loadInternalCatalogTask, loadExternalCatalogPipeline.Run());
+				if (loadInternalCatalogTask != null)
+				{
+					await Task.WhenAll(loadInternalCatalogTask, loadExternalCatalogPipeline.Run());
+				}
+				else
+				{
+					await loadExternalCatalogPipeline.Run();
+				}
 			}
-			else
+			else if (loadInternalCatalogTask != null)
 			{
 				await loadInternalCatalogTask;
 			}
 
-			if (loadInternalCatalogPipeline.Result.IsOk == false)
+			if (loadInternalCatalogPipeline != null && loadInternalCatalogPipeline.Result.IsOk == false)
 			{
 				Result = loadInternalCatalogPipeline.Result;
 				return Result;
@@ -143,20 +179,27 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			}
 
 			CatalogConfig internalCatalog;
-			try
+			if (loadInternalCatalogPipeline != null)
 			{
-				internalCatalog = JsonUtility.FromJson<CatalogConfig>(loadInternalCatalogPipeline.Text);
-			}
-			catch (Exception exception)
-			{
-				Debug.LogException(exception);
-				Result = new()
+				try
 				{
-					Exception = exception,
-					Msg = "invalid json format",
-					ErrorType = PipelineErrorType.DataIncorrect,
-				};
-				return Result;
+					internalCatalog = JsonUtility.FromJson<CatalogConfig>(loadInternalCatalogPipeline.Text);
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+					Result = new()
+					{
+						Exception = exception,
+						Msg = "invalid json format",
+						ErrorType = PipelineErrorType.DataIncorrect,
+					};
+					return Result;
+				}
+			}
+			else
+			{
+				internalCatalog = null;
 			}
 
 			CatalogConfig externalCatalog;
@@ -222,6 +265,8 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		private void HandleCatalog(CatalogConfig internalCatalog, CatalogConfig externalCatalog, string sourceUri)
 		{
+			Debug.Assert(internalCatalog != null || externalCatalog != null, "internalCatalog!=null||externalCatalog!=null");
+
 			this.InternalCatalog = internalCatalog;
 			this.ExternalCatalog = externalCatalog;
 			this.SourceUri = sourceUri;

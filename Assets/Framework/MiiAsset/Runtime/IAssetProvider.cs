@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Status;
@@ -7,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace Framework.MiiAsset.Runtime
 {
-	public interface IAssetProvider
+	public interface IAssetProvider: IDisposable
 	{
 		public interface IProviderInitOptions : IIOProtoInitOptions
 		{
@@ -16,11 +17,12 @@ namespace Framework.MiiAsset.Runtime
 		public Task<bool> Init(IProviderInitOptions options);
 
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri);
+		public Task<PipelineResult> LoadLocalCatalog();
 
 		public bool AllowTags(string[] tags);
 
-		public Task LoadTags(string[] tags, AssetLoadStatusGroup loadStatus);
-		public Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus);
+		public Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus);
+		public Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadTags(string[] tags);
 
@@ -30,15 +32,15 @@ namespace Framework.MiiAsset.Runtime
 
 		public bool IsBundleInTags(string bundleFileName, IEnumerable<string> tags);
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object;
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus);
 
 		public Task UnloadAssetJust(string address);
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object;
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadAsset(string address);
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object;
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadAssetByRefer(string address);
 

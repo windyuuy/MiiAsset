@@ -11,7 +11,7 @@ namespace U3DUdpater.Editor
 		{
 			var aaPathConfig = AssetDatabase.LoadAssetAtPath<AAPathConfig>(configPath);
 			var paths = aaPathConfig.paths.ToList();
-			paths.Sort((p1, p2) => p2.path.Length - p1.path.Length);
+			paths.Sort((p1, p2) => p2.scanRoot.Length - p1.scanRoot.Length);
 			paths.ForEach((item) => { item.pathRegex = new Regex(item.path); });
 
 			var pathInfo = new AAPathInfo();
@@ -27,7 +27,7 @@ namespace U3DUdpater.Editor
 		{
 			var guids = AssetDatabase.FindAssets("t:AAPathConfig", new []
 			{
-				"Assets/Bundle/GameConfigs/Editor/AAConfig/",
+				"Assets/Bundles/GameConfigs/Editor/AAConfig/",
 				"Assets/Editor/AAConfig/",
 			});
 			var assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);

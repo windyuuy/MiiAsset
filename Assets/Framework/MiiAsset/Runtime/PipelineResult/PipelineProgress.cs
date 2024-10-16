@@ -57,7 +57,7 @@ namespace Framework.MiiAsset.Runtime
 
 		private ulong CountInternal;
 
-		public float Progress
+		public float Percent
 		{
 			get
 			{

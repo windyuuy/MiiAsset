@@ -16,11 +16,13 @@ namespace Framework.MiiAsset.Runtime
 		public string internalBaseUri = "mii/";
 		public string externalBaseUri = "mii/";
 		public string bundleCacheDir = "hotres/";
-		public string catalogName = "catalog.zip";
+		public string catalogName = "catalog";
+		public string catalogType = "zip";
+		public string updateTunnel = "default";
 		public LoadType loadType;
-		public string InternalBaseUri =>internalBaseUri;
-		public string ExternalBaseUri =>externalBaseUri;
-		public string BundleCacheDir =>bundleCacheDir;
-		public string CatalogName =>catalogName;
+		public string InternalBaseUri => internalBaseUri;
+		public string ExternalBaseUri => externalBaseUri;
+		public string BundleCacheDir => bundleCacheDir;
+		public string CatalogName => $"{catalogName}_{updateTunnel}.{catalogType}";
 	}
 }

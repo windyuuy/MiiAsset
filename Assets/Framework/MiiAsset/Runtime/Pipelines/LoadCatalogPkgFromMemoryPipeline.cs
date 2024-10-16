@@ -20,7 +20,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
-			throw new System.NotImplementedException();
+			
 		}
 
 		public PipelineResult Result { get; set; }

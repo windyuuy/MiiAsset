@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -24,7 +23,6 @@ namespace Framework.MiiAsset.Runtime
 		public string groupName;
 
 		public string groupRoot;
-		[HideInInspector]
 		public string scanRoot;
 
 		// split with ;
@@ -39,121 +37,34 @@ namespace Framework.MiiAsset.Runtime
 		{
 			if (Application.isPlaying)
 			{
-				throw new NotImplementedException();
-			}
-			
-			var groupInfo = new GroupScanInfo();
-			var m2 = new Regex(@"^([a-zA-Z_\/]*)[\/]").Match(this.path);
-			if (m2.Success)
-			{
-				groupInfo.IsFolder = true;
-				scanRoot = m2.Groups[1].Value;
+				throw new NotImplementedException("cannot build when is playing");
 			}
 
-			groupInfo.ScanRoot = scanRoot;
-			groupInfo.IsFolder = Directory.Exists(scanRoot);
+			var groupInfo = new GroupScanInfo();
+			groupInfo.IsFolder = Directory.Exists(ScanRoot);
+
+			groupInfo.ScanRoot = ScanRoot;
+			groupInfo.IsFolder = Directory.Exists(ScanRoot);
 			groupInfo.Item = this;
 
 			return groupInfo;
 		}
-	}
 
-	public class AAPathInfo
-	{
-		public List<AAPathConfigItem> Paths = new();
-
-		/// <summary>
-		/// 排除的文件扩展名
-		/// </summary>
-		/// <returns></returns>
-		public List<string> ExcludeExtensions = new List<string>();
-
-		/// <summary>
-		/// 排除的路径
-		/// </summary>
-		/// <returns></returns>
-		public List<AAPathConfigItem> ExcludePaths = new List<AAPathConfigItem>();
-
-		public bool IsShaderGroupOffline = true;
-		public bool IsMyBuiltinShaderGroupOffline = true;
-
-		public IEnumerable<GroupScanInfo> GetScanRootInfos()
+		internal string ScanRoot
 		{
-			return Paths.Select(p => p.GetScanRootInfo()).Distinct();
-		}
-
-		/// <summary>
-		/// 解出组名
-		/// </summary>
-		/// <param name="config"></param>
-		/// <param name="assetPath"></param>
-		/// <returns></returns>
-		public static GroupNameInfo ParseGroupName(AAPathConfigItem config, string assetPath, string guid)
-		{
-			if (string.IsNullOrEmpty(config.path))
+			get
 			{
-				return null;
-			}
-
-			var m = config.pathRegex.Match(assetPath);
-			if (!m.Success)
-			{
-				m = config.pathRegex.Match(assetPath + "/");
-			}
-
-			if (m.Success)
-			{
-				var groupInfo = new GroupNameInfo();
-				groupInfo.Guid = guid;
-				groupInfo.AssetPath = assetPath;
-				var ss = m.Groups.Select(g => g.Value).ToArray();
-				try
+				if (string.IsNullOrEmpty(scanRoot))
 				{
-					groupInfo.GroupName = string.Format(config.groupName, ss);
-					var groupDefs = config.groupRoot.Split(" -> ", StringSplitOptions.RemoveEmptyEntries);
-					if (groupDefs.Length >= 1)
+					var m2 = new Regex(@"^\(*([a-zA-Z_\/]*)[\/]").Match(this.path);
+					if (m2.Success)
 					{
-						var groupRoot = string.Format(groupDefs[0], ss);
-						var m2 = new Regex(@"^(.*?)([\\/]*\*)$").Match(groupRoot);
-						if (m2.Success)
-						{
-							groupInfo.IsFolder = true;
-							groupRoot = m2.Groups[1].Value;
-						}
-
-						groupInfo.GroupRoot = groupRoot;
-						if (groupDefs.Length >= 2)
-						{
-							groupInfo.GroupRootRename = string.Format(groupDefs[1], ss);
-						}
-						else
-						{
-							groupInfo.GroupRootRename = null;
-						}
+						scanRoot = m2.Groups[1].Value;
 					}
-
-					if (config.tags == null)
-					{
-						groupInfo.Tags = Array.Empty<string>();
-					}
-					else
-					{
-						groupInfo.Tags = string.Format(config.tags, ss)
-							.Split(";", StringSplitOptions.RemoveEmptyEntries);
-					}
-
-					groupInfo.Tags = groupInfo.Tags.Prepend(groupInfo.GroupName).ToArray(); 
-
-					groupInfo.IsRemote = !config.isOffline;
-					return groupInfo;
 				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
-				}
+
+				return scanRoot;
 			}
-
-			return null;
 		}
 	}
 

@@ -29,7 +29,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public void Build()
 		{
-			throw new System.NotImplementedException();
+			
 		}
 
 		public Task<PipelineResult> Run()

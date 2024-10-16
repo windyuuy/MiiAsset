@@ -39,17 +39,22 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UpdateCatalog(remoteBaseUri);
 		}
 
+		public Task<PipelineResult> LoadLocalCatalog()
+		{
+			return Provider.LoadLocalCatalog();
+		}
+
 		public bool AllowTags(string[] tags)
 		{
 			return Provider.AllowTags(tags);
 		}
 
-		public Task LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadTags(tags, loadStatus);
 		}
 
-		public Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.DownloadTags(tags, loadStatus);
 		}
@@ -74,7 +79,7 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.IsBundleInTags(bundleFileName, tags);
 		}
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadAssetJust<T>(address, loadStatus);
 		}
@@ -84,7 +89,7 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UnloadAssetJust(address);
 		}
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadAsset<T>(address, loadStatus);
 		}
@@ -94,7 +99,7 @@ namespace Framework.MiiAsset.Runtime
 			return Provider.UnLoadAsset(address);
 		}
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadAssetByRefer<T>(address, loadStatus);
 		}
@@ -127,6 +132,11 @@ namespace Framework.MiiAsset.Runtime
 		public Task<PipelineResult> CleanUpOldVersionFiles()
 		{
 			return Provider.CleanUpOldVersionFiles();
+		}
+
+		public void Dispose()
+		{
+			this.Provider.Dispose();
 		}
 	}
 }

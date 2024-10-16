@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.AssetUtils;
 using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Pipelines;
 using Framework.MiiAsset.Runtime.Status;
@@ -57,6 +56,11 @@ namespace Framework.MiiAsset.Runtime
 
 			return LoadCatalogTask;
 		}
+
+		public Task<PipelineResult> LoadLocalCatalog()
+		{
+			return UpdateCatalog(null);
+		}
 		//
 		// private async Task<bool> EnsureStreamingAssets()
 		// {
@@ -91,15 +95,18 @@ namespace Framework.MiiAsset.Runtime
 						LoadCatalogInfo(externalCatalog, loadSource);
 
 						// merge internal catalog
-						var internalSource = new ResourceLoadSource(InternalBaseUri, null);
-						foreach (var bundleInfo in internalCatalog.bundleInfos)
+						if (internalCatalog != null)
 						{
-							if (CatalogInfo.BundleLoadSourceMap.ContainsKey(bundleInfo.fileName))
+							var internalSource = new ResourceLoadSource(InternalBaseUri, null);
+							foreach (var bundleInfo in internalCatalog.bundleInfos)
 							{
-								CatalogInfo.BundleLoadSourceMap[bundleInfo.fileName] = internalSource;
-							}
+								if (CatalogInfo.BundleLoadSourceMap.ContainsKey(bundleInfo.fileName))
+								{
+									CatalogInfo.BundleLoadSourceMap[bundleInfo.fileName] = internalSource;
+								}
 
-							CatalogInfo.InternalBundles.Add(bundleInfo.fileName, internalSource);
+								CatalogInfo.InternalBundles.Add(bundleInfo.fileName, internalSource);
+							}
 						}
 					}
 					else
@@ -118,11 +125,11 @@ namespace Framework.MiiAsset.Runtime
 			}
 		}
 
-		private void LoadCatalogInfo(CatalogConfig externalCatalog, ResourceLoadSource loadSource)
+		private void LoadCatalogInfo(CatalogConfig catalog, ResourceLoadSource loadSource)
 		{
-			CatalogInfo.LoadCatalogInfo(externalCatalog);
+			CatalogInfo.LoadCatalogInfo(catalog);
 
-			foreach (var bundleInfo in externalCatalog.bundleInfos)
+			foreach (var bundleInfo in catalog.bundleInfos)
 			{
 				CatalogInfo.BundleLoadSourceMap.Add(bundleInfo.fileName, loadSource);
 			}
@@ -136,17 +143,20 @@ namespace Framework.MiiAsset.Runtime
 			return true;
 		}
 
-		public Task LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public async Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			AllowTags(tags);
-			var task = CatalogStatus.LoadTags(tags, CatalogInfo, loadStatus);
-			return task;
+			var results = await CatalogStatus.LoadTags(tags, CatalogInfo, loadStatus);
+			var isOk = results.All(result => result.IsOk);
+			return isOk;
 		}
 
-		public Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public async Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			var task = CatalogStatus.DownloadTags(tags, CatalogInfo, loadStatus);
-			return task;
+			var results = await task;
+			var isOk = results.All(result => result.IsOk);
+			return isOk;
 		}
 
 		public Task UnLoadTags(string[] tags)
@@ -169,7 +179,7 @@ namespace Framework.MiiAsset.Runtime
 			return CatalogStatus.IsAddressInTags(bundleFileName, tags, CatalogInfo);
 		}
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
@@ -188,7 +198,7 @@ namespace Framework.MiiAsset.Runtime
 			await bundleLoadStatus.UnLoadAssetJust(address);
 		}
 
-		public async Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		public async Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
@@ -202,7 +212,10 @@ namespace Framework.MiiAsset.Runtime
 			{
 				foreach (var result in results)
 				{
-					result.Print();
+					if (!result.IsOk)
+					{
+						result.Print();
+					}
 				}
 
 				return default(T);
@@ -260,7 +273,7 @@ namespace Framework.MiiAsset.Runtime
 
 		protected CatalogAddressStatus CatalogAddressStatus = new();
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			var task = LoadByReferInternal<T>(address, loadStatus);
 			CatalogAddressStatus.RegisterAddress(address, task);
@@ -400,6 +413,11 @@ namespace Framework.MiiAsset.Runtime
 
 			result.Status = PipelineStatus.Done;
 			return Task.FromResult(result);
+		}
+
+		public void Dispose()
+		{
+			this.CatalogStatus.Dispose();
 		}
 	}
 }

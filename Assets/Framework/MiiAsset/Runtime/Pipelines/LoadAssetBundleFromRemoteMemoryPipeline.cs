@@ -6,13 +6,13 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
-	public class LoadAssetBundleFromRemoteMemoryStreamPipeline : ILoadAssetBundlePipeline
+	public class LoadAssetBundleFromRemoteMemoryPipeline : ILoadAssetBundlePipeline
 	{
 		protected string RemoteUri;
 		protected WebDownloadToMemoryPipeline DownloadToMemoryPipeline;
 		protected uint Crc;
 
-		public LoadAssetBundleFromRemoteMemoryStreamPipeline Init(string remoteUri, uint crc)
+		public LoadAssetBundleFromRemoteMemoryPipeline Init(string remoteUri, uint crc)
 		{
 			RemoteUri = remoteUri;
 			this.Crc = crc;

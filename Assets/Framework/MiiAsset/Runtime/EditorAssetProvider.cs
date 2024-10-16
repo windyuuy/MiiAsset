@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.Status;
-using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -26,19 +27,24 @@ namespace Framework.MiiAsset.Runtime
 			});
 		}
 
+		public Task<PipelineResult> LoadLocalCatalog()
+		{
+			return UpdateCatalog(null);
+		}
+
 		public bool AllowTags(string[] tags)
 		{
 			return true;
 		}
 
-		public Task LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
-			return Task.CompletedTask;
+			return Task.FromResult(true);
 		}
 
-		public Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
-			return Task.CompletedTask;
+			return Task.FromResult(true);
 		}
 
 		public Task UnLoadTags(string[] tags)
@@ -61,11 +67,19 @@ namespace Framework.MiiAsset.Runtime
 			return true;
 		}
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
-			var data = AssetDatabase.LoadAssetAtPath<T>(address);
-			loadStatus?.Add(new AssetDatabaseOpStatus(data != null));
-			return Task.FromResult(data);
+			var obj = AssetDatabase.LoadAssetAtPath(address, typeof(T));
+			if (obj is T data)
+			{
+				loadStatus?.Add(new AssetDatabaseOpStatus(true));
+				return Task.FromResult(data);
+			}
+			else
+			{
+				loadStatus?.Add(new AssetDatabaseOpStatus(false));
+				return Task.FromResult(default(T));
+			}
 		}
 
 		public Task UnloadAssetJust(string address)
@@ -73,7 +87,7 @@ namespace Framework.MiiAsset.Runtime
 			return Task.CompletedTask;
 		}
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
@@ -83,7 +97,7 @@ namespace Framework.MiiAsset.Runtime
 			return Task.CompletedTask;
 		}
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
@@ -125,6 +139,11 @@ namespace Framework.MiiAsset.Runtime
 				IsOk = true,
 				Status = PipelineStatus.Done,
 			});
+		}
+
+		public void Dispose()
+		{
+			
 		}
 	}
 }

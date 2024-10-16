@@ -46,7 +46,7 @@ namespace Framework.MiiAsset.Runtime
 		}
 	}
 
-	public class CatalogStatus
+	public class CatalogStatus : IDisposable
 	{
 		public Dictionary<string, int> AllowedTags = new();
 		public Dictionary<string, IAssetBundleStatus> BundleLoadStatus = new();
@@ -89,7 +89,7 @@ namespace Framework.MiiAsset.Runtime
 			}
 		}
 
-		public Task DownloadTags(IEnumerable<string> tags, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResult[]> DownloadTags(IEnumerable<string> tags, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
 		{
 			var bundleNames = new HashSet<string>();
 			catalogInfo.GetTagsDependBundles(tags, bundleNames);
@@ -107,10 +107,11 @@ namespace Framework.MiiAsset.Runtime
 				}
 			}
 
-			return Task.WhenAll(tasks);
+			var downloadTask = Task.WhenAll(tasks);
+			return downloadTask;
 		}
 
-		public Task LoadTags(IEnumerable<string> tags, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResult[]> LoadTags(IEnumerable<string> tags, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
 		{
 			var bundleNames = new HashSet<string>();
 			catalogInfo.GetTagsDependBundles(tags, bundleNames);
@@ -139,7 +140,7 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
-				throw new Exception($"asset not exist in any bundle: {address}");
+				Debug.LogError($"asset not exist in2 any bundle: {address}");
 			}
 
 			return false;
@@ -315,7 +316,8 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
-				throw new Exception($"asset not exist in any bundle: {address}");
+				Debug.LogError($"asset not exist in3 any bundle: {address}");
+				return null;
 			}
 		}
 
@@ -331,6 +333,16 @@ namespace Framework.MiiAsset.Runtime
 			}
 
 			return size;
+		}
+
+		public void Dispose()
+		{
+			foreach (var bundleLoadStatus in this.BundleLoadStatus)
+			{
+				bundleLoadStatus.Value.Dispose();
+			}
+			this.BundleLoadStatus.Clear();
+			this.AllowedTags.Clear();
 		}
 	}
 }

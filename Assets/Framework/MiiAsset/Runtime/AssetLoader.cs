@@ -22,15 +22,36 @@ namespace Framework.MiiAsset.Runtime
 			AdapterInternal.Adapt(adapter);
 		}
 
+		private static bool _isInited = false;
+
 		public static async Task<bool> Init()
 		{
+			if (_isInited)
+			{
+				return true;
+			}
+
 			AdapterInternal.AdaptDefault();
 			RegisterCertificateHandler(new AcceptAllCertificate());
 
 			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
 			var result = await Init(config);
 			Resources.UnloadAsset(config);
+			
+			InitDispose();
+			
+			_isInited = result;
 			return result;
+		}
+
+		private static void InitDispose()
+		{
+			Application.quitting += AssetLoader.Dispose;
+		}
+
+		private static void Dispose()
+		{
+			Consumer.Dispose();
 		}
 
 		public static void RegisterCertificateHandler(CertificateHandler certificateHandler)
@@ -66,7 +87,17 @@ namespace Framework.MiiAsset.Runtime
 
 		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
+			if (!remoteBaseUri.EndsWith("/"))
+			{
+				remoteBaseUri = $"{remoteBaseUri}/";
+			}
+
 			return Consumer.UpdateCatalog(remoteBaseUri);
+		}
+
+		public static Task<PipelineResult> LoadLocalCatalog()
+		{
+			return Consumer.LoadLocalCatalog();
 		}
 
 		public static Task<PipelineResult> CleanUpOldVersionFiles()
@@ -89,7 +120,7 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.AllowTags(tags);
 		}
 
-		public static Task LoadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
+		public static Task<bool> LoadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
 		{
 			if (tags is not string[] tags1)
 			{
@@ -99,14 +130,24 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.LoadTags(tags1, loadStatus);
 		}
 
-		public static Task LoadTags(params string[] tags)
+		public static Task<bool> LoadTags(params string[] tags)
 		{
 			return Consumer.LoadTags(tags, null);
 		}
 
-		public static Task DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus = null)
+		public static Task<bool> DownloadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.DownloadTags(tags, loadStatus);
+			if (tags is not string[] tags1)
+			{
+				tags1 = tags.ToArray();
+			}
+
+			return Consumer.DownloadTags(tags1, loadStatus);
+		}
+
+		public static Task<bool> DownloadTags(params string[] tags)
+		{
+			return Consumer.DownloadTags(tags, null);
 		}
 
 		public static Task UnLoadTags(IEnumerable<string> tags)
@@ -154,7 +195,7 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnloadAssetJust(address);
 		}
 
-		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
 			return Consumer.LoadAsset<T>(address, loadStatus);
 		}
@@ -164,9 +205,36 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnLoadAsset(address);
 		}
 
-		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
 			return Consumer.LoadAssetByRefer<T>(address, loadStatus);
+		}
+
+		public static AsyncLoadingStatus<T> LoadAssetByReferWrapped<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		{
+			var task = Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			var status = new AsyncLoadingStatus<T>(address, task, loadStatus);
+			return status;
+		}
+
+		public static Task UnLoadAssetByReferWrapped<T>(AsyncLoadingStatus<T> status)
+		{
+			var task = Consumer.UnLoadAssetByRefer(status.Address);
+			return task;
+		}
+
+		public static AsyncLoadingStatus<Scene> LoadSceneByReferWrapped(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
+		{
+			var task = Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			var status = new AsyncLoadingStatus<Scene>(sceneAddress, task, loadStatus);
+			return status;
+		}
+
+		public static async Task<Scene> UnLoadSceneByReferWrapped(AsyncLoadingStatus<Scene> status, UnloadSceneOptions options = UnloadSceneOptions.None)
+		{
+			await Consumer.UnLoadSceneByRefer(status.Address, options);
+			var scene = status.Result;
+			return scene;
 		}
 
 		public static Task UnLoadAssetByRefer(string address)
@@ -174,7 +242,7 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnLoadAssetByRefer(address);
 		}
 
-		public static Task LoadScene(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
+		public static Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
 		{
 			return Consumer.LoadScene(sceneAddress, parameters, loadStatus);
 		}
@@ -208,6 +276,38 @@ namespace Framework.MiiAsset.Runtime
 			}
 
 			return tagsBundleSet;
+		}
+
+		public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key)
+		{
+			var status = LoadAssetByReferWrapped<GameObject>(key, new AssetLoadStatusGroup());
+
+			async Task<GameObject> Load()
+			{
+				var asset = await status.Task;
+				var obj = GameObject.Instantiate(asset);
+				return obj;
+			}
+
+			status.Task = Load();
+			return status;
+		}
+
+		public static bool ReleaseInstance(string key, GameObject gameObject)
+		{
+#if UNITY_EDITOR
+			if (!Application.isPlaying)
+			{
+				GameObject.DestroyImmediate(gameObject);
+			}
+			else
+#endif
+			{
+				GameObject.Destroy(gameObject);
+			}
+
+			UnLoadAssetByRefer(key);
+			return true;
 		}
 	}
 }

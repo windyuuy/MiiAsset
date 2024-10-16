@@ -18,12 +18,14 @@ using UnityEngine;
 using UnityEngine.Build.Pipeline;
 using UnityEngine.U2D;
 using AssetBundleInfo = Framework.MiiAsset.Runtime.AssetBundleInfo;
+using CompressionLevel = System.IO.Compression.CompressionLevel;
 
 namespace U3DUdpater.Editor
 {
 	public class ExtraBuildOptions
 	{
 		public string UpdateTunnel = "";
+		public string CatalogType = "";
 	}
 
 	public class AnalyzeItemResult
@@ -189,7 +191,7 @@ namespace U3DUdpater.Editor
 			// collect sprites in spriteatlas
 			var filterMap = new HashSet<string>();
 
-			void CollectSpriteAtlas(HashSet<string> filterMap)
+			void CollectSpriteAtlas(HashSet<string> filterMap0)
 			{
 				var guids = AssetDatabase.FindAssets("t:spriteatlas", new string[] { "Assets" });
 				foreach (var guid in guids)
@@ -198,7 +200,7 @@ namespace U3DUdpater.Editor
 					var objs = spriteatlas.GetPackables();
 					foreach (var o in objs)
 					{
-						filterMap.Add(AssetDatabase.GetAssetPath(o));
+						filterMap0.Add(AssetDatabase.GetAssetPath(o));
 					}
 				}
 			}
@@ -219,6 +221,14 @@ namespace U3DUdpater.Editor
 					.Where(item => item != null);
 				foreach (var groupNameInfo in validGroupNameInfo)
 				{
+					if (guidBundleMap.ContainsKey(groupNameInfo.Guid))
+					{
+						continue;
+					}
+
+					groupNameInfo.Tags = groupNameInfo.Tags
+						.Select(tag => tag.ToLower())
+						.ToArray();
 					if (groupNameInfo.AssetPath.EndsWith(".unity"))
 					{
 						groupNameInfo.Tags = groupNameInfo.Tags.Append("scene").ToArray();
@@ -235,15 +245,15 @@ namespace U3DUdpater.Editor
 						tagBundleMap.Add(tagsKey, tagBundle);
 					}
 
-					tagBundle.IsOffline |= !groupNameInfo.IsRemote;
-					tagBundle.Guids.Add(groupNameInfo.Guid);
-
-					if (guidBundleMap.TryGetValue(groupNameInfo.Guid, out var exist))
+					if (guidBundleMap.TryAdd(groupNameInfo.Guid, tagBundle))
 					{
-						Debug.LogError($"conflict item: {groupNameInfo.AssetPath}");
-					}
+						tagBundle.IsOffline |= !groupNameInfo.IsRemote;
+						tagBundle.Guids.Add(groupNameInfo.Guid);
 
-					guidBundleMap[groupNameInfo.Guid] = tagBundle;
+						// Debug.LogError($"conflict item: {groupNameInfo.AssetPath}");
+					}
+					//
+					// guidBundleMap[groupNameInfo.Guid] = tagBundle;
 				}
 			}
 
@@ -261,7 +271,7 @@ namespace U3DUdpater.Editor
 				};
 				return build;
 			});
-			var folderPath = "AssetBundles";
+			var folderPath = $"AssetBundles/{EditorUserBuildSettings.activeBuildTarget}";
 			var outPath = "Temp/MiiAsset/AssetBundles";
 			var tmpPath = "Temp/MiiAsset/Temp";
 			if (Directory.Exists(outPath))
@@ -438,7 +448,7 @@ namespace U3DUdpater.Editor
 				{
 					bundleInfos = catalogBundleInfos,
 				};
-				var catalogFilePath = $"{folderPath}/catalog_{options.UpdateTunnel}.zip".Replace("_.", ".");
+				var catalogFilePath = $"{folderPath}/catalog_{options.UpdateTunnel}.{options.CatalogType}".Replace("_.", ".");
 				var catalogHashFilePath = Path.ChangeExtension(catalogFilePath, "hash");
 				var bytes = SaveCatalog(catalog, catalogFilePath);
 
@@ -504,7 +514,12 @@ namespace U3DUdpater.Editor
 					return key;
 				}
 
-				var assetTags = string.Join("", tagOrderMap.Keys.Select(tag => $@"		public static string {ToFirstUpperCase(tag)} = ""{tag}"";
+				string ToTagKey(string tag)
+				{
+					return ToFirstUpperCase(tag).Replace(".", "_");
+				}
+
+				var assetTags = string.Join("", tagOrderMap.Keys.Select(tag => $@"		public const string {ToTagKey(tag)} = ""{tag}"";
 "));
 				// var sceneKeys = string.Join("",tagBundles.Where(tagBundle=>tagBundle.Tags.Contains("scene")).Select(tagBundle=>tagBundle.))
 				var content = @$"
@@ -520,8 +535,14 @@ namespace MiiAssetHint
 	}}
 }}
 ";
-				var content0 = File.ReadAllText(codeFilePath, Encoding.UTF8);
-				if (content0 != content)
+				var needOverwrite = true;
+				if (File.Exists(codeFilePath))
+				{
+					var content0 = File.ReadAllText(codeFilePath, Encoding.UTF8);
+					needOverwrite = content0 != content;
+				}
+
+				if (needOverwrite)
 				{
 					File.WriteAllText(codeFilePath, content, EncodingExt.UTF8WithoutBom);
 				}
@@ -544,7 +565,9 @@ namespace MiiAssetHint
 			using var stream = new FileStream(catalogFilePath, FileMode.Open, FileAccess.Read);
 			byte[] hashByte = hash.ComputeHash(stream);
 			var hash128Str = BitConverter.ToString(hashByte).Replace("-", "").ToLower();
-			File.WriteAllText(catalogHashFilePath, hash128Str, EncodingExt.UTF8WithoutBom);
+			var hashByteLength = stream.Length;
+			var hashStr = $"{hash128Str},{hashByteLength}";
+			File.WriteAllText(catalogHashFilePath, hashStr, EncodingExt.UTF8WithoutBom);
 		}
 
 		private static byte[] SaveCatalog(CatalogConfig catalog, string catalogFilePath)
@@ -554,7 +577,7 @@ namespace MiiAssetHint
 			using (var ms = new FileStream(catalogFilePath, FileMode.Create))
 			using (ZipArchive arch = new ZipArchive(ms, ZipArchiveMode.Create))
 			{
-				var entry = arch.CreateEntry("catalog.json");
+				var entry = arch.CreateEntry("catalog.json", CompressionLevel.Optimal);
 				var stream = entry.Open();
 				stream.Write(bytes);
 			}
@@ -584,9 +607,22 @@ namespace MiiAssetHint
 				options = ScriptCompilationOptions.DevelopmentBuild,
 			};
 
+			var configGuids = AssetDatabase.FindAssets("t:AssetConsumerConfig", new[] { "Assets" });
+			var tunnel = "";
+			var catalogType = "";
+			if (configGuids.Length > 0)
+			{
+				var configGuid = configGuids[0];
+				var config = AssetDatabase.LoadAssetAtPath<AssetConsumerConfig>(AssetDatabase.GUIDToAssetPath(configGuid));
+				tunnel = config.updateTunnel;
+				catalogType = config.catalogType;
+			}
+
 			var pathInfo = AAPathConfigLoader.LoadDefaultConfigs();
 			var buildAssetBundlesResult = BuildAssetBundles(pathInfo, scriptCompilationSettings, new()
 			{
+				UpdateTunnel = tunnel,
+				CatalogType = catalogType,
 			});
 			return buildAssetBundlesResult;
 		}

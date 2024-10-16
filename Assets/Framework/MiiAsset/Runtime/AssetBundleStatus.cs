@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.IOManagers;
 using Framework.MiiAsset.Runtime.Status;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Framework.MiiAsset.Runtime
 {
@@ -15,7 +16,7 @@ namespace Framework.MiiAsset.Runtime
 		public AssetBundleRequest Op;
 	}
 
-	public interface IAssetBundleStatus : IAssetLoadStatus
+	public interface IAssetBundleStatus : IAssetLoadStatus, IDisposable
 	{
 		public Task<PipelineResult> Task { get; }
 		public int RefCount { get; set; }
@@ -115,6 +116,11 @@ namespace Framework.MiiAsset.Runtime
 
 				return 0;
 			}
+		}
+
+		public IEnumerable<PipelineResult> Results
+		{
+			get { yield return Task.Result; }
 		}
 
 		public Task<PipelineResult> Load(CatalogInfo catalogInfo)
@@ -319,7 +325,13 @@ namespace Framework.MiiAsset.Runtime
 		{
 			if (AssetBundle == null && !Task.IsCompletedSuccessfully)
 			{
-				throw new Exception($"AssetBundle not load yet: {BundleName}, cannot load by asset key: {address}");
+				if (loadStatus != null)
+				{
+					var exception = new Exception($"AssetBundle not load yet: {BundleName}, cannot load by asset key: {address}");
+					loadStatus.Exception = exception;
+				}
+
+				return default;
 			}
 
 			var op = AssetBundle.LoadAssetAsync<T>(address);
@@ -332,7 +344,13 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
-				throw new InvalidCastException($"invalid asset Type<{nameof(T)}> to load: {address}");
+				if (loadStatus != null)
+				{
+					var exception = new InvalidCastException($"invalid asset Type<{nameof(T)}> to load: {address}");
+					loadStatus.Exception = exception;
+				}
+
+				return default;
 			}
 		}
 
@@ -356,6 +374,26 @@ namespace Framework.MiiAsset.Runtime
 			}
 
 			return status;
+		}
+
+		public void Dispose()
+		{
+			if (this.Disposable != null)
+			{
+				this.Disposable.Dispose();
+				this.Disposable = null;
+			}
+
+			if (this.AssetBundle != null)
+			{
+				this.AssetBundle.UnloadAsync(true);
+				this.AssetBundle = null;
+			}
+
+			if (this.LoadPipeline != null)
+			{
+				this.LoadPipeline.Dispose();
+			}
 		}
 	}
 }

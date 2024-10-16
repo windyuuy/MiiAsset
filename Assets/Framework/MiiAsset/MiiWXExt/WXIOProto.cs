@@ -53,13 +53,17 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			Debug.Log($"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
 			FileSystemManager = WX.GetFileSystemManager();
-			var results = await Task.WhenAll(
-				EnsureStreamingAssets("catalog.hash"),
-				EnsureStreamingAssets(CatalogName)
-			);
-
-			var isOk = results.All(r => r);
-			return isOk;
+			// var catalogHashName = this.CatalogName
+			// 	.Replace(".json", ".hash")
+			// 	.Replace(".zip", ".hash");
+			// var results = await Task.WhenAll(
+			// 	EnsureStreamingAssets(catalogHashName),
+			// 	EnsureStreamingAssets(CatalogName)
+			// );
+			//
+			// var isOk = results.All(r => r);
+			// return isOk;
+			return true;
 		}
 
 		public bool Exists(string uri)

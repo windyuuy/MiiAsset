@@ -58,7 +58,7 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
-				throw new Exception($"asset not exist int any bundle: {address}");
+				Debug.LogError($"asset not exist in1 any bundle: {address}");
 			}
 
 			deps = null;
@@ -124,17 +124,17 @@ namespace Framework.MiiAsset.Runtime
 				}
 			}
 
-			var flatBundlesMap = this.TagFlatBundlesMap;
+			var tagFlatBundlesMap = this.TagFlatBundlesMap;
 			foreach (var bundleInfo in catalog.bundleInfos)
 			{
 				// this.TagFlatBundlesMap
 
-				foreach (var tag in bundleInfo.tags)
+				foreach (var tag in bundleInfo.tags.Append("all"))
 				{
-					if (!flatBundlesMap.TryGetValue(tag, out var deps))
+					if (!tagFlatBundlesMap.TryGetValue(tag, out var deps))
 					{
 						deps = new();
-						flatBundlesMap.Add(tag, deps);
+						tagFlatBundlesMap.Add(tag, deps);
 					}
 
 					deps.Add(bundleInfo.fileName);
@@ -159,7 +159,8 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
-				throw new Exception($"invalid bundle not exist: {bundleName}");
+				Debug.LogError($"invalid bundle not exist: {bundleName}");
+				return null;
 			}
 		}
 
@@ -171,7 +172,8 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
-				throw new Exception($"invalid bundle not exist: {bundleName}");
+				Debug.LogError($"invalid bundle not exist: {bundleName}");
+				return -1;
 			}
 		}
 

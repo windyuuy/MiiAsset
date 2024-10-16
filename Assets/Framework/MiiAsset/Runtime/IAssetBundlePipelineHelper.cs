@@ -22,7 +22,7 @@ namespace Framework.MiiAsset.Runtime
 			{
 				if (remoteUri.StartsWith("jar:"))
 				{
-					pipeline = new LoadAssetBundleFromRemoteMemoryStreamPipeline().Init(remoteUri, crc);
+					pipeline = new LoadAssetBundleFromRemoteMemoryPipeline().Init(remoteUri, crc);
 				}
 				else if (Application.platform == RuntimePlatform.WebGLPlayer)
 				{
@@ -37,9 +37,17 @@ namespace Framework.MiiAsset.Runtime
 			}
 			else
 			{
-				pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri, crc);
+				if (Application.platform == RuntimePlatform.WebGLPlayer)
+				{
+					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
+					pipeline = new LoadAssetBundleFromRemoteBytesPipeline().Init(remoteUri, cacheUri, crc);
+				}
+				else
+				{
+					pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri, crc);
+				}
 			}
-			
+
 			// Debug.Log($"userpipeline {pipeline.GetType().Name} for {assetBundleInfo.fileName}");
 
 			return pipeline;
