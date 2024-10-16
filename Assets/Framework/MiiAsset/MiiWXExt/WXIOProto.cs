@@ -37,7 +37,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 
 		protected WXFileSystemManager FileSystemManager;
 
-		public async Task<bool> Init(IIOProtoInitOptions options)
+		public Task<bool> Init(IIOProtoInitOptions options)
 		{
 #if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
@@ -53,6 +53,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			Debug.Log($"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
 			FileSystemManager = WX.GetFileSystemManager();
+
 			// var catalogHashName = this.CatalogName
 			// 	.Replace(".json", ".hash")
 			// 	.Replace(".zip", ".hash");
@@ -63,7 +64,25 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			//
 			// var isOk = results.All(r => r);
 			// return isOk;
-			return true;
+
+			var ret = EnsurePersistDirs();
+
+			return Task.FromResult(ret);
+		}
+
+		private bool EnsurePersistDirs()
+		{
+			try
+			{
+				EnsureDirectory(this.CacheDir);
+				EnsureDirectory(this.ExternalDir);
+				return true;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+				return false;
+			}
 		}
 
 		public bool Exists(string uri)
@@ -150,7 +169,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			{
 				BundleExistMap = new();
 				var files1 = FileSystemManager.ReaddirSync(CacheDir);
-				var files2 = FileSystemManager.ReaddirSync(InternalDir);
+				var files2 = Exists(InternalDir) ? FileSystemManager.ReaddirSync(InternalDir) : Array.Empty<string>();
 				foreach (var file in files1.Concat(files2))
 				{
 					var fileName = Path.GetFileName(file);
@@ -228,7 +247,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 
 		public bool IsWebUri(string uri)
 		{
-			return !uri.StartsWith(WX.env.USER_DATA_PATH) && uri.Contains("://");
+			return (!uri.StartsWith(WX.env.USER_DATA_PATH)) && uri.Contains("://");
 		}
 
 		public Task<string> ReadCatalog(string uri)

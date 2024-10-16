@@ -56,6 +56,8 @@ namespace Framework.MiiAsset.Runtime.Status
 			}
 		}
 
+		public bool IsCompletedSuccessfully => Status!=null && Status.Results.All(r => r.IsOk);
+
 		private Action<AsyncLoadingStatus<T>> _completed;
 
 		public void OnComplete(Action<AsyncLoadingStatus<T>> action)
@@ -242,9 +244,11 @@ namespace Framework.MiiAsset.Runtime.Status
 			this.StatusList.Add(status);
 		}
 
-		public void AddAsyncOperationStatus(AsyncOperation op)
+		public AsyncOperationStatus AddAsyncOperationStatus(AsyncOperation op)
 		{
-			Add(new AsyncOperationStatus().Set(op));
+			var loadStatus = new AsyncOperationStatus().Set(op);
+			Add(loadStatus);
+			return loadStatus;
 		}
 
 		public void Clear()

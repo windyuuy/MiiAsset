@@ -176,7 +176,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 
 		var dt2 = Date.Now();
-		var result = await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/");
+		var result = await AssetLoader.UpdateCatalog("http://192.168.110.59:8081/");
 		var dt3 = Date.Now();
 		if (result.IsOk)
 		{
@@ -194,13 +194,13 @@ public class NewBehaviourScript : MonoBehaviour
 				while (true)
 				{
 					var downloadProgress = loadStatus.DownloadProgress;
-					if (p > downloadProgress.Progress || (100 < downloadProgress.Total && downloadProgress.Total < 4148766))
+					if (p > downloadProgress.Percent || (100 < downloadProgress.Total && downloadProgress.Total < 4148766))
 					{
 						Debug.Log("lkwjef");
 					}
 
-					p = downloadProgress.Progress;
-					Debug.Log($"progress: {downloadProgress.Count}/{downloadProgress.Total}={downloadProgress.Progress}");
+					p = downloadProgress.Percent;
+					Debug.Log($"progress: {downloadProgress.Count}/{downloadProgress.Total}={downloadProgress.Percent}");
 					if (downloadProgress.IsDone)
 					{
 						break;
@@ -233,12 +233,12 @@ public class NewBehaviourScript : MonoBehaviour
 			var task3 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
 			var dt10 = Date.Now();
 			Debug.Log($"done: {dt2 - dt1}, {dt3 - dt2}, {dt4 - dt3}, {dt5 - dt4}, {dt6 - dt5}, {dt7 - dt6}, {dt8 - dt7}, {dt9 - dt8}, {dt10 - dt9}");
-
+			
 			await Task.WhenAll(task1, task2, task3, unloadTask1, unloadTask2);
-
+			
 			await Load1();
 			await AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
-
+			
 			var atlas = await AssetLoader.LoadAssetByRefer<SpriteAtlas>("Assets/Bundles/BB/jfew/FVE.spriteatlasv2");
 			var sprite = atlas.GetSprite("login_btn_kanjian1");
 			Debug.Assert(sprite != null);

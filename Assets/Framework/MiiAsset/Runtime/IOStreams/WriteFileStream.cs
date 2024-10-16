@@ -78,7 +78,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			{
 				try
 				{
-					IOManager.LocalIOProto.EnsureFileDirectory(Uri);
+					// IOManager.LocalIOProto.EnsureFileDirectory(Uri);
 					FileStream = IOManager.LocalIOProto.OpenWrite(ToTempPath(Uri));
 				}
 				catch (Exception exception)

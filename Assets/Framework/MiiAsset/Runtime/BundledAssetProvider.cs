@@ -73,19 +73,19 @@ namespace Framework.MiiAsset.Runtime
 		private void HandleCatalog(CatalogConfig internalCatalog, CatalogConfig externalCatalog, string sourceUri)
 		{
 			var cacheDir = IOManager.LocalIOProto.CacheDir;
-			var isDirReady = false;
-			try
-			{
-				IOManager.LocalIOProto.EnsureDirectory(cacheDir);
-				isDirReady = true;
-			}
-			catch (Exception exception)
-			{
-				Result.Exception = exception;
-				Result.ErrorType = PipelineErrorType.FileSystemError;
-			}
+			// var isDirReady = false;
+			// try
+			// {
+			// 	IOManager.LocalIOProto.EnsureDirectory(cacheDir);
+			// 	isDirReady = true;
+			// }
+			// catch (Exception exception)
+			// {
+			// 	Result.Exception = exception;
+			// 	Result.ErrorType = PipelineErrorType.FileSystemError;
+			// }
 
-			if (isDirReady)
+			// if (isDirReady)
 			{
 				try
 				{

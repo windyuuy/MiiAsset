@@ -40,19 +40,21 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		{
 			var catalogName = CatalogName;
 			var internalCatalogUri = InternalBaseUri + catalogName;
-			var remoteCatalogUri = RemoteBaseUri + catalogName;
+			var supportRemoteCatalog = !string.IsNullOrEmpty(RemoteBaseUri);
+			var remoteCatalogUri = supportRemoteCatalog ? RemoteBaseUri + catalogName : null;
 			var externalCatalogUri = ExternalBaseUri + catalogName;
 			var externalHashUri = ToHashFileName(externalCatalogUri);
 			var isInternalAsWebUri = IOManager.LocalIOProto.IsWebUri(internalCatalogUri);
 			// 暂时仅判断catalog文件是否存在来判定, 已经足够
 			var isInternalCatalogExist = isInternalAsWebUri || IOManager.LocalIOProto.Exists(internalCatalogUri);
+			Debug.Log($"isInternalCatalogExist: {isInternalCatalogExist}, {isInternalAsWebUri}");
 			using ILoadTextAssetPipeline loadInternalHashPipeline = isInternalCatalogExist
 				? (isInternalAsWebUri
 					? new LoadRemoteTextFilePipeline().Init(ToHashFileName(internalCatalogUri), null)
 					: new LoadTextFilePipeline().Init(ToHashFileName(internalCatalogUri)))
 				: null;
 			;
-			using var loadRemoteHashPipeline = new LoadRemoteTextFilePipeline().Init(ToHashFileName(remoteCatalogUri), null);
+			using var loadRemoteHashPipeline = supportRemoteCatalog ? new LoadRemoteTextFilePipeline().Init(ToHashFileName(remoteCatalogUri), null) : null;
 
 			using ILoadTextAssetPipeline loadInternalCatalogPipeline = isInternalCatalogExist
 				? (isInternalAsWebUri
@@ -62,41 +64,64 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 			LoadTextFilePipeline loadExternalHashPipeline = null;
 			Task loadHashPipelinesTask;
-			if (IOManager.LocalIOProto.Exists(externalHashUri) && IOManager.LocalIOProto.Exists(externalCatalogUri))
+			var existExternalCatalog = IOManager.LocalIOProto.Exists(externalHashUri) && IOManager.LocalIOProto.Exists(externalCatalogUri);
+
+			IEnumerable<Task<PipelineResult>> CollectValidPipelinesResult()
 			{
-				loadExternalHashPipeline = new LoadTextFilePipeline().Init(externalHashUri);
+				if (loadRemoteHashPipeline != null)
+				{
+					yield return loadRemoteHashPipeline.Run();
+				}
+
+				if (existExternalCatalog)
+				{
+					loadExternalHashPipeline = new LoadTextFilePipeline().Init(externalHashUri);
+					yield return loadExternalHashPipeline.Run();
+				}
+
 				if (loadInternalHashPipeline != null)
 				{
-					loadHashPipelinesTask = Task.WhenAll(
-						loadInternalHashPipeline.Run(),
-						loadExternalHashPipeline.Run(),
-						loadRemoteHashPipeline.Run()
-					);
-				}
-				else
-				{
-					loadHashPipelinesTask = Task.WhenAll(
-						loadExternalHashPipeline.Run(),
-						loadRemoteHashPipeline.Run()
-					);
+					yield return loadInternalHashPipeline.Run();
 				}
 			}
-			else
-			{
-				if (loadInternalHashPipeline != null)
-				{
-					loadHashPipelinesTask = Task.WhenAll(
-						loadInternalHashPipeline.Run(),
-						loadRemoteHashPipeline.Run()
-					);
-				}
-				else
-				{
-					loadHashPipelinesTask = Task.WhenAll(
-						loadRemoteHashPipeline.Run()
-					);
-				}
-			}
+
+			loadHashPipelinesTask = Task.WhenAll(CollectValidPipelinesResult());
+			//
+			// if (existExternalCatalog)
+			// {
+			// 	loadExternalHashPipeline = new LoadTextFilePipeline().Init(externalHashUri);
+			// 	if (loadInternalHashPipeline != null)
+			// 	{
+			// 		loadHashPipelinesTask = Task.WhenAll(
+			// 			loadInternalHashPipeline.Run(),
+			// 			loadExternalHashPipeline.Run(),
+			// 			loadRemoteHashPipeline.Run()
+			// 		);
+			// 	}
+			// 	else
+			// 	{
+			// 		loadHashPipelinesTask = Task.WhenAll(
+			// 			loadExternalHashPipeline.Run(),
+			// 			loadRemoteHashPipeline.Run()
+			// 		);
+			// 	}
+			// }
+			// else
+			// {
+			// 	if (loadInternalHashPipeline != null)
+			// 	{
+			// 		loadHashPipelinesTask = Task.WhenAll(
+			// 			loadInternalHashPipeline.Run(),
+			// 			loadRemoteHashPipeline.Run()
+			// 		);
+			// 	}
+			// 	else
+			// 	{
+			// 		loadHashPipelinesTask = Task.WhenAll(
+			// 			loadRemoteHashPipeline.Run()
+			// 		);
+			// 	}
+			// }
 
 			LoadInternalCatalogPipeline = loadInternalCatalogPipeline;
 			var loadInternalCatalogTask = loadInternalCatalogPipeline?.Run();
@@ -111,7 +136,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 				return Result;
 			}
 
-			if (loadRemoteHashPipeline.Result.IsOk == false)
+			if (loadRemoteHashPipeline != null && loadRemoteHashPipeline.Result.IsOk == false)
 			{
 				Result = loadRemoteHashPipeline.Result;
 				return Result;
@@ -126,15 +151,16 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			ILoadTextAssetPipeline loadExternalCatalogPipeline;
 			string sourceUri;
 			sourceUri = RemoteBaseUri;
-			var remoteHash = loadRemoteHashPipeline.Text;
+			var remoteHash = loadRemoteHashPipeline?.Text;
 			var needUpdateCatalog = false;
 			var internalHash = loadInternalHashPipeline?.Text;
-			if ((loadExternalHashPipeline == null && internalHash != remoteHash) ||
-			    (loadExternalHashPipeline != null && loadExternalHashPipeline.Text != remoteHash))
+			if (remoteHash != null && ((loadExternalHashPipeline == null && internalHash != remoteHash) ||
+			                           (loadExternalHashPipeline != null && loadExternalHashPipeline.Text != remoteHash)))
 			{
 				// load from remote
 				needUpdateCatalog = true;
-				loadExternalCatalogPipeline = new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true);
+				// ReSharper disable once ConditionIsAlwaysTrueOrFalse
+				loadExternalCatalogPipeline = supportRemoteCatalog ? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true) : null;
 			}
 			else if (loadExternalHashPipeline != null
 			         && loadExternalHashPipeline.Text == remoteHash && loadExternalHashPipeline.Text != internalHash)
@@ -164,6 +190,19 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			else if (loadInternalCatalogTask != null)
 			{
 				await loadInternalCatalogTask;
+			}
+			else
+			{
+				var message = "no valid catalog to load";
+				Debug.Log(message);
+				Result = new PipelineResult
+				{
+					IsOk = false,
+					Msg = message,
+					ErrorType = PipelineErrorType.NetError,
+					Status = PipelineStatus.Done,
+				};
+				return Result;
 			}
 
 			if (loadInternalCatalogPipeline != null && loadInternalCatalogPipeline.Result.IsOk == false)

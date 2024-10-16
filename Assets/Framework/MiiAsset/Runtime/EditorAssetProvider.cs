@@ -110,7 +110,7 @@ namespace Framework.MiiAsset.Runtime
 		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
 			var op = EditorSceneManager.LoadSceneAsyncInPlayMode(sceneAddress, parameters);
-			loadStatus?.AddAsyncOperationStatus(op);
+			var subStatus = loadStatus?.AddAsyncOperationStatus(op);
 			await op.GetTask();
 			var scene = SceneManager.GetSceneByName(sceneAddress);
 			return scene;

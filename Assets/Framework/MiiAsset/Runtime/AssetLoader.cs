@@ -252,7 +252,7 @@ namespace Framework.MiiAsset.Runtime
 			return Consumer.UnLoadScene(sceneAddress, options);
 		}
 
-		public static Task LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
+		public static Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
 		{
 			return Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 		}

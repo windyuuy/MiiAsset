@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,7 +29,24 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			this.ExternalDir = persistentDataPath + "/" + options.ExternalBaseUri;
 			this.CatalogName = options.CatalogName;
 
-			return Task.FromResult(true);
+			var ret = EnsurePersistDirs();
+
+			return Task.FromResult(ret);
+		}
+
+		private bool EnsurePersistDirs()
+		{
+			try
+			{
+				EnsureDirectory(this.CacheDir);
+				EnsureDirectory(this.ExternalDir);
+				return true;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+				return false;
+			}
 		}
 
 		public bool Exists(string uri)

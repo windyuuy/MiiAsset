@@ -74,7 +74,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 					{
 						try
 						{
-							IOManager.LocalIOProto.EnsureFileDirectory(CacheUri);
+							// IOManager.LocalIOProto.EnsureFileDirectory(CacheUri);
 							await IOManager.LocalIOProto.WriteAllTextAsync(CacheUri, Text, EncodingExt.UTF8WithoutBom);
 							Result.IsOk = true;
 						}

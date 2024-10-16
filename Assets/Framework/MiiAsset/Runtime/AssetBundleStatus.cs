@@ -134,6 +134,8 @@ namespace Framework.MiiAsset.Runtime
 				}
 			}
 
+			Debug.Assert(Task != null, "Task != null");
+
 			return Task;
 		}
 
@@ -306,12 +308,14 @@ namespace Framework.MiiAsset.Runtime
 
 			if (AssetBundle != null)
 			{
-				UnloadTask = this.AssetBundle.UnloadAsync(true).GetTask();
+				UnloadTask ??= this.AssetBundle.UnloadAsync(true).GetTask();
 				if (Disposable != null)
 				{
 					Disposable.Dispose();
 					Disposable = null;
 				}
+
+				AssetBundle = null;
 
 				Task = null;
 
