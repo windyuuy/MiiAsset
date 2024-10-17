@@ -27,7 +27,7 @@ namespace Framework.MiiAsset.Runtime
 				else if (Application.platform == RuntimePlatform.WebGLPlayer)
 				{
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
-					pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri, crc);
+					pipeline = new LoadAssetBundleFromLocalBytesPipeline().Init(remoteUri, crc);
 				}
 				else
 				{

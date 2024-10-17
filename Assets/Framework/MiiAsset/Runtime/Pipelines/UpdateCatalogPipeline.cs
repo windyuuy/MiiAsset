@@ -126,6 +126,16 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			LoadInternalCatalogPipeline = loadInternalCatalogPipeline;
 			var loadInternalCatalogTask = loadInternalCatalogPipeline?.Run();
 
+			ILoadTextAssetPipeline loadExternalCatalogPipeline;
+			if (loadInternalHashPipeline == null && loadExternalHashPipeline == null)
+			{
+				loadExternalCatalogPipeline = supportRemoteCatalog ? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true) : null;
+			}
+			else
+			{
+				loadExternalCatalogPipeline = null;
+			}
+
 			await loadHashPipelinesTask;
 
 			IsHashLoaded = true;
@@ -148,7 +158,6 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 				return Result;
 			}
 
-			ILoadTextAssetPipeline loadExternalCatalogPipeline;
 			string sourceUri;
 			sourceUri = RemoteBaseUri;
 			var remoteHash = loadRemoteHashPipeline?.Text;
@@ -160,7 +169,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 				// load from remote
 				needUpdateCatalog = true;
 				// ReSharper disable once ConditionIsAlwaysTrueOrFalse
-				loadExternalCatalogPipeline = supportRemoteCatalog ? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true) : null;
+				loadExternalCatalogPipeline ??= supportRemoteCatalog ? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true) : null;
 			}
 			else if (loadExternalHashPipeline != null
 			         && loadExternalHashPipeline.Text == remoteHash && loadExternalHashPipeline.Text != internalHash)

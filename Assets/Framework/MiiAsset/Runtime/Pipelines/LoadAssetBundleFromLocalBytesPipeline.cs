@@ -5,12 +5,12 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Pipelines
 {
-	public class LoadAssetBundleBytesPipeline : ILoadAssetBundlePipeline
+	public class LoadAssetBundleFromLocalBytesPipeline : ILoadAssetBundlePipeline
 	{
 		protected string Uri;
 		protected uint Crc;
 
-		public LoadAssetBundleBytesPipeline Init(string uri, uint crc)
+		public LoadAssetBundleFromLocalBytesPipeline Init(string uri, uint crc)
 		{
 			Uri = uri;
 			Crc = crc;

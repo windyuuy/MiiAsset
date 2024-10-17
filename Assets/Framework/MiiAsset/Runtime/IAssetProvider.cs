@@ -8,10 +8,14 @@ using UnityEngine.SceneManagement;
 
 namespace Framework.MiiAsset.Runtime
 {
-	public interface IAssetProvider: IDisposable
+	public interface IAssetProvider : IDisposable
 	{
 		public interface IProviderInitOptions : IIOProtoInitOptions
 		{
+			/// <summary>
+			/// bundle最大下载并发数
+			/// </summary>
+			public int MaxDownloadCoCount { get; }
 		}
 
 		public Task<bool> Init(IProviderInitOptions options);

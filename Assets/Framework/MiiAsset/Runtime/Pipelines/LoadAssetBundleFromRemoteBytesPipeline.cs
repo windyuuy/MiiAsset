@@ -8,7 +8,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 	public class LoadAssetBundleFromRemoteBytesPipeline : ILoadAssetBundlePipeline
 	{
 		public IDownloadPipeline DownloadPipeline;
-		protected LoadAssetBundlePipeline LoadAssetBundlePipeline;
+		protected LoadAssetBundleFromLocalBytesPipeline LoadAssetBundlePipeline;
 
 		protected string RemoteUri;
 		protected string LocalUri;
@@ -43,7 +43,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		public void Build()
 		{
 			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false);
-			LoadAssetBundlePipeline = new LoadAssetBundlePipeline().Init(LocalUri, Crc);
+			LoadAssetBundlePipeline = new LoadAssetBundleFromLocalBytesPipeline().Init(LocalUri, Crc);
 		}
 
 		public AssetBundle AssetBundle => LoadAssetBundlePipeline.AssetBundle;

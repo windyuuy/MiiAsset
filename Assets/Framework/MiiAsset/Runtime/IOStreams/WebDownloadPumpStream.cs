@@ -65,18 +65,23 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 				{
 					Result.Status = PipelineStatus.Running;
 					Ts = new();
-					Uwr = new UnityWebRequest(this.Uri);
-					Uwr.downloadHandler = DownloadHandler;
 
-					OnCtrl?.Invoke(new StreamCtrlEvent()
+					using (await BundleWebSemaphore.Wait())
 					{
-						Event = StreamEvent.Begin,
-						PumpStream = this,
-					});
+						Uwr = new UnityWebRequest(this.Uri);
+						Uwr.downloadHandler = DownloadHandler;
 
-					IOManager.LocalIOProto.SetUwr(Uwr);
-					var op = Uwr.SendWebRequest();
-					await op.GetTask();
+						OnCtrl?.Invoke(new StreamCtrlEvent()
+						{
+							Event = StreamEvent.Begin,
+							PumpStream = this,
+						});
+
+						IOManager.LocalIOProto.SetUwr(Uwr);
+						var op = Uwr.SendWebRequest();
+						await op.GetTask();
+					}
+
 					var code = Uwr.responseCode;
 					var msg = Uwr.error;
 
@@ -161,7 +166,7 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 			Progress = new()
 			{
 				Total = DownloadHandler.TotalBytes,
-				Count = Uwr.downloadedBytes,
+				Count = Uwr?.downloadedBytes ?? 0,
 			};
 		}
 

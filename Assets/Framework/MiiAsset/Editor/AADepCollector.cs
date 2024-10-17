@@ -271,7 +271,7 @@ namespace U3DUdpater.Editor
 				};
 				return build;
 			});
-			var folderPath = $"AssetBundles/{EditorUserBuildSettings.activeBuildTarget}";
+			var folderPath = $"AssetBundles/{AssetHelper.GetBuildTarget(EditorUserBuildSettings.activeBuildTarget)}";
 			var outPath = "Temp/MiiAsset/AssetBundles";
 			var tmpPath = "Temp/MiiAsset/Temp";
 			if (Directory.Exists(outPath))

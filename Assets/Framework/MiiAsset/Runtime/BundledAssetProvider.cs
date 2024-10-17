@@ -27,6 +27,8 @@ namespace Framework.MiiAsset.Runtime
 			this.InternalBaseUri = IOManager.LocalIOProto.InternalDir;
 			this.ExternalBaseUri = IOManager.LocalIOProto.ExternalDir;
 			this.CatalogName = IOManager.LocalIOProto.CatalogName;
+			
+			BundleWebSemaphore.Init(options.MaxDownloadCoCount);
 
 			return result;
 		}
