@@ -100,9 +100,22 @@ namespace Framework.MiiAsset.Runtime
             return Consumer.LoadLocalCatalog();
         }
 
+        /// <summary>
+        /// 清理旧版本文件
+        /// </summary>
+        /// <returns></returns>
         public static Task<PipelineResult> CleanUpOldVersionFiles()
         {
             return Consumer.CleanUpOldVersionFiles();
+        }
+
+        /// <summary>
+        /// 设置下载最大并发数
+        /// </summary>
+        /// <param name="maxCount"></param>
+        public static void SetDownloadMaxCount(int maxCount)
+        {
+            BundleWebSemaphore.MaxCount = maxCount;
         }
 
         public static bool AllowTags(IEnumerable<string> tags)
