@@ -337,7 +337,7 @@ namespace Framework.MiiAsset.Runtime
 			var failedList = new List<string>();
 			{
 				var cacheDir = IOManager.LocalIOProto.CacheDir;
-				var files = IOManager.LocalIOProto.ReadDir(cacheDir);
+				var files = IOManager.LocalIOProto.Exists(cacheDir)?  IOManager.LocalIOProto.ReadDir(cacheDir): Array.Empty<string>();
 				CatalogInfo.BundlesToClean.Clear();
 				foreach (var filePath in files)
 				{
@@ -377,7 +377,7 @@ namespace Framework.MiiAsset.Runtime
 			if (IOManager.LocalIOProto.IsInternalDirUpdating)
 			{
 				var internalDir = IOManager.LocalIOProto.InternalDir;
-				var files = IOManager.LocalIOProto.ReadDir(internalDir);
+				var files = IOManager.LocalIOProto.Exists(internalDir)? IOManager.LocalIOProto.ReadDir(internalDir):Array.Empty<string>();
 				foreach (var filePath in files)
 				{
 					if (!filePath.EndsWith(".bundle"))
