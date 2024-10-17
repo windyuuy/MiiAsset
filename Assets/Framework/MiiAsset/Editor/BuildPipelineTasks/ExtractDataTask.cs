@@ -2,7 +2,7 @@ using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
 
-namespace U3DUdpater.Editor.BuildPipelineTasks
+namespace MiiAsset.Editor.BuildPipelineTasks
 {
     /// <summary>
     /// The BuildTask used to extract write data from the build.

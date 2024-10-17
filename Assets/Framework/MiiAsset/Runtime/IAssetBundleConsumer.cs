@@ -17,7 +17,7 @@ namespace Framework.MiiAsset.Runtime
 
 		public async Task Init()
 		{
-			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
+			var config = AssetConsumerConfig.Load();
 			await this.Init(config);
 			Resources.UnloadAsset(config);
 		}

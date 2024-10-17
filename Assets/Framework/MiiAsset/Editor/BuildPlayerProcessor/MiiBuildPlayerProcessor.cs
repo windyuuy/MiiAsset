@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using Framework.MiiAsset.Runtime.AssetUtils;
-using U3DUdpater.Editor;
+using MiiAsset.Editor.Build;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -21,7 +21,7 @@ namespace Framework.MiiAsset.Editor.BuildPlayerProcessor
 
 		public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
 		{
-			AADepCollector.BuildAssetBundlesWithPathInfo1();
+			MiiBuildTool.BuildAssetBundlesWithPathInfo();
 
 			var internalBuildPath = AssetHelper.GetInternalBuildPath();
 			buildPlayerContext.AddAdditionalPathToStreamingAssets(internalBuildPath, "mii");

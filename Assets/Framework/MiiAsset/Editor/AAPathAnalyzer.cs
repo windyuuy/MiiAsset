@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using Framework.MiiAsset.Runtime;
 using UnityEngine;
 
-namespace U3DUdpater.Editor
+namespace MiiAsset.Editor.Build
 {
 	public class AAPathAnalyzer
 	{

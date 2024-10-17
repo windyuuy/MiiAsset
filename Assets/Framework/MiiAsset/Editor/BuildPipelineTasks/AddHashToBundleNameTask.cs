@@ -9,7 +9,7 @@ using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 
-namespace U3DUdpater.Editor.BuildPipelineTasks
+namespace MiiAsset.Editor.BuildPipelineTasks
 {
 	/// <summary>
 	/// The BuildTask used to append the asset hash to the internal bundle name.

@@ -50,11 +50,6 @@ namespace Framework.MiiAsset.Runtime.AssetUtils
 			};
 			return name;
 		}
-#else
-		public static string GetBuildTarget(UnityEditor.BuildTarget buildTarget)
-		{
-			throw new NotImplementedException();
-		}
 #endif
 
 		public static string GetRuntimeTarget()

@@ -1,4 +1,4 @@
-﻿namespace U3DUdpater.Editor.CodeHintTemplate
+﻿namespace MiiAsset.Editor.CodeHintTemplate
 {
 	/// <summary>
 	/// dep: bb, cc

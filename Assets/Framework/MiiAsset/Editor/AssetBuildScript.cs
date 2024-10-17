@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using U3DUdpater.Editor.BuildPipelineTasks;
+using MiiAsset.Editor.BuildPipelineTasks;
 using UnityEditor;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -9,7 +9,7 @@ using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 
-namespace U3DUdpater.Editor
+namespace MiiAsset.Editor.Build
 {
 	struct SBPSettingsOverwriterScope : IDisposable
 	{

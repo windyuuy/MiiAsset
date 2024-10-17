@@ -4,7 +4,7 @@ using UnityEditor.Compilation;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
-namespace U3DUdpater.Editor
+namespace MiiAsset.Editor.Build
 {
     /// <summary>
     /// Utility class for the Addressables Build Content process.
