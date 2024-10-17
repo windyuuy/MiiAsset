@@ -255,5 +255,13 @@ namespace Framework.MiiAsset.Runtime.Status
 		{
 			this.StatusList.Clear();
 		}
+
+		public void Print()
+		{
+			foreach (var result in this.Results)
+			{
+				result.Print();
+			}
+		}
 	}
 }

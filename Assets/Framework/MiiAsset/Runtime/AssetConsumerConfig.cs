@@ -19,7 +19,7 @@ namespace Framework.MiiAsset.Runtime
         public string catalogName = "catalog";
         public string catalogType = "zip";
         public string updateTunnel = "default";
-        public LoadType loadType;
+        public LoadType loadType = LoadType.LoadFromEditor;
         public int initDownloadCoCount = 10;
         public int maxDownloadCoCount = 50;
         public string InternalBaseUri => internalBaseUri;
@@ -31,7 +31,7 @@ namespace Framework.MiiAsset.Runtime
 
         public static AssetConsumerConfig Load()
         {
-            var config = Resources.Load<AssetConsumerConfig>("MiiConfig/ConsumerConfig");
+            var config = Resources.Load<AssetConsumerConfig>("MiiConfig/AssetConsumerConfig");
             return config;
         }
 //
