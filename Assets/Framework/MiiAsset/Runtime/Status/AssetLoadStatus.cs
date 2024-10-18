@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.Status
+namespace MiiAsset.Runtime.Status
 {
     public struct AsyncLoadingStatus<T>
     {

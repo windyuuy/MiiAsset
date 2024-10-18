@@ -2,11 +2,11 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.IOManagers;
-using Framework.MiiAsset.Runtime.IOStreams;
+using MiiAsset.Runtime.IOStreams;
+using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.Pipelines
+namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadTextFilePipeline : ILoadTextAssetPipeline
 	{

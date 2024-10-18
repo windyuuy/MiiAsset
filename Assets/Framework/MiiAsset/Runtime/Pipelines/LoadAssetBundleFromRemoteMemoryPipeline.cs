@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.IOStreams;
+using MiiAsset.Runtime.IOStreams;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.Pipelines
+namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadAssetBundleFromRemoteMemoryPipeline : ILoadAssetBundlePipeline
 	{

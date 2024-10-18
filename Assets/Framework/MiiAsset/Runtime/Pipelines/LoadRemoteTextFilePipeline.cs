@@ -2,12 +2,12 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.IOManagers;
 using Game.Diagnostics;
 using Lang.Encoding;
+using MiiAsset.Runtime.IOManagers;
 using UnityEngine.Networking;
 
-namespace Framework.MiiAsset.Runtime.Pipelines
+namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadRemoteTextFilePipeline : ILoadTextAssetPipeline
 	{

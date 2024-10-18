@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using WeChatWASM;
 
-namespace Framework.MiiAsset.Runtime.IOManagers
+namespace MiiAsset.Runtime.IOManagers
 {
 	public class WXSafeOpener
 	{

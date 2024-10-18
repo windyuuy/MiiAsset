@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	public struct PipelineProgress
 	{

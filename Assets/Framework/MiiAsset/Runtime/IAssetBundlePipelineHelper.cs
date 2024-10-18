@@ -1,9 +1,9 @@
 ﻿using System.Text.RegularExpressions;
-using Framework.MiiAsset.Runtime.Pipelines;
+using MiiAsset.Runtime.Pipelines;
 using UnityEngine;
 using Application = UnityEngine.Device.Application;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	public static class AssetBundlePipelineHelper
 	{

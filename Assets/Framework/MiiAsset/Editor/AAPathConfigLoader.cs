@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
-using Framework.MiiAsset.Runtime;
+using MiiAsset.Runtime;
 using UnityEditor;
 
 namespace MiiAsset.Editor.Optimization

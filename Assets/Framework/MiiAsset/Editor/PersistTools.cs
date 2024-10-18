@@ -1,7 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Editor
+namespace MiiAsset.Editor
 {
 	internal static class PersistTools
 	{

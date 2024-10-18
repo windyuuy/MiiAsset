@@ -4,7 +4,7 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.Pipelines
+namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadCatalogPkgFromMemoryPipeline : ILoadTextAssetPipeline
 	{

@@ -1,13 +1,13 @@
 ﻿using System.IO;
 using System.Linq;
-using Framework.MiiAsset.Runtime.AssetUtils;
+using MiiAsset.Runtime.AssetUtils;
 using MiiAsset.Editor.Build;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Editor.BuildPlayerProcessor
+namespace MiiAsset.Editor.BuildPlayerProcessor
 {
 	public class MiiBuildPlayerProcessor : UnityEditor.Build.BuildPlayerProcessor,IPostprocessBuildWithReport
 	{

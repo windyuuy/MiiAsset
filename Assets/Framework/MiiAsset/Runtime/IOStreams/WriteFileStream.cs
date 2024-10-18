@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.IOManagers;
+using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.IOStreams
+namespace MiiAsset.Runtime.IOStreams
 {
 	public class WriteFileStream : IWriteStream, ICacheableStream
 	{

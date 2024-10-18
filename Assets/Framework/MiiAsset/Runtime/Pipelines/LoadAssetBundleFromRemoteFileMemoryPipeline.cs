@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.Pipelines
+namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadAssetBundleFromRemoteFileMemoryPipeline: ILoadAssetBundlePipeline
 	{

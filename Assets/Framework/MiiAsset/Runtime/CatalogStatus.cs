@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.Status;
+using MiiAsset.Runtime.Status;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	public interface IResourceLoadSource
 	{

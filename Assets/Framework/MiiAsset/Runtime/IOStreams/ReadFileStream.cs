@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.IOManagers;
+using MiiAsset.Runtime.IOManagers;
 
-namespace Framework.MiiAsset.Runtime.IOStreams
+namespace MiiAsset.Runtime.IOStreams
 {
 	public class ReadFileStream : IRandomReadStream
 	{

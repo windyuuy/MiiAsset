@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine.Networking;
 
-namespace Framework.MiiAsset.Runtime.IOManagers
+namespace MiiAsset.Runtime.IOManagers
 {
 	public interface IIOProtoInitOptions
 	{

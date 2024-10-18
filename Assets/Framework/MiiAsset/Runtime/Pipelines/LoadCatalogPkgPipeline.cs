@@ -2,11 +2,11 @@
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.IOManagers;
+using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 using WeChatWASM;
 
-namespace Framework.MiiAsset.Runtime.Pipelines
+namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadCatalogPkgPipeline : ILoadTextAssetPipeline
 	{

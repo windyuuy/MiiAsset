@@ -4,11 +4,11 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.AssetUtils;
+using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Framework.MiiAsset.Runtime.IOManagers
+namespace MiiAsset.Runtime.IOManagers
 {
 	public class LocalIOProto : IIOProto
 	{

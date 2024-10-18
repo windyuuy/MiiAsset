@@ -1,6 +1,6 @@
-﻿using Framework.MiiAsset.Runtime.Adapter;
+﻿using MiiAsset.Runtime.Adapter;
 
-namespace Framework.MiiAsset.Runtime.IOManagers
+namespace MiiAsset.Runtime.IOManagers
 {
 	public class WXAdapter: IAdapter
 	{

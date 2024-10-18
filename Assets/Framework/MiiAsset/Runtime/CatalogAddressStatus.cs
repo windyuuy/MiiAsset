@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	public class LoadAddressStatus
 	{

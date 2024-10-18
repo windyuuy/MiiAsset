@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	[Serializable]
 	public class AssetBundleInfo

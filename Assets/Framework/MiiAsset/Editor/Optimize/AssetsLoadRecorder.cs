@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Framework.MiiAsset.Runtime;
+using MiiAsset.Runtime;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;

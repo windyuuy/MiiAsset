@@ -4,7 +4,7 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.AssetUtils
+namespace MiiAsset.Runtime.AssetUtils
 {
 	public static class AssetHelper
 	{

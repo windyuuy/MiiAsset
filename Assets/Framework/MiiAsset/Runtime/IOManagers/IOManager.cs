@@ -1,4 +1,4 @@
-﻿namespace Framework.MiiAsset.Runtime.IOManagers
+﻿namespace MiiAsset.Runtime.IOManagers
 {
 	public class IOManager
 	{

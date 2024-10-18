@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.Status;
+using MiiAsset.Runtime.Status;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	public class EditorAssetProvider : IAssetProvider
 	{

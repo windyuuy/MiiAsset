@@ -1,6 +1,6 @@
-﻿using Framework.MiiAsset.Runtime.IOManagers;
+﻿using MiiAsset.Runtime.IOManagers;
 
-namespace Framework.MiiAsset.Runtime.Adapter
+namespace MiiAsset.Runtime.Adapter
 {
 	public interface IAdapter
 	{

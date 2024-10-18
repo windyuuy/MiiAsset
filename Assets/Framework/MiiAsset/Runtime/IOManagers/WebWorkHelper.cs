@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.IOManagers
+namespace MiiAsset.Runtime.IOManagers
 {
     public struct BundleWebSemaphore : IDisposable
     {

@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.IOStreams;
+using MiiAsset.Runtime.IOStreams;
 
-namespace Framework.MiiAsset.Runtime.Pipelines
+namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadRemoteCatalogPkgFromMemoryPipeline : ILoadTextAssetPipeline
 	{

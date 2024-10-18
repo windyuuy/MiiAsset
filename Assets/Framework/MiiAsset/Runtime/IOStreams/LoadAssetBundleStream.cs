@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.IOStreams
+namespace MiiAsset.Runtime.IOStreams
 {
 	public class LoadAssetBundleStream : Stream, IRandomWritePumpStream
 	{

@@ -5,7 +5,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	public class GroupScanInfo
 	{

@@ -1,7 +1,7 @@
 
 
 // Based on https://www.owasp.org/index.php/Certificate_and_Public_Key_Pinning#.Net
-namespace Framework.MiiAsset.Runtime.CertificateHandlers
+namespace MiiAsset.Runtime.CertificateHandlers
 {
 	public class AcceptAllCertificate : UnityEngine.Networking.CertificateHandler
 	{

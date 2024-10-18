@@ -5,9 +5,9 @@ using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using Framework.MiiAsset.Runtime;
-using Framework.MiiAsset.Runtime.AssetUtils;
-using Framework.MiiAsset.Runtime.IOManagers;
+using MiiAsset.Runtime;
+using MiiAsset.Runtime.AssetUtils;
+using MiiAsset.Runtime.IOManagers;
 using Lang.Encoding;
 using MiiAsset.Editor.Optimization;
 using MiiAsset.Runtime.Optimization;
@@ -19,7 +19,7 @@ using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.Build.Pipeline;
 using UnityEngine.U2D;
-using AssetBundleInfo = Framework.MiiAsset.Runtime.AssetBundleInfo;
+using AssetBundleInfo = MiiAsset.Runtime.AssetBundleInfo;
 using BuildOptions = UnityEditor.BuildOptions;
 using BuildResult = UnityEditor.Build.Reporting.BuildResult;
 using CompressionLevel = System.IO.Compression.CompressionLevel;
@@ -557,7 +557,7 @@ namespace MiiAsset.Editor.Build
 "));
                 // var sceneKeys = string.Join("",tagBundles.Where(tagBundle=>tagBundle.Tags.Contains("scene")).Select(tagBundle=>tagBundle.))
                 var content = @$"
-namespace MiiAssetHint
+namespace MiiAsset.MiiAssetHint
 {{
 	public interface AssetTags
 	{{

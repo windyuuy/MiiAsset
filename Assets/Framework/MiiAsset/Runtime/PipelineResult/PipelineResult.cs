@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	public enum PipelineStatus
 	{

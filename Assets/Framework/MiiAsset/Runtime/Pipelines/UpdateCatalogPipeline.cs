@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.IOManagers;
 using Lang.Encoding;
+using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 
-namespace Framework.MiiAsset.Runtime.Pipelines
+namespace MiiAsset.Runtime.Pipelines
 {
 	public class UpdateCatalogPipeline : IPipeline
 	{

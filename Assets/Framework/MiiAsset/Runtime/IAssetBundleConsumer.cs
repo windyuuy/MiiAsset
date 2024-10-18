@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.Status;
+using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Framework.MiiAsset.Runtime
+namespace MiiAsset.Runtime
 {
 	public interface IAssetBundleConsumer : IAssetProvider
 	{

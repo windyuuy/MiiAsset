@@ -4,13 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime.AssetUtils;
 using Lang.Encoding;
+using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
 using WeChatWASM;
 
-namespace Framework.MiiAsset.Runtime.IOManagers
+namespace MiiAsset.Runtime.IOManagers
 {
 	public static class WXExt
 	{
