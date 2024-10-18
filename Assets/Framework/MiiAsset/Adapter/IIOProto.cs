@@ -20,6 +20,45 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		Downloaded = 2,
 	}
 
+	public struct FilePathInfo
+	{
+		private string _fileName;
+		private readonly string _filePath;
+		public FilePathInfo(string filePath, string fileName, string dir)
+		{
+			_fileName = fileName;
+			if (filePath == null)
+			{
+				_filePath = dir + fileName;
+			}
+			else
+			{
+				_filePath = filePath;
+			}
+		}
+
+		public string FileName
+		{
+			get
+			{
+				if (_fileName == null)
+				{
+					_fileName = Path.GetFileName(_filePath);
+				}
+
+				return _fileName;
+			}
+		}
+
+		public string FilePath
+		{
+			get
+			{
+				return _filePath;
+			}
+		}
+	}
+	
 	public interface IIOProto
 	{
 		public string CacheDir { get; }
@@ -31,7 +70,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		public Task<bool> Init(IIOProtoInitOptions options);
 
 		public bool Exists(string uri);
-
+		public bool ExistsDir(string dir);
 		public void EnsureDirectory(string dir);
 
 		public void EnsureFileDirectory(string uri);
@@ -51,7 +90,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 
 		public void Delete(string filePath);
 
-		public string[] ReadDir(string readDir);
+		public FilePathInfo[] ReadDir(string readDir);
 
 		public Task<byte[]> ReadAllBytesAsync(string uri);
 		public Task WriteAllBytesAsync(string uri, byte[] bytes);

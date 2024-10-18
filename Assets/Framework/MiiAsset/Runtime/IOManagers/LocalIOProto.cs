@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Framework.MiiAsset.Runtime.AssetUtils;
@@ -25,7 +26,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			this.InternalDir = Application.dataPath + "/" + options.InternalBaseUri;
 #endif
 			var persistentDataPath = Application.persistentDataPath;
-			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}/";
+			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = persistentDataPath + "/" + options.ExternalBaseUri;
 			this.CatalogName = options.CatalogName;
 
@@ -52,6 +53,11 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 		public bool Exists(string uri)
 		{
 			return File.Exists(uri);
+		}
+
+		public bool ExistsDir(string dir)
+		{
+			return Directory.Exists(dir);
 		}
 
 		public void EnsureDirectory(string dir)
@@ -133,9 +139,12 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			File.Delete(filePath);
 		}
 
-		public string[] ReadDir(string readDir)
+		public FilePathInfo[] ReadDir(string readDir)
 		{
-			return Directory.GetFiles(readDir);
+			var filePathInfos = Directory.GetFiles(readDir)
+				.Select(filePath => new FilePathInfo(filePath, null, readDir))
+				.ToArray();
+			return filePathInfos;
 		}
 
 		public Task<byte[]> ReadAllBytesAsync(string uri)

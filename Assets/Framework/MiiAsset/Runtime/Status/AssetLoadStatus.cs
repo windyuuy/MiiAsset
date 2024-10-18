@@ -40,10 +40,18 @@ namespace Framework.MiiAsset.Runtime.Status
                 Debug.Assert(_status != null, "_status!=null, 请传入 loadStatus 参数或者 设置 createStatus 为true");
                 return _status;
             }
-            set => _status = value;
+        }
+
+        internal IAssetLoadStatus GetStatus()
+        {
+            return _status;
         }
 #else
 		public readonly IAssetLoadStatus Status;
+        internal IAssetLoadStatus GetStatus()
+        {
+            return Status;
+        }
 #endif
 
         public string DebugName

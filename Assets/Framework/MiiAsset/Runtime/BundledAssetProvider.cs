@@ -337,17 +337,19 @@ namespace Framework.MiiAsset.Runtime
 			var failedList = new List<string>();
 			{
 				var cacheDir = IOManager.LocalIOProto.CacheDir;
-				var files = IOManager.LocalIOProto.Exists(cacheDir)?  IOManager.LocalIOProto.ReadDir(cacheDir): Array.Empty<string>();
+				var files = IOManager.LocalIOProto.ExistsDir(cacheDir)?  IOManager.LocalIOProto.ReadDir(cacheDir): Array.Empty<FilePathInfo>();
 				CatalogInfo.BundlesToClean.Clear();
-				foreach (var filePath in files)
+				foreach (var fileInfo in files)
 				{
-					var fileName = Path.GetFileName(filePath);
+					var fileName = fileInfo.FileName;
+					var filePath = fileInfo.FilePath;
 					if (!CatalogInfo.BundleLoadSourceMap.ContainsKey(fileName))
 					{
 						CatalogInfo.BundlesToClean.Add(fileName);
 
 						try
 						{
+							Debug.Log($"delete1 {filePath}");
 							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)
@@ -356,13 +358,13 @@ namespace Framework.MiiAsset.Runtime
 							failedList.Add(filePath);
 						}
 					}
-
-					if (CatalogInfo.InternalBundles.ContainsKey(fileName))
+					else if (CatalogInfo.InternalBundles.ContainsKey(fileName))
 					{
 						CatalogInfo.BundlesToClean.Add(fileName);
 
 						try
 						{
+							Debug.Log($"delete2 {filePath}");
 							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)
@@ -377,25 +379,24 @@ namespace Framework.MiiAsset.Runtime
 			if (IOManager.LocalIOProto.IsInternalDirUpdating)
 			{
 				var internalDir = IOManager.LocalIOProto.InternalDir;
-				var files = IOManager.LocalIOProto.Exists(internalDir)? IOManager.LocalIOProto.ReadDir(internalDir):Array.Empty<string>();
-				foreach (var filePath in files)
+				var files = IOManager.LocalIOProto.ExistsDir(internalDir)? IOManager.LocalIOProto.ReadDir(internalDir):Array.Empty<FilePathInfo>();
+				foreach (var fileInfo in files)
 				{
-					if (!filePath.EndsWith(".bundle"))
+					var fileName = fileInfo.FileName;
+					if (!fileName.EndsWith(".bundle"))
 					{
 						continue;
 					}
 
-					var fileName = Path.GetFileName(filePath);
+					var filePath = fileInfo.FilePath;
 					if (!CatalogInfo.BundleLoadSourceMap.ContainsKey(fileName))
 					{
 						try
 						{
-							if (IOManager.LocalIOProto.Exists(filePath))
-							{
-								CatalogInfo.BundlesToClean.Add(fileName);
+							CatalogInfo.BundlesToClean.Add(fileName);
 
-								IOManager.LocalIOProto.Delete(filePath);
-							}
+							Debug.Log($"delete3 {filePath}");
+							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)
 						{

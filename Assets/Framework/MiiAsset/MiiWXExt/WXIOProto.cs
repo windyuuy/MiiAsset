@@ -90,9 +90,14 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			return FileSystemManager.AccessSync(uri) == "access:ok";
 		}
 
+		public bool ExistsDir(string dir)
+		{
+			return Exists(dir);
+		}
+
 		public void EnsureDirectory(string dir)
 		{
-			if (!Exists(dir))
+			if (!ExistsDir(dir))
 			{
 				FileSystemManager.MkdirSync(dir, true);
 			}
@@ -169,7 +174,7 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			{
 				BundleExistMap = new();
 				var files1 = FileSystemManager.ReaddirSync(CacheDir);
-				var files2 = Exists(InternalDir) ? FileSystemManager.ReaddirSync(InternalDir) : Array.Empty<string>();
+				var files2 = ExistsDir(InternalDir) ? FileSystemManager.ReaddirSync(InternalDir) : Array.Empty<string>();
 				foreach (var file in files1.Concat(files2))
 				{
 					var fileName = Path.GetFileName(file);
@@ -207,9 +212,17 @@ namespace Framework.MiiAsset.Runtime.IOManagers
 			FileSystemManager.UnlinkSync(filePath);
 		}
 
-		public string[] ReadDir(string readDir)
+		public FilePathInfo[] ReadDir(string readDir)
 		{
-			var files = FileSystemManager.ReaddirSync(readDir);
+			if (!readDir.EndsWith("/"))
+			{
+				readDir += "/";
+			}
+
+			var files = FileSystemManager
+				.ReaddirSync(readDir)
+				.Select(fileName => new FilePathInfo(null, fileName, readDir))
+				.ToArray();
 			return files;
 		}
 
