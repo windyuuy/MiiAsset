@@ -6,262 +6,277 @@ using UnityEngine;
 
 namespace Framework.MiiAsset.Runtime.Status
 {
-	public struct AsyncLoadingStatus<T>
-	{
-		public AsyncLoadingStatus(string address, Task<T> task, IAssetLoadStatus status)
-		{
-			this.Address = address;
-			this.Task = task;
-			this.Status = status;
-			_completed = null;
+    public struct AsyncLoadingStatus<T>
+    {
+        public AsyncLoadingStatus(string address, Task<T> task, IAssetLoadStatus status)
+        {
+            this.Address = address;
+            this.Task = task;
+#if UNITY_EDITOR
+            this._status = status;
+#else
+            this.Status = status;
+#endif
+            _completed = null;
 
-			_ = Load(task);
-		}
+            _ = Load(task);
+        }
 
-		async Task Load(Task task)
-		{
-			await task;
-			_completed?.Invoke(this);
-		}
+        async Task Load(Task task)
+        {
+            await task;
+            _completed?.Invoke(this);
+        }
 
-		public string Address;
-		public Task<T> Task;
-		public IAssetLoadStatus Status;
+        public readonly string Address;
+        public readonly Task<T> Task;
 
-		public string DebugName
-		{
-			get { return Address; }
-		}
+#if UNITY_EDITOR
+        private IAssetLoadStatus _status;
+        public IAssetLoadStatus Status
+        {
+            get
+            {
+                Debug.Assert(_status != null, "_status!=null, 请传入 loadStatus 参数或者 设置 createStatus 为true");
+                return _status;
+            }
+            set => _status = value;
+        }
+#else
+		public readonly IAssetLoadStatus Status;
+#endif
 
-		public bool IsDone
-		{
-			get { return Status.Progress.IsDone; }
-		}
+        public string DebugName
+        {
+            get { return Address; }
+        }
 
-		public T Result
-		{
-			get { return Task.Result; }
-		}
+        public bool IsDone
+        {
+            get { return Status.Progress.IsDone; }
+        }
 
-		public Exception OperationException
-		{
-			get => Task.Exception;
-		}
+        public T Result
+        {
+            get { return Task.Result; }
+        }
 
-		public float PercentComplete
-		{
-			get
-			{
-				return Status.Progress.Percent;
-			}
-		}
+        public Exception OperationException
+        {
+            get => Task.Exception;
+        }
 
-		public bool IsCompletedSuccessfully => Status!=null && Status.Results.All(r => r.IsOk);
+        public float PercentComplete
+        {
+            get { return Status.Progress.Percent; }
+        }
 
-		private Action<AsyncLoadingStatus<T>> _completed;
+        public bool IsCompletedSuccessfully => Status != null && Status.Results.All(r => r.IsOk);
 
-		public void OnComplete(Action<AsyncLoadingStatus<T>> action)
-		{
-			_completed += action;
-			if (Task.IsCompleted)
-			{
-				action?.Invoke(this);
-			}
-		}
+        private Action<AsyncLoadingStatus<T>> _completed;
 
-		public void OffComplete(Action<AsyncLoadingStatus<T>> action)
-		{
-			_completed -= action;
-		}
+        public void OnComplete(Action<AsyncLoadingStatus<T>> action)
+        {
+            _completed += action;
+            if (Task.IsCompleted)
+            {
+                action?.Invoke(this);
+            }
+        }
 
-		public bool IsValid()
-		{
-			return !string.IsNullOrEmpty(Address);
-		}
-	}
+        public void OffComplete(Action<AsyncLoadingStatus<T>> action)
+        {
+            _completed -= action;
+        }
 
-	public interface IAssetLoadStatus
-	{
-		public PipelineProgress Progress { get; }
-		public PipelineProgress DownloadProgress { get; }
+        public bool IsValid()
+        {
+            return !string.IsNullOrEmpty(Address);
+        }
+    }
 
-		/// <summary>
-		/// 待下载的大小
-		/// </summary>
-		public long DownloadSize { get; }
+    public interface IAssetLoadStatus
+    {
+        public PipelineProgress Progress { get; }
+        public PipelineProgress DownloadProgress { get; }
 
-		public IEnumerable<PipelineResult> Results { get; }
-	}
+        /// <summary>
+        /// 待下载的大小
+        /// </summary>
+        public long DownloadSize { get; }
 
-	public class AsyncOperationStatus : IAssetLoadStatus
-	{
-		protected AsyncOperation Op;
-		public Exception Exception;
+        public IEnumerable<PipelineResult> Results { get; }
+    }
 
-		public AsyncOperationStatus Set(AsyncOperation op)
-		{
-			Op = op;
-			return this;
-		}
+    public class AsyncOperationStatus : IAssetLoadStatus
+    {
+        protected AsyncOperation Op;
+        public Exception Exception;
 
-		public PipelineProgress Progress
-		{
-			get
-			{
-				var progress = new PipelineProgress().Set01Progress(false);
-				if (Op != null)
-				{
-					progress.SetProgress(Op.progress);
-				}
+        public AsyncOperationStatus Set(AsyncOperation op)
+        {
+            Op = op;
+            return this;
+        }
 
-				return progress;
-			}
-		}
+        public PipelineProgress Progress
+        {
+            get
+            {
+                var progress = new PipelineProgress().Set01Progress(false);
+                if (Op != null)
+                {
+                    progress.SetProgress(Op.progress);
+                }
 
-		public PipelineProgress DownloadProgress =>
-			new()
-			{
-				Total = 0,
-				Count = 1,
-			};
+                return progress;
+            }
+        }
 
-		public long DownloadSize => 0;
+        public PipelineProgress DownloadProgress =>
+            new()
+            {
+                Total = 0,
+                Count = 1,
+            };
 
-		public IEnumerable<PipelineResult> Results
-		{
-			get
-			{
-				yield return new PipelineResult
-				{
-					IsOk = Op.isDone,
-					Exception = Exception,
-					Code = 0,
-					Msg = Op.isDone ? "" : "native-error",
-					ErrorType = PipelineErrorType.FileSystemError,
-					Status = PipelineStatus.Done,
-				};
-			}
-		}
-	}
+        public long DownloadSize => 0;
 
-	public class AssetDatabaseOpStatus : IAssetLoadStatus
-	{
-		public bool IsDone;
+        public IEnumerable<PipelineResult> Results
+        {
+            get
+            {
+                yield return new PipelineResult
+                {
+                    IsOk = Op.isDone,
+                    Exception = Exception,
+                    Code = 0,
+                    Msg = Op.isDone ? "" : "native-error",
+                    ErrorType = PipelineErrorType.FileSystemError,
+                    Status = PipelineStatus.Done,
+                };
+            }
+        }
+    }
 
-		public AssetDatabaseOpStatus()
-		{
-		}
+    public class AssetDatabaseOpStatus : IAssetLoadStatus
+    {
+        public bool IsDone;
 
-		public AssetDatabaseOpStatus(bool isDone)
-		{
-			IsDone = isDone;
-		}
+        public AssetDatabaseOpStatus()
+        {
+        }
 
-		public PipelineProgress Progress
-		{
-			get { return new PipelineProgress().Set01Progress(IsDone); }
-		}
+        public AssetDatabaseOpStatus(bool isDone)
+        {
+            IsDone = isDone;
+        }
 
-		public PipelineProgress DownloadProgress
-		{
-			get { return new PipelineProgress().SetDownloadedProgress(IsDone); }
-		}
+        public PipelineProgress Progress
+        {
+            get { return new PipelineProgress().Set01Progress(IsDone); }
+        }
 
-		public long DownloadSize
-		{
-			get { return 0; }
-		}
+        public PipelineProgress DownloadProgress
+        {
+            get { return new PipelineProgress().SetDownloadedProgress(IsDone); }
+        }
 
-		public IEnumerable<PipelineResult> Results
-		{
-			get
-			{
-				yield return new PipelineResult
-				{
-					IsOk = IsDone,
-					Exception = null,
-					Code = 0,
-					Msg = IsDone ? "" : "native-error",
-					ErrorType = PipelineErrorType.FileSystemError,
-					Status = PipelineStatus.Done,
-				};
-			}
-		}
-	}
+        public long DownloadSize
+        {
+            get { return 0; }
+        }
 
-	public class AssetLoadStatusGroup : IAssetLoadStatus
-	{
-		protected List<IAssetLoadStatus> StatusList = new();
+        public IEnumerable<PipelineResult> Results
+        {
+            get
+            {
+                yield return new PipelineResult
+                {
+                    IsOk = IsDone,
+                    Exception = null,
+                    Code = 0,
+                    Msg = IsDone ? "" : "native-error",
+                    ErrorType = PipelineErrorType.FileSystemError,
+                    Status = PipelineStatus.Done,
+                };
+            }
+        }
+    }
 
-		public PipelineProgress Progress
-		{
-			get { return PipelineProgress.CombineAll(StatusList.Select(status => status.Progress)); }
-		}
+    public class AssetLoadStatusGroup : IAssetLoadStatus
+    {
+        protected readonly List<IAssetLoadStatus> StatusList = new();
 
-		public PipelineProgress DownloadProgress
-		{
-			get { return PipelineProgress.CombineAll(StatusList.Select(status => status.DownloadProgress)); }
-		}
+        public PipelineProgress Progress
+        {
+            get { return PipelineProgress.CombineAll(StatusList.Select(status => status.Progress)); }
+        }
 
-		public long DownloadSize
-		{
-			get
-			{
-				long size = 0;
-				foreach (var status in StatusList)
-				{
-					size += status.DownloadSize;
-				}
+        public PipelineProgress DownloadProgress
+        {
+            get { return PipelineProgress.CombineAll(StatusList.Select(status => status.DownloadProgress)); }
+        }
 
-				return size;
-			}
-		}
+        public long DownloadSize
+        {
+            get
+            {
+                long size = 0;
+                foreach (var status in StatusList)
+                {
+                    size += status.DownloadSize;
+                }
 
-		public IEnumerable<PipelineResult> Results
-		{
-			get
-			{
-				foreach (var pipelineResultse in StatusList.Select(status => status.Results))
-				{
-					foreach (var pipelineResult in pipelineResultse)
-					{
-						yield return pipelineResult;
-					}
-				}
-			}
-		}
+                return size;
+            }
+        }
 
-		internal AsyncOperationStatus AllocAsyncOperationStatus()
-		{
-			var status = new AsyncOperationStatus();
-			this.Add(status);
-			return status;
-		}
+        public IEnumerable<PipelineResult> Results
+        {
+            get
+            {
+                foreach (var pipelineResultse in StatusList.Select(status => status.Results))
+                {
+                    foreach (var pipelineResult in pipelineResultse)
+                    {
+                        yield return pipelineResult;
+                    }
+                }
+            }
+        }
 
-		public void Add(IAssetLoadStatus status)
-		{
-			// Debug.Assert(!this.StatusList.Contains(status), "!this.StatusList.Contains(status)");
-			this.StatusList.Add(status);
-		}
+        internal AsyncOperationStatus AllocAsyncOperationStatus()
+        {
+            var status = new AsyncOperationStatus();
+            this.Add(status);
+            return status;
+        }
 
-		public AsyncOperationStatus AddAsyncOperationStatus(AsyncOperation op)
-		{
-			var loadStatus = new AsyncOperationStatus().Set(op);
-			Add(loadStatus);
-			return loadStatus;
-		}
+        public void Add(IAssetLoadStatus status)
+        {
+            // Debug.Assert(!this.StatusList.Contains(status), "!this.StatusList.Contains(status)");
+            this.StatusList.Add(status);
+        }
 
-		public void Clear()
-		{
-			this.StatusList.Clear();
-		}
+        public AsyncOperationStatus AddAsyncOperationStatus(AsyncOperation op)
+        {
+            var loadStatus = new AsyncOperationStatus().Set(op);
+            Add(loadStatus);
+            return loadStatus;
+        }
 
-		public void Print()
-		{
-			foreach (var result in this.Results)
-			{
-				result.Print();
-			}
-		}
-	}
+        public void Clear()
+        {
+            this.StatusList.Clear();
+        }
+
+        public void Print()
+        {
+            foreach (var result in this.Results)
+            {
+                result.Print();
+            }
+        }
+    }
 }

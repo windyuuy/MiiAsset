@@ -235,8 +235,9 @@ namespace Framework.MiiAsset.Runtime
         }
 
         public static AsyncLoadingStatus<T> LoadAssetByReferWrapped<T>(string address,
-            AssetLoadStatusGroup loadStatus = null)
+            bool createStatus = false)
         {
+            AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
             var task = Consumer.LoadAssetByRefer<T>(address, loadStatus);
             var status = new AsyncLoadingStatus<T>(address, task, loadStatus);
             return status;
@@ -249,8 +250,9 @@ namespace Framework.MiiAsset.Runtime
         }
 
         public static AsyncLoadingStatus<Scene> LoadSceneByReferWrapped(string sceneAddress,
-            LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
+            LoadSceneParameters parameters = new(), bool createStatus = false)
         {
+            AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
             var task = Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
             var status = new AsyncLoadingStatus<Scene>(sceneAddress, task, loadStatus);
             return status;
@@ -307,9 +309,9 @@ namespace Framework.MiiAsset.Runtime
             return tagsBundleSet;
         }
 
-        public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key)
+        public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key, bool createStatus = false)
         {
-            var status = LoadAssetByReferWrapped<GameObject>(key, new AssetLoadStatusGroup());
+            var status = LoadAssetByReferWrapped<GameObject>(key, createStatus);
 
             async Task<GameObject> Load()
             {
@@ -318,8 +320,9 @@ namespace Framework.MiiAsset.Runtime
                 return obj;
             }
 
-            status.Task = Load();
-            return status;
+            var task = Load();
+            var status2 = new AsyncLoadingStatus<GameObject>(status.Address, task, status.Status);
+            return status2;
         }
 
         public static bool ReleaseInstance(string key, GameObject gameObject)
