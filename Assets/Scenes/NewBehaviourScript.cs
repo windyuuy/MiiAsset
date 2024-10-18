@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using Framework.MiiAsset.Runtime;
-using Framework.MiiAsset.Runtime.Status;
 using GameLib.MonoUtils;
 using lang.time;
-using MiiAssetHint;
+using MiiAsset.MiiAssetHint;
+using MiiAsset.Runtime;
+using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.U2D;

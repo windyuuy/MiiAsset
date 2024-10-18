@@ -1,13 +1,13 @@
-﻿
-namespace MiiAssetHint
+
+namespace MiiAsset.MiiAssetHint
 {
 	public interface AssetTags
 	{
-		public static string Aa = "aa";
-		public static string Bb = "bb";
-		public static string Cc = "cc";
-		public static string Scene = "scene";
-		public static string Builtinshader = "builtinshader";
+		public const string Aa = "aa";
+		public const string Bb = "bb";
+		public const string Cc = "cc";
+		public const string Scene = "scene";
+		public const string Builtinshader = "builtinshader";
 
 	}
 

@@ -4,7 +4,6 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
-using WeChatWASM;
 
 namespace MiiAsset.Runtime.Pipelines
 {

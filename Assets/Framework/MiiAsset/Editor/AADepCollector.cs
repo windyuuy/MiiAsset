@@ -368,20 +368,23 @@ namespace MiiAsset.Editor.Build
                 // add load batch tag
                 {
                     var config = AssetsOrderLoader.LoadOrderConfig();
-                    var batchMap = new Dictionary<string, AALoadOrderBatchConfig>();
-                    foreach (var batchConfig in config.batches)
+                    if (config != null)
                     {
-                        foreach (var path in batchConfig.batch)
+                        var batchMap = new Dictionary<string, AALoadOrderBatchConfig>();
+                        foreach (var batchConfig in config.batches)
                         {
-                            batchMap.TryAdd(path, batchConfig);
+                            foreach (var path in batchConfig.batch)
+                            {
+                                batchMap.TryAdd(path, batchConfig);
+                            }
                         }
-                    }
 
-                    foreach (var tagBundle in tagBundles)
-                    {
-                        if (batchMap.TryGetValue(tagBundle.GetBundleName(), out var batchConfig))
+                        foreach (var tagBundle in tagBundles)
                         {
-                            tagBundle.TagsAdditional = tagBundle.TagsAdditional.Append(batchConfig.BatchName).ToArray();
+                            if (batchMap.TryGetValue(tagBundle.GetBundleName(), out var batchConfig))
+                            {
+                                tagBundle.TagsAdditional = tagBundle.TagsAdditional.Append(batchConfig.BatchName).ToArray();
+                            }
                         }
                     }
                 }

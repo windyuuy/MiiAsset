@@ -106,7 +106,7 @@ namespace MiiAsset.Runtime
 					this.AddressBundleMap.Add(entry, bundleInfo.fileName);
 				}
 			}
-
+			
 			var flatRelationMap = this.BundleFlatRelationMap;
 			foreach (var bundleInfo in catalog.bundleInfos)
 			{
