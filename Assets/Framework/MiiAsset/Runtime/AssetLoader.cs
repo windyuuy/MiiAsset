@@ -163,6 +163,16 @@ namespace Framework.MiiAsset.Runtime
             return Consumer.DownloadTags(new string[] { $"batch{batch}" }, loadStatus);
         }
 
+        public static Task<bool> DownloadAll(AssetLoadStatusGroup loadStatus = null)
+        {
+            return Consumer.DownloadTags(new string[] { "all" }, loadStatus);
+        }
+
+        public static Task<bool> DownloadAllLeft(AssetLoadStatusGroup loadStatus = null)
+        {
+            return DownloadAll(loadStatus);
+        }
+
         public static long GetBatchDownloadSize(int batch)
         {
             return Consumer.GetDownloadSize(new string[] { $"batch{batch}" });

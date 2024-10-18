@@ -64,6 +64,7 @@ namespace MiiAsset.Runtime.Optimization
 
     public class AssetsOrderRecorder
     {
+        public bool IsRecording = false;
         public AssetsOrderRecorder()
         {
             BundleStatusNotify.OnBundleLoad -= OnBundleLoad;
@@ -172,6 +173,7 @@ namespace MiiAsset.Runtime.Optimization
         public static void PushIndex2()
         {
             AssetsOrderRecorder.Inst.PushIndex();
+            AssetsOrderRecorder.Inst.IsRecording = true;
         }
 
 #if UNITY_EDITOR
@@ -181,6 +183,7 @@ namespace MiiAsset.Runtime.Optimization
         public static void LoadRecords2()
         {
             AssetsOrderRecorder.Inst.LoadRecords();
+            AssetsOrderRecorder.Inst.IsRecording = true;
         }
 
 #if UNITY_EDITOR
@@ -190,6 +193,7 @@ namespace MiiAsset.Runtime.Optimization
         public static void ResetIndex2()
         {
             AssetsOrderRecorder.Inst.ResetIndex();
+            AssetsOrderRecorder.Inst.IsRecording = true;
         }
 
 #if UNITY_EDITOR
@@ -199,6 +203,7 @@ namespace MiiAsset.Runtime.Optimization
         public static void Clear2()
         {
             AssetsOrderRecorder.Inst.Clear();
+            AssetsOrderRecorder.Inst.IsRecording = true;
         }
     }
 }
