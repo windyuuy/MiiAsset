@@ -15,6 +15,8 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 		protected string WriteUri;
 		public bool Overwrite;
 
+		protected bool UseCache = false;
+
 		public DownloadPipeline Init(string uri, string writeUri, bool overwrite)
 		{
 			Debug.Assert(writeUri != null, "writeUri!=null");
@@ -37,6 +39,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 			}
 			else
 			{
+				UseCache = true;
 				Result = new PipelineResult
 				{
 					IsOk = true,
@@ -78,7 +81,7 @@ namespace Framework.MiiAsset.Runtime.Pipelines
 
 		public bool IsCached()
 		{
-			return false;
+			return UseCache;
 		}
 
 		protected PipelineProgress Progress = new PipelineProgress();

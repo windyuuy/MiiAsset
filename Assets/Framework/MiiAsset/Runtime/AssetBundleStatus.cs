@@ -277,8 +277,10 @@ namespace Framework.MiiAsset.Runtime
                 // download only
                 PipelineResult downloadResult;
                 var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
+                var isCached = false;
                 if (IsInternalBundle || downloadPipeline == null)
                 {
+                    isCached = true;
                     downloadResult = new PipelineResult
                     {
                         IsOk = true,
@@ -290,6 +292,7 @@ namespace Framework.MiiAsset.Runtime
                 }
                 else
                 {
+                    isCached = downloadPipeline.IsCached();
                     downloadResult = await downloadPipeline.Run();
                     _progress = loadAssetBundlePipeline.GetProgress();
                 }
@@ -309,7 +312,10 @@ namespace Framework.MiiAsset.Runtime
 
                 if (downloadResult.IsOk)
                 {
-                    Debug.Log($"AssetBundle-DownLoaded: {this.BundleName}");
+                    if (!isCached)
+                    {
+                        Debug.Log($"AssetBundle-DownLoaded: {this.BundleName}");
+                    }
 #if UNITY_EDITOR
                     BundleStatusNotify.OnBundleDownLoad?.Invoke(this);
 #endif

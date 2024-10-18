@@ -12,9 +12,12 @@ namespace Framework.MiiAsset.Runtime.IOStreams
 		protected string Uri;
 		public byte[] Bytes;
 
+		protected bool UseCache = false;
+		
 		public WebDownloadToMemoryPipeline Init(string uri)
 		{
 			Uri = uri;
+			UseCache = true;
 			this.Result = new();
 			return this;
 		}
