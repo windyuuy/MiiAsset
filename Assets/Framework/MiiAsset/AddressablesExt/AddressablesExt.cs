@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -42,15 +43,32 @@ namespace MiiAsset.AddressablesExt
 
 			return ts.Task;
 #else
-			try
+			var cacheDir = $"{Application.persistentDataPath}/com.unity.addressables/";
+			if (Directory.Exists(cacheDir))
 			{
-				Caching.ClearCache();
-				return Task.FromResult(true);
+				try
+				{
+					Directory.Delete(cacheDir, true);
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+				}
+
+				try
+				{
+					Caching.ClearCache();
+					return Task.FromResult(true);
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+					return Task.FromResult(false);
+				}
 			}
-			catch (Exception exception)
+			else
 			{
-				Debug.LogException(exception);
-				return Task.FromResult(false);
+				return Task.FromResult(true);
 			}
 #endif
 		}
