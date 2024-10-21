@@ -49,11 +49,15 @@ namespace MiiAsset.Runtime
             Application.quitting += AssetLoader.Dispose;
         }
 
-        private static void Dispose()
+        public static void Dispose()
         {
             Consumer.Dispose();
         }
 
+        /// <summary>
+        /// 注册自定义证书许可策略
+        /// </summary>
+        /// <param name="certificateHandler"></param>
         public static void RegisterCertificateHandler(CertificateHandler certificateHandler)
         {
             IOManager.LocalIOProto.RegisterCertificateHandler(certificateHandler);
