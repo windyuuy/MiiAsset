@@ -71,7 +71,7 @@ namespace MiiAsset.Runtime
 
 		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
-			if (CheckPathAndTags<T>(address)) return Task.FromResult<T>(default);
+			if (!CheckPathAndTags<T>(address)) return Task.FromResult<T>(default);
 
 			var obj = AssetDatabase.LoadAssetAtPath(address, typeof(T));
 			if (obj is T data)
@@ -91,10 +91,10 @@ namespace MiiAsset.Runtime
 			var groupInfo = AAPathInfo.ParseGroupName(PathInfo, address, AssetDatabase.AssetPathToGUID(address));
 			if (groupInfo == null)
 			{
-				return true;
+				return false;
 			}
 
-			return false;
+			return true;
 		}
 
 		public Task UnloadAssetJust(string address)
@@ -124,7 +124,7 @@ namespace MiiAsset.Runtime
 
 		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
-			if (CheckPathAndTags<Scene>(sceneAddress)) return default;
+			if (!CheckPathAndTags<Scene>(sceneAddress)) return default;
 
 			var op = EditorSceneManager.LoadSceneAsyncInPlayMode(sceneAddress, parameters);
 			var subStatus = loadStatus?.AddAsyncOperationStatus(op);
