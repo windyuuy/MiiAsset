@@ -4,8 +4,6 @@
 
 获取新版本资源url -> AssetLoader.Init -> AssetLoader.UpdateCatalog(传入新版本资源url) -> AssetLoader.CleanUpOldVersionFiles  清理旧版缓存 -> 下载资源 -> 加载资源(未下载则伴随下载) -> AssetLoader.Dispose
 
-
-
 ## 热更原理:
 
 1. 获取新版本资源url
@@ -87,6 +85,17 @@
       1. AssetLoader.LoadTags
       
       2. AssetLoader.UnloadTags
+         
+         - 获取下载/加载进度
+           
+           ```csharp
+           var status = new AssetLoadStatusGroup();
+           AssetLoader.LoadTags(tags, status);
+           // 下载进度
+           var downloadProgress = status.DownloadProgress;
+           // 加载进度
+           var progress = status.Progress;
+           ```
    
    3. 仅加载本地catalog
       
@@ -103,5 +112,3 @@
    6. 注册其他平台适配器
       
       1. AssetLoader.Adapt
-
-
