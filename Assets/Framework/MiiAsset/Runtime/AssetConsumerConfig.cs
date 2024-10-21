@@ -22,12 +22,15 @@ namespace MiiAsset.Runtime
         public LoadType loadType = LoadType.LoadFromEditor;
         public int initDownloadCoCount = 10;
         public int maxDownloadCoCount = 50;
+        [Header("网络超时时长")]
+        public int timeout = 300;
         public string InternalBaseUri => internalBaseUri;
         public string ExternalBaseUri => externalBaseUri;
         public string BundleCacheDir => bundleCacheDir;
         public string CatalogName => $"{catalogName}_{updateTunnel}.{catalogType}";
         public int InitDownloadCoCount => initDownloadCoCount;
         public int MaxDownloadCoCount => maxDownloadCoCount;
+        public int Timeout => timeout;
 
         public static AssetConsumerConfig Load()
         {

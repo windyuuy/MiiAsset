@@ -16,6 +16,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public string InternalDir { get; set; }
 		public string ExternalDir { get; set; }
 		public string CatalogName { get; set; }
+		public int Timeout { get; set; }
 		public bool IsInternalDirUpdating => false;
 
 		public Task<bool> Init(IIOProtoInitOptions options)
@@ -29,6 +30,7 @@ namespace MiiAsset.Runtime.IOManagers
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = persistentDataPath + "/" + options.ExternalBaseUri;
 			this.CatalogName = options.CatalogName;
+			this.Timeout = options.Timeout;
 
 			var ret = EnsurePersistDirs();
 
@@ -175,6 +177,7 @@ namespace MiiAsset.Runtime.IOManagers
 			{
 				uwr.certificateHandler = CertificateHandler;
 				uwr.disposeCertificateHandlerOnDispose = false;
+				uwr.timeout = this.Timeout;
 			}
 		}
 	}

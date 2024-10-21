@@ -11,6 +11,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public string ExternalBaseUri { get; }
 		public string BundleCacheDir { get; }
 		public string CatalogName { get; }
+		public int Timeout { get; }
 	}
 
 	public enum EnsureStreamingBundlesResult
@@ -24,6 +25,7 @@ namespace MiiAsset.Runtime.IOManagers
 	{
 		private string _fileName;
 		private readonly string _filePath;
+
 		public FilePathInfo(string filePath, string fileName, string dir)
 		{
 			_fileName = fileName;
@@ -52,13 +54,10 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public string FilePath
 		{
-			get
-			{
-				return _filePath;
-			}
+			get { return _filePath; }
 		}
 	}
-	
+
 	public interface IIOProto
 	{
 		public string CacheDir { get; }
