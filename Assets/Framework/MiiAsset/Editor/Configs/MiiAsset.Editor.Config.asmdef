@@ -1,10 +1,10 @@
 {
-    "name": "AddressablesExt.Runtime",
+    "name": "MiiAsset.Editor.Config",
     "rootNamespace": "",
-    "references": [
-        "GUID:5efd170ecd8084500bed5692932fe14e"
+    "references": ["GUID:2327133a9cd59df45aac0ce0d43e61e8"],
+    "includePlatforms": [
+        "Editor"
     ],
-    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

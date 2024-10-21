@@ -1,0 +1,4 @@
+{
+	"name": "MiiAsset.Runtime.Ease",
+	"references":[ "GUID:2327133a9cd59df45aac0ce0d43e61e8", "GUID:890b253146385e54b9b4cff5c8dea58b", "GUID:613373635edb2ba438b0c1fe4560ae2c" ]
+}

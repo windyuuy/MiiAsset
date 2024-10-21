@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -28,6 +29,78 @@ namespace MiiAsset.Runtime
 		public IEnumerable<GroupScanInfo> GetScanRootInfos()
 		{
 			return Paths.Select(p => p.GetScanRootInfo()).Distinct();
+		}
+
+		/// <summary>
+		/// 特殊目录列表
+		/// </summary>
+		public static Dictionary<string, bool> SpecialFolders = new Dictionary<string, bool>()
+		{
+			{ "Editor", true },
+			{ "Editor Default Resources", true },
+			{ "Gizmos", true },
+			{ "Resources", true },
+			{ "Standard Assets", true },
+			{ "Pro Standard Assets", true },
+			{ "StreamingAssets", true },
+			{ "Plugins", true },
+			{ "/.", true },
+			{ "/~", true },
+			{ "/Hidden", true },
+		};
+
+		public static bool IsValidAsset(AAPathInfo pathInfo, string assetPath)
+		{
+			var isContainSpecificFolder = false;
+			foreach (var kvp in SpecialFolders)
+			{
+				if (kvp.Value && assetPath.Contains(kvp.Key))
+				{
+					isContainSpecificFolder = true;
+					break;
+				}
+			}
+
+			var isHiddenFolder = false;
+			var excludeExts = pathInfo.ExcludeExtensions;
+			foreach (var ext in excludeExts)
+			{
+				if (assetPath.EndsWith(ext))
+				{
+					isHiddenFolder = true;
+					break;
+				}
+			}
+
+			var isFolderOnly = Directory.Exists(assetPath);
+			var isNotSpecialFolder = !(isContainSpecificFolder || isHiddenFolder || isFolderOnly);
+			return isNotSpecialFolder;
+		}
+
+		public static GroupNameInfo ParseGroupName(AAPathInfo pathInfo, string assetPath, string guid)
+		{
+			if (!IsValidAsset(pathInfo, assetPath))
+			{
+				Debug.LogError($"loading invalid asset: {assetPath}");
+				return null;
+			}
+
+			GroupNameInfo groupNameInfo = null;
+			foreach (var item in pathInfo.Paths)
+			{
+				groupNameInfo = ParseGroupName(item, assetPath, guid);
+				if (groupNameInfo != null)
+				{
+					break;
+				}
+			}
+
+			if (groupNameInfo == null)
+			{
+				Debug.LogError($"loading asset not in bundle");
+			}
+
+			return groupNameInfo;
 		}
 
 		/// <summary>
@@ -90,7 +163,7 @@ namespace MiiAsset.Runtime
 							.Split(";", StringSplitOptions.RemoveEmptyEntries);
 					}
 
-					groupInfo.Tags = groupInfo.Tags.Prepend(groupInfo.GroupName).ToArray(); 
+					groupInfo.Tags = groupInfo.Tags.Prepend(groupInfo.GroupName).ToArray();
 
 					groupInfo.IsRemote = !config.isOffline;
 					return groupInfo;

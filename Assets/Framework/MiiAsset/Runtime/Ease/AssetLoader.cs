@@ -331,7 +331,7 @@ namespace MiiAsset.Runtime
             }
 
             var task = Load();
-            var status2 = new AsyncLoadingStatus<GameObject>(status.Address, task, status.GetStatus());
+            var status2 = new AsyncLoadingStatus<GameObject>(status, task);
             return status2;
         }
 

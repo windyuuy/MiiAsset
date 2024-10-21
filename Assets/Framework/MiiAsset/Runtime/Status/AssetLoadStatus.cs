@@ -83,6 +83,10 @@ namespace MiiAsset.Runtime.Status
 
         private Action<AsyncLoadingStatus<T>> _completed;
 
+        public AsyncLoadingStatus(AsyncLoadingStatus<T> status, Task<T> task):this(status.Address,task,status.GetStatus())
+        {
+        }
+
         public void OnComplete(Action<AsyncLoadingStatus<T>> action)
         {
             _completed += action;

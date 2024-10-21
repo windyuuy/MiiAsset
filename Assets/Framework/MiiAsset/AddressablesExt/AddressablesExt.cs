@@ -26,15 +26,15 @@ namespace MiiAsset.AddressablesExt
 					dirPath = dir,
 					recursive = true,
 				});
-
-				try
-				{
-					Caching.ClearCache();
-				}
-				catch (Exception exception)
-				{
-					Debug.LogException(exception);
-				}
+				//
+				// try
+				// {
+				// 	Caching.ClearCache();
+				// }
+				// catch (Exception exception)
+				// {
+				// 	Debug.LogException(exception);
+				// }
 			}
 			else
 			{

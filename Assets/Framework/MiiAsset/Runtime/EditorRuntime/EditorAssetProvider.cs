@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MiiAsset.Editor.Optimization;
 using MiiAsset.Runtime.Status;
 using UnityEngine.SceneManagement;
-using Object = UnityEngine.Object;
-
-#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
@@ -13,8 +11,12 @@ namespace MiiAsset.Runtime
 {
 	public class EditorAssetProvider : IAssetProvider
 	{
+		protected AAPathInfo PathInfo;
+
 		public Task<bool> Init(IAssetProvider.IProviderInitOptions options)
 		{
+			PathInfo = AAPathConfigLoader.LoadDefaultConfigs();
+
 			return Task.FromResult(true);
 		}
 
@@ -69,6 +71,8 @@ namespace MiiAsset.Runtime
 
 		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
+			if (CheckPathAndTags<T>(address)) return Task.FromResult<T>(default);
+
 			var obj = AssetDatabase.LoadAssetAtPath(address, typeof(T));
 			if (obj is T data)
 			{
@@ -80,6 +84,17 @@ namespace MiiAsset.Runtime
 				loadStatus?.Add(new AssetDatabaseOpStatus(false));
 				return Task.FromResult(default(T));
 			}
+		}
+
+		private bool CheckPathAndTags<T>(string address)
+		{
+			var groupInfo = AAPathInfo.ParseGroupName(PathInfo, address, AssetDatabase.AssetPathToGUID(address));
+			if (groupInfo == null)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		public Task UnloadAssetJust(string address)
@@ -109,6 +124,8 @@ namespace MiiAsset.Runtime
 
 		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
+			if (CheckPathAndTags<Scene>(sceneAddress)) return default;
+
 			var op = EditorSceneManager.LoadSceneAsyncInPlayMode(sceneAddress, parameters);
 			var subStatus = loadStatus?.AddAsyncOperationStatus(op);
 			await op.GetTask();
@@ -143,8 +160,6 @@ namespace MiiAsset.Runtime
 
 		public void Dispose()
 		{
-			
 		}
 	}
 }
-#endif

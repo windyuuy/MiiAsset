@@ -63,52 +63,6 @@ namespace MiiAsset.Editor.Build
 
     public class AADepCollector
     {
-        /// <summary>
-        /// 特殊目录列表
-        /// </summary>
-        public static Dictionary<string, bool> SpecialFolders = new Dictionary<string, bool>()
-        {
-            { "Editor", true },
-            { "Editor Default Resources", true },
-            { "Gizmos", true },
-            { "Resources", true },
-            { "Standard Assets", true },
-            { "Pro Standard Assets", true },
-            { "StreamingAssets", true },
-            { "Plugins", true },
-            { "/.", true },
-            { "/~", true },
-            { "/Hidden", true },
-        };
-
-        public static bool IsValidAsset(string assetPath, AAPathInfo pathInfo)
-        {
-            var isContainSpecificFolder = false;
-            foreach (var kvp in SpecialFolders)
-            {
-                if (kvp.Value && assetPath.Contains(kvp.Key))
-                {
-                    isContainSpecificFolder = true;
-                    break;
-                }
-            }
-
-            var isHiddenFolder = false;
-            var excludeExts = pathInfo.ExcludeExtensions;
-            foreach (var ext in excludeExts)
-            {
-                if (assetPath.EndsWith(ext))
-                {
-                    isHiddenFolder = true;
-                    break;
-                }
-            }
-
-            var isFolderOnly = Directory.Exists(assetPath);
-            var isNotSpecialFolder = !(isContainSpecificFolder || isHiddenFolder || isFolderOnly);
-            return isNotSpecialFolder;
-        }
-
         public class TagBundle
         {
             public HashSet<string> Guids = new();
@@ -218,11 +172,16 @@ namespace MiiAsset.Editor.Build
                 var guids = AssetDatabase.FindAssets("", new[] { scanInfo.ScanRoot });
                 var validGroupNameInfo = guids.Select(guid => (guid, assetPath: AssetDatabase.GUIDToAssetPath(guid)))
                     .Where(item => !filterMap.Contains(item.assetPath))
-                    .Where(item => IsValidAsset(item.assetPath, pathInfo))
+                    .Where(item => AAPathInfo.IsValidAsset(pathInfo, item.assetPath))
                     .Select(item =>
                     {
-                        var groupNameInfo = AAPathInfo.ParseGroupName(scanInfo.Item, item.assetPath, item.guid);
-                        return groupNameInfo;
+                        if (string.IsNullOrEmpty(scanInfo.ScanRoot) || item.assetPath.StartsWith(scanInfo.ScanRoot))
+                        {
+                            var groupNameInfo = AAPathInfo.ParseGroupName(scanInfo.Item, item.assetPath, item.guid);
+                            return groupNameInfo;
+                        }
+
+                        return null;
                     })
                     .Where(item => item != null);
                 foreach (var groupNameInfo in validGroupNameInfo)
