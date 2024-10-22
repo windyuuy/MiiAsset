@@ -433,6 +433,7 @@ namespace MiiAsset.Editor.Build
                         deps = tagBundle.Deps.ToArray(),
                         tags = tagBundle.Tags.Concat(tagBundle.TagsAdditional).ToArray(),
                         entries = tagBundle.GetAssetNames(),
+                        guids = tagBundle.Guids.ToArray(),
                         IsOffline = tagBundle.IsOffline,
                         size = tagBundle.FileSize,
                     };
