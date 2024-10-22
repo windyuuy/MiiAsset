@@ -5,5 +5,6 @@
   "unity": "2019.4",
   "description": "Unity Resource and Code hot update",
   "dependencies": {
+    "com.unity.scriptablebuildpipeline": "1.21.24"
   }
 }

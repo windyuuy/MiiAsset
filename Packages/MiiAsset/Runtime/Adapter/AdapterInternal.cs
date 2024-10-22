@@ -21,7 +21,11 @@ namespace MiiAsset.Runtime.Adapter
 
 		public void Adapt(IAdapter adapter)
 		{
-			IOManager.LocalIOProto = adapter.GetIOProto();
+			var localIOProto = adapter.GetIOProto();
+			if (localIOProto != null)
+			{
+				IOManager.LocalIOProto = localIOProto;
+			}
 		}
 	}
 }

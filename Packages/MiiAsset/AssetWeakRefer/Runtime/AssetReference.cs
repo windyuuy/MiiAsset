@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using MiiAsset.Runtime;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.U2D;
 using Object = UnityEngine.Object;
 
@@ -37,7 +38,8 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		// ReSharper disable once InconsistentNaming
 		public string AssetGUID => guid;
 
-		public string Address => guid ?? AssetLoader.GetAddressFromGuid(guid);
+		public string Address => guid != null ? AssetLoader.GetAddressFromGuid(guid) : null;
+		public object RuntimeKey => Address ?? guid;
 
 		public Object RawAsset => asset;
 
@@ -65,9 +67,14 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 
 		public bool RuntimeKeyIsValid()
 		{
-			return Address != null && RawAsset != null;
+			return Address != null || RawAsset != null;
 		}
-		
+
+		public bool IsValid()
+		{
+			return RawAsset != null || AssetLoader.ExistAddress(Address);
+		}
+
 #if UNITY_EDITOR
 		public Object EditorAsset => asset == null ? AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid)) : asset;
 
@@ -110,6 +117,18 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 			return true;
 		}
 #endif
+		public Task<Scene> LoadScene(LoadSceneMode mode, AssetLoadStatusGroup loadStatus = null)
+		{
+			return AssetLoader.LoadScene(Address, new LoadSceneParameters()
+			{
+				loadSceneMode = mode,
+			}, loadStatus);
+		}
+
+		public Task UnLoadScene(UnloadSceneOptions options = UnloadSceneOptions.None)
+		{
+			return AssetLoader.UnLoadScene(Address, options);
+		}
 	}
 
 	[Serializable]
@@ -125,6 +144,11 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		}
 
 		public TObject Asset => asset as TObject;
+
+		public Task<TObject> Load(AssetLoadStatusGroup loadStatus = null)
+		{
+			return AssetLoader.LoadAsset<TObject>(Address, loadStatus);
+		}
 	}
 
 	[Serializable]

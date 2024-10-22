@@ -360,5 +360,10 @@ namespace MiiAsset.Runtime
             UnLoadAssetByRefer(key);
             return true;
         }
+
+        public static bool ExistAddress(string address)
+        {
+            return Consumer.ExistAddress(address);
+        }
     }
 }

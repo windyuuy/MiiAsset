@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Lang.Encoding;
 using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
+using Lang.Encoding;
+
+#if UNITY_WEBGL && SUPPORT_WECHATGAME
 using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
@@ -364,3 +366,4 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 	}
 }
+#endif

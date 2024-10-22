@@ -87,8 +87,7 @@ namespace MiiAsset.Runtime
 		void ParseDeps(AssetBundleInfo bundleInfo, HashSet<string> deps)
 		{
 			var bundleInfoDeps = bundleInfo.deps;
-			bundleInfoDeps.Add(bundleInfo.fileName);
-			foreach (var dep in bundleInfoDeps)
+			foreach (var dep in bundleInfoDeps.Append(bundleInfo.fileName))
 			{
 				if (!deps.Contains(dep))
 				{
@@ -199,6 +198,17 @@ namespace MiiAsset.Runtime
 			}
 
 			return null;
+		}
+
+		public bool ExistAddress(string address)
+		{
+			return this.AddressBundleMap.ContainsKey(address);
+		}
+		
+		
+		public bool ExistGuid(string address)
+		{
+			return this.GuidAddressMap.ContainsKey(address);
 		}
 	}
 }

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using GameLib.MonoUtils;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace MiiAsset.Runtime
 {

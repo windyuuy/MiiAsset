@@ -2,6 +2,8 @@
 using System.IO;
 using System.Linq;
 using UnityEngine;
+
+#if UNITY_WEBGL && SUPPORT_WECHATGAME
 using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
@@ -109,3 +111,4 @@ namespace MiiAsset.Runtime.IOManagers
 		public override long Position { get; set; }
 	}
 }
+#endif

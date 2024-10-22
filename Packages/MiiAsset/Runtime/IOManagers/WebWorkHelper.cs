@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using GameLib.MonoUtils;
 using UnityEngine;
 
 namespace MiiAsset.Runtime.IOManagers
@@ -17,13 +18,13 @@ namespace MiiAsset.Runtime.IOManagers
             MaxCount = initCount;
             Debug.Log($"下载并发数限制：{initCount}->{maxCount}");
 
-            await AsyncUtils.WaitForSeconds(0.4f);
+            await UniAsyncUtils.WaitForSeconds(0.4f);
             MaxCount = (int)(initCount*0.7f + maxCount * 0.3f);
 
-            await AsyncUtils.WaitForSeconds(0.8f);
+            await UniAsyncUtils.WaitForSeconds(0.8f);
             MaxCount = (int)(initCount*0.5f + maxCount * 0.5f);
 
-            await AsyncUtils.WaitForSeconds(1f);
+            await UniAsyncUtils.WaitForSeconds(1f);
             MaxCount = maxCount;
         }
 

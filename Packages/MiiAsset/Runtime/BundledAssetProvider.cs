@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using GameLib.MonoUtils;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Pipelines;
 using MiiAsset.Runtime.Status;
@@ -234,6 +235,16 @@ namespace MiiAsset.Runtime
 		public string GetAddressFromGuid(string guid)
 		{
 			return CatalogInfo.GetAddressFromGuid(guid);
+		}
+
+		public bool ExistAddress(string address)
+		{
+			return CatalogInfo.ExistAddress(address);
+		}
+
+		public bool ExistGuid(string address)
+		{
+			return CatalogInfo.ExistGuid(address);
 		}
 
 		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)

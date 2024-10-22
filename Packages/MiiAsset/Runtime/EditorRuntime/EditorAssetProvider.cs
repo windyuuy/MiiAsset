@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
+using GameLib.MonoUtils;
 using MiiAsset.Editor.Optimization;
 using MiiAsset.Runtime.Status;
 using UnityEngine.SceneManagement;
@@ -115,6 +117,18 @@ namespace MiiAsset.Runtime
 		public string GetAddressFromGuid(string guid)
 		{
 			return AssetDatabase.GUIDToAssetPath(guid);
+		}
+
+		public bool ExistAddress(string address)
+		{
+			return File.Exists(address);
+		}
+
+		public bool ExistGuid(string guid)
+		{
+			var path = AssetDatabase.GUIDToAssetPath(guid);
+			var exist = !string.IsNullOrEmpty(path);
+			return exist;
 		}
 
 		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)

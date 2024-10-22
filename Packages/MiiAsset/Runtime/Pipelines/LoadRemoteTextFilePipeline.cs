@@ -2,9 +2,10 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Game.Diagnostics;
+using GameLib.MonoUtils;
 using Lang.Encoding;
 using MiiAsset.Runtime.IOManagers;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime.Pipelines

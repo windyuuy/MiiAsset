@@ -104,6 +104,16 @@ namespace MiiAsset.Runtime
 			return Provider.GetAddressFromGuid(guid);
 		}
 
+		public bool ExistAddress(string address)
+		{
+			return Provider.ExistAddress(address);
+		}
+
+		public bool ExistGuid(string guid)
+		{
+			return Provider.ExistGuid(guid);
+		}
+
 		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadAssetByRefer<T>(address, loadStatus);

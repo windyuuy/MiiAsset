@@ -151,7 +151,7 @@ public static class AsyncTaskExt
 	public static Task<object> GetTask(this ResourceRequest iter, MonoBehaviour comp = null)
 	{
 		var taskSource = new TaskCompletionSource<object>();
-		(comp ?? LoomMG.sharedLoom).StartCoroutine(_runTaskIterForObjectType(iter, taskSource));
+		(comp ?? LoomMG.SharedLoom).StartCoroutine(_runTaskIterForObjectType(iter, taskSource));
 		return taskSource.Task;
 	}
 	
@@ -163,7 +163,7 @@ public static class AsyncTaskExt
 	public static Task GetTask(this YieldInstruction iter, MonoBehaviour comp = null)
 	{
 		var taskSource = new TaskCompletionSource<bool>();
-		(comp ?? LoomMG.sharedLoom).StartCoroutine(_runTaskIter(iter, taskSource));
+		(comp ?? LoomMG.SharedLoom).StartCoroutine(_runTaskIter(iter, taskSource));
 		return taskSource.Task;
 	}
 	private static IEnumerator _runTaskIter(IEnumerator iter, TaskCompletionSource<bool> taskSource)
@@ -174,7 +174,7 @@ public static class AsyncTaskExt
 	public static Task GetTask(this IEnumerator iter, MonoBehaviour comp = null)
 	{
 		var taskSource = new TaskCompletionSource<bool>();
-		(comp ?? LoomMG.sharedLoom).StartCoroutine(_runTaskIter(iter, taskSource));
+		(comp ?? LoomMG.SharedLoom).StartCoroutine(_runTaskIter(iter, taskSource));
 		return taskSource.Task;
 	}
 	private static IEnumerator _runTaskIter(IEnumerator iter, CancellationToken cancellationToken, TaskCompletionSource<bool> taskSource)
@@ -194,7 +194,7 @@ public static class AsyncTaskExt
 		});
 		if (!cancellationToken.IsCancellationRequested)
 		{
-			(comp ?? LoomMG.sharedLoom).StartCoroutine(_runTaskIter(iter, cancellationToken, taskSource));
+			(comp ?? LoomMG.SharedLoom).StartCoroutine(_runTaskIter(iter, cancellationToken, taskSource));
 		}
 		return taskSource.Task;
 	}
@@ -470,7 +470,7 @@ public class AsyncTask
 	public static Task<bool> JoinMainThread()
 	{
 		var taskSource = new TaskCompletionSource<bool>();
-		LoomMG.sharedLoom.AddTask(() =>
+		LoomMG.SharedLoom.AddTask(() =>
 		{
 			taskSource.SetResult(true);
 		});

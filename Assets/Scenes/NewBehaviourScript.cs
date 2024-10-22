@@ -22,7 +22,7 @@ public class NewBehaviourScript : MonoBehaviour
 		TaskScheduler.UnobservedTaskException += (s, e) => { Debug.LogException(e.Exception); };
 		AppDomain.CurrentDomain.UnhandledException += (s, args) => { Debug.LogError((Exception)args.ExceptionObject); };
 		LoomMG.Init();
-		await AsyncUtils.WaitForFrames(1);
+		await UniAsyncUtils.WaitForFrames(1);
 		var dt1 = Date.Now();
 		await TestProgress();
 		var dt2 = Date.Now();
@@ -211,7 +211,7 @@ public class NewBehaviourScript : MonoBehaviour
 						break;
 					}
 
-					await AsyncUtils.WaitForFrames(1);
+					await UniAsyncUtils.WaitForFrames(1);
 				}
 			}
 
