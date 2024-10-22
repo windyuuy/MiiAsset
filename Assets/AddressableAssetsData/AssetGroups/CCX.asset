@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: CCX
+  m_EditorClassIdentifier: 
+  m_GroupName: CCX
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 769fc14e9e86a9f45babc999f1ab063c
+  m_SerializeEntries: []
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 08c403f9905aba14fa7204c8b70b796b, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 98cf69b8defe8ee4d907e424f83a81ff, type: 2}
+    - {fileID: 11400000, guid: b95fa7a3e9b43634e96ee943ba1e895f, type: 2}
