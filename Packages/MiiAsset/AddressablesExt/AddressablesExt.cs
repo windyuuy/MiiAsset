@@ -9,7 +9,7 @@ namespace MiiAsset.AddressablesExt
 	{
 		public static Task<bool> CleanUpAddressablesCache()
 		{
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if UNITY_WEBGL && SUPPORT_WECHATGAME && !UNITY_EDITOR
 			var ts = new TaskCompletionSource<bool>();
 			var wxfs = WeChatWASM.WX.GetFileSystemManager();
 			var dir = $"{WeChatWASM.WX.env.USER_DATA_PATH}/__GAME_FILE_CACHE/hotres/";
@@ -55,6 +55,7 @@ namespace MiiAsset.AddressablesExt
 					Debug.LogException(exception);
 				}
 
+#if !UNITY_WEBGL || UNITY_EDITOR
 				try
 				{
 					Caching.ClearCache();
@@ -65,6 +66,9 @@ namespace MiiAsset.AddressablesExt
 					Debug.LogException(exception);
 					return Task.FromResult(false);
 				}
+#else
+				return Task.FromResult(true);
+#endif
 			}
 			else
 			{

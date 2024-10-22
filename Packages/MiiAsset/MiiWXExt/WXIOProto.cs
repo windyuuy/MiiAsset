@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GameLib.MonoUtils;
 using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -295,7 +296,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 			var maxTimes = 100;
 			// 有可能还是旧的，但是不是新的没关系, 在就行
-			await AsyncUtils.WaitUntil(() =>
+			await UniAsyncUtils.WaitUntil(() =>
 			{
 				if (--maxTimes <= 0)
 				{
@@ -327,7 +328,7 @@ namespace MiiAsset.Runtime.IOManagers
 				{
 					var maxTimes = 100;
 					// 有可能还是旧的，但是不是新的没关系, 在就行
-					await AsyncUtils.WaitUntil(() =>
+					await UniAsyncUtils.WaitUntil(() =>
 					{
 						if (--maxTimes <= 0)
 						{

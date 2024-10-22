@@ -1,4 +1,18 @@
 {
-	"name": "AssetWeakRefer.Editor",
-	"references":[ "GUID:40a117695f8636349a7a4a68b08b5418" ]
+    "name": "AssetWeakRefer.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:40a117695f8636349a7a4a68b08b5418"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
