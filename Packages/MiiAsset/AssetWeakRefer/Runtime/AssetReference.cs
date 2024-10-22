@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
+using MiiAsset.Runtime;
+using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.U2D;
 using Object = UnityEngine.Object;
@@ -31,10 +34,35 @@ namespace AssetWeakRefer.Runtime
 			this.guid = guid;
 		}
 
-
 		public string AssetGuid
 		{
 			get => guid;
+		}
+
+		public string Address => guid ?? AssetLoader.GetAddressFromGuid(guid);
+
+		public Object RawAsset => asset;
+
+		public Task<T> Load<T>(AssetLoadStatusGroup loadStatus = null)
+		{
+			if (Address == null)
+			{
+				if (RawAsset is T assetT)
+				{
+					return Task.FromResult<T>(assetT);
+				}
+
+				return Task.FromResult<T>(default);
+			}
+			else
+			{
+				return AssetLoader.LoadAsset<T>(Address, loadStatus);
+			}
+		}
+
+		public Task UnLoad()
+		{
+			return AssetLoader.UnLoadAsset(Address);
 		}
 
 #if UNITY_EDITOR
@@ -92,6 +120,8 @@ namespace AssetWeakRefer.Runtime
 			: base(guid)
 		{
 		}
+
+		public TObject Asset => asset as TObject;
 	}
 
 	[Serializable]
@@ -101,7 +131,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class GameObjectAssetReference : AssetReferenceT<GameObject>
 	{
@@ -109,7 +139,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class TextureAssetReference : AssetReferenceT<Texture>
 	{
@@ -117,7 +147,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class Texture2DAssetReference : AssetReferenceT<Texture2D>
 	{
@@ -125,7 +155,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class SpriteAtlasAssetReference : AssetReferenceT<SpriteAtlas>
 	{
@@ -133,7 +163,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class MaterialAssetReference : AssetReferenceT<Material>
 	{
@@ -141,7 +171,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class ShaderAssetReference : AssetReferenceT<Shader>
 	{
@@ -149,7 +179,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class MeshAssetReference : AssetReferenceT<Mesh>
 	{
@@ -157,7 +187,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class AudioClipAssetReference : AssetReferenceT<AudioClip>
 	{
@@ -165,6 +195,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
+
 	//
 	// [Serializable]
 	// public class VideoClipAssetReference : AssetReferenceT<VideoClip>
@@ -181,7 +212,7 @@ namespace AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class ScriptableObjectAssetReference : AssetReferenceT<ScriptableObject>
 	{

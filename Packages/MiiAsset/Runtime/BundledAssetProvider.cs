@@ -231,6 +231,11 @@ namespace MiiAsset.Runtime
 			await UnloadAssetJust(address);
 		}
 
+		public string GetAddressFromGuid(string guid)
+		{
+			return CatalogInfo.GetAddressFromGuid(guid);
+		}
+
 		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();

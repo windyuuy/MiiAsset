@@ -243,6 +243,11 @@ namespace MiiAsset.Runtime
             return Consumer.UnLoadAsset(address);
         }
 
+        public static string GetAddressFromGuid(string guid)
+        {
+            return Consumer.GetAddressFromGuid(guid);
+        }
+        
         public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
         {
             return Consumer.LoadAssetByRefer<T>(address, loadStatus);

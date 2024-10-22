@@ -19,6 +19,7 @@ namespace MiiAsset.Runtime
 		public string[] deps;
 		public string[] tags;
 		public string[] entries;
+		public string[] guids;
 		// public string uri;
 		[NonSerialized]
 		public bool IsOffline;

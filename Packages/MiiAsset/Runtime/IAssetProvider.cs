@@ -46,6 +46,8 @@ namespace MiiAsset.Runtime
 
         public Task UnLoadAsset(string address);
 
+        public string GetAddressFromGuid(string guid);
+
         public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus);
 
         public Task UnLoadAssetByRefer(string address);

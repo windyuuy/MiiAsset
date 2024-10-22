@@ -99,6 +99,11 @@ namespace MiiAsset.Runtime
 			return Provider.UnLoadAsset(address);
 		}
 
+		public string GetAddressFromGuid(string guid)
+		{
+			return Provider.GetAddressFromGuid(guid);
+		}
+
 		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadAssetByRefer<T>(address, loadStatus);

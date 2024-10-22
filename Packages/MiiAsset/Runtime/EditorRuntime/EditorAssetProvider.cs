@@ -112,6 +112,11 @@ namespace MiiAsset.Runtime
 			return Task.CompletedTask;
 		}
 
+		public string GetAddressFromGuid(string guid)
+		{
+			return AssetDatabase.GUIDToAssetPath(guid);
+		}
+
 		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
 			return LoadAssetJust<T>(address, loadStatus);

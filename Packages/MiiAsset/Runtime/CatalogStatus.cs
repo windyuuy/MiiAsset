@@ -344,5 +344,6 @@ namespace MiiAsset.Runtime
 			this.BundleLoadStatus.Clear();
 			this.AllowedTags.Clear();
 		}
+
 	}
 }

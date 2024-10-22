@@ -10,6 +10,7 @@ namespace MiiAsset.Runtime
 	{
 		public Dictionary<string, AssetBundleInfo> NameBundleMap = new();
 		public Dictionary<string, string> AddressBundleMap = new();
+		public Dictionary<string, string> GuidAddressMap = new();
 
 		public Dictionary<string, HashSet<string>> BundleFlatRelationMap = new();
 		public Dictionary<string, HashSet<string>> TagFlatBundlesMap = new();
@@ -18,7 +19,9 @@ namespace MiiAsset.Runtime
 		/// 合并后的bundle加载清单
 		/// </summary>
 		public Dictionary<string, IResourceLoadSource> BundleLoadSourceMap = new();
+
 		public Dictionary<string, IResourceLoadSource> InternalBundles = new();
+
 		// record bundles cleaned before update
 		public List<string> BundlesToClean = new();
 
@@ -105,8 +108,14 @@ namespace MiiAsset.Runtime
 				{
 					this.AddressBundleMap.Add(entry, bundleInfo.fileName);
 				}
+
+				for (var index = 0; index < bundleInfo.guids.Length; index++)
+				{
+					var guid = bundleInfo.guids[index];
+					this.GuidAddressMap.Add(guid, bundleInfo.entries[index]);
+				}
 			}
-			
+
 			var flatRelationMap = this.BundleFlatRelationMap;
 			foreach (var bundleInfo in catalog.bundleInfos)
 			{
@@ -180,6 +189,16 @@ namespace MiiAsset.Runtime
 		public bool IsInternalBundle(string bundleName)
 		{
 			return this.InternalBundles.ContainsKey(bundleName);
+		}
+
+		public string GetAddressFromGuid(string guid)
+		{
+			if (this.GuidAddressMap.TryGetValue(guid, out var address))
+			{
+				return address;
+			}
+
+			return null;
 		}
 	}
 }

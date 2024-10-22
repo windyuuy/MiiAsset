@@ -1,3 +1,4 @@
 {
-	"name": "AssetWeakRefer"
+	"name": "AssetWeakRefer",
+	"references":[ "GUID:05986448812a44c4e93dbe70ba9b2de0", "GUID:2327133a9cd59df45aac0ce0d43e61e8" ]
 }
