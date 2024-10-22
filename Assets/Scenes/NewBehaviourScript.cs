@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AssetWeakRefer.Runtime;
 using GameLib.MonoUtils;
 using lang.time;
 using MiiAsset.MiiAssetHint;
@@ -7,10 +8,14 @@ using MiiAsset.Runtime;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using UnityEngine.U2D;
 
 public class NewBehaviourScript : MonoBehaviour
 {
+	public AssetReference assetRefer1;
+	public AssetReferenceT<Sprite> assetRefer2;
+	public SpriteAssetReference spriteAssetRefer1;
 	// Start is called before the first frame update
 	async void Start()
 	{
