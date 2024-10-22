@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 using UnityEditor;
 #endif
 
-namespace AssetWeakRefer.Runtime
+namespace MiiAsset.AssetWeakRefer.Runtime
 {
 	[Serializable]
 	public class AssetReference

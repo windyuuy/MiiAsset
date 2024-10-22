@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using AssetWeakRefer.Runtime;
+using MiiAsset.AssetWeakRefer.Runtime;
+using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
-namespace UnityEditor.AddressableAssets.GUI
+namespace MiiAsset.AssetWeakRefer.Editor
 {
 	[CustomPropertyDrawer(typeof(AssetReference), true)]
 	class AssetReferenceDrawer : PropertyDrawer
