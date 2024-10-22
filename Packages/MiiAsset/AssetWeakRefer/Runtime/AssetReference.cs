@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.U2D;
 using Object = UnityEngine.Object;
 
 #if UNITY_EDITOR
@@ -97,6 +98,94 @@ namespace AssetWeakRefer.Runtime
 	public class SpriteAssetReference : AssetReferenceT<Sprite>
 	{
 		public SpriteAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class GameObjectAssetReference : AssetReferenceT<GameObject>
+	{
+		public GameObjectAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class TextureAssetReference : AssetReferenceT<Texture>
+	{
+		public TextureAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class Texture2DAssetReference : AssetReferenceT<Texture2D>
+	{
+		public Texture2DAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class SpriteAtlasAssetReference : AssetReferenceT<SpriteAtlas>
+	{
+		public SpriteAtlasAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class MaterialAssetReference : AssetReferenceT<Material>
+	{
+		public MaterialAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class ShaderAssetReference : AssetReferenceT<Shader>
+	{
+		public ShaderAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class MeshAssetReference : AssetReferenceT<Mesh>
+	{
+		public MeshAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class AudioClipAssetReference : AssetReferenceT<AudioClip>
+	{
+		public AudioClipAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	//
+	// [Serializable]
+	// public class VideoClipAssetReference : AssetReferenceT<VideoClip>
+	// {
+	// 	public VideoClipAssetReference(string guid) : base(guid)
+	// 	{
+	// 	}
+	// }
+	//
+	[Serializable]
+	public class AnimationClipAssetReference : AssetReferenceT<AnimationClip>
+	{
+		public AnimationClipAssetReference(string guid) : base(guid)
+		{
+		}
+	}
+	
+	[Serializable]
+	public class ScriptableObjectAssetReference : AssetReferenceT<ScriptableObject>
+	{
+		public ScriptableObjectAssetReference(string guid) : base(guid)
 		{
 		}
 	}
