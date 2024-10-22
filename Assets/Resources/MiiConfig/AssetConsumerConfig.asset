@@ -21,3 +21,5 @@ MonoBehaviour:
   loadType: 0
   initDownloadCoCount: 10
   maxDownloadCoCount: 50
+  timeout: 300
+  buildGuids: 0

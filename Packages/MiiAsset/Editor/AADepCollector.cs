@@ -37,6 +37,7 @@ namespace MiiAsset.Editor.Build
     {
         public string UpdateTunnel = "";
         public string CatalogType = "";
+        public bool BuildGuids = false;
     }
 
     public class AnalyzeItemResult
@@ -115,7 +116,6 @@ namespace MiiAsset.Editor.Build
         public static BuildAssetBundlesResult BuildAssetBundles(AAPathInfo pathInfo,
             ScriptCompilationSettings scriptCompilationSettings, ExtraBuildOptions options)
         {
-            AnalyzeResult result = new();
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
             {
                 return new BuildAssetBundlesResult()
@@ -601,6 +601,7 @@ namespace MiiAsset.MiiAssetHint
                 AssetDatabase.FindAssets("t:AssetConsumerConfig", new[] { "Assets", "Packages/windy.miiasset" });
             var tunnel = "";
             var catalogType = "";
+            var buildGuids = false;
             if (configGuids.Length > 0)
             {
                 var configGuid = configGuids[0];
@@ -608,6 +609,7 @@ namespace MiiAsset.MiiAssetHint
                     AssetDatabase.LoadAssetAtPath<AssetConsumerConfig>(AssetDatabase.GUIDToAssetPath(configGuid));
                 tunnel = config.updateTunnel;
                 catalogType = config.catalogType;
+                buildGuids = config.buildGuids;
             }
             else
             {
@@ -620,6 +622,7 @@ namespace MiiAsset.MiiAssetHint
             {
                 UpdateTunnel = tunnel,
                 CatalogType = catalogType,
+                BuildGuids = buildGuids,
             });
             return buildAssetBundlesResult;
         }
