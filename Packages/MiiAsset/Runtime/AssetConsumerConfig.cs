@@ -34,6 +34,10 @@ namespace MiiAsset.Runtime
         [Header("构建Guid映射")]
         [Tooltip("是否在构建中包含资源Guid信息, 会显著增大catalog尺寸")]
         public bool buildGuids = false;
+
+        [Header("是否构建索引代码")]
+        [Tooltip("可以通过生成的索引代码引用资源Tag等, 或观察bundle和依赖变化")]
+        public bool buildCodeHint;
         public string InternalBaseUri => internalBaseUri;
         public string ExternalBaseUri => externalBaseUri;
         public string BundleCacheDir => bundleCacheDir;

@@ -38,6 +38,7 @@ namespace MiiAsset.Editor.Build
         public string UpdateTunnel = "";
         public string CatalogType = "";
         public bool BuildGuids = false;
+        public bool BuildHintCode = true;
     }
 
     public class AnalyzeItemResult
@@ -496,30 +497,32 @@ namespace MiiAsset.Editor.Build
                 }
 
                 // gen code hint
-                var codeOutputDir = "Assets/Bundles/GameConfigs/MiiConfigs/";
-                var codeFileName = "MiiAssetHint.cs";
-                var codeFilePath = $"{codeOutputDir}/{codeFileName}";
-                if (!Directory.Exists(codeOutputDir))
+                if (options.BuildHintCode)
                 {
-                    Directory.CreateDirectory(codeOutputDir);
-                }
+                    var codeOutputDir = "Assets/Bundles/GameConfigs/MiiConfigs/";
+                    var codeFileName = "MiiAssetHint.cs";
+                    var codeFilePath = $"{codeOutputDir}/{codeFileName}";
+                    if (!Directory.Exists(codeOutputDir))
+                    {
+                        Directory.CreateDirectory(codeOutputDir);
+                    }
 
-                string ToFirstUpperCase(string tag)
-                {
-                    var key = char.ToUpper(tag[0]) + tag[1..];
-                    return key;
-                }
+                    string ToFirstUpperCase(string tag)
+                    {
+                        var key = char.ToUpper(tag[0]) + tag[1..];
+                        return key;
+                    }
 
-                string ToTagKey(string tag)
-                {
-                    return ToFirstUpperCase(tag).Replace(".", "_");
-                }
+                    string ToTagKey(string tag)
+                    {
+                        return ToFirstUpperCase(tag).Replace(".", "_");
+                    }
 
-                var assetTags = string.Join("", tagOrderMap.Keys.Select(tag =>
-                    $@"		public const string {ToTagKey(tag)} = ""{tag}"";
+                    var assetTags = string.Join("", tagOrderMap.Keys.Select(tag =>
+                        $@"		public const string {ToTagKey(tag)} = ""{tag}"";
 "));
-                // var sceneKeys = string.Join("",tagBundles.Where(tagBundle=>tagBundle.Tags.Contains("scene")).Select(tagBundle=>tagBundle.))
-                var content = @$"
+                    // var sceneKeys = string.Join("",tagBundles.Where(tagBundle=>tagBundle.Tags.Contains("scene")).Select(tagBundle=>tagBundle.))
+                    var content = @$"
 namespace MiiAsset.MiiAssetHint
 {{
 	public interface AssetTags
@@ -532,16 +535,17 @@ namespace MiiAsset.MiiAssetHint
 	}}
 }}
 ";
-                var needOverwrite = true;
-                if (File.Exists(codeFilePath))
-                {
-                    var content0 = File.ReadAllText(codeFilePath, Encoding.UTF8);
-                    needOverwrite = content0 != content;
-                }
+                    var needOverwrite = true;
+                    if (File.Exists(codeFilePath))
+                    {
+                        var content0 = File.ReadAllText(codeFilePath, Encoding.UTF8);
+                        needOverwrite = content0 != content;
+                    }
 
-                if (needOverwrite)
-                {
-                    File.WriteAllText(codeFilePath, content, EncodingExt.UTF8WithoutBom);
+                    if (needOverwrite)
+                    {
+                        File.WriteAllText(codeFilePath, content, EncodingExt.UTF8WithoutBom);
+                    }
                 }
 
                 // refersh
@@ -602,6 +606,7 @@ namespace MiiAsset.MiiAssetHint
             var tunnel = "";
             var catalogType = "";
             var buildGuids = false;
+            var buildCodeHint = true;
             if (configGuids.Length > 0)
             {
                 var configGuid = configGuids[0];
@@ -610,6 +615,7 @@ namespace MiiAsset.MiiAssetHint
                 tunnel = config.updateTunnel;
                 catalogType = config.catalogType;
                 buildGuids = config.buildGuids;
+                buildCodeHint = config.buildCodeHint;
             }
             else
             {
@@ -623,6 +629,7 @@ namespace MiiAsset.MiiAssetHint
                 UpdateTunnel = tunnel,
                 CatalogType = catalogType,
                 BuildGuids = buildGuids,
+                BuildHintCode = buildCodeHint,
             });
             return buildAssetBundlesResult;
         }
