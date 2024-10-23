@@ -16,7 +16,19 @@
 
 5. 更新资源
 
-6. 
+## 配置方法
+
+1. 创建配置: 使用Assets目录下任意位置右键菜单 Create/MiiConfig/AssetConsumerConfig, 创建配置 AssetConsumerConfig.asset, 如果不创建改配置则使用默认配置
+
+2. 参数说明:
+   
+   1. UpdateTunnel 热更通道, 如果集成了AAUpdateSettings, 那么直接从AAUpdateSettings面板修改即可
+   
+   2. LoadType 加载模式(仅编辑器中生效):
+      
+      1. LoadFromEditor: 直接通过编辑器加载资源
+      
+      2. LoadFromBundle: 从发布的AssetBundle加载资源，用于模拟测试复现问题
 
 ## 常用模式:
 

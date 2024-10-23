@@ -15,12 +15,18 @@ namespace MiiAsset.Runtime
 
         public string internalBaseUri = "mii/";
         public string externalBaseUri = "mii/";
+        [Header("热更资源缓存路径")]
         public string bundleCacheDir = "hotres/";
         public string catalogName = "catalog";
         public string catalogType = "zip";
+        [Header("热更通道")]
+        [Tooltip("会打进包里，热更通道一致，才能通过升级版本号来升级热更资源")]
         public string updateTunnel = "default";
+        [Header("资源加载方式(仅编辑器)")]
+        [Tooltip("加载模式(仅编辑器中生效):\n\n1. LoadFromEditor: 直接通过编辑器加载资源\n  \n2. LoadFromBundle: 从发布的AssetBundle加载资源，用于模拟测试复现问题")]
         public LoadType loadType = LoadType.LoadFromEditor;
         public int initDownloadCoCount = 10;
+        [Header("最大下载线程数")]
         public int maxDownloadCoCount = 50;
         [Header("网络超时时长")]
         public int timeout = 300;
