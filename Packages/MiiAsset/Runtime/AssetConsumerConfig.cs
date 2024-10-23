@@ -37,7 +37,7 @@ namespace MiiAsset.Runtime
 
         [Header("是否构建索引代码")]
         [Tooltip("可以通过生成的索引代码引用资源Tag等, 或观察bundle和依赖变化")]
-        public bool buildCodeHint;
+        public bool buildCodeHint = true;
         public string InternalBaseUri => internalBaseUri;
         public string ExternalBaseUri => externalBaseUri;
         public string BundleCacheDir => bundleCacheDir;
