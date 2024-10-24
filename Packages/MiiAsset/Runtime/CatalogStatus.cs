@@ -183,7 +183,7 @@ namespace MiiAsset.Runtime
 							var bundleLoadStatus = GetOrCreateStatus(bundleName);
 							if (bundleLoadStatus.RefCount > 0)
 							{
-								bundleLoadStatus.RefCount--;
+								--bundleLoadStatus.RefCount;
 							}
 							else
 							{
@@ -291,7 +291,15 @@ namespace MiiAsset.Runtime
 				var task = Task.WhenAll(deps.Select(dep =>
 				{
 					var loadStatus = GetOrCreateStatus(dep);
-					--loadStatus.RefCount;
+					if (loadStatus.RefCount > 0)
+					{
+						--loadStatus.RefCount;
+					}
+					else
+					{
+						Debug.LogError($"bundle referCount invalid: {dep}");
+					}
+
 					if (loadStatus.RefCount == 0)
 					{
 						return loadStatus.UnLoad();
@@ -341,9 +349,9 @@ namespace MiiAsset.Runtime
 			{
 				bundleLoadStatus.Value.Dispose();
 			}
+
 			this.BundleLoadStatus.Clear();
 			this.AllowedTags.Clear();
 		}
-
 	}
 }

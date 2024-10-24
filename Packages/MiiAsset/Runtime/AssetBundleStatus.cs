@@ -358,6 +358,16 @@ namespace MiiAsset.Runtime
                 BundleStatusNotify.OnBundleUnLoad?.Invoke(this);
 #endif
             }
+            else
+            {
+                Task = null;
+
+                if (UnloadTask != null)
+                {
+                    await UnloadTask;
+                    UnloadTask = null;
+                }
+            }
         }
 
         public async Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus)
