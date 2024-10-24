@@ -38,7 +38,17 @@ namespace MiiAsset.Runtime
 
 		public void RegisterAsset<T>(string address, T asset)
 		{
-			AddressLoadMap[address].Asset = asset;
+			if (asset != null)
+			{
+				if (AddressLoadMap.TryGetValue(address, out var status))
+				{
+					status.Asset = asset;
+				}
+				else
+				{
+					Debug.LogError($"invalid address status: {address}");
+				}
+			}
 		}
 
 		public async Task UnRegisterAsset(string address)
