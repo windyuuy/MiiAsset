@@ -28,7 +28,7 @@ namespace MiiAsset.Runtime
 			this.InternalBaseUri = IOManager.LocalIOProto.InternalDir;
 			this.ExternalBaseUri = IOManager.LocalIOProto.ExternalDir;
 			this.CatalogName = IOManager.LocalIOProto.CatalogName;
-			
+
 			BundleWebSemaphore.Init(options.InitDownloadCoCount, options.MaxDownloadCoCount);
 
 			return result;
@@ -186,19 +186,40 @@ namespace MiiAsset.Runtime
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
-			return bundleLoadStatus.LoadAssetJust<T>(address, subStatus);
+			if (bundleLoadStatus != null)
+			{
+				return bundleLoadStatus.LoadAssetJust<T>(address, subStatus);
+			}
+			else
+			{
+				return Task.FromResult<T>(default);
+			}
 		}
 
 		protected Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus)
 		{
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
-			return bundleLoadStatus.LoadAssetJust<T>(address, loadStatus);
+			if (bundleLoadStatus != null)
+			{
+				return bundleLoadStatus.LoadAssetJust<T>(address, loadStatus);
+			}
+			else
+			{
+				return Task.FromResult<T>(default);
+			}
 		}
 
-		public async Task UnloadAssetJust(string address)
+		public Task UnloadAssetJust(string address)
 		{
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
-			await bundleLoadStatus.UnLoadAssetJust(address);
+			if (bundleLoadStatus != null)
+			{
+				return bundleLoadStatus.UnLoadAssetJust(address);
+			}
+			else
+			{
+				return Task.CompletedTask;
+			}
 		}
 
 		public async Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
@@ -353,7 +374,7 @@ namespace MiiAsset.Runtime
 			var failedList = new List<string>();
 			{
 				var cacheDir = IOManager.LocalIOProto.CacheDir;
-				var files = IOManager.LocalIOProto.ExistsDir(cacheDir)?  IOManager.LocalIOProto.ReadDir(cacheDir): Array.Empty<FilePathInfo>();
+				var files = IOManager.LocalIOProto.ExistsDir(cacheDir) ? IOManager.LocalIOProto.ReadDir(cacheDir) : Array.Empty<FilePathInfo>();
 				CatalogInfo.BundlesToClean.Clear();
 				foreach (var fileInfo in files)
 				{
@@ -395,7 +416,7 @@ namespace MiiAsset.Runtime
 			if (IOManager.LocalIOProto.IsInternalDirUpdating)
 			{
 				var internalDir = IOManager.LocalIOProto.InternalDir;
-				var files = IOManager.LocalIOProto.ExistsDir(internalDir)? IOManager.LocalIOProto.ReadDir(internalDir):Array.Empty<FilePathInfo>();
+				var files = IOManager.LocalIOProto.ExistsDir(internalDir) ? IOManager.LocalIOProto.ReadDir(internalDir) : Array.Empty<FilePathInfo>();
 				foreach (var fileInfo in files)
 				{
 					var fileName = fileInfo.FileName;
