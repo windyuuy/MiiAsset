@@ -14,7 +14,7 @@ namespace MiiAsset.Runtime
 {
 	public static class AssetLoader
 	{
-		private static IAssetProvider Consumer;
+		internal static IAssetProvider Consumer;
 		private static readonly AdapterInternal AdapterInternal = new();
 
 		public static void Adapt(IAdapter adapter)
