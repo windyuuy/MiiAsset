@@ -76,7 +76,7 @@ namespace MiiAsset.Runtime
 						foreach (var bundleName in bundleNames)
 						{
 							var loadStatus = GetOrCreateStatus(bundleName);
-							loadStatus.RefCount++;
+							++loadStatus.RefCount;
 						}
 					}
 				}
@@ -284,7 +284,7 @@ namespace MiiAsset.Runtime
 			return Task.CompletedTask;
 		}
 
-		public Task UnLoadBundlesByRefer(HashSet<string> deps)
+		public Task UnLoadBundlesByRefer(string address, HashSet<string> deps)
 		{
 			if (deps != null)
 			{
@@ -297,7 +297,7 @@ namespace MiiAsset.Runtime
 					}
 					else
 					{
-						Debug.LogError($"bundle referCount invalid: {dep}");
+						Debug.LogError($"bundle referCount invalid: [{dep}], caused with unloading[{address}]");
 					}
 
 					if (loadStatus.RefCount == 0)

@@ -312,7 +312,7 @@ namespace MiiAsset.Runtime
 		{
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
 			await CatalogAddressStatus.UnRegisterAsset(address);
-			await CatalogStatus.UnLoadBundlesByRefer(deps);
+			await CatalogStatus.UnLoadBundlesByRefer(address, deps);
 		}
 
 		public async Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
@@ -345,7 +345,7 @@ namespace MiiAsset.Runtime
 			await opStand.GetTask();
 			// await UnLoadAssetByRefer(sceneAddress);
 			await CatalogAddressStatus.UnRegisterAsset(sceneAddress);
-			await CatalogStatus.UnLoadBundlesByRefer(deps);
+			await CatalogStatus.UnLoadBundlesByRefer(sceneAddress, deps);
 		}
 
 		public Task<PipelineResult> CleanUpOldVersionFiles()
