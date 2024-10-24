@@ -140,7 +140,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError($"asset not exist in2 any bundle: {address}");
+				Debug.LogError($"asset not exist in any bundle2: {address}");
 			}
 
 			return false;
@@ -324,7 +324,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError($"asset not exist in3 any bundle: {address}");
+				Debug.LogError($"asset not exist in any bundle3: {address}");
 				return null;
 			}
 		}
