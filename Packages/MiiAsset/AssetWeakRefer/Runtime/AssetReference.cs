@@ -43,28 +43,6 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 
 		public Object RawAsset => asset;
 
-		public Task<T> Load<T>(AssetLoadStatusGroup loadStatus = null)
-		{
-			if (Address == null)
-			{
-				if (RawAsset is T assetT)
-				{
-					return Task.FromResult<T>(assetT);
-				}
-
-				return Task.FromResult<T>(default);
-			}
-			else
-			{
-				return AssetLoader.LoadAsset<T>(Address, loadStatus);
-			}
-		}
-
-		public Task UnLoad()
-		{
-			return AssetLoader.UnLoadAsset(Address);
-		}
-
 		public bool RuntimeKeyIsValid()
 		{
 			return Address != null || RawAsset != null;
@@ -117,6 +95,30 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 			return true;
 		}
 #endif
+
+#if !DISABLE_NOREFERCOUNT_API
+		public Task<T> Load<T>(AssetLoadStatusGroup loadStatus = null)
+		{
+			if (Address == null)
+			{
+				if (RawAsset is T assetT)
+				{
+					return Task.FromResult<T>(assetT);
+				}
+
+				return Task.FromResult<T>(default);
+			}
+			else
+			{
+				return AssetLoader.LoadAsset<T>(Address, loadStatus);
+			}
+		}
+
+		public Task UnLoad()
+		{
+			return AssetLoader.UnLoadAsset(Address);
+		}
+
 		public Task<Scene> LoadScene(LoadSceneMode mode, AssetLoadStatusGroup loadStatus = null)
 		{
 			return AssetLoader.LoadScene(Address, new LoadSceneParameters()
@@ -129,6 +131,7 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		{
 			return AssetLoader.UnLoadScene(Address, options);
 		}
+#endif
 	}
 
 	[Serializable]
@@ -145,10 +148,12 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 
 		public TObject Asset => asset as TObject;
 
+#if !DISABLE_NOREFERCOUNT_API
 		public Task<TObject> Load(AssetLoadStatusGroup loadStatus = null)
 		{
 			return AssetLoader.LoadAsset<TObject>(Address, loadStatus);
 		}
+#endif
 	}
 
 	[Serializable]
