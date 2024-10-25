@@ -222,6 +222,12 @@ namespace MiiAsset.Runtime
 			return Consumer.IsBundleInTags(bundleFileName, tags);
 		}
 
+		public static string GetAddressFromGuid(string guid)
+		{
+			return Consumer.GetAddressFromGuid(guid);
+		}
+
+#if !DISABLE_NOREFERCOUNT_API
 		/// <summary>
 		/// 无视bundle引用计数, 直接加载资源
 		/// </summary>
@@ -229,7 +235,6 @@ namespace MiiAsset.Runtime
 		/// <param name="loadStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		[Obsolete]
 		public static Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus = null)
 			where T : UnityEngine.Object
 		{
@@ -241,7 +246,6 @@ namespace MiiAsset.Runtime
 		/// </summary>
 		/// <param name="address"></param>
 		/// <returns></returns>
-		[Obsolete]
 		public static Task UnloadAssetJust(string address)
 		{
 			return Consumer.UnloadAssetJust(address);
@@ -254,7 +258,6 @@ namespace MiiAsset.Runtime
 		/// <param name="loadStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		[Obsolete]
 		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
 			return Consumer.LoadAsset<T>(address, loadStatus);
@@ -265,16 +268,35 @@ namespace MiiAsset.Runtime
 		/// </summary>
 		/// <param name="address"></param>
 		/// <returns></returns>
-		[Obsolete]
 		public static Task UnLoadAsset(string address)
 		{
 			return Consumer.UnLoadAsset(address);
 		}
 
-		public static string GetAddressFromGuid(string guid)
+		/// <summary>
+		/// 不带引用计数加载场景,老项目误用
+		/// </summary>
+		/// <param name="sceneAddress"></param>
+		/// <param name="parameters"></param>
+		/// <param name="loadStatus"></param>
+		/// <returns></returns>
+		public static Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters = new(),
+			AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.GetAddressFromGuid(guid);
+			return Consumer.LoadScene(sceneAddress, parameters, loadStatus);
 		}
+
+		/// <summary>
+		/// 不带引用计数卸载场景,老项目勿用
+		/// </summary>
+		/// <param name="sceneAddress"></param>
+		/// <param name="options"></param>
+		/// <returns></returns>
+		public static Task UnLoadScene(string sceneAddress, UnloadSceneOptions options = UnloadSceneOptions.None)
+		{
+			return Consumer.UnLoadScene(sceneAddress, options);
+		}
+#endif
 
 		/// <summary>
 		/// 带引用计数加载资源
@@ -354,32 +376,6 @@ namespace MiiAsset.Runtime
 		public static Task UnLoadAssetByRefer(string address)
 		{
 			return Consumer.UnLoadAssetByRefer(address);
-		}
-
-		/// <summary>
-		/// 不带引用计数加载场景,老项目误用
-		/// </summary>
-		/// <param name="sceneAddress"></param>
-		/// <param name="parameters"></param>
-		/// <param name="loadStatus"></param>
-		/// <returns></returns>
-		[Obsolete]
-		public static Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters = new(),
-			AssetLoadStatusGroup loadStatus = null)
-		{
-			return Consumer.LoadScene(sceneAddress, parameters, loadStatus);
-		}
-
-		/// <summary>
-		/// 不带引用计数卸载场景,老项目勿用
-		/// </summary>
-		/// <param name="sceneAddress"></param>
-		/// <param name="options"></param>
-		/// <returns></returns>
-		[Obsolete]
-		public static Task UnLoadScene(string sceneAddress, UnloadSceneOptions options = UnloadSceneOptions.None)
-		{
-			return Consumer.UnLoadScene(sceneAddress, options);
 		}
 
 		/// <summary>
