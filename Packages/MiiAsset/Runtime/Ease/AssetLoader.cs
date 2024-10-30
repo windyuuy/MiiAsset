@@ -453,7 +453,18 @@ namespace MiiAsset.Runtime
 
 		public static bool ExistAddress(string address)
 		{
+#if UNITY_EDITOR
+			if (!IsValid())
+			{
+				return false;
+			}
+#endif
 			return Consumer.ExistAddress(address);
+		}
+
+		public static bool IsValid()
+		{
+			return Consumer != null;
 		}
 	}
 }

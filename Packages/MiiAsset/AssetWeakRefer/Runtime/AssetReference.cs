@@ -50,7 +50,11 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 
 		public bool IsValid()
 		{
-			return RawAsset != null || AssetLoader.ExistAddress(Address);
+			return
+#if UNITY_EDITOR
+				AssetLoader.IsValid() &&
+#endif
+				(RawAsset != null || AssetLoader.ExistAddress(Address));
 		}
 
 #if UNITY_EDITOR
