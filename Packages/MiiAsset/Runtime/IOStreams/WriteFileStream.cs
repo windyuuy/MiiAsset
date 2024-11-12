@@ -47,7 +47,7 @@ namespace MiiAsset.Runtime.IOStreams
 					FileStream.Close();
 					try
 					{
-						IOManager.LocalIOProto.Delete(Uri);
+						IOManager.LocalIOProto.Delete(ToTempPath(Uri));
 					}
 					catch (Exception exception)
 					{
