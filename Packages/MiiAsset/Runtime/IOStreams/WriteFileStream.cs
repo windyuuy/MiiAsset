@@ -43,7 +43,7 @@ namespace MiiAsset.Runtime.IOStreams
 				Result.IsOk = evt.IsOk;
 				if (!evt.IsOk)
 				{
-					Result.ErrorType = PipelineErrorType.FileSystemError;
+					Debug.LogError($"Download-Exception: {evt.GetReason()}");
 					FileStream.Close();
 					try
 					{
@@ -51,6 +51,7 @@ namespace MiiAsset.Runtime.IOStreams
 					}
 					catch (Exception exception)
 					{
+						Result.ErrorType = PipelineErrorType.FileSystemError;
 						Debug.LogException(exception);
 					}
 				}

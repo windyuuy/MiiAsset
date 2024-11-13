@@ -34,6 +34,11 @@ namespace MiiAsset.Runtime
 		public bool IsOk;
 		public int Capability;
 		public IPumpStream PumpStream;
+
+		public string GetReason()
+		{
+			return $"event:{this.Event}, code:${this.Code}, msg:{this.Msg}";
+		}
 	}
 
 	public static class PumpStreamExt
