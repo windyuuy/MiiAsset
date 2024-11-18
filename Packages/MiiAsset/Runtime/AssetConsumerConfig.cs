@@ -48,7 +48,7 @@ namespace MiiAsset.Runtime
 
         public static AssetConsumerConfig Load()
         {
-            var config = Resources.Load<AssetConsumerConfig>("MiiConfig/AssetConsumerConfig");
+            var config = Resources.Load<AssetConsumerConfig>("MiiConfig/AssetConsumerConfig") ?? Resources.Load<AssetConsumerConfig>("MiiConfig/BuiltinAssetConsumerConfig");
             return config;
         }
 
