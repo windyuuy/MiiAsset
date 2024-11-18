@@ -27,7 +27,7 @@ namespace MiiAsset.Runtime
         public LoadType loadType = LoadType.LoadFromEditor;
         public int initDownloadCoCount = 10;
         [Header("最大下载线程数")]
-        public int maxDownloadCoCount = 50;
+        public int maxDownloadCoCount = 20;
         [Header("网络超时时长")]
         public int timeout = 300;
 

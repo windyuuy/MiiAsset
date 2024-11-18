@@ -38,7 +38,7 @@ namespace MiiAsset.Runtime
 
 		public string GetReason()
 		{
-			return $"event:{this.Event}, code:${this.Code}, msg:{this.Msg}, srcUri:{this.SourceUri}";
+			return $"event:{this.Event}, code:{this.Code}, msg:{this.Msg}, srcUri:{this.SourceUri}";
 		}
 	}
 

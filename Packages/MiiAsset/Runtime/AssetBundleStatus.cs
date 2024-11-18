@@ -127,7 +127,13 @@ namespace MiiAsset.Runtime
 
 		public IEnumerable<PipelineResult> Results
 		{
-			get { yield return Task.Result; }
+			get
+			{
+				if (Task != null)
+				{
+					yield return Task.Result;
+				}
+			}
 		}
 
 		public Task<PipelineResult> Load(CatalogInfo catalogInfo)

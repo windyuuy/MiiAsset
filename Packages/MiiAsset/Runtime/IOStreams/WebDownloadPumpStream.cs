@@ -95,6 +95,11 @@ namespace MiiAsset.Runtime.IOStreams
 						IsOk = code == 200,
 						SourceUri = this.Uri,
 					};
+
+					if (!evt.IsOk)
+					{
+						UnityEngine.Debug.LogError($"download-failed: {Uwr.responseCode}, {Uwr.error}");
+					}
 					Result.Code = (int)code;
 					Result.Msg = msg;
 					Result.IsOk = evt.IsOk;

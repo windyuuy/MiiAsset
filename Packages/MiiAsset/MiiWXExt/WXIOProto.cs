@@ -35,6 +35,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public string InternalDir { get; set; }
 		public string ExternalDir { get; set; }
 		public string CatalogName { get; set; }
+		public int Timeout { get; set; }
 		public bool IsInternalDirUpdating => true;
 		public static string StreamingCacheAssetPath = $"{WX.env.USER_DATA_PATH}/__GAME_FILE_CACHE/StreamingAssets/";
 		public static string StreamingRemoteAssetPath;
@@ -53,6 +54,7 @@ namespace MiiAsset.Runtime.IOManagers
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
 			StreamingRemoteAssetPath = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
 			this.CatalogName = options.CatalogName;
+			this.Timeout = options.Timeout;
 
 			Debug.Log($"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
@@ -257,9 +259,15 @@ namespace MiiAsset.Runtime.IOManagers
 					var exception = new IOException(resp.GetExceptionDesc("write-file-failed"));
 					ts.SetException(exception);
 				},
+				data = bytes,
 				filePath = uri,
 			});
 			return ts.Task;
+		}
+
+		public void WriteAllBytes(string uri, byte[] bytes)
+		{
+			FileSystemManager.WriteFileSync(uri, bytes);
 		}
 
 		public bool IsWebUri(string uri)
@@ -385,12 +393,13 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public void SetUwr(UnityWebRequest uwr)
 		{
-			Debug.Log($"request-begin: {uwr.url}");
+			Debug.Log($"request-begin: {uwr.url}, {this.Timeout}");
 
 			if (CertificateHandler != null)
 			{
 				uwr.certificateHandler = CertificateHandler;
 				uwr.disposeCertificateHandlerOnDispose = false;
+				uwr.timeout = this.Timeout;
 			}
 		}
 	}

@@ -20,7 +20,7 @@ MonoBehaviour:
   updateTunnel: default
   loadType: 1
   initDownloadCoCount: 10
-  maxDownloadCoCount: 50
+  maxDownloadCoCount: 20
   timeout: 300
   buildGuids: 0
   buildCodeHint: 1

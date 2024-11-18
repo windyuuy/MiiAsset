@@ -36,7 +36,7 @@ namespace MiiAsset.Runtime.IOStreams
 			}
 		}
 
-		public void OnCtrl(StreamCtrlEvent evt)
+		public async void OnCtrl(StreamCtrlEvent evt)
 		{
 			if (evt.Event == StreamEvent.End)
 			{
@@ -59,6 +59,12 @@ namespace MiiAsset.Runtime.IOStreams
 				{
 					try
 					{
+#if true
+						var bytes = new byte[FileStream.Length];
+						FileStream.Seek(0, SeekOrigin.Begin);
+						var count = FileStream.Read(bytes, 0, bytes.Length);
+						await IOManager.LocalIOProto.WriteAllBytesAsync(ToTempPath(Uri),bytes);
+#endif
 						FileStream.Close();
 						IOManager.LocalIOProto.Move(ToTempPath(Uri), Uri);
 					}
@@ -80,7 +86,11 @@ namespace MiiAsset.Runtime.IOStreams
 				try
 				{
 					// IOManager.LocalIOProto.EnsureFileDirectory(Uri);
+#if false
 					FileStream = IOManager.LocalIOProto.OpenWrite(ToTempPath(Uri));
+#else
+					FileStream = new MemoryStream();
+#endif
 				}
 				catch (Exception exception)
 				{

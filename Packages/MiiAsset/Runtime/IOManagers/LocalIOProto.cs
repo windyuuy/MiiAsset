@@ -159,6 +159,11 @@ namespace MiiAsset.Runtime.IOManagers
 			return File.WriteAllBytesAsync(uri, bytes);
 		}
 
+		public void WriteAllBytes(string uri, byte[] bytes)
+		{
+			File.WriteAllBytes(uri, bytes);
+		}
+
 		public bool IsWebUri(string uri)
 		{
 			return uri.Contains("://");
