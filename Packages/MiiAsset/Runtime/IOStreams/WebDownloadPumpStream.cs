@@ -75,6 +75,7 @@ namespace MiiAsset.Runtime.IOStreams
 						OnCtrl?.Invoke(new StreamCtrlEvent()
 						{
 							Event = StreamEvent.Begin,
+							SourceUri = this.Uri,
 							PumpStream = this,
 						});
 
@@ -92,6 +93,7 @@ namespace MiiAsset.Runtime.IOStreams
 						Code = code,
 						Msg = msg,
 						IsOk = code == 200,
+						SourceUri = this.Uri,
 					};
 					Result.Code = (int)code;
 					Result.Msg = msg;

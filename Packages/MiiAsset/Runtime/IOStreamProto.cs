@@ -32,12 +32,13 @@ namespace MiiAsset.Runtime
 		public long Code;
 		public string Msg;
 		public bool IsOk;
+		public string SourceUri;
 		public int Capability;
 		public IPumpStream PumpStream;
 
 		public string GetReason()
 		{
-			return $"event:{this.Event}, code:${this.Code}, msg:{this.Msg}";
+			return $"event:{this.Event}, code:${this.Code}, msg:{this.Msg}, srcUri:{this.SourceUri}";
 		}
 	}
 
