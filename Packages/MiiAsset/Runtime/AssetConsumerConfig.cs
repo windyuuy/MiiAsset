@@ -51,26 +51,26 @@ namespace MiiAsset.Runtime
             var config = Resources.Load<AssetConsumerConfig>("MiiConfig/AssetConsumerConfig");
             return config;
         }
-//
-// #if UNITY_EDITOR
-//         public static AssetConsumerConfig LoadInEditor()
-//         {
-//             var configGuids = UnityEditor.AssetDatabase.FindAssets("t:AssetConsumerConfig",
-//                 new[] { "Assets", "Packages/windy.miiasset" });
-//             if (configGuids.Length > 0)
-//             {
-//                 var configGuid = configGuids[0];
-//                 var config =
-//                     UnityEditor.AssetDatabase.LoadAssetAtPath<AssetConsumerConfig>(
-//                         UnityEditor.AssetDatabase.GUIDToAssetPath(configGuid));
-//                 return config;
-//             }
-//             else
-//             {
-//                 Debug.LogError("no consumer config found");
-//                 return null;
-//             }
-//         }
-// #endif
+
+#if UNITY_EDITOR
+        public static bool LoadInEditor(out AssetConsumerConfig config)
+        {
+            var configGuids =
+                UnityEditor.AssetDatabase.FindAssets("t:AssetConsumerConfig", new[] { "Assets", "Packages/windy.miiasset" });
+            if (configGuids.Length > 0)
+            {
+                var configGuid = configGuids[0];
+                config =
+                    UnityEditor.AssetDatabase.LoadAssetAtPath<AssetConsumerConfig>(UnityEditor.AssetDatabase.GUIDToAssetPath(configGuid));
+                return true;
+            }
+            else
+            {
+                Debug.LogError("no consumer config found");
+                config = null;
+                return false;
+            }
+        }
+#endif
     }
 }
