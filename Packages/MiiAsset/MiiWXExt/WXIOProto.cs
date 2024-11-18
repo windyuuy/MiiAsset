@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -268,11 +269,38 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<string> ReadCatalog(string uri)
 		{
-			var entry = "catalog.json";
+			var entryKey = "catalog.json";
 			var ts = new TaskCompletionSource<string>();
 			FileSystemManager.ReadZipEntry(new ReadZipEntryOptionString()
 			{
-				success = (resp) => { ts.SetResult(resp.entries[entry].data); },
+				success = (resp) =>
+				{
+					// Debug.LogError($"catalog.zip-keys:{resp.entries.Count}, {String.Join(",", resp.entries.Keys)}");
+					if (resp.entries.TryGetValue(entryKey, out var entry))
+					{
+						ts.SetResult(entry.data);
+					}
+					else
+					{
+						try
+						{
+							using var stream = this.OpenRead(uri);
+							using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
+							var entry2 = zipArchive.GetEntry(entryKey);
+							Debug.Assert(entry2 != null, $"entry2!=null, {uri}");
+							using var streamReader = new StreamReader(entry2.Open());
+							var text = streamReader.ReadToEnd();
+							ts.SetResult(text);
+						}
+						catch (Exception exception)
+						{
+							Debug.LogException(exception);
+							var err = new IOException($"handle zip file with exception: {uri}");
+							Debug.LogException(err);
+							ts.SetException(err);
+						}
+					}
+				},
 				fail = (resp) => { ts.SetException(new IOException(resp.GetExceptionDesc("read catalog failed"))); },
 				entries = "all",
 				filePath = uri,
