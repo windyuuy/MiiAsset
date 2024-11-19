@@ -1,4 +1,5 @@
 ﻿using System;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime
@@ -66,7 +67,7 @@ namespace MiiAsset.Runtime
             }
             else
             {
-                Debug.LogError("no consumer config found");
+                MyLogger.LogError("no consumer config found");
                 config = null;
                 return false;
             }

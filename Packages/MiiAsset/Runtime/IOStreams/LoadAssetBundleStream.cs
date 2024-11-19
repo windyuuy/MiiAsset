@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime.IOStreams
@@ -20,7 +21,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public override void Flush()
 		{
-			Debug.LogError("NotImplementException");
+			MyLogger.LogError("NotImplementException");
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)

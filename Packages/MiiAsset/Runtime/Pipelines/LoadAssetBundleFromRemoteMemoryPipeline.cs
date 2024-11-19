@@ -52,7 +52,7 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				// else
 				// {
-				// 	Debug.Log($"bundle-loaded: {RemoteUri}");
+				// 	MyLogger.Log($"bundle-loaded: {RemoteUri}");
 				// }
 			}
 

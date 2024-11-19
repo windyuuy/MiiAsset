@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -59,7 +60,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogException(new NotInTagsBundleSetException());
+				MyLogger.LogException(new NotInTagsBundleSetException());
 				return default;
 			}
 		}
@@ -77,7 +78,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogException(new NotInTagsBundleSetException());
+				MyLogger.LogException(new NotInTagsBundleSetException());
 				return default;
 			}
 		}

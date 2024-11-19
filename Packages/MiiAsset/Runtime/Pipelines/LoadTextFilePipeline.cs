@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOStreams;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
@@ -39,7 +40,7 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (Exception ex)
 				{
-					Debug.LogException(ex);
+					MyLogger.LogException(ex);
 					Result.ErrorType = PipelineErrorType.FileSystemError;
 					Result.Exception = ex;
 				}

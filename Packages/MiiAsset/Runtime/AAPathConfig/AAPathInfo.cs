@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime
@@ -81,7 +82,7 @@ namespace MiiAsset.Runtime
 		{
 			if (!IsValidAsset(pathInfo, assetPath))
 			{
-				Debug.LogError($"loading invalid asset: {assetPath}");
+				MyLogger.LogError($"loading invalid asset: {assetPath}");
 				return null;
 			}
 
@@ -97,7 +98,7 @@ namespace MiiAsset.Runtime
 
 			if (groupNameInfo == null)
 			{
-				Debug.LogError($"loading asset not in bundle");
+				MyLogger.LogError($"loading asset not in bundle");
 			}
 
 			return groupNameInfo;
@@ -170,7 +171,7 @@ namespace MiiAsset.Runtime
 				}
 				catch (Exception e)
 				{
-					Debug.LogException(e);
+					MyLogger.LogException(e);
 				}
 			}
 

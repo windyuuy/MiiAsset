@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
-using UnityEngine;
 
 namespace MiiAsset.Runtime.IOStreams
 {
@@ -25,7 +25,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public int Write(byte[] data, int offset, int len)
 		{
-			// Debug.Log($"WriteSeg: {Path.GetFileName(Uri)}, {len}, {FileStream != null}");
+			// MyLogger.Log($"WriteSeg: {Path.GetFileName(Uri)}, {len}, {FileStream != null}");
 			if (FileStream != null)
 			{
 				FileStream.Write(data, offset, len);
@@ -44,7 +44,7 @@ namespace MiiAsset.Runtime.IOStreams
 				Result.IsOk = evt.IsOk;
 				if (!evt.IsOk)
 				{
-					Debug.LogError($"Download-Exception: {Uri}, {evt.GetReason()}");
+					MyLogger.LogError($"Download-Exception: {Uri}, {evt.GetReason()}");
 					FileStream.Close();
 					try
 					{
@@ -53,7 +53,7 @@ namespace MiiAsset.Runtime.IOStreams
 					catch (Exception exception)
 					{
 						Result.ErrorType = PipelineErrorType.FileSystemError;
-						Debug.LogException(exception);
+						MyLogger.LogException(exception);
 					}
 				}
 				else
@@ -75,7 +75,7 @@ namespace MiiAsset.Runtime.IOStreams
 						Result.Exception = exception;
 						Result.ErrorType = PipelineErrorType.FileSystemError;
 						Result.IsOk = false;
-						// Debug.LogException(exception);
+						// MyLogger.LogException(exception);
 					}
 				}
 

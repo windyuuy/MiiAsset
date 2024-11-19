@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 #if UNITY_WEBGL && SUPPORT_WECHATGAME
@@ -35,11 +36,11 @@ namespace MiiAsset.Runtime.IOManagers
 					filePath = path,
 					flag = flag,
 				});
-				// Debug.Log($"OpenSync: {path}, {fd}");
+				// MyLogger.Log($"OpenSync: {path}, {fd}");
 				FdMap.Add(path, fd);
 			}
 
-			// Debug.Log($"OpenSync2: {path}, {fd}");
+			// MyLogger.Log($"OpenSync2: {path}, {fd}");
 			return fd;
 		}
 	}
@@ -58,12 +59,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void Flush()
 		{
-			Debug.LogError("NotImplementException-Flush");
+			MyLogger.LogError("NotImplementException-Flush");
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)
 		{
-			Debug.LogError("NotImplementException-Read");
+			MyLogger.LogError("NotImplementException-Read");
 			var readLen = Math.Min(buffer.Length - offset, count);
 			var bytes = Fs.ReadFileSync(this.Uri, this.Position, readLen);
 			var readLen1 = bytes.Length;
@@ -95,7 +96,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void SetLength(long value)
 		{
-			Debug.LogError("WXWriteFileStream.SetLength not implement");
+			MyLogger.LogError("WXWriteFileStream.SetLength not implement");
 			this._length = value;
 			this.Position = Math.Min(this._length, this.Position);
 		}
@@ -106,7 +107,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public override void Write(byte[] buffer, int offset, int count)
 		{
 			var fd = Opener.Open(Uri, "a");
-			// Debug.Log($"Write-Begine: {Path.GetFileName(Uri)}, {offset}, {count}, {buffer.Length}, {Position}, {fd}");
+			// MyLogger.Log($"Write-Begine: {Path.GetFileName(Uri)}, {offset}, {count}, {buffer.Length}, {Position}, {fd}");
 
 			if (buffer.Length > WriteSeg)
 			{
@@ -127,14 +128,14 @@ namespace MiiAsset.Runtime.IOManagers
 					// {
 					// 	success = (resp) =>
 					// 	{
-					// 		Debug.Log($"Write-End: {Path.GetFileName(this.Uri)}, {Position}, {offset}, {count}");
+					// 		MyLogger.Log($"Write-End: {Path.GetFileName(this.Uri)}, {Position}, {offset}, {count}");
 					// 		this.WaitLock.OkOnce();
 					// 	},
 					// 	fail = (resp) =>
 					// 	{
 					// 		var reason =
 					// 			$"WriteFile-Fail: {Path.GetFileName(Uri)}, code: {resp?.errCode}, errMsg: {resp?.errMsg}, offset: {offset}, count: {count}, len: {buffer.Length}, pos: {Position}, fd: {fd}";
-					// 		Debug.LogError(reason);
+					// 		MyLogger.LogError(reason);
 					// 		this.WaitLock.FailOnce(reason);
 					// 	},
 					// 	fd = fd,
@@ -159,7 +160,7 @@ namespace MiiAsset.Runtime.IOManagers
 				Position += count;
 			}
 
-			// Debug.Log($"Write-Wait: {Path.GetFileName(this.Uri)}, {Position}, {offset}, {count}");
+			// MyLogger.Log($"Write-Wait: {Path.GetFileName(this.Uri)}, {Position}, {offset}, {count}");
 
 			_length = Math.Max(Position, _length);
 		}

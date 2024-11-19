@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.AddressablesExt
@@ -38,7 +39,7 @@ namespace MiiAsset.AddressablesExt
 			}
 			else
 			{
-				Debug.Log("本地存储为空");
+				MyLogger.Log("本地存储为空");
 			}
 
 			return ts.Task;

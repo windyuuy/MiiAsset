@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime.IOManagers
@@ -16,7 +17,7 @@ namespace MiiAsset.Runtime.IOManagers
         internal static async void Init(int initCount, int maxCount)
         {
             MaxCount = initCount;
-            Debug.Log($"下载并发数限制：{initCount}->{maxCount}");
+            MyLogger.Log($"下载并发数限制：{initCount}->{maxCount}");
 
             await UniAsyncUtils.WaitForSeconds(0.4f);
             MaxCount = (int)(initCount*0.7f + maxCount * 0.3f);
@@ -40,11 +41,11 @@ namespace MiiAsset.Runtime.IOManagers
                 }
                 catch (Exception exception)
                 {
-                    Debug.LogException(exception);
+                    MyLogger.LogException(exception);
                 }
             }
 
-            // Debug.Log($"当前下载并发数：{PendingCount}");
+            // MyLogger.Log($"当前下载并发数：{PendingCount}");
         }
 
         internal static void Respond()

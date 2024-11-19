@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
 
@@ -140,7 +141,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError($"asset not exist in any bundle2: {address}");
+				MyLogger.LogError($"asset not exist in any bundle2: {address}");
 			}
 
 			return false;
@@ -172,7 +173,7 @@ namespace MiiAsset.Runtime
 					}
 					else
 					{
-						Debug.LogError($"tag referCount invalid: {tag}");
+						MyLogger.LogError($"tag referCount invalid: {tag}");
 					}
 
 					if (referCount == 0)
@@ -187,7 +188,7 @@ namespace MiiAsset.Runtime
 							}
 							else
 							{
-								Debug.LogError($"bundle referCount invalid: {bundleName}");
+								MyLogger.LogError($"bundle referCount invalid: {bundleName}");
 							}
 
 							if (bundleLoadStatus.RefCount == 0)
@@ -297,7 +298,7 @@ namespace MiiAsset.Runtime
 					}
 					else
 					{
-						Debug.LogError($"bundle referCount invalid: [{dep}], caused with unloading[{address}]");
+						MyLogger.LogError($"bundle referCount invalid: [{dep}], caused with unloading[{address}]");
 					}
 
 					if (loadStatus.RefCount == 0)
@@ -324,7 +325,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError($"asset not exist in any bundle3: {address}");
+				MyLogger.LogError($"asset not exist in any bundle3: {address}");
 				return null;
 			}
 		}

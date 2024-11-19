@@ -2,6 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime.Pipelines
@@ -33,7 +34,7 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 			try
 			{
-				Debug.Log($"load catalog.zip: {Bytes.Length}");
+				MyLogger.Log($"load catalog.zip: {Bytes.Length}");
 				try
 				{
 					var stream = new MemoryStream(Bytes);
@@ -43,7 +44,7 @@ namespace MiiAsset.Runtime.Pipelines
 					using var streamReader = new StreamReader(entry.Open());
 					var text = await streamReader.ReadToEndAsync();
 					Text = text;
-					Debug.Log("load catalog.zip done");
+					MyLogger.Log("load catalog.zip done");
 					
 					if (string.IsNullOrWhiteSpace(text))
 					{
@@ -56,12 +57,12 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (Exception exception)
 				{
-					Debug.LogException(exception);
+					MyLogger.LogException(exception);
 				}
 			}
 			catch (Exception ex)
 			{
-				Debug.LogException(ex);
+				MyLogger.LogException(ex);
 				Result.ErrorType = PipelineErrorType.DataIncorrect;
 				Result.Exception = ex;
 			}

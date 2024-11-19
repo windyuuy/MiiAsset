@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Pipelines;
 using MiiAsset.Runtime.Status;
@@ -306,7 +307,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError($"cannot unload the scene: {sceneAddress}");
+				MyLogger.LogError($"cannot unload the scene: {sceneAddress}");
 			}
 		}
 
@@ -386,12 +387,12 @@ namespace MiiAsset.Runtime
 
 						try
 						{
-							Debug.Log($"delete1 {filePath}");
+							MyLogger.Log($"delete1 {filePath}");
 							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)
 						{
-							Debug.LogException(exception);
+							MyLogger.LogException(exception);
 							failedList.Add(filePath);
 						}
 					}
@@ -401,12 +402,12 @@ namespace MiiAsset.Runtime
 
 						try
 						{
-							Debug.Log($"delete2 {filePath}");
+							MyLogger.Log($"delete2 {filePath}");
 							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)
 						{
-							Debug.LogException(exception);
+							MyLogger.LogException(exception);
 							failedList.Add(filePath);
 						}
 					}
@@ -432,12 +433,12 @@ namespace MiiAsset.Runtime
 						{
 							CatalogInfo.BundlesToClean.Add(fileName);
 
-							Debug.Log($"delete3 {filePath}");
+							MyLogger.Log($"delete3 {filePath}");
 							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)
 						{
-							Debug.LogException(exception);
+							MyLogger.LogException(exception);
 							failedList.Add(filePath);
 						}
 					}

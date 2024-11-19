@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
@@ -237,12 +238,12 @@ namespace MiiAsset.Runtime
 					if (isInternalBundleExist)
 					{
 						_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
-						// Debug.Log($"downloadprogress1: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						// MyLogger.Log($"downloadprogress1: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
 					}
 					else
 					{
 						_downloadProgress = new PipelineProgress((ulong)FileSize, 0).Complete(Result.IsOk);
-						// Debug.Log($"downloadprogress2: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						// MyLogger.Log($"downloadprogress2: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
 					}
 
 					IsDownloaded = 2;
@@ -254,13 +255,13 @@ namespace MiiAsset.Runtime
 					{
 						IsDownloaded = downloadPipeline.Result.IsOk ? 1 : 0;
 						_downloadProgress = downloadPipeline.GetProgress();
-						// Debug.Log($"downloadprogress3: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						// MyLogger.Log($"downloadprogress3: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
 					}
 					else
 					{
 						IsDownloaded = 1;
 						_downloadProgress = new PipelineProgress().SetDownloadedProgress(true);
-						// Debug.Log($"downloadprogress4: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						// MyLogger.Log($"downloadprogress4: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
 					}
 				}
 
@@ -268,11 +269,11 @@ namespace MiiAsset.Runtime
 
 				if (this.AssetBundle == null)
 				{
-					Debug.LogError($"invalid AssetBundle: {BundleName}");
+					MyLogger.LogError($"invalid AssetBundle: {BundleName}");
 				}
 				else
 				{
-					Debug.Log($"AssetBundle-Loaded: {this.BundleName}");
+					MyLogger.Log($"AssetBundle-Loaded: {this.BundleName}");
 					IOManager.LocalIOProto.EnsureBundle(this.BundleName);
 				}
 
@@ -320,7 +321,7 @@ namespace MiiAsset.Runtime
 				{
 					if (!isCached)
 					{
-						Debug.Log($"AssetBundle-DownLoaded: {this.BundleName}");
+						MyLogger.Log($"AssetBundle-DownLoaded: {this.BundleName}");
 					}
 #if UNITY_EDITOR
 					BundleStatusNotify.OnBundleDownLoad?.Invoke(this);
@@ -358,7 +359,7 @@ namespace MiiAsset.Runtime
 
 				await UnloadTask;
 				UnloadTask = null;
-				Debug.Log($"AssetBundle-unloaded: {this.BundleName}");
+				MyLogger.Log($"AssetBundle-unloaded: {this.BundleName}");
 
 #if UNITY_EDITOR
 				BundleStatusNotify.OnBundleUnLoad?.Invoke(this);

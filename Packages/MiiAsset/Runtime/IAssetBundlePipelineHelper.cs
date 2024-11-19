@@ -48,7 +48,7 @@ namespace MiiAsset.Runtime
 				}
 			}
 
-			// Debug.Log($"userpipeline {pipeline.GetType().Name} for {assetBundleInfo.fileName}");
+			// MyLogger.Log($"userpipeline {pipeline.GetType().Name} for {assetBundleInfo.fileName}");
 
 			return pipeline;
 		}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -102,7 +103,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 					// if (!evt.IsOk)
 					// {
-					// 	UnityEngine.Debug.LogError($"download-failed: {Uwr.responseCode}, {Uwr.error}");
+					// 	UnityEngine.MyLogger.LogError($"download-failed: {Uwr.responseCode}, {Uwr.error}");
 					// }
 
 					Result.Code = (int)code;
@@ -127,7 +128,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public void Abort()
 		{
-			Debug.LogError($"Abort-Uwr: {Uri}");
+			MyLogger.LogError($"Abort-Uwr: {Uri}");
 			if (Uwr != null)
 			{
 				Uwr.Abort();
