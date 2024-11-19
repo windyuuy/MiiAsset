@@ -25,6 +25,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public int Write(byte[] data, int offset, int len)
 		{
+			// Debug.Log($"WriteSeg: {Path.GetFileName(Uri)}, {len}, {FileStream != null}");
 			if (FileStream != null)
 			{
 				FileStream.Write(data, offset, len);
@@ -59,12 +60,13 @@ namespace MiiAsset.Runtime.IOStreams
 				{
 					try
 					{
-#if true
+#if false
 						var bytes = new byte[FileStream.Length];
 						FileStream.Seek(0, SeekOrigin.Begin);
 						var count = FileStream.Read(bytes, 0, bytes.Length);
 						await IOManager.LocalIOProto.WriteAllBytesAsync(ToTempPath(Uri),bytes);
 #endif
+						// await FileStream.FlushAsync();
 						FileStream.Close();
 						IOManager.LocalIOProto.Move(ToTempPath(Uri), Uri);
 					}
@@ -86,7 +88,7 @@ namespace MiiAsset.Runtime.IOStreams
 				try
 				{
 					// IOManager.LocalIOProto.EnsureFileDirectory(Uri);
-#if false
+#if true
 					FileStream = IOManager.LocalIOProto.OpenWrite(ToTempPath(Uri));
 #else
 					FileStream = new MemoryStream();
