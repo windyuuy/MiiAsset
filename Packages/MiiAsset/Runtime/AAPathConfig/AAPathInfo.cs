@@ -27,9 +27,9 @@ namespace MiiAsset.Runtime
 		public bool IsShaderGroupOffline = true;
 		public bool IsMyBuiltinShaderGroupOffline = true;
 
-		public IEnumerable<GroupScanInfo> GetScanRootInfos()
+		public IEnumerable<GroupScanInfo> GetScanRootInfos(bool analyzeOnly)
 		{
-			return Paths.Select(p => p.GetScanRootInfo()).Distinct();
+			return Paths.Select(p => p.GetScanRootInfo(analyzeOnly)).Distinct();
 		}
 
 		/// <summary>

@@ -33,9 +33,9 @@ namespace MiiAsset.Runtime
 		/// </summary>
 		public bool isOffline;
 
-		public GroupScanInfo GetScanRootInfo()
+		public GroupScanInfo GetScanRootInfo(bool analyzeOnly)
 		{
-			if (Application.isPlaying)
+			if (Application.isPlaying && !analyzeOnly)
 			{
 				throw new NotImplementedException("cannot build when is playing");
 			}

@@ -15,7 +15,7 @@ namespace MiiAsset.Editor.Build
         
         public static BuildAssetBundlesResult BuildAssetBundlesWithPathInfo()
         {
-            var ret = AADepCollector.BuildAssetBundlesWithPathInfo();
+            var ret = AADepBuilder.BuildAssetBundlesWithPathInfo();
             Debug.Log("Build Done.");
             return ret;
         }

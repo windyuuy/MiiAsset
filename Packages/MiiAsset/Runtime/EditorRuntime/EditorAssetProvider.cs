@@ -3,27 +3,33 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
+using lang.time;
+using MiiAsset.Editor.Build;
 using MiiAsset.Editor.Optimization;
 using MiiAsset.Runtime.Status;
 using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine;
 
 namespace MiiAsset.Runtime
 {
 	public class EditorAssetProvider : IAssetProvider
 	{
 		protected AAPathInfo PathInfo;
+		protected readonly DepCollector DepCollector = new DepCollector();
 
 		public Task<bool> Init(IAssetProvider.IProviderInitOptions options)
 		{
-			PathInfo = AAPathConfigLoader.LoadDefaultConfigs();
-
 			return Task.FromResult(true);
 		}
 
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
+			PathInfo ??= AAPathConfigLoader.LoadDefaultConfigs();
+
+			DepCollector.CollectValidAssets(PathInfo);
+
 			return Task.FromResult(new PipelineResult
 			{
 				IsOk = true,
@@ -73,7 +79,10 @@ namespace MiiAsset.Runtime
 
 		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
 		{
-			if (!CheckPathAndTags<T>(address)) return Task.FromResult<T>(default);
+			if (!CheckPathAndTags<T>(address))
+			{
+				return Task.FromResult<T>(default);
+			}
 
 			var obj = AssetDatabase.LoadAssetAtPath(address, typeof(T));
 			if (obj is T data)
@@ -90,12 +99,16 @@ namespace MiiAsset.Runtime
 
 		private bool CheckPathAndTags<T>(string address)
 		{
-			var groupInfo = AAPathInfo.ParseGroupName(PathInfo, address, AssetDatabase.AssetPathToGUID(address));
-			if (groupInfo == null)
+			// var groupInfo = AAPathInfo.ParseGroupName(PathInfo, address, AssetDatabase.AssetPathToGUID(address));
+			// if (groupInfo == null)
+			// {
+			// 	return false;
+			// }
+			var b1 = this.DepCollector.IsValidAsset(address);
+			if (!b1)
 			{
 				return false;
 			}
-
 			return true;
 		}
 
@@ -141,9 +154,13 @@ namespace MiiAsset.Runtime
 			return Task.CompletedTask;
 		}
 
-		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters,
+			AssetLoadStatusGroup loadStatus)
 		{
-			if (!CheckPathAndTags<Scene>(sceneAddress)) return default;
+			if (!CheckPathAndTags<Scene>(sceneAddress))
+			{
+				return default;
+			}
 
 			var op = EditorSceneManager.LoadSceneAsyncInPlayMode(sceneAddress, parameters);
 			var subStatus = loadStatus?.AddAsyncOperationStatus(op);
@@ -158,7 +175,8 @@ namespace MiiAsset.Runtime
 			return op.GetTask();
 		}
 
-		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters,
+			AssetLoadStatusGroup loadStatus)
 		{
 			return LoadScene(sceneAddress, parameters, loadStatus);
 		}
