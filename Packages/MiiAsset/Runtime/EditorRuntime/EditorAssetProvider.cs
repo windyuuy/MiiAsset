@@ -6,6 +6,7 @@ using GameLib.MonoUtils;
 using lang.time;
 using MiiAsset.Editor.Build;
 using MiiAsset.Editor.Optimization;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Status;
 using UnityEngine.SceneManagement;
 using UnityEditor;
@@ -107,6 +108,7 @@ namespace MiiAsset.Runtime
 			var b1 = this.DepCollector.IsValidAsset(address);
 			if (!b1)
 			{
+				MyLogger.LogError($"asset not exist in any bundle1: {address}");
 				return false;
 			}
 			return true;
