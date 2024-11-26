@@ -38,7 +38,7 @@ namespace MiiAsset.Editor.Build
 		public readonly Dictionary<string, bool> AddressExistMap = new();
 
 		protected AAPathInfo PathInfo;
-		protected HashSet<string> FilterMap0;
+		protected HashSet<string> FilterMap0 = new();
 
 		public void CollectValidAssets(AAPathInfo pathInfo)
 		{
@@ -55,7 +55,7 @@ namespace MiiAsset.Editor.Build
 			//
 			Reset();
 			// collect sprites in spriteatlas
-			FilterMap0 = new HashSet<string>();
+			FilterMap0.Clear();
 			CollectSpriteAtlas(FilterMap0);
 
 			PathInfo = pathInfo;
