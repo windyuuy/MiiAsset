@@ -470,5 +470,16 @@ namespace MiiAsset.Runtime
 		{
 			return CatalogAddressStatus.GetAddressStatus(address);
 		}
+
+		public HashSet<string> GetAssetDependBundles(string address)
+		{
+			CatalogInfo.GetAssetDependBundles(address, out var deps);
+			return deps;
+		}
+
+		public Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatus()
+		{
+			return CatalogStatus.BundleLoadStatus;
+		}
 	}
 }
