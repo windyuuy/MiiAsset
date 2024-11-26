@@ -62,6 +62,16 @@ namespace MiiAsset.Runtime
 			return status;
 		}
 
+		/// <summary>
+		/// get bundle status
+		/// </summary>
+		/// <param name="bundleName"></param>
+		/// <returns>nullable</returns>
+		public IAssetBundleStatus GetStatus(string bundleName)
+		{
+			return BundleLoadStatus[bundleName];
+		}
+
 		public void AllowTags(IEnumerable<string> tags, CatalogInfo catalogInfo)
 		{
 			foreach (var tag in tags)

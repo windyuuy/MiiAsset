@@ -459,5 +459,15 @@ namespace MiiAsset.Runtime
 		{
 			this.CatalogStatus.Dispose();
 		}
+
+		public IAssetBundleStatus GetBundleStatus(string bundleName)
+		{
+			return this.CatalogStatus.GetStatus(bundleName);
+		}
+
+		public LoadAddressStatus GetAddressStatus(string address)
+		{
+			return CatalogAddressStatus.GetAddressStatus(address);
+		}
 	}
 }

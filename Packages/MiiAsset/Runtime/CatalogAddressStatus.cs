@@ -16,6 +16,11 @@ namespace MiiAsset.Runtime
 	{
 		public Dictionary<string, LoadAddressStatus> AddressLoadMap = new();
 
+		public LoadAddressStatus GetAddressStatus(string address)
+		{
+			return AddressLoadMap[address];
+		}
+
 		public void RegisterAddress<T>(string address, Task<T> task)
 		{
 			if (!AddressLoadMap.TryGetValue(address, out var status))
