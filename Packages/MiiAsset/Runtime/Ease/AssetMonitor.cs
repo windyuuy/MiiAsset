@@ -3,15 +3,16 @@ using UnityEngine;
 
 namespace MiiAsset.Runtime
 {
-	public static class AssetMonitor
+	public class AssetMonitor
 	{
-		internal static IAssetProvider Consumer => AssetLoader.Consumer;
+		public static readonly AssetMonitor Inst = new AssetMonitor();
+		internal IAssetProvider Consumer => AssetLoader.Consumer;
 
 		/// <summary>
 		/// 仅用于开发时观测加载状态, 正式版本要移除
 		/// </summary>
 		/// <returns></returns>
-		public static BundledAssetProvider GetBundledAssetProvider()
+		public BundledAssetProvider GetBundledAssetProvider()
 		{
 			if (Consumer is BundledAssetProvider bundledAssetProvider)
 			{
@@ -24,9 +25,12 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public static BundledAssetProvider BundledAssetProvider => GetBundledAssetProvider();
+		/// <summary>
+		/// 所有asset加载状态
+		/// </summary>
+		public BundledAssetProvider BundledAssetProvider => GetBundledAssetProvider();
 
-		public static Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatus()
+		public Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatus()
 		{
 			var provider = GetBundledAssetProvider();
 			if (provider != null)
@@ -37,13 +41,16 @@ namespace MiiAsset.Runtime
 			return null;
 		}
 
-		public static Dictionary<string, IAssetBundleStatus> AllBundleLoadStatus => GetAllBundleLoadStatus();
+		/// <summary>
+		/// 所有bundle加载状态
+		/// </summary>
+		public Dictionary<string, IAssetBundleStatus> AllBundleLoadStatus => GetAllBundleLoadStatus();
 
 		/// <summary>
 		/// 仅用于开发时观测加载状态, 正式版本要移除
 		/// </summary>
 		/// <returns></returns>
-		public static IAssetBundleStatus GetAssetBundleStatus(string bundleName)
+		public IAssetBundleStatus GetAssetBundleStatus(string bundleName)
 		{
 			var provider = GetBundledAssetProvider();
 			if (provider != null)
@@ -58,7 +65,7 @@ namespace MiiAsset.Runtime
 		/// 仅用于开发时观测加载状态, 正式版本要移除
 		/// </summary>
 		/// <returns></returns>
-		public static LoadAddressStatus GetAddressStatus(string address)
+		public LoadAddressStatus GetAddressStatus(string address)
 		{
 			var provider = GetBundledAssetProvider();
 			if (provider != null)
@@ -69,7 +76,12 @@ namespace MiiAsset.Runtime
 			return null;
 		}
 
-		public static HashSet<string> GetAssetDependBundles(string address)
+		/// <summary>
+		/// 获取asset依赖的bundle
+		/// </summary>
+		/// <param name="address"></param>
+		/// <returns></returns>
+		public HashSet<string> GetAssetDependBundles(string address)
 		{
 			var provider = GetBundledAssetProvider();
 			if (provider != null)
