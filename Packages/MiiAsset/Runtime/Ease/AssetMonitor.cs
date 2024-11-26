@@ -24,6 +24,8 @@ namespace MiiAsset.Runtime
 			}
 		}
 
+		public static BundledAssetProvider BundledAssetProvider => GetBundledAssetProvider();
+
 		public static Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatus()
 		{
 			var provider = GetBundledAssetProvider();
@@ -34,6 +36,8 @@ namespace MiiAsset.Runtime
 
 			return null;
 		}
+
+		public static Dictionary<string, IAssetBundleStatus> AllBundleLoadStatus => GetAllBundleLoadStatus();
 
 		/// <summary>
 		/// 仅用于开发时观测加载状态, 正式版本要移除
