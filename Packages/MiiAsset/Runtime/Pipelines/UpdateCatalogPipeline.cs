@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lang.Encoding;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 
@@ -47,7 +48,7 @@ namespace MiiAsset.Runtime.Pipelines
 			var isInternalAsWebUri = IOManager.LocalIOProto.IsWebUri(internalCatalogUri);
 			// 暂时仅判断catalog文件是否存在来判定, 已经足够
 			var isInternalCatalogExist = isInternalAsWebUri || IOManager.LocalIOProto.Exists(internalCatalogUri);
-			Debug.Log($"isInternalCatalogExist: {isInternalCatalogExist}, {isInternalAsWebUri}");
+			MyLogger.Log($"isInternalCatalogExist: {isInternalCatalogExist}, {isInternalAsWebUri}");
 			using ILoadTextAssetPipeline loadInternalHashPipeline = isInternalCatalogExist
 				? (isInternalAsWebUri
 					? new LoadRemoteTextFilePipeline().Init(ToHashFileName(internalCatalogUri), null)
@@ -203,7 +204,7 @@ namespace MiiAsset.Runtime.Pipelines
 			else
 			{
 				var message = "no valid catalog to load";
-				Debug.Log(message);
+				MyLogger.Log(message);
 				Result = new PipelineResult
 				{
 					IsOk = false,
@@ -235,7 +236,7 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (Exception exception)
 				{
-					Debug.LogException(exception);
+					MyLogger.LogException(exception);
 					Result = new()
 					{
 						Exception = exception,
@@ -307,7 +308,7 @@ namespace MiiAsset.Runtime.Pipelines
 		private static string ToHashFileName(string internalCatalogUri)
 		{
 			var hashFileName = internalCatalogUri.Replace(".json", ".hash").Replace(".zip", ".hash");
-			Debug.Log($"ToHashFileName: {internalCatalogUri}->{hashFileName}");
+			MyLogger.Log($"ToHashFileName: {internalCatalogUri}->{hashFileName}");
 			return hashFileName;
 		}
 

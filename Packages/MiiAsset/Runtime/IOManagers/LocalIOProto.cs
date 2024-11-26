@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -47,7 +48,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 			catch (Exception exception)
 			{
-				Debug.LogException(exception);
+				MyLogger.LogException(exception);
 				return false;
 			}
 		}
@@ -157,6 +158,11 @@ namespace MiiAsset.Runtime.IOManagers
 		public Task WriteAllBytesAsync(string uri, byte[] bytes)
 		{
 			return File.WriteAllBytesAsync(uri, bytes);
+		}
+
+		public void WriteAllBytes(string uri, byte[] bytes)
+		{
+			File.WriteAllBytes(uri, bytes);
 		}
 
 		public bool IsWebUri(string uri)

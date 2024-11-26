@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
 using Lang.Encoding;
+using MiiAsset.Runtime.Adapter;
 
 #if UNITY_WEBGL && SUPPORT_WECHATGAME
 using WeChatWASM;
@@ -34,6 +36,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public string InternalDir { get; set; }
 		public string ExternalDir { get; set; }
 		public string CatalogName { get; set; }
+		public int Timeout { get; set; }
 		public bool IsInternalDirUpdating => true;
 		public static string StreamingCacheAssetPath = $"{WX.env.USER_DATA_PATH}/__GAME_FILE_CACHE/StreamingAssets/";
 		public static string StreamingRemoteAssetPath;
@@ -52,8 +55,9 @@ namespace MiiAsset.Runtime.IOManagers
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
 			StreamingRemoteAssetPath = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
 			this.CatalogName = options.CatalogName;
+			this.Timeout = options.Timeout;
 
-			Debug.Log($"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
+			MyLogger.Log($"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
 			FileSystemManager = WX.GetFileSystemManager();
 
@@ -83,7 +87,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 			catch (Exception exception)
 			{
-				Debug.LogException(exception);
+				MyLogger.LogException(exception);
 				return false;
 			}
 		}
@@ -256,9 +260,15 @@ namespace MiiAsset.Runtime.IOManagers
 					var exception = new IOException(resp.GetExceptionDesc("write-file-failed"));
 					ts.SetException(exception);
 				},
+				data = bytes,
 				filePath = uri,
 			});
 			return ts.Task;
+		}
+
+		public void WriteAllBytes(string uri, byte[] bytes)
+		{
+			FileSystemManager.WriteFileSync(uri, bytes);
 		}
 
 		public bool IsWebUri(string uri)
@@ -268,11 +278,38 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<string> ReadCatalog(string uri)
 		{
-			var entry = "catalog.json";
+			var entryKey = "catalog.json";
 			var ts = new TaskCompletionSource<string>();
 			FileSystemManager.ReadZipEntry(new ReadZipEntryOptionString()
 			{
-				success = (resp) => { ts.SetResult(resp.entries[entry].data); },
+				success = (resp) =>
+				{
+					// MyLogger.LogError($"catalog.zip-keys:{resp.entries.Count}, {String.Join(",", resp.entries.Keys)}");
+					if (resp.entries.TryGetValue(entryKey, out var entry))
+					{
+						ts.SetResult(entry.data);
+					}
+					else
+					{
+						try
+						{
+							using var stream = this.OpenRead(uri);
+							using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
+							var entry2 = zipArchive.GetEntry(entryKey);
+							Debug.Assert(entry2 != null, $"entry2!=null, {uri}");
+							using var streamReader = new StreamReader(entry2.Open());
+							var text = streamReader.ReadToEnd();
+							ts.SetResult(text);
+						}
+						catch (Exception exception)
+						{
+							MyLogger.LogException(exception);
+							var err = new IOException($"handle zip file with exception: {uri}");
+							MyLogger.LogException(err);
+							ts.SetException(err);
+						}
+					}
+				},
 				fail = (resp) => { ts.SetException(new IOException(resp.GetExceptionDesc("read catalog failed"))); },
 				entries = "all",
 				filePath = uri,
@@ -284,14 +321,14 @@ namespace MiiAsset.Runtime.IOManagers
 		private async Task<bool> EnsureStreamingAssets(string fileName)
 		{
 			var uri2 = $"{StreamingRemoteAssetPath}{fileName}";
-			Debug.Log($"EnsureStreamingAssets: {uri2}");
+			MyLogger.Log($"EnsureStreamingAssets: {uri2}");
 			var uwr = UnityWebRequest.Get(uri2);
 			var op = uwr.SendWebRequest();
 			await op.GetTask();
 			var isOk = uwr.result == UnityWebRequest.Result.Success;
 			if (!isOk)
 			{
-				Debug.Log($"EnsureStreamingAssets-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
+				MyLogger.Log($"EnsureStreamingAssets-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
 			}
 
 			var maxTimes = 100;
@@ -315,14 +352,14 @@ namespace MiiAsset.Runtime.IOManagers
 			if (!existsBundle)
 			{
 				var uri2 = $"{StreamingRemoteAssetPath}{bundleName}";
-				Debug.Log($"EnsureStreamingBundles: {uri2}");
+				MyLogger.Log($"EnsureStreamingBundles: {uri2}");
 				var uwr = UnityWebRequest.Get(uri2);
 				var op = uwr.SendWebRequest();
 				await op.GetTask();
 				var isOk = uwr.result == UnityWebRequest.Result.Success;
 				if (!isOk)
 				{
-					Debug.Log($"EnsureStreamingBundles-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
+					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
 				}
 				else
 				{
@@ -357,12 +394,13 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public void SetUwr(UnityWebRequest uwr)
 		{
-			Debug.Log($"request-begin: {uwr.url}");
+			MyLogger.Log($"request-begin: {uwr.url}, {this.Timeout}");
 
 			if (CertificateHandler != null)
 			{
 				uwr.certificateHandler = CertificateHandler;
 				uwr.disposeCertificateHandlerOnDispose = false;
+				uwr.timeout = this.Timeout;
 			}
 		}
 	}

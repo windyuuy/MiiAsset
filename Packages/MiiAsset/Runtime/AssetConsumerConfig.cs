@@ -1,4 +1,5 @@
 ﻿using System;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime
@@ -27,7 +28,7 @@ namespace MiiAsset.Runtime
         public LoadType loadType = LoadType.LoadFromEditor;
         public int initDownloadCoCount = 10;
         [Header("最大下载线程数")]
-        public int maxDownloadCoCount = 50;
+        public int maxDownloadCoCount = 20;
         [Header("网络超时时长")]
         public int timeout = 300;
 
@@ -48,7 +49,7 @@ namespace MiiAsset.Runtime
 
         public static AssetConsumerConfig Load()
         {
-            var config = Resources.Load<AssetConsumerConfig>("MiiConfig/AssetConsumerConfig");
+            var config = Resources.Load<AssetConsumerConfig>("MiiConfig/AssetConsumerConfig") ?? Resources.Load<AssetConsumerConfig>("MiiConfig/BuiltinAssetConsumerConfig");
             return config;
         }
 
@@ -66,7 +67,7 @@ namespace MiiAsset.Runtime
             }
             else
             {
-                Debug.LogError("no consumer config found");
+                MyLogger.LogError("no consumer config found");
                 config = null;
                 return false;
             }

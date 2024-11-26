@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime
@@ -51,7 +52,7 @@ namespace MiiAsset.Runtime
 				}
 				else
 				{
-					Debug.LogError($"invalid address status: {address}");
+					MyLogger.LogError($"invalid address status: {address}");
 				}
 			}
 		}

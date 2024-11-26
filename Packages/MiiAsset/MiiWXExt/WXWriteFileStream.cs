@@ -1,6 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System;
+using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 #if UNITY_WEBGL && SUPPORT_WECHATGAME
@@ -32,9 +36,11 @@ namespace MiiAsset.Runtime.IOManagers
 					filePath = path,
 					flag = flag,
 				});
+				// MyLogger.Log($"OpenSync: {path}, {fd}");
 				FdMap.Add(path, fd);
 			}
 
+			// MyLogger.Log($"OpenSync2: {path}, {fd}");
 			return fd;
 		}
 	}
@@ -53,12 +59,19 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void Flush()
 		{
-			Debug.LogError("NotImplementException");
+			MyLogger.LogError("NotImplementException-Flush");
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)
 		{
-			throw new System.NotImplementedException();
+			MyLogger.LogError("NotImplementException-Read");
+			var readLen = Math.Min(buffer.Length - offset, count);
+			var bytes = Fs.ReadFileSync(this.Uri, this.Position, readLen);
+			var readLen1 = bytes.Length;
+			Buffer.BlockCopy(bytes, 0, buffer, offset, readLen1);
+			this.Position += readLen1;
+			this._length = Math.Max(this._length, this.Position);
+			return bytes.Length;
 		}
 
 
@@ -83,30 +96,89 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void SetLength(long value)
 		{
-			throw new System.NotImplementedException("WXWriteFileStream.SetLength not implement");
+			MyLogger.LogError("WXWriteFileStream.SetLength not implement");
+			this._length = value;
+			this.Position = Math.Min(this._length, this.Position);
 		}
+
+		const int WriteSeg = 1024*1024*4;//11525472;
+		static readonly byte[] TempBuffer = new byte[WriteSeg];
 
 		public override void Write(byte[] buffer, int offset, int count)
 		{
 			var fd = Opener.Open(Uri, "a");
-			Fs.WriteSync(new WriteSyncOption
+			// MyLogger.Log($"Write-Begine: {Path.GetFileName(Uri)}, {offset}, {count}, {buffer.Length}, {Position}, {fd}");
+
+			if (buffer.Length > WriteSeg)
 			{
-				data = buffer,
-				fd = fd,
-				length = count,
-				offset = offset,
-				position = Position,
-			});
+				for (var i = 0; i < count; i += WriteSeg)
+				{
+					var writeLen = Math.Min(WriteSeg, count - i);
+					Buffer.BlockCopy(buffer, offset + i, TempBuffer, 0, writeLen);
+					Fs.WriteSync(new WriteSyncOption
+					{
+						fd = fd,
+						position = Position,
+						data = TempBuffer,
+						offset = 0,
+						length = writeLen,
+					});
+					// WaitLock.AddWait();
+					// Fs.Write(new WriteOption
+					// {
+					// 	success = (resp) =>
+					// 	{
+					// 		MyLogger.Log($"Write-End: {Path.GetFileName(this.Uri)}, {Position}, {offset}, {count}");
+					// 		this.WaitLock.OkOnce();
+					// 	},
+					// 	fail = (resp) =>
+					// 	{
+					// 		var reason =
+					// 			$"WriteFile-Fail: {Path.GetFileName(Uri)}, code: {resp?.errCode}, errMsg: {resp?.errMsg}, offset: {offset}, count: {count}, len: {buffer.Length}, pos: {Position}, fd: {fd}";
+					// 		MyLogger.LogError(reason);
+					// 		this.WaitLock.FailOnce(reason);
+					// 	},
+					// 	fd = fd,
+					// 	position = Position,
+					// 	data = TempBuffer,
+					// 	offset = 0,
+					// 	length = writeLen,
+					// });
+					Position += writeLen;
+				}
+			}
+			else
+			{
+				Fs.WriteSync(new WriteSyncOption
+				{
+					fd = fd,
+					position = Position,
+					data = buffer,
+					offset = offset,
+					length = count,
+				});
+				Position += count;
+			}
+
+			// MyLogger.Log($"Write-Wait: {Path.GetFileName(this.Uri)}, {Position}, {offset}, {count}");
+
+			_length = Math.Max(Position, _length);
 		}
 
-		public override bool CanRead => false;
+		protected WaitLock WaitLock = new WaitLock(false);
+
+		public override Task FlushAsync(CancellationToken cancellationToken)
+		{
+			// return this.WaitLock.Wait();
+			return Task.CompletedTask;
+		}
+
+		public override bool CanRead => true;
 		public override bool CanSeek => true;
 		public override bool CanWrite => true;
 
-		public override long Length
-		{
-			get { throw new System.NotImplementedException("WXWriteFileStream.get_Length not implement"); }
-		}
+		private long _length = 0;
+		public override long Length => _length;
 
 		public override long Position { get; set; }
 	}

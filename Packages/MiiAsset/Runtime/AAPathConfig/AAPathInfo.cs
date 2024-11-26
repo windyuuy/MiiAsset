@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime
@@ -26,9 +27,9 @@ namespace MiiAsset.Runtime
 		public bool IsShaderGroupOffline = true;
 		public bool IsMyBuiltinShaderGroupOffline = true;
 
-		public IEnumerable<GroupScanInfo> GetScanRootInfos()
+		public IEnumerable<GroupScanInfo> GetScanRootInfos(bool analyzeOnly)
 		{
-			return Paths.Select(p => p.GetScanRootInfo()).Distinct();
+			return Paths.Select(p => p.GetScanRootInfo(analyzeOnly)).Distinct();
 		}
 
 		/// <summary>
@@ -81,7 +82,7 @@ namespace MiiAsset.Runtime
 		{
 			if (!IsValidAsset(pathInfo, assetPath))
 			{
-				Debug.LogError($"loading invalid asset: {assetPath}");
+				MyLogger.LogError($"loading invalid asset: {assetPath}");
 				return null;
 			}
 
@@ -97,7 +98,7 @@ namespace MiiAsset.Runtime
 
 			if (groupNameInfo == null)
 			{
-				Debug.LogError($"loading asset not in bundle");
+				MyLogger.LogError($"loading asset not in bundle");
 			}
 
 			return groupNameInfo;
@@ -170,7 +171,7 @@ namespace MiiAsset.Runtime
 				}
 				catch (Exception e)
 				{
-					Debug.LogException(e);
+					MyLogger.LogException(e);
 				}
 			}
 

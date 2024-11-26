@@ -1,4 +1,5 @@
 ﻿using System;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime
@@ -30,16 +31,16 @@ namespace MiiAsset.Runtime
 		{
 			if (!this.IsOk)
 			{
-				Debug.LogError($"Pipeline-Error: ErrorType: {ErrorType}, Code: {Code}, Msg: {Msg}");
+				MyLogger.LogError($"Pipeline-Error: ErrorType: {ErrorType}, Code: {Code}, Msg: {Msg}");
 
 				if (this.Exception != null)
 				{
-					Debug.LogException(this.Exception);
+					MyLogger.LogException(this.Exception);
 				}
 			}
 			else
 			{
-				Debug.Log($"Pipeline-Done");
+				MyLogger.Log($"Pipeline-Done");
 			}
 		}
 

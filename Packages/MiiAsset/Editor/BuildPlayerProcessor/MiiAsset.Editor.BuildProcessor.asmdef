@@ -1,14 +1,16 @@
 {
-    "name": "MiiAsset.Editor",
+    "name": "MiiAsset.Editor.BuildProcessor",
     "rootNamespace": "",
     "references": [
-        "GUID:c5ecc461727906345a35491a0440694f",
+        "GUID:3335fd4912059ac44ade7352e91cad72",
         "GUID:890b253146385e54b9b4cff5c8dea58b",
-        "GUID:5c1ff9bd975acec488150743d53a93ca",
-        "GUID:6a5755abd07c03b43979d9a2f6b82cca",
+        "GUID:2327133a9cd59df45aac0ce0d43e61e8",
         "GUID:2ad8be1357a00fe40aa378204df22159",
-        "GUID:454beedd5f58f5346b10a7985088861c",
-        "GUID:2327133a9cd59df45aac0ce0d43e61e8"
+        "GUID:5c1ff9bd975acec488150743d53a93ca",
+        "GUID:c5ecc461727906345a35491a0440694f",
+        "GUID:05986448812a44c4e93dbe70ba9b2de0",
+        "GUID:6a5755abd07c03b43979d9a2f6b82cca",
+        "GUID:454beedd5f58f5346b10a7985088861c"
     ],
     "includePlatforms": [
         "Editor"

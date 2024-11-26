@@ -74,7 +74,7 @@ namespace MiiAsset.Runtime.Pipelines
 				if (AssetBundle != null)
 				{
 					Result.IsOk = true;
-					// Debug.Log($"bundle-loaded: {Uri}");
+					// MyLogger.Log($"bundle-loaded: {Uri}");
 				}
 				else
 				{

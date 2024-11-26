@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
 using Lang.Encoding;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -48,7 +49,7 @@ namespace MiiAsset.Runtime.Pipelines
 				{
 					Result.Status = PipelineStatus.Running;
 					Ts = new();
-					Debug.Log($"download: {Uri}");
+					MyLogger.Log($"download: {Uri}");
 					Uwr = UnityWebRequest.Get(this.Uri);
 					DownloadHandler = Uwr.downloadHandler;
 					IOManager.LocalIOProto.SetUwr(Uwr);

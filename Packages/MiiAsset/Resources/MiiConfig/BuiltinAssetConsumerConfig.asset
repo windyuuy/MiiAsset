@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f4e5389a8454d11a422efbc0447685a, type: 3}
-  m_Name: AssetConsumerConfig
+  m_Name: BuiltinAssetConsumerConfig
   m_EditorClassIdentifier: 
   internalBaseUri: mii/
   externalBaseUri: mii/
@@ -20,7 +20,7 @@ MonoBehaviour:
   updateTunnel: default
   loadType: 1
   initDownloadCoCount: 10
-  maxDownloadCoCount: 50
+  maxDownloadCoCount: 20
   timeout: 300
   buildGuids: 0
   buildCodeHint: 1

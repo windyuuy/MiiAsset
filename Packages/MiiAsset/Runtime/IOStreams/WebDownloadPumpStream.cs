@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime.IOStreams
@@ -10,6 +11,8 @@ namespace MiiAsset.Runtime.IOStreams
 	{
 		public ulong TotalBytes = 0;
 		protected bool IsTotalBytesUnkown = true;
+		public string Uri;
+
 		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 
 		public Action<StreamCtrlEvent> OnCtrl { get; set; }
@@ -32,6 +35,7 @@ namespace MiiAsset.Runtime.IOStreams
 				Event = StreamEvent.Capability,
 				Code = 0,
 				Msg = null,
+				SourceUri = Uri,
 				IsOk = true,
 				Capability = (int)contentLength,
 			});
@@ -54,6 +58,7 @@ namespace MiiAsset.Runtime.IOStreams
 		{
 			Uri = uri;
 			DownloadHandler = new();
+			DownloadHandler.Uri = uri;
 			Result = new();
 			return this;
 		}
@@ -75,6 +80,7 @@ namespace MiiAsset.Runtime.IOStreams
 						OnCtrl?.Invoke(new StreamCtrlEvent()
 						{
 							Event = StreamEvent.Begin,
+							SourceUri = this.Uri,
 							PumpStream = this,
 						});
 
@@ -92,7 +98,14 @@ namespace MiiAsset.Runtime.IOStreams
 						Code = code,
 						Msg = msg,
 						IsOk = code == 200,
+						SourceUri = this.Uri,
 					};
+
+					// if (!evt.IsOk)
+					// {
+					// 	UnityEngine.MyLogger.LogError($"download-failed: {Uwr.responseCode}, {Uwr.error}");
+					// }
+
 					Result.Code = (int)code;
 					Result.Msg = msg;
 					Result.IsOk = evt.IsOk;
@@ -115,6 +128,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public void Abort()
 		{
+			MyLogger.LogError($"Abort-Uwr: {Uri}");
 			if (Uwr != null)
 			{
 				Uwr.Abort();

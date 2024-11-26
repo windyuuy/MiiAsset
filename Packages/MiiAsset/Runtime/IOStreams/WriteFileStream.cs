@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
-using UnityEngine;
 
 namespace MiiAsset.Runtime.IOStreams
 {
@@ -25,6 +25,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public int Write(byte[] data, int offset, int len)
 		{
+			// MyLogger.Log($"WriteSeg: {Path.GetFileName(Uri)}, {len}, {FileStream != null}");
 			if (FileStream != null)
 			{
 				FileStream.Write(data, offset, len);
@@ -36,14 +37,14 @@ namespace MiiAsset.Runtime.IOStreams
 			}
 		}
 
-		public void OnCtrl(StreamCtrlEvent evt)
+		public async void OnCtrl(StreamCtrlEvent evt)
 		{
 			if (evt.Event == StreamEvent.End)
 			{
 				Result.IsOk = evt.IsOk;
 				if (!evt.IsOk)
 				{
-					Debug.LogError($"Download-Exception: {evt.GetReason()}");
+					MyLogger.LogError($"Download-Exception: {Uri}, {evt.GetReason()}");
 					FileStream.Close();
 					try
 					{
@@ -52,13 +53,20 @@ namespace MiiAsset.Runtime.IOStreams
 					catch (Exception exception)
 					{
 						Result.ErrorType = PipelineErrorType.FileSystemError;
-						Debug.LogException(exception);
+						MyLogger.LogException(exception);
 					}
 				}
 				else
 				{
 					try
 					{
+#if false
+						var bytes = new byte[FileStream.Length];
+						FileStream.Seek(0, SeekOrigin.Begin);
+						var count = FileStream.Read(bytes, 0, bytes.Length);
+						await IOManager.LocalIOProto.WriteAllBytesAsync(ToTempPath(Uri),bytes);
+#endif
+						// await FileStream.FlushAsync();
 						FileStream.Close();
 						IOManager.LocalIOProto.Move(ToTempPath(Uri), Uri);
 					}
@@ -67,7 +75,7 @@ namespace MiiAsset.Runtime.IOStreams
 						Result.Exception = exception;
 						Result.ErrorType = PipelineErrorType.FileSystemError;
 						Result.IsOk = false;
-						// Debug.LogException(exception);
+						// MyLogger.LogException(exception);
 					}
 				}
 
@@ -80,7 +88,11 @@ namespace MiiAsset.Runtime.IOStreams
 				try
 				{
 					// IOManager.LocalIOProto.EnsureFileDirectory(Uri);
+#if true
 					FileStream = IOManager.LocalIOProto.OpenWrite(ToTempPath(Uri));
+#else
+					FileStream = new MemoryStream();
+#endif
 				}
 				catch (Exception exception)
 				{

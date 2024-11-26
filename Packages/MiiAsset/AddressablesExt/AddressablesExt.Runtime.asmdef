@@ -2,7 +2,8 @@
     "name": "AddressablesExt.Runtime",
     "rootNamespace": "",
     "references": [
-        "GUID:5efd170ecd8084500bed5692932fe14e"
+        "GUID:5efd170ecd8084500bed5692932fe14e",
+        "GUID:890b253146385e54b9b4cff5c8dea58b"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using UnityEngine;
+using MiiAsset.Runtime.Adapter;
 
 namespace MiiAsset.Runtime
 {
@@ -61,7 +60,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError($"asset not exist in any bundle1: {address}");
+				MyLogger.LogError($"asset not exist in any bundle1: {address}");
 			}
 
 			deps = null;
@@ -167,7 +166,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError($"invalid bundle not exist: {bundleName}");
+				MyLogger.LogError($"invalid bundle not exist: {bundleName}");
 				return null;
 			}
 		}
@@ -180,7 +179,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError($"invalid bundle not exist: {bundleName}");
+				MyLogger.LogError($"invalid bundle not exist: {bundleName}");
 				return -1;
 			}
 		}

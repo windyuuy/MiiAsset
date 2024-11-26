@@ -93,6 +93,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<byte[]> ReadAllBytesAsync(string uri);
 		public Task WriteAllBytesAsync(string uri, byte[] bytes);
+		public void WriteAllBytes(string uri, byte[] bytes);
 
 		public bool IsWebUri(string uri);
 
