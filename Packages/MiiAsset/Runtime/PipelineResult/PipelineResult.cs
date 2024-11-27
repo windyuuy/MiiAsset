@@ -15,7 +15,6 @@ namespace MiiAsset.Runtime
 	{
 		public PipelineResult()
 		{
-			
 		}
 
 		public virtual bool IsOk { get; set; } = false;
@@ -59,6 +58,6 @@ namespace MiiAsset.Runtime
 	{
 		NetError = 1,
 		FileSystemError = 2,
-		DataIncorrect,
+		DataIncorrect = 4,
 	}
 }

@@ -52,7 +52,7 @@ namespace MiiAsset.Runtime.IOStreams
 					}
 					catch (Exception exception)
 					{
-						Result.ErrorType = PipelineErrorType.FileSystemError;
+						// Result.ErrorType = PipelineErrorType.FileSystemError;
 						MyLogger.LogException(exception);
 					}
 				}
