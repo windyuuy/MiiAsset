@@ -298,6 +298,27 @@ namespace MiiAsset.Runtime
 		}
 #endif
 
+		private const bool EnableTimeout = true;
+		private const int Timeout = 5;
+		private static readonly PooledLinkedList<(int timeEnd, string address)> TimeoutMap = new PooledLinkedList<(int, string)>();
+
+		public static int CheckTimeout()
+		{
+			var time = UnityEngine.Time.time;
+			var timeoutCount = 0;
+			foreach (var node in TimeoutMap.ToEnumerable())
+			{
+				if (node.Value.timeEnd < time)
+				{
+					++timeoutCount;
+					Debug.LogError($"ldab-Address-Timeout: {node.Value.address}");
+					TimeoutMap.Remove(node);
+				}
+			}
+
+			return timeoutCount;
+		}
+
 		/// <summary>
 		/// 带引用计数加载资源
 		/// </summary>
@@ -307,7 +328,23 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			if (EnableTimeout)
+			{
+				return LoadAssetByReferWithTimeout<T>(address, loadStatus);
+			}
+			else
+			{
+				return Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			}
+		}
+
+		private static async Task<T> LoadAssetByReferWithTimeout<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		{
+			var timeEnd = (int)UnityEngine.Time.time + Timeout;
+			var node = TimeoutMap.AddLast((timeEnd, address));
+			var ret = await Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			TimeoutMap.Remove(node);
+			return ret;
 		}
 
 		/// <summary>
@@ -321,7 +358,7 @@ namespace MiiAsset.Runtime
 			bool createStatus = false)
 		{
 			AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
-			var task = Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			var task = LoadAssetByRefer<T>(address, loadStatus);
 			var status = new AsyncLoadingStatus<T>(address, task, loadStatus);
 			return status;
 		}
@@ -388,7 +425,24 @@ namespace MiiAsset.Runtime
 		public static Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters = new(),
 			AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			if (EnableTimeout)
+			{
+				return LoadSceneByReferWithTimeout(sceneAddress, parameters, loadStatus);
+			}
+			else
+			{
+				return Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			}
+		}
+
+		private static async Task<Scene> LoadSceneByReferWithTimeout(string sceneAddress, LoadSceneParameters parameters = new(),
+			AssetLoadStatusGroup loadStatus = null)
+		{
+			var timeEnd = (int)UnityEngine.Time.time + Timeout;
+			var node = TimeoutMap.AddLast((timeEnd, sceneAddress));
+			var ret = await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			TimeoutMap.Remove(node);
+			return ret;
 		}
 
 		/// <summary>
