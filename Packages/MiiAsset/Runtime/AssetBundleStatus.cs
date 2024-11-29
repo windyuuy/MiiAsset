@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
+using lang.time;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Status;
@@ -391,10 +392,12 @@ namespace MiiAsset.Runtime
 				return default;
 			}
 
+			var t1 = Date.Now();
 			var op = AssetBundle.LoadAssetAsync<T>(address);
 			loadStatus?.Set(op);
 			var task = op.GetTask();
 			await task;
+			MyLogger.De($"ldab-Asset: {Date.Now()-t1}, {address}");
 			if (op.asset is T asset)
 			{
 				return asset;

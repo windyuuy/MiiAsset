@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
+using lang.time;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 
@@ -30,6 +32,7 @@ namespace MiiAsset.Runtime.Pipelines
 		}
 
 		public AssetBundle AssetBundle { get; set; }
+
 		public IDisposable GetDisposable()
 		{
 			return null;
@@ -45,7 +48,9 @@ namespace MiiAsset.Runtime.Pipelines
 			if (AssetBundle == null)
 			{
 				var bytes = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
+				var t1 = Date.Now();
 				AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
+				MyLogger.De($"ldab-Load: {Date.Now() - t1}, {Uri}");
 				if (AssetBundle != null)
 				{
 					Result.IsOk = true;

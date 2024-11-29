@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using lang.time;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.CertificateHandlers;
 using MiiAsset.Runtime.IOManagers;
@@ -305,9 +306,13 @@ namespace MiiAsset.Runtime
 		/// <param name="loadStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		public static async Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			MyLogger.De($"ldab-AssetTotal-Begin: {address}");
+			var t1 = Date.Now();
+			var ret = await Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			MyLogger.De($"ldab-AssetTotal: {Date.Now() - t1}, {address}");
+			return ret;
 		}
 
 		/// <summary>
@@ -321,7 +326,7 @@ namespace MiiAsset.Runtime
 			bool createStatus = false)
 		{
 			AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
-			var task = Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			var task = LoadAssetByRefer<T>(address, loadStatus);
 			var status = new AsyncLoadingStatus<T>(address, task, loadStatus);
 			return status;
 		}
@@ -349,7 +354,7 @@ namespace MiiAsset.Runtime
 			LoadSceneParameters parameters = new(), bool createStatus = false)
 		{
 			AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
-			var task = Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			var task = LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 			var status = new AsyncLoadingStatus<Scene>(sceneAddress, task, loadStatus);
 			return status;
 		}
@@ -385,10 +390,14 @@ namespace MiiAsset.Runtime
 		/// <param name="parameters"></param>
 		/// <param name="loadStatus"></param>
 		/// <returns></returns>
-		public static Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters = new(),
+		public static async Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters = new(),
 			AssetLoadStatusGroup loadStatus = null)
 		{
-			return Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			MyLogger.De($"ldab-SceneTotal-Begin: {sceneAddress}");
+			var t1 = Date.Now();
+			var ret = await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			MyLogger.De($"ldab-SceneTotal: {Date.Now() - t1}, {sceneAddress}");
+			return ret;
 		}
 
 		/// <summary>

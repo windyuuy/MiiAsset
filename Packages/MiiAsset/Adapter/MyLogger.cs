@@ -10,6 +10,15 @@ namespace MiiAsset.Runtime.Adapter
 		// public static Action<object> LogError = Debug.LogError;
 		// public static Action<Exception> LogException = Debug.LogException;
 
+		public static bool EnableDebugLog = true;
+		public static void De(object message)
+		{
+			if (EnableDebugLog)
+			{
+				Debug.Log(message);
+			}
+		}
+
 		public static void Log(object message)
 		{
 			Debug.Log($"-[mii]{message}");

@@ -13,6 +13,7 @@ using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
 
 #if UNITY_WEBGL && SUPPORT_WECHATGAME
+using lang.time;
 using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
@@ -235,10 +236,15 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<byte[]> ReadAllBytesAsync(string uri)
 		{
+			var t1 = Date.Now();
 			var ts = new TaskCompletionSource<byte[]>();
 			FileSystemManager.ReadFile(new()
 			{
-				success = (resp) => { ts.SetResult(resp.binData); },
+				success = (resp) =>
+				{
+					MyLogger.De($"ldab-Read: {Date.Now()-t1}, {uri}");
+					ts.SetResult(resp.binData);
+				},
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
