@@ -299,8 +299,8 @@ namespace MiiAsset.Runtime
 #endif
 
 		private const bool EnableTimeout = true;
-		private const int Timeout = 5;
-		private static readonly PooledLinkedList<(int timeEnd, string address)> TimeoutMap = new PooledLinkedList<(int, string)>();
+		private const float Timeout = 5;
+		private static readonly PooledLinkedList<(float timeEnd, string address)> TimeoutMap = new PooledLinkedList<(float, string)>();
 
 		public static int CheckTimeout()
 		{
@@ -349,14 +349,16 @@ namespace MiiAsset.Runtime
 
 		private static async Task<T> LoadAssetByReferWithTimeout<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
-			var timeEnd = (int)UnityEngine.Time.time + Timeout;
+			var timeStart = UnityEngine.Time.time;
+			var timeEnd = timeStart + Timeout;
 			var node = TimeoutMap.AddLast((timeEnd, address));
 			try
 			{
 				var ret = await Consumer.LoadAssetByRefer<T>(address, loadStatus);
 				if (!TimeoutMap.Remove(node))
 				{
-					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {address}");
+					var time2 = UnityEngine.Time.time;
+					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {address},TimeCost:{time2 - timeStart}");
 				}
 
 				return ret;
@@ -410,12 +412,17 @@ namespace MiiAsset.Runtime
 		private static async Task<Scene> LoadSceneByReferWithTimeout(string sceneAddress, LoadSceneParameters parameters = new(),
 			AssetLoadStatusGroup loadStatus = null)
 		{
-			var timeEnd = (int)UnityEngine.Time.time + Timeout;
+			var timeStart = UnityEngine.Time.time;
+			var timeEnd = timeStart + Timeout;
 			var node = TimeoutMap.AddLast((timeEnd, sceneAddress));
 			try
 			{
 				var ret = await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
-				TimeoutMap.Remove(node);
+				if (!TimeoutMap.Remove(node))
+				{
+					var time2 = UnityEngine.Time.time;
+					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {sceneAddress},TimeCost:{time2 - timeStart}");
+				}
 				return ret;
 			}
 			catch (Exception exception)
