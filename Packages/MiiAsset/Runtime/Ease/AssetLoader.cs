@@ -358,7 +358,7 @@ namespace MiiAsset.Runtime
 				if (!TimeoutMap.Remove(node))
 				{
 					var time2 = UnityEngine.Time.time;
-					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {address},TimeCost:{time2 - timeStart}");
+					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {address},TimeCost: {time2 - timeStart}");
 				}
 
 				return ret;
@@ -421,7 +421,7 @@ namespace MiiAsset.Runtime
 				if (!TimeoutMap.Remove(node))
 				{
 					var time2 = UnityEngine.Time.time;
-					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {sceneAddress},TimeCost:{time2 - timeStart}");
+					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {sceneAddress},TimeCost: {time2 - timeStart}");
 				}
 				return ret;
 			}
