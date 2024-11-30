@@ -26,6 +26,12 @@ namespace MiiAsset.Runtime.Adapter
 			{
 				IOManager.LocalIOProto = localIOProto;
 			}
+
+			var widget = adapter.GetWidget();
+			if (widget != null)
+			{
+				IOManager.Widget = widget;
+			}
 		}
 	}
 }

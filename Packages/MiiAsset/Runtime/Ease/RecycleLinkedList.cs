@@ -22,10 +22,18 @@ namespace MiiAsset.Runtime
 			return node;
 		}
 
-		public void Remove(LinkedListNode<T> node)
+		public bool Remove(LinkedListNode<T> node)
 		{
+			if (node.Next == null && node.Previous == null && node.List == null)
+			{
+				// 已经移除过
+				return false;
+			}
+
 			Coll.Remove(node);
+			// node.Value = default;
 			Pool.Push(node);
+			return true;
 		}
 
 		public IEnumerable<LinkedListNode<T>> ToEnumerable()

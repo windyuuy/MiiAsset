@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime
@@ -20,7 +21,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.LogError("cannot get BundledAssetProvider in EditorMode");
+				MyLogger.LogError("cannot get BundledAssetProvider in EditorMode");
 				return null;
 			}
 		}

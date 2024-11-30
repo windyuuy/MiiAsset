@@ -198,6 +198,11 @@ namespace MiiAsset.Runtime
 			});
 		}
 
+		public bool IsAssetBundlesOfAssetLoaded(string address)
+		{
+			return true;
+		}
+
 		public void Dispose()
 		{
 		}

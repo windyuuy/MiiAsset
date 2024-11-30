@@ -65,5 +65,6 @@ namespace MiiAsset.Runtime
 
 		public Task UnLoadSceneByRefer(string sceneAddress, UnloadSceneOptions options);
 		public Task<PipelineResult> CleanUpOldVersionFiles();
+		public bool IsAssetBundlesOfAssetLoaded(string address);
 	}
 }

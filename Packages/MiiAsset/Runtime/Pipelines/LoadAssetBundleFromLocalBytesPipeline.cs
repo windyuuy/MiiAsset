@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 
@@ -30,6 +31,7 @@ namespace MiiAsset.Runtime.Pipelines
 		}
 
 		public AssetBundle AssetBundle { get; set; }
+
 		public IDisposable GetDisposable()
 		{
 			return null;
@@ -46,13 +48,30 @@ namespace MiiAsset.Runtime.Pipelines
 			{
 				var bytes = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
 				AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
+				// AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
+				if (AssetBundle == null)
+				{
+					if (AssetBundleUtils.GetLoadedBundleByPath(Uri, out AssetBundle assetBundle))
+					{
+						MyLogger.Log($"retry reload assetbundle to resolve: {Uri}");
+						if (assetBundle != null)
+						{
+							assetBundle.Unload(false);
+						}
+
+						AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
+					}
+				}
+
 				if (AssetBundle != null)
 				{
+					AssetBundleUtils.AddLiveBundle(AssetBundle);
 					Result.IsOk = true;
 				}
 				else
 				{
 					Result.ErrorType = PipelineErrorType.DataIncorrect;
+					Result.Msg = "Failed to load AssetBundle";
 				}
 			}
 			else

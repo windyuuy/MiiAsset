@@ -456,6 +456,14 @@ namespace MiiAsset.Runtime
 			return Task.FromResult(result);
 		}
 
+		public bool IsAssetBundlesOfAssetLoaded(string address)
+		{
+			var dependBundles = this.GetAssetDependBundles(address);
+			var isAllLoaded = dependBundles
+				.All(bundleName => this.CatalogStatus.IsBundleLoadedImmediate(bundleName));
+			return isAllLoaded;
+		}
+
 		public void Dispose()
 		{
 			this.CatalogStatus.Dispose();

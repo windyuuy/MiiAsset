@@ -12,5 +12,14 @@ namespace MiiAsset.Runtime.IOManagers
 			return null;
 #endif
 		}
+
+		public IWidget GetWidget()
+		{
+#if UNITY_WEBGL && SUPPORT_WECHATGAME
+			return new WXWidget();
+#else
+			return null;
+#endif
+		}
 	}
 }

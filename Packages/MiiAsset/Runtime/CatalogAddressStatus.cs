@@ -55,6 +55,10 @@ namespace MiiAsset.Runtime
 					MyLogger.LogError($"invalid address status: {address}");
 				}
 			}
+			else
+			{
+				MyLogger.LogError($"load asset failed, maybe bundle is null: {address}");
+			}
 		}
 
 		public async Task UnRegisterAsset(string address)

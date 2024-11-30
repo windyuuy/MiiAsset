@@ -149,6 +149,11 @@ namespace MiiAsset.Runtime
 			return Provider.CleanUpOldVersionFiles();
 		}
 
+		public bool IsAssetBundlesOfAssetLoaded(string address)
+		{
+			return Provider.IsAssetBundlesOfAssetLoaded(address);
+		}
+
 		public void Dispose()
 		{
 			this.Provider.Dispose();

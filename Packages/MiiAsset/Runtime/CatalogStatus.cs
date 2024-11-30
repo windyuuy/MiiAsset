@@ -73,6 +73,16 @@ namespace MiiAsset.Runtime
 			return BundleLoadStatus[bundleName];
 		}
 
+		public bool IsBundleLoadedImmediate(string bundleName)
+		{
+			if (BundleLoadStatus.TryGetValue(bundleName, out var bundleStatus))
+			{
+				return bundleStatus.IsLoaded();
+			}
+
+			return false;
+		}
+
 		public void AllowTags(IEnumerable<string> tags, CatalogInfo catalogInfo)
 		{
 			foreach (var tag in tags)

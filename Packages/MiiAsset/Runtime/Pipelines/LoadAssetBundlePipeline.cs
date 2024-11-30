@@ -1,7 +1,10 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOStreams;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace MiiAsset.Runtime.Pipelines
 {
@@ -55,6 +58,7 @@ namespace MiiAsset.Runtime.Pipelines
 		}
 
 		public AssetBundle AssetBundle { get; set; }
+
 		public IDisposable GetDisposable()
 		{
 			return LoadStream;
@@ -70,15 +74,37 @@ namespace MiiAsset.Runtime.Pipelines
 			if (AssetBundle == null)
 			{
 				ReadStream.Run();
-				AssetBundle = AssetBundle.LoadFromStream(LoadStream,Crc);
+				AssetBundle = AssetBundle.LoadFromStream(LoadStream, Crc);
+				// if (Random.Range(0, 4) > 1)
+				// {
+				// 	AssetBundle = AssetBundle.LoadFromStream(LoadStream, Crc);
+				// }
+				if (AssetBundle == null)
+				{
+					MyLogger.LogError($"assetbundle is null: {Uri}");
+					if (AssetBundleUtils.GetLoadedBundleByPath(Uri, out AssetBundle assetBundle))
+					{
+						MyLogger.Log($"retry reload assetbundle to resolve: {Uri}");
+						if (assetBundle != null)
+						{
+							assetBundle.Unload(false);
+						}
+
+						LoadStream.Seek(0, SeekOrigin.Begin);
+						AssetBundle = AssetBundle.LoadFromStream(LoadStream, Crc);
+					}
+				}
+
 				if (AssetBundle != null)
 				{
+					AssetBundleUtils.AddLiveBundle(AssetBundle);
 					Result.IsOk = true;
 					// MyLogger.Log($"bundle-loaded: {Uri}");
 				}
 				else
 				{
 					Result.ErrorType = PipelineErrorType.DataIncorrect;
+					Result.Msg = "Failed to load AssetBundle";
 				}
 			}
 			else

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
 using MiiAsset.Runtime.Adapter;
@@ -28,6 +29,7 @@ namespace MiiAsset.Runtime
 		Task UnLoad();
 		Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus);
 		Task UnLoadAssetJust(string address);
+		bool IsLoaded();
 	}
 
 	public static class BundleStatusNotify
@@ -47,6 +49,7 @@ namespace MiiAsset.Runtime
 		}
 
 		public long FileSize = -1;
+		public string BundleInternalName = null;
 		public uint Crc;
 
 		public Task<PipelineResult> Task { get; set; } = null;
@@ -142,8 +145,9 @@ namespace MiiAsset.Runtime
 			Debug.Assert(RefCount > 0, $"Bundle is not allowed: {this.BundleName}");
 			if (AssetBundle == null)
 			{
-				if (Task == null || (Task.IsCompleted && !Task.IsCompletedSuccessfully))
+				if (Task == null || (Task.IsCompleted && (!Task.IsCompletedSuccessfully || Task.Result == null || (!Task.Result.IsOk))))
 				{
+					Task = null;
 					Task = LoadInternal(catalogInfo, true);
 				}
 			}
@@ -174,6 +178,7 @@ namespace MiiAsset.Runtime
 				FileSize = bundleInfo.size;
 				Crc = bundleInfo.crc;
 				IsInternalBundle = catalogInfo.IsInternalBundle(BundleName);
+				BundleInternalName = bundleInfo.bundleName;
 			}
 		}
 
@@ -270,6 +275,13 @@ namespace MiiAsset.Runtime
 				if (this.AssetBundle == null)
 				{
 					MyLogger.LogError($"invalid AssetBundle: {BundleName}");
+					var existBundle = IsLoadDuplicated();
+					if (existBundle)
+					{
+						var tip = $"error: cannot load bundle twice: {BundleName}";
+						MyLogger.LogError(tip);
+						_ = IOManager.Widget.ShowToast(tip, 5);
+					}
 				}
 				else
 				{
@@ -334,6 +346,11 @@ namespace MiiAsset.Runtime
 			return Result;
 		}
 
+		private bool IsLoadDuplicated()
+		{
+			return AssetBundleUtils.IsLoadDuplicated(BundleInternalName);
+		}
+
 		internal Task UnloadTask;
 
 		public async Task UnLoad()
@@ -391,6 +408,25 @@ namespace MiiAsset.Runtime
 				return default;
 			}
 
+			if (AssetBundle == null)
+			{
+				var existBundle = IsLoadDuplicated();
+				var tip = existBundle ? $"AssetBundle cannot load twice: {BundleName} for {address}" : $"AssetBundle is not load correct: {BundleName} for {address}";
+				MyLogger.LogError(tip);
+				if (loadStatus != null)
+				{
+					var exception = new NullReferenceException(tip);
+					loadStatus.Exception = exception;
+				}
+
+				if (existBundle)
+				{
+					_ = IOManager.Widget.ShowToast(tip, 5);
+				}
+
+				return default;
+			}
+
 			var op = AssetBundle.LoadAssetAsync<T>(address);
 			loadStatus?.Set(op);
 			var task = op.GetTask();
@@ -414,6 +450,11 @@ namespace MiiAsset.Runtime
 		public Task UnLoadAssetJust(string address)
 		{
 			return System.Threading.Tasks.Task.CompletedTask;
+		}
+
+		public bool IsLoaded()
+		{
+			return this.AssetBundle != null;
 		}
 
 		protected Dictionary<string, LoadOneAssetStatus> AssetStatusMap = new();

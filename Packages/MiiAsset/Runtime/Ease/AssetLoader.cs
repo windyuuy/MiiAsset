@@ -311,12 +311,21 @@ namespace MiiAsset.Runtime
 				if (node.Value.timeEnd < time)
 				{
 					++timeoutCount;
-					Debug.LogError($"ldab-Address-Timeout: {node.Value.address}");
-					TimeoutMap.Remove(node);
+					var address = node.Value.address;
+					var isRemoveCorrect = TimeoutMap.Remove(node);
+					var isAllBundlesLoaded = IsAssetBundlesOfAssetLoaded(address);
+					var timeoutMsg = $"ldab-ATimeout:{isRemoveCorrect},{isAllBundlesLoaded},{address}";
+					MyLogger.LogError(timeoutMsg);
+					IOManager.Widget.ShowToast(timeoutMsg, 5);
 				}
 			}
 
 			return timeoutCount;
+		}
+
+		public static bool IsAssetBundlesOfAssetLoaded(string address)
+		{
+			return Consumer.IsAssetBundlesOfAssetLoaded(address);
 		}
 
 		/// <summary>
@@ -342,9 +351,24 @@ namespace MiiAsset.Runtime
 		{
 			var timeEnd = (int)UnityEngine.Time.time + Timeout;
 			var node = TimeoutMap.AddLast((timeEnd, address));
-			var ret = await Consumer.LoadAssetByRefer<T>(address, loadStatus);
-			TimeoutMap.Remove(node);
-			return ret;
+			try
+			{
+				var ret = await Consumer.LoadAssetByRefer<T>(address, loadStatus);
+				if (!TimeoutMap.Remove(node))
+				{
+					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {address}");
+				}
+
+				return ret;
+			}
+			catch (Exception exception)
+			{
+				MyLogger.LogError($"Unexpected Error loading {address}");
+				MyLogger.LogException(exception);
+				TimeoutMap.Remove(node);
+				_ = IOManager.Widget.ShowToast(exception.Message, 5);
+				throw;
+			}
 		}
 
 		/// <summary>
@@ -361,58 +385,6 @@ namespace MiiAsset.Runtime
 			var task = LoadAssetByRefer<T>(address, loadStatus);
 			var status = new AsyncLoadingStatus<T>(address, task, loadStatus);
 			return status;
-		}
-
-		/// <summary>
-		/// 带引用计数卸载资源
-		/// </summary>
-		/// <param name="status"></param>
-		/// <typeparam name="T"></typeparam>
-		/// <returns></returns>
-		public static Task UnLoadAssetByReferWrapped<T>(AsyncLoadingStatus<T> status)
-		{
-			var task = Consumer.UnLoadAssetByRefer(status.Address);
-			return task;
-		}
-
-		/// <summary>
-		/// 带引用计数加载场景
-		/// </summary>
-		/// <param name="sceneAddress"></param>
-		/// <param name="parameters"></param>
-		/// <param name="createStatus"></param>
-		/// <returns></returns>
-		public static AsyncLoadingStatus<Scene> LoadSceneByReferWrapped(string sceneAddress,
-			LoadSceneParameters parameters = new(), bool createStatus = false)
-		{
-			AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
-			var task = Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
-			var status = new AsyncLoadingStatus<Scene>(sceneAddress, task, loadStatus);
-			return status;
-		}
-
-		/// <summary>
-		/// 带引用计数卸载场景
-		/// </summary>
-		/// <param name="status"></param>
-		/// <param name="options"></param>
-		/// <returns></returns>
-		public static async Task<Scene> UnLoadSceneByReferWrapped(AsyncLoadingStatus<Scene> status,
-			UnloadSceneOptions options = UnloadSceneOptions.None)
-		{
-			await Consumer.UnLoadSceneByRefer(status.Address, options);
-			var scene = status.Result;
-			return scene;
-		}
-
-		/// <summary>
-		/// 带引用计数卸载资源
-		/// </summary>
-		/// <param name="address"></param>
-		/// <returns></returns>
-		public static Task UnLoadAssetByRefer(string address)
-		{
-			return Consumer.UnLoadAssetByRefer(address);
 		}
 
 		/// <summary>
@@ -440,9 +412,72 @@ namespace MiiAsset.Runtime
 		{
 			var timeEnd = (int)UnityEngine.Time.time + Timeout;
 			var node = TimeoutMap.AddLast((timeEnd, sceneAddress));
-			var ret = await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
-			TimeoutMap.Remove(node);
-			return ret;
+			try
+			{
+				var ret = await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+				TimeoutMap.Remove(node);
+				return ret;
+			}
+			catch (Exception exception)
+			{
+				MyLogger.LogError($"Unexpected Error loading {sceneAddress}");
+				MyLogger.LogException(exception);
+				TimeoutMap.Remove(node);
+				_ = IOManager.Widget.ShowToast(exception.Message, 5);
+				throw;
+			}
+		}
+
+		/// <summary>
+		/// 带引用计数加载场景
+		/// </summary>
+		/// <param name="sceneAddress"></param>
+		/// <param name="parameters"></param>
+		/// <param name="createStatus"></param>
+		/// <returns></returns>
+		public static AsyncLoadingStatus<Scene> LoadSceneByReferWrapped(string sceneAddress,
+			LoadSceneParameters parameters = new(), bool createStatus = false)
+		{
+			AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
+			var task = LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			var status = new AsyncLoadingStatus<Scene>(sceneAddress, task, loadStatus);
+			return status;
+		}
+
+		/// <summary>
+		/// 带引用计数卸载资源
+		/// </summary>
+		/// <param name="status"></param>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		public static Task UnLoadAssetByReferWrapped<T>(AsyncLoadingStatus<T> status)
+		{
+			var task = Consumer.UnLoadAssetByRefer(status.Address);
+			return task;
+		}
+
+		/// <summary>
+		/// 带引用计数卸载场景
+		/// </summary>
+		/// <param name="status"></param>
+		/// <param name="options"></param>
+		/// <returns></returns>
+		public static async Task<Scene> UnLoadSceneByReferWrapped(AsyncLoadingStatus<Scene> status,
+			UnloadSceneOptions options = UnloadSceneOptions.None)
+		{
+			await Consumer.UnLoadSceneByRefer(status.Address, options);
+			var scene = status.Result;
+			return scene;
+		}
+
+		/// <summary>
+		/// 带引用计数卸载资源
+		/// </summary>
+		/// <param name="address"></param>
+		/// <returns></returns>
+		public static Task UnLoadAssetByRefer(string address)
+		{
+			return Consumer.UnLoadAssetByRefer(address);
 		}
 
 		/// <summary>

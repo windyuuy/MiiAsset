@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 
@@ -37,8 +38,24 @@ namespace MiiAsset.Runtime.Pipelines
 			if (IOManager.LocalIOProto.Exists(Uri))
 			{
 				AssetBundle = AssetBundle.LoadFromFile(Uri, Crc);
+				// AssetBundle = AssetBundle.LoadFromFile(Uri, Crc);
+				if (AssetBundle == null)
+				{
+					if (AssetBundleUtils.GetLoadedBundleByPath(Uri, out AssetBundle assetBundle))
+					{
+						MyLogger.Log($"retry reload assetbundle to resolve: {Uri}");
+						if (assetBundle != null)
+						{
+							assetBundle.Unload(false);
+						}
+
+						AssetBundle = AssetBundle.LoadFromFile(Uri, Crc);
+					}
+				}
+
 				if (AssetBundle != null)
 				{
+					AssetBundleUtils.AddLiveBundle(AssetBundle);
 					Result.IsOk = true;
 				}
 				else
