@@ -26,7 +26,7 @@ namespace MiiAsset.Runtime
         [Header("资源加载方式(仅编辑器)")]
         [Tooltip("加载模式(仅编辑器中生效):\n\n1. LoadFromEditor: 直接通过编辑器加载资源\n  \n2. LoadFromBundle: 从发布的AssetBundle加载资源，用于模拟测试复现问题")]
         public LoadType loadType = LoadType.LoadFromEditor;
-        public int initDownloadCoCount = 10;
+        public int initDownloadCoCount = 4;
         [Header("最大下载线程数")]
         public int maxDownloadCoCount = 20;
         [Header("网络超时时长")]
