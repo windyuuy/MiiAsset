@@ -66,7 +66,7 @@ namespace MiiAsset.Runtime
 		public static async Task<bool> Init(AssetConsumerConfig config)
 		{
 			Debug.Assert(config != null, "config != null");
-			_timeout = config.LoadTimeout / 1000.0f;
+			SetLoadAssetTimeout(config.LoadTimeout / 1000.0f);
 #if UNITY_EDITOR
 			if (config.loadType == AssetConsumerConfig.LoadType.LoadFromBundle)
 			{
@@ -305,6 +305,12 @@ namespace MiiAsset.Runtime
 
 		public static void SetLoadAssetTimeout(float timeout)
 		{
+			if (timeout <= 0)
+			{
+				Debug.LogError("资源加载超时时长 timeout<=0, 重置为默认值");
+				timeout = 5000;
+			}
+
 			_timeout = timeout;
 		}
 
