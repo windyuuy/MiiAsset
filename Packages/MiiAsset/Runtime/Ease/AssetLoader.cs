@@ -65,6 +65,8 @@ namespace MiiAsset.Runtime
 
 		public static async Task<bool> Init(AssetConsumerConfig config)
 		{
+			Debug.Assert(config != null, "config != null");
+			_timeout = config.LoadTimeout / 1000.0f;
 #if UNITY_EDITOR
 			if (config.loadType == AssetConsumerConfig.LoadType.LoadFromBundle)
 			{
@@ -299,7 +301,13 @@ namespace MiiAsset.Runtime
 #endif
 
 		private const bool EnableTimeout = true;
-		private const float Timeout = 5;
+		private static float _timeout = 5;
+
+		public static void SetLoadAssetTimeout(float timeout)
+		{
+			_timeout = timeout;
+		}
+
 		private static readonly PooledLinkedList<(float timeEnd, string address)> TimeoutMap = new PooledLinkedList<(float, string)>();
 
 		public static int CheckTimeout()
@@ -350,7 +358,7 @@ namespace MiiAsset.Runtime
 		private static async Task<T> LoadAssetByReferWithTimeout<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
 			var timeStart = UnityEngine.Time.time;
-			var timeEnd = timeStart + Timeout;
+			var timeEnd = timeStart + _timeout;
 			var node = TimeoutMap.AddLast((timeEnd, address));
 			try
 			{
@@ -413,7 +421,7 @@ namespace MiiAsset.Runtime
 			AssetLoadStatusGroup loadStatus = null)
 		{
 			var timeStart = UnityEngine.Time.time;
-			var timeEnd = timeStart + Timeout;
+			var timeEnd = timeStart + _timeout;
 			var node = TimeoutMap.AddLast((timeEnd, sceneAddress));
 			try
 			{
@@ -423,6 +431,7 @@ namespace MiiAsset.Runtime
 					var time2 = UnityEngine.Time.time;
 					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {sceneAddress},TimeCost: {time2 - timeStart}");
 				}
+
 				return ret;
 			}
 			catch (Exception exception)

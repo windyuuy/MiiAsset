@@ -31,6 +31,8 @@ namespace MiiAsset.Runtime
         public int maxDownloadCoCount = 20;
         [Header("网络超时时长")]
         public int timeout = 300;
+        [Header("资源加载超时时长")]
+        public float loadTimeout = 5000;
 
         [Header("构建Guid映射")]
         [Tooltip("是否在构建中包含资源Guid信息, 会显著增大catalog尺寸")]
@@ -46,6 +48,7 @@ namespace MiiAsset.Runtime
         public int InitDownloadCoCount => initDownloadCoCount;
         public int MaxDownloadCoCount => maxDownloadCoCount;
         public int Timeout => timeout;
+        public float LoadTimeout => loadTimeout;
 
         public static AssetConsumerConfig Load()
         {
