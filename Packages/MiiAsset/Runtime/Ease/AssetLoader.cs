@@ -358,7 +358,21 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				return Consumer.LoadAssetByRefer<T>(address, loadStatus);
+				return LoadAssetByReferWithInternal<T>(address, loadStatus);
+			}
+		}
+
+		private static async Task<T> LoadAssetByReferWithInternal<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		{
+			try
+			{
+				return await Consumer.LoadAssetByRefer<T>(address, loadStatus);
+			}
+			catch (Exception exception)
+			{
+				MyLogger.LogException(exception);
+				_ = IOManager.Widget.ShowToast(exception.Message, 5);
+				throw;
 			}
 		}
 
@@ -420,7 +434,22 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				return Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+				return LoadSceneByReferInternal(sceneAddress, parameters, loadStatus);
+			}
+		}
+
+		private static async Task<Scene> LoadSceneByReferInternal(string sceneAddress, LoadSceneParameters parameters = new(),
+			AssetLoadStatusGroup loadStatus = null)
+		{
+			try
+			{
+				return await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
+			}
+			catch (Exception exception)
+			{
+				MyLogger.LogException(exception);
+				_ = IOManager.Widget.ShowToast(exception.Message, 5);
+				throw;
 			}
 		}
 
