@@ -66,7 +66,7 @@ namespace MiiAsset.Runtime
 		public static async Task<bool> Init(AssetConsumerConfig config)
 		{
 			Debug.Assert(config != null, "config != null");
-			SetLoadAssetTimeout(config.LoadTimeout / 1000.0f);
+			SetLoadAssetTimeout(config.LoadTimeout / 1000.0f, config.checkLoadTimeout);
 #if UNITY_EDITOR
 			if (config.loadType == AssetConsumerConfig.LoadType.LoadFromBundle)
 			{
@@ -300,10 +300,10 @@ namespace MiiAsset.Runtime
 		}
 #endif
 
-		private const bool EnableTimeout = true;
+		private static bool _enableTimeout = true;
 		private static float _timeout = 5;
 
-		public static void SetLoadAssetTimeout(float timeout)
+		public static void SetLoadAssetTimeout(float timeout, bool enable)
 		{
 			if (timeout <= 0)
 			{
@@ -312,6 +312,7 @@ namespace MiiAsset.Runtime
 			}
 
 			_timeout = timeout;
+			_enableTimeout = enable;
 		}
 
 		private static readonly PooledLinkedList<(float timeEnd, string address)> TimeoutMap = new PooledLinkedList<(float, string)>();
@@ -351,7 +352,7 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
 		{
-			if (EnableTimeout)
+			if (_enableTimeout)
 			{
 				return LoadAssetByReferWithTimeout<T>(address, loadStatus);
 			}
@@ -413,7 +414,7 @@ namespace MiiAsset.Runtime
 		public static Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters = new(),
 			AssetLoadStatusGroup loadStatus = null)
 		{
-			if (EnableTimeout)
+			if (_enableTimeout)
 			{
 				return LoadSceneByReferWithTimeout(sceneAddress, parameters, loadStatus);
 			}
