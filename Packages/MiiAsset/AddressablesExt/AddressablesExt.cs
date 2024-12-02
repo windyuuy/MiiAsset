@@ -18,7 +18,11 @@ namespace MiiAsset.AddressablesExt
 			{
 				wxfs.Rmdir(new WeChatWASM.RmdirParam
 				{
-					success = (resp) => { ts.SetResult(true); },
+					success = (resp) =>
+					{
+						Debug.Log("清理AA缓存成功");
+						ts.SetResult(true);
+					},
 					fail = (resp) =>
 					{
 						Debug.LogError($"remove aa-cache failed, errCode: {resp.errCode}, errMsg: {resp.errMsg}");
