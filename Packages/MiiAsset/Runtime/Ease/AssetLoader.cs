@@ -331,7 +331,7 @@ namespace MiiAsset.Runtime
 					var address = node.Value.address;
 					var isRemoveCorrect = TimeoutMap.Remove(node);
 					var isAllBundlesLoaded = IsAssetBundlesOfAssetLoaded(address);
-					var timeoutMsg = $"ldab-ATimeout:{isRemoveCorrect},{isAllBundlesLoaded},{address}";
+					var timeoutMsg = $"加载超时z:{isRemoveCorrect},{isAllBundlesLoaded},{address}";
 					MyLogger.LogError(timeoutMsg);
 					if (_displayTimeout)
 					{
