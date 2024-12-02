@@ -278,9 +278,9 @@ namespace MiiAsset.Runtime
 					var existBundle = IsLoadDuplicated();
 					if (existBundle)
 					{
-						var tip = $"error: cannot load bundle twice: {BundleName}";
-						MyLogger.LogError(tip);
-						_ = IOManager.Widget.ShowToast(tip, 5);
+						var errTip = $"error: cannot load bundle twice: {BundleName}";
+						MyLogger.LogError(errTip);
+						_ = IOManager.Widget.ShowToast(errTip, 5);
 					}
 				}
 				else
@@ -411,17 +411,17 @@ namespace MiiAsset.Runtime
 			if (AssetBundle == null)
 			{
 				var existBundle = IsLoadDuplicated();
-				var tip = existBundle ? $"AssetBundle cannot load twice: {BundleName} for {address}" : $"AssetBundle is not load correct: {BundleName} for {address}";
-				MyLogger.LogError(tip);
+				var errTip = existBundle ? $"error: AssetBundle cannot load twice: {BundleName} for {address}" : $"error: AssetBundle is not load correct: {BundleName} for {address}";
+				MyLogger.LogError(errTip);
 				if (loadStatus != null)
 				{
-					var exception = new NullReferenceException(tip);
+					var exception = new NullReferenceException(errTip);
 					loadStatus.Exception = exception;
 				}
 
 				if (existBundle)
 				{
-					_ = IOManager.Widget.ShowToast(tip, 5);
+					_ = IOManager.Widget.ShowToast(errTip, 5);
 				}
 
 				return default;

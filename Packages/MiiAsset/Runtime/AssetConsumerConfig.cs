@@ -34,6 +34,8 @@ namespace MiiAsset.Runtime
 
         [Header("检查资源加载超时")]
         public bool checkLoadTimeout = true;
+        [Header("显示资源加载超时")]
+        public bool displayLoadTimeout = true;
         [Header("资源加载超时时长")]
         public float loadTimeout = 10000;
 

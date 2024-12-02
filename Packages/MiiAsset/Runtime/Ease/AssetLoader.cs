@@ -66,7 +66,7 @@ namespace MiiAsset.Runtime
 		public static async Task<bool> Init(AssetConsumerConfig config)
 		{
 			Debug.Assert(config != null, "config != null");
-			SetLoadAssetTimeout(config.LoadTimeout / 1000.0f, config.checkLoadTimeout);
+			SetLoadAssetTimeout(config.LoadTimeout / 1000.0f, config.checkLoadTimeout, config.displayLoadTimeout);
 #if UNITY_EDITOR
 			if (config.loadType == AssetConsumerConfig.LoadType.LoadFromBundle)
 			{
@@ -301,9 +301,10 @@ namespace MiiAsset.Runtime
 #endif
 
 		private static bool _enableTimeout = true;
+		private static bool _displayTimeout = true;
 		private static float _timeout = 5;
 
-		public static void SetLoadAssetTimeout(float timeout, bool enable)
+		public static void SetLoadAssetTimeout(float timeout, bool enable, bool displayTimeout)
 		{
 			if (timeout <= 0)
 			{
@@ -313,6 +314,7 @@ namespace MiiAsset.Runtime
 
 			_timeout = timeout;
 			_enableTimeout = enable;
+			_displayTimeout = displayTimeout;
 		}
 
 		private static readonly PooledLinkedList<(float timeEnd, string address)> TimeoutMap = new PooledLinkedList<(float, string)>();
@@ -331,7 +333,10 @@ namespace MiiAsset.Runtime
 					var isAllBundlesLoaded = IsAssetBundlesOfAssetLoaded(address);
 					var timeoutMsg = $"ldab-ATimeout:{isRemoveCorrect},{isAllBundlesLoaded},{address}";
 					MyLogger.LogError(timeoutMsg);
-					IOManager.Widget.ShowToast(timeoutMsg, 5);
+					if (_displayTimeout)
+					{
+						IOManager.Widget.ShowToast(timeoutMsg, 5);
+					}
 				}
 			}
 
