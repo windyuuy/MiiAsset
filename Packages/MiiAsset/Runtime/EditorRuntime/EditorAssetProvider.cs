@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
 using lang.time;
 using MiiAsset.Editor.Build;
 using MiiAsset.Editor.Optimization;
@@ -148,6 +147,11 @@ namespace MiiAsset.Runtime
 		}
 
 		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
+		{
+			return LoadAssetJust<T>(address, loadStatus);
+		}
+
+		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}

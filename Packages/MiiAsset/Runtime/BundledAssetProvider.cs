@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Pipelines;
@@ -309,6 +308,36 @@ namespace MiiAsset.Runtime
 			{
 				MyLogger.LogError($"cannot unload the scene: {sceneAddress}");
 			}
+		}
+
+		protected Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : UnityEngine.Object
+		{
+			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
+			if (bundleLoadStatus != null)
+			{
+				return bundleLoadStatus.LoadAssetJustSync<T>(address, loadStatus);
+			}
+			else
+			{
+				return Task.FromResult<T>(default);
+			}
+		}
+
+		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		{
+			var task = LoadByReferInternalSync<T>(address, loadStatus);
+			CatalogAddressStatus.RegisterAddress(address, task);
+			return task;
+		}
+
+		protected async Task<T> LoadByReferInternalSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		{
+			var subStatus = loadStatus?.AllocSyncOperationStatus();
+			CatalogInfo.GetAssetDependBundles(address, out var deps);
+			await CatalogStatus.LoadBundlesByRefer(deps, CatalogInfo, loadStatus);
+			var asset = await LoadAssetJustSync<T>(address, subStatus);
+			CatalogAddressStatus.RegisterAsset(address, asset);
+			return asset;
 		}
 
 		protected CatalogAddressStatus CatalogAddressStatus = new();

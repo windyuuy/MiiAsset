@@ -119,6 +119,11 @@ namespace MiiAsset.Runtime
 			return Provider.LoadAssetByRefer<T>(address, loadStatus);
 		}
 
+		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : Object
+		{
+			return Provider.LoadAssetByReferSync<T>(address, loadStatus);
+		}
+
 		public Task UnLoadAssetByRefer(string address)
 		{
 			return Provider.UnLoadAssetByRefer(address);

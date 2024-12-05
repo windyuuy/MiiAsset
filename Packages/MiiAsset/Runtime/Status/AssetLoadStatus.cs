@@ -120,6 +120,57 @@ namespace MiiAsset.Runtime.Status
         public IEnumerable<PipelineResult> Results { get; }
     }
 
+    public class SyncOperationStatus : IAssetLoadStatus
+    {
+        protected UnityEngine.Object Asset;
+        public Exception Exception;
+
+        public SyncOperationStatus Set(UnityEngine.Object asset)
+        {
+            Asset = asset;
+            return this;
+        }
+
+        public PipelineProgress Progress
+        {
+            get
+            {
+                var progress = new PipelineProgress().Set01Progress(false);
+                if (Asset != null)
+                {
+                    progress.SetProgress(1);
+                }
+
+                return progress;
+            }
+        }
+
+        public PipelineProgress DownloadProgress =>
+            new()
+            {
+                Total = 0,
+                Count = 1,
+            };
+
+        public long DownloadSize => 0;
+
+        public IEnumerable<PipelineResult> Results
+        {
+            get
+            {
+                yield return new PipelineResult
+                {
+                    IsOk = Asset!=null,
+                    Exception = Exception,
+                    Code = 0,
+                    Msg = Asset!=null ? "" : "native-error",
+                    ErrorType = PipelineErrorType.FileSystemError,
+                    Status = PipelineStatus.Done,
+                };
+            }
+        }
+    }
+
     public class AsyncOperationStatus : IAssetLoadStatus
     {
         protected AsyncOperation Op;
@@ -261,6 +312,13 @@ namespace MiiAsset.Runtime.Status
         internal AsyncOperationStatus AllocAsyncOperationStatus()
         {
             var status = new AsyncOperationStatus();
+            this.Add(status);
+            return status;
+        }
+
+        internal SyncOperationStatus AllocSyncOperationStatus()
+        {
+            var status = new SyncOperationStatus();
             this.Add(status);
             return status;
         }

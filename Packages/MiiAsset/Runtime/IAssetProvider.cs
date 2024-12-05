@@ -52,6 +52,7 @@ namespace MiiAsset.Runtime
 		bool ExistGuid(string guid);
 
 		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
+		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
 
 		public Task UnLoadAssetByRefer(string address);
 

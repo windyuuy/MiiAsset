@@ -366,6 +366,10 @@ namespace MiiAsset.Runtime
 				return LoadAssetByReferWithInternal<T>(address, loadStatus);
 			}
 		}
+		public static Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		{
+			return Consumer.LoadAssetByReferSync<T>(address, loadStatus);
+		}
 
 		private static async Task<T> LoadAssetByReferWithInternal<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{

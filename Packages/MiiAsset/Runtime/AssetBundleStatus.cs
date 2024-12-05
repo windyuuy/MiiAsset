@@ -29,6 +29,7 @@ namespace MiiAsset.Runtime
 		public long GetDownloadSize(CatalogInfo catalogInfo);
 		Task UnLoad();
 		Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : UnityEngine.Object;
+		Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : UnityEngine.Object;
 		Task UnLoadAssetJust(string address);
 		bool IsLoaded();
 	}
@@ -452,6 +453,64 @@ namespace MiiAsset.Runtime
 				}
 
 				return default;
+			}
+		}
+
+		public Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : UnityEngine.Object
+		{
+			if (AssetBundle == null && !Task.IsCompletedSuccessfully)
+			{
+				if (loadStatus != null)
+				{
+					var exception =
+						new Exception($"AssetBundle not load yet: {BundleName}, cannot load by asset key: {address}");
+					loadStatus.Exception = exception;
+				}
+
+				return System.Threading.Tasks.Task.FromResult<T>(default);
+			}
+
+			if (AssetBundle == null)
+			{
+				var existBundle = IsLoadDuplicated();
+				var errTip = existBundle
+					? $"error: AssetBundle cannot load twice: {BundleName} for {address}"
+					: $"error: AssetBundle is not load correct: {BundleName} for {address}";
+				MyLogger.LogError(errTip);
+				if (loadStatus != null)
+				{
+					var exception = new NullReferenceException(errTip);
+					loadStatus.Exception = exception;
+				}
+
+				if (existBundle)
+				{
+					_ = IOManager.Widget.ShowToast(errTip, 5);
+				}
+
+				return System.Threading.Tasks.Task.FromResult<T>(default);
+			}
+
+			// var t1 = Date.Now();
+			// var fc1 = Time.frameCount;
+			var asset = AssetBundle.LoadAsset<T>(address);
+			loadStatus?.Set(asset);
+			// var t2 = Date.Now();
+			// var fc2 = Time.frameCount;
+			// Debug.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
+			if (asset != null)
+			{
+				return System.Threading.Tasks.Task.FromResult(asset);
+			}
+			else
+			{
+				if (loadStatus != null)
+				{
+					var exception = new InvalidCastException($"invalid asset Type<{nameof(T)}> to load: {address}");
+					loadStatus.Exception = exception;
+				}
+
+				return System.Threading.Tasks.Task.FromResult<T>(default);
 			}
 		}
 
