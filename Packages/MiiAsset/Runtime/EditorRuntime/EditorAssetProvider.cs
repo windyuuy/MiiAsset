@@ -78,7 +78,7 @@ namespace MiiAsset.Runtime
 			return true;
 		}
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
 		{
 			if (!CheckPathAndTags<T>(address))
 			{
@@ -120,7 +120,7 @@ namespace MiiAsset.Runtime
 			return Task.CompletedTask;
 		}
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
@@ -147,7 +147,7 @@ namespace MiiAsset.Runtime
 			return exist;
 		}
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
@@ -201,6 +201,11 @@ namespace MiiAsset.Runtime
 		public bool IsAssetBundlesOfAssetLoaded(string address)
 		{
 			return true;
+		}
+
+		public void RunDelayedTasks()
+		{
+			
 		}
 
 		public void Dispose()

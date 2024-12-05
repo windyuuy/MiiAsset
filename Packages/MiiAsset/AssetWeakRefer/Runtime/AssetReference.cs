@@ -101,7 +101,7 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 #endif
 
 #if !DISABLE_NOREFERCOUNT_API
-		public Task<T> Load<T>(AssetLoadStatusGroup loadStatus = null)
+		public Task<T> Load<T>(AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			if (Address == null)
 			{

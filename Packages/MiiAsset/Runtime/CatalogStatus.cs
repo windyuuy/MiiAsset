@@ -201,19 +201,19 @@ namespace MiiAsset.Runtime
 						var bundleNames = catalogInfo.GetTagDependBundles(tag);
 						foreach (var bundleName in bundleNames)
 						{
-							var bundleLoadStatus = GetOrCreateStatus(bundleName);
-							if (bundleLoadStatus.RefCount > 0)
+							var loadStatus = GetOrCreateStatus(bundleName);
+							if (loadStatus.RefCount > 0)
 							{
-								--bundleLoadStatus.RefCount;
+								--loadStatus.RefCount;
 							}
 							else
 							{
 								MyLogger.LogError($"bundle referCount invalid: {bundleName}");
 							}
 
-							if (bundleLoadStatus.RefCount == 0)
+							if (loadStatus.RefCount == 0)
 							{
-								var task = bundleLoadStatus.UnLoad();
+								var task = TryDelayUnload(loadStatus);
 								tasks.Add(task);
 							}
 						}
@@ -222,6 +222,78 @@ namespace MiiAsset.Runtime
 			}
 
 			return Task.WhenAll(tasks);
+		}
+
+		const bool EnableDelayUnloadBundles = true;
+		protected readonly Dictionary<IAssetBundleStatus, TaskCompletionSource<bool>> DelayUnloadStatus = new();
+
+		protected readonly List<IAssetBundleStatus> TempList1 = new();
+		protected readonly List<TaskCompletionSource<bool>> TempList2 = new();
+
+		public void RunDelayedTasks()
+		{
+			TempList1.Clear();
+			TempList2.Clear();
+			foreach (var (loadStatus, tsc) in DelayUnloadStatus)
+			{
+				if (tsc != null)
+				{
+					if (loadStatus.AssetBundle == null)
+					{
+						TempList1.Add(loadStatus);
+						TempList2.Add(tsc);
+					}
+					else if (loadStatus.RefCount == 0)
+					{
+						loadStatus.UnLoad();
+					}
+				}
+			}
+
+			foreach (var loadStatus in TempList1)
+			{
+				DelayUnloadStatus[loadStatus] = null;
+			}
+
+			foreach (var tsc in TempList2)
+			{
+				try
+				{
+					tsc.SetResult(true);
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+				}
+			}
+
+			TempList2.Clear();
+		}
+
+		public Task TryDelayUnload(IAssetBundleStatus loadStatus)
+		{
+			if (EnableDelayUnloadBundles)
+			{
+				if (!DelayUnloadStatus.TryGetValue(loadStatus, out var tcs))
+				{
+					tcs = new TaskCompletionSource<bool>();
+					DelayUnloadStatus.Add(loadStatus, tcs);
+				}
+				else
+				{
+					if (tcs == null)
+					{
+						tcs = new TaskCompletionSource<bool>();
+						DelayUnloadStatus[loadStatus] = tcs;
+					}
+				}
+
+				return tcs.Task;
+			}
+			else
+			{
+				return loadStatus.UnLoad();
+			}
 		}
 
 		public Task<PipelineResult[]> LoadBundles(HashSet<string> deps, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
@@ -265,20 +337,20 @@ namespace MiiAsset.Runtime
 			return Task.FromResult(Array.Empty<PipelineResult>());
 		}
 
-		public Task UnLoadBundles(HashSet<string> deps)
-		{
-			if (deps != null)
-			{
-				var task = Task.WhenAll(deps.Select(dep =>
-				{
-					var loadStatus = GetOrCreateStatus(dep);
-					return loadStatus.UnLoad();
-				}));
-				return task;
-			}
-
-			return Task.CompletedTask;
-		}
+		// public Task UnLoadBundles(HashSet<string> deps)
+		// {
+		// 	if (deps != null)
+		// 	{
+		// 		var task = Task.WhenAll(deps.Select(dep =>
+		// 		{
+		// 			var loadStatus = GetOrCreateStatus(dep);
+		// 			return loadStatus.UnLoad();
+		// 		}));
+		// 		return task;
+		// 	}
+		//
+		// 	return Task.CompletedTask;
+		// }
 
 		public Task LoadBundlesByRefer(HashSet<string> deps, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
 		{
@@ -323,7 +395,7 @@ namespace MiiAsset.Runtime
 
 					if (loadStatus.RefCount == 0)
 					{
-						return loadStatus.UnLoad();
+						return TryDelayUnload(loadStatus);
 					}
 					else
 					{

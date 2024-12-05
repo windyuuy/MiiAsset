@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
+using lang.time;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Status;
@@ -27,7 +28,7 @@ namespace MiiAsset.Runtime
 		Task<PipelineResult> Download(CatalogInfo catalogInfo);
 		public long GetDownloadSize(CatalogInfo catalogInfo);
 		Task UnLoad();
-		Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus);
+		Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : UnityEngine.Object;
 		Task UnLoadAssetJust(string address);
 		bool IsLoaded();
 	}
@@ -394,7 +395,7 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public async Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus)
+		public async Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : UnityEngine.Object
 		{
 			if (AssetBundle == null && !Task.IsCompletedSuccessfully)
 			{
@@ -411,7 +412,9 @@ namespace MiiAsset.Runtime
 			if (AssetBundle == null)
 			{
 				var existBundle = IsLoadDuplicated();
-				var errTip = existBundle ? $"error: AssetBundle cannot load twice: {BundleName} for {address}" : $"error: AssetBundle is not load correct: {BundleName} for {address}";
+				var errTip = existBundle
+					? $"error: AssetBundle cannot load twice: {BundleName} for {address}"
+					: $"error: AssetBundle is not load correct: {BundleName} for {address}";
 				MyLogger.LogError(errTip);
 				if (loadStatus != null)
 				{
@@ -427,10 +430,15 @@ namespace MiiAsset.Runtime
 				return default;
 			}
 
+			// var t1 = Date.Now();
+			// var fc1 = Time.frameCount;
 			var op = AssetBundle.LoadAssetAsync<T>(address);
 			loadStatus?.Set(op);
 			var task = op.GetTask();
 			await task;
+			// var t2 = Date.Now();
+			// var fc2 = Time.frameCount;
+			// Debug.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
 			if (op.asset is T asset)
 			{
 				return asset;

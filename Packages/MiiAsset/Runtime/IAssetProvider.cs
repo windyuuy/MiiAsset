@@ -38,11 +38,11 @@ namespace MiiAsset.Runtime
 
 		public bool IsBundleInTags(string bundleFileName, IEnumerable<string> tags);
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus);
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
 
 		public Task UnloadAssetJust(string address);
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus);
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
 
 		public Task UnLoadAsset(string address);
 
@@ -51,7 +51,7 @@ namespace MiiAsset.Runtime
 		bool ExistAddress(string address);
 		bool ExistGuid(string guid);
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus);
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
 
 		public Task UnLoadAssetByRefer(string address);
 
@@ -66,5 +66,6 @@ namespace MiiAsset.Runtime
 		public Task UnLoadSceneByRefer(string sceneAddress, UnloadSceneOptions options);
 		public Task<PipelineResult> CleanUpOldVersionFiles();
 		public bool IsAssetBundlesOfAssetLoaded(string address);
+		public void RunDelayedTasks();
 	}
 }

@@ -183,7 +183,7 @@ namespace MiiAsset.Runtime
 			return CatalogStatus.IsAddressInTags(bundleFileName, tags, CatalogInfo);
 		}
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
@@ -197,7 +197,7 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		protected Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus)
+		protected Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : UnityEngine.Object
 		{
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
 			if (bundleLoadStatus != null)
@@ -223,7 +223,7 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public async Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)
+		public async Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
@@ -313,14 +313,14 @@ namespace MiiAsset.Runtime
 
 		protected CatalogAddressStatus CatalogAddressStatus = new();
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			var task = LoadByReferInternal<T>(address, loadStatus);
 			CatalogAddressStatus.RegisterAddress(address, task);
 			return task;
 		}
 
-		protected async Task<T> LoadByReferInternal<T>(string address, AssetLoadStatusGroup loadStatus)
+		protected async Task<T> LoadByReferInternal<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
@@ -488,6 +488,11 @@ namespace MiiAsset.Runtime
 		public Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatus()
 		{
 			return CatalogStatus.BundleLoadStatus;
+		}
+
+		public void RunDelayedTasks()
+		{
+			this.CatalogStatus.RunDelayedTasks();
 		}
 	}
 }

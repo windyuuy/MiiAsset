@@ -260,7 +260,7 @@ namespace MiiAsset.Runtime
 		/// <param name="loadStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			return Consumer.LoadAsset<T>(address, loadStatus);
 		}
@@ -355,7 +355,7 @@ namespace MiiAsset.Runtime
 		/// <param name="loadStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			if (_enableTimeout)
 			{
@@ -367,7 +367,7 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		private static async Task<T> LoadAssetByReferWithInternal<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		private static async Task<T> LoadAssetByReferWithInternal<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			try
 			{
@@ -381,7 +381,7 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		private static async Task<T> LoadAssetByReferWithTimeout<T>(string address, AssetLoadStatusGroup loadStatus = null)
+		private static async Task<T> LoadAssetByReferWithTimeout<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			var timeStart = UnityEngine.Time.time;
 			var timeEnd = timeStart + _timeout;
@@ -414,8 +414,7 @@ namespace MiiAsset.Runtime
 		/// <param name="createStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public static AsyncLoadingStatus<T> LoadAssetByReferWrapped<T>(string address,
-			bool createStatus = false)
+		public static AsyncLoadingStatus<T> LoadAssetByReferWrapped<T>(string address, bool createStatus = false) where T : UnityEngine.Object
 		{
 			AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
 			var task = LoadAssetByRefer<T>(address, loadStatus);
@@ -509,8 +508,7 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task UnLoadAssetByReferWrapped<T>(AsyncLoadingStatus<T> status)
 		{
-			var task = Consumer.UnLoadAssetByRefer(status.Address);
-			return task;
+			return UnLoadAssetByRefer(status.Address);
 		}
 
 		/// <summary>
@@ -519,12 +517,10 @@ namespace MiiAsset.Runtime
 		/// <param name="status"></param>
 		/// <param name="options"></param>
 		/// <returns></returns>
-		public static async Task<Scene> UnLoadSceneByReferWrapped(AsyncLoadingStatus<Scene> status,
+		public static Task UnLoadSceneByReferWrapped(AsyncLoadingStatus<Scene> status,
 			UnloadSceneOptions options = UnloadSceneOptions.None)
 		{
-			await Consumer.UnLoadSceneByRefer(status.Address, options);
-			var scene = status.Result;
-			return scene;
+			return UnLoadSceneByRefer(status.Address, options);
 		}
 
 		/// <summary>
@@ -612,5 +608,11 @@ namespace MiiAsset.Runtime
 		{
 			return Consumer != null;
 		}
+		
+		public static void RunDelayedTasks()
+		{
+			Consumer?.RunDelayedTasks();
+		}
+
 	}
 }
