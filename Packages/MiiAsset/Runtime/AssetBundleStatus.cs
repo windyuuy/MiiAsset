@@ -7,6 +7,7 @@ using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace MiiAsset.Runtime
 {
@@ -393,12 +394,12 @@ namespace MiiAsset.Runtime
 			}
 
 			var t1 = Date.Now();
-			var op = AssetBundle.LoadAssetAsync<T>(address);
-			loadStatus?.Set(op);
-			var task = op.GetTask();
-			await task;
+			var asset1 = AssetBundle.LoadAsset<Object>(address);
+			loadStatus?.Set(new AsyncOperation());
+			// var task = op.GetTask();
+			// await task;
 			MyLogger.De($"ldab-Asset: {Date.Now()-t1}, {address}");
-			if (op.asset is T asset)
+			if (asset1 is T asset)
 			{
 				return asset;
 			}

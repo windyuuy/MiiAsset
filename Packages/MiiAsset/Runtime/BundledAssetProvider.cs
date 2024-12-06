@@ -354,10 +354,12 @@ namespace MiiAsset.Runtime
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
 			await CatalogStatus.LoadBundlesByRefer(deps, CatalogInfo, loadStatus);
-			var op = SceneManager.LoadSceneAsync(sceneAddress, parameters);
-			subStatus?.Set(op);
-			await op.GetTask();
-			return op;
+			var op = SceneManager.LoadScene(sceneAddress, parameters);
+			// subStatus?.Set(op);
+			// await op.GetTask();
+			// return op;
+			var asyncOperation = new AsyncOperation();
+			return asyncOperation;
 		}
 
 		public async Task UnLoadSceneByRefer(string sceneAddress, UnloadSceneOptions options)

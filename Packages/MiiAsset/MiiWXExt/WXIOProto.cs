@@ -237,22 +237,25 @@ namespace MiiAsset.Runtime.IOManagers
 		public Task<byte[]> ReadAllBytesAsync(string uri)
 		{
 			var t1 = Date.Now();
-			var ts = new TaskCompletionSource<byte[]>();
-			FileSystemManager.ReadFile(new()
-			{
-				success = (resp) =>
-				{
-					MyLogger.De($"ldab-Read: {Date.Now()-t1}, {uri}");
-					ts.SetResult(resp.binData);
-				},
-				fail = (resp) =>
-				{
-					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
-					ts.SetException(exception);
-				},
-				filePath = uri,
-			});
-			return ts.Task;
+			// var ts = new TaskCompletionSource<byte[]>();
+			var binData = FileSystemManager.ReadFileSync(uri);
+			MyLogger.De($"ldab-Read: {Date.Now()-t1}, {uri}");
+			// FileSystemManager.ReadFile(new()
+			// {
+			// 	success = (resp) =>
+			// 	{
+			// 		MyLogger.De($"ldab-Read: {Date.Now()-t1}, {uri}");
+			// 		ts.SetResult(resp.binData);
+			// 	},
+			// 	fail = (resp) =>
+			// 	{
+			// 		var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
+			// 		ts.SetException(exception);
+			// 	},
+			// 	filePath = uri,
+			// });
+			// return ts.Task;
+			return Task.FromResult(binData);
 		}
 
 		public Task WriteAllBytesAsync(string uri, byte[] bytes)
