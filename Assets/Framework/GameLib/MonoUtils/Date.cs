@@ -1,8 +1,8 @@
 
 using System;
-using GameLib.MonoUtils;
+using MonoExtLib.DateExt;
 
-namespace lang.time
+namespace Lang.Time
 {
 	public class Date
 	{
@@ -44,7 +44,7 @@ namespace lang.time
 
 		public static long Now(DateTime nowDateTime)
 		{
-			var toNow = nowDateTime - new DateTime(1970, 1, 1, 0, 0, 0, 0);
+			var toNow = nowDateTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, 0);
 			return Convert.ToInt64(toNow.TotalMilliseconds);
 		}
 

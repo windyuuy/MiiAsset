@@ -1,6 +1,6 @@
-using fsync;
+using FSync;
 
-namespace GameLib.MonoUtils
+namespace MonoExtLib.StringExt
 {
 	public class MonoSchedulerMG
 	{

@@ -1,8 +1,8 @@
 using System;
 
-namespace GameLib.MonoUtils
+namespace MonoExtLib.DateExt
 {
-	public static class DateExt
+	public static class SystemDateExt
 	{
 		
 		/// <summary>

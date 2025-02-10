@@ -54,7 +54,7 @@ namespace MiiAsset.Runtime.Pipelines
 					? new LoadRemoteTextFilePipeline().Init(ToHashFileName(internalCatalogUri), null)
 					: new LoadTextFilePipeline().Init(ToHashFileName(internalCatalogUri)))
 				: null;
-			;
+			
 			using var loadRemoteHashPipeline = supportRemoteCatalog ? new LoadRemoteTextFilePipeline().Init(ToHashFileName(remoteCatalogUri), null) : null;
 
 			using ILoadTextAssetPipeline loadInternalCatalogPipeline = isInternalCatalogExist
@@ -66,6 +66,9 @@ namespace MiiAsset.Runtime.Pipelines
 			LoadTextFilePipeline loadExternalHashPipeline = null;
 			Task loadHashPipelinesTask;
 			var existExternalCatalog = IOManager.LocalIOProto.Exists(externalHashUri) && IOManager.LocalIOProto.Exists(externalCatalogUri);
+			
+			Debug.Log($"LoadCatalogOptions: internalCatalogUri:{internalCatalogUri}, remoteCatalogUri:{remoteCatalogUri}, externalCatalogUri:{externalCatalogUri}," +
+			          $" isInternalCatalogExist:{isInternalCatalogExist}, existExternalCatalog:{existExternalCatalog}, isInternalAsWebUri:{isInternalAsWebUri}");
 
 			IEnumerable<Task<PipelineResult>> CollectValidPipelinesResult()
 			{

@@ -25,7 +25,7 @@ namespace MiiAsset.Runtime.IOManagers
 #if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 #else
-			this.InternalDir = Application.dataPath + "/" + options.InternalBaseUri;
+			this.InternalDir = Application.streamingAssetsPath + "/" + options.InternalBaseUri;
 #endif
 			var persistentDataPath = Application.persistentDataPath;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";

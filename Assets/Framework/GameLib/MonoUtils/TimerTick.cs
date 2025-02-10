@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System;
 using System.Threading;
 
-namespace lang.time
+namespace MonoExtLib.LinqExt
 {
 	class TimeoutInfo
 	{

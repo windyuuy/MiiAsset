@@ -1,11 +1,12 @@
 
-namespace fsync
+namespace FSync
 {
 	using TTimeStamp = System.Int64;
 
 	/// <summary>
 	/// 网络时间管理
 	/// - 使用前需要设置 setStartTime 和 updateTime
+	/// - 保持该命名风格，和unity api一致
 	/// </summary>
 	public class TTimer
 	{

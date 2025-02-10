@@ -1,8 +1,7 @@
+#if SUPPORT_RSGPROMISE
 
 using System;
 using System.Threading.Tasks;
-
-#if SUPPORT_RSGPROMISE
 using RSG;
 
 namespace RSG.Ext

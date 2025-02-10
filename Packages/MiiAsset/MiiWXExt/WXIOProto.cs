@@ -5,12 +5,12 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
 using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
 using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
+using MonoExtLib.AsyncExt;
 
 #if UNITY_WEBGL && SUPPORT_WECHATGAME
 using WeChatWASM;
@@ -46,6 +46,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
 #if UNITY_EDITOR
+	
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 #else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";

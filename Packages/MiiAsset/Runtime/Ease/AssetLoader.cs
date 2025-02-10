@@ -133,7 +133,12 @@ namespace MiiAsset.Runtime
 
 			return Consumer.AllowTags(tags1);
 		}
-
+		
+		/// <summary>
+		/// 包含一个特殊tag "all", 表示标记所有
+		/// </summary>
+		/// <param name="tags"></param>
+		/// <returns></returns>
 		public static bool AllowTags(params string[] tags)
 		{
 			return Consumer.AllowTags(tags);
@@ -233,7 +238,7 @@ namespace MiiAsset.Runtime
 		{
 			if (string.IsNullOrEmpty(address))
 			{
-				Debug.LogError($"address is null or empty");
+				MyLogger.Log($"address is null or empty(可能catalog为空,或者检查是否isremote选项不正确)");
 			}
 		}
 

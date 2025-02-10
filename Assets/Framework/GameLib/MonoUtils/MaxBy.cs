@@ -15,7 +15,7 @@
 // limitations under the License.
 #endregion
 #nullable enable
-namespace MoreLinq
+namespace MonoExtLib.MoreLinq
 {
 	using System;
 	using System.Collections;
@@ -88,7 +88,9 @@ namespace MoreLinq
 		/// otherwise, the first element in source.
 		/// </returns>
 
+#if UNITY_EDITOR || UNITY_2017_1_OR_NEWER
 		[return: MaybeNull]
+#endif
 		public static T FirstOrDefault<T>(this IExtremaEnumerable<T> source)
 		{
 			if (source == null) throw new ArgumentNullException(nameof(source));
@@ -125,7 +127,9 @@ namespace MoreLinq
 		/// otherwise, the last element in source.
 		/// </returns>
 
+#if UNITY_EDITOR || UNITY_2017_1_OR_NEWER
 		[return: MaybeNull]
+#endif
 		public static T LastOrDefault<T>(this IExtremaEnumerable<T> source)
 		{
 			if (source == null) throw new ArgumentNullException(nameof(source));
@@ -164,7 +168,9 @@ namespace MoreLinq
 		/// <typeparamref name="T"/> if the sequence contains no elements.
 		/// </returns>
 
+#if UNITY_EDITOR || UNITY_2017_1_OR_NEWER
 		[return: MaybeNull]
+#endif
 		public static T SingleOrDefault<T>(this IExtremaEnumerable<T> source)
 		{
 			if (source == null) throw new ArgumentNullException(nameof(source));

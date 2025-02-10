@@ -1,13 +1,25 @@
 
-namespace GameLib.MonoUtils
+namespace MonoExtLib.Loom
 {
     public class LoomMG
-    {
-        public static MyLoom SharedLoom;
+	{
+		private static MyLoom _sharedLoom;
 
-        public static void Init()
-        {
-            SharedLoom = SharedLoom ?? MyLoom.CreateOne();
-        }
-    }
+		public static MyLoom SharedLoom
+		{
+			get
+			{
+				if (_sharedLoom == null)
+				{
+					_sharedLoom = MyLoom.CreateOne();
+				}
+
+				return _sharedLoom;
+			}
+		}
+
+		public static void Init()
+		{
+		}
+	}
 }

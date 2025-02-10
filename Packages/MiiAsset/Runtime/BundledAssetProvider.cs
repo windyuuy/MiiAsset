@@ -7,6 +7,7 @@ using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Pipelines;
 using MiiAsset.Runtime.Status;
+using MonoExtLib.AsyncExt;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -114,6 +115,10 @@ namespace MiiAsset.Runtime
 					}
 					else
 					{
+						if (sourceUri == null)
+						{
+							sourceUri = IOManager.LocalIOProto.InternalDir;
+						}
 						var loadSource = new ResourceLoadSource(sourceUri, null);
 						LoadCatalogInfo(internalCatalog, loadSource);
 					}

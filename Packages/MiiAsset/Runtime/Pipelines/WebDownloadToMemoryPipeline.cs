@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
 using MiiAsset.Runtime.IOManagers;
+using MonoExtLib.AsyncExt;
 using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime.IOStreams

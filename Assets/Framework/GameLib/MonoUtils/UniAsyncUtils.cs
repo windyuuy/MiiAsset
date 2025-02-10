@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Threading.Tasks;
+using MonoExtLib.Loom;
 using UnityEngine;
 
-namespace GameLib.MonoUtils
+namespace MonoExtLib.AsyncExt
 {
 	public class UniAsyncUtils
 	{

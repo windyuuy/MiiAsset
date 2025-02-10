@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace fsync
+namespace FSync
 {
 
 	using MonoBehaviour = UnityEngine.MonoBehaviour;

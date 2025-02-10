@@ -187,12 +187,12 @@ namespace MiiAsset.Editor.Build
 				{
 					var resultValue = r.Value;
 					m_Linker.AddTypes(resultValue.includedTypes);
-#if UNITY_2021_1_OR_NEWER
+				#if UNITY_2021_1_OR_NEWER
 					m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
-#else
+				#else
                         if (resultValue.GetType().GetProperty("includedSerializeReferenceFQN") != null)
                             m_Linker.AddSerializedClass(resultValue.GetType().GetProperty("includedSerializeReferenceFQN").GetValue(resultValue) as System.Collections.Generic.IEnumerable<string>);
-#endif
+				#endif
 				}
 
 				m_Linker.AddTypes(typeof(AssetLoader));
@@ -279,9 +279,33 @@ namespace MiiAsset.Editor.Build
 					File.Delete(curFile);
 				}
 
+				IEnumerable<AssetBundleInfo> CollectOfflineBundles(AssetBundleInfo[] assetBundleInfos)
+				{
+					var offlineBundles =
+						catalogBundleInfos.Where(info => info.IsOffline);
+					var containsBuiltin = false;
+					var collectOfflineBundles = offlineBundles.ToArray();
+					foreach (var bundle in collectOfflineBundles)
+					{
+						if (bundle.deps.Any(dep => dep.StartsWith("builtinshader_")))
+						{
+							containsBuiltin = true;
+						}
+					}
+
+					if (containsBuiltin)
+					{
+						collectOfflineBundles =
+							collectOfflineBundles
+								.Concat(catalogBundleInfos.Where(info => info.bundleName == "builtinshader")).ToArray();
+					}
+
+					return collectOfflineBundles;
+				}
+
 				var internalCatalog = new CatalogConfig
 				{
-					bundleInfos = catalogBundleInfos.Where(info => info.IsOffline).ToArray(),
+					bundleInfos = CollectOfflineBundles(catalogBundleInfos).ToArray(),
 					EntryBundleMap = null
 				};
 				var internalCatalogFilePath = $"{internalBuildPath}{Path.GetRelativePath(folderPath, catalogFilePath)}";
