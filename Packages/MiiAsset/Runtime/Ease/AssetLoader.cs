@@ -9,6 +9,7 @@ using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace MiiAsset.Runtime
 {
@@ -46,7 +47,7 @@ namespace MiiAsset.Runtime
 
 		private static void InitDispose()
 		{
-			Application.quitting += AssetLoader.Dispose;
+			Application.quitting += Dispose;
 		}
 
 		public static void Dispose()
@@ -133,7 +134,7 @@ namespace MiiAsset.Runtime
 
 			return Consumer.AllowTags(tags1);
 		}
-		
+
 		/// <summary>
 		/// 包含一个特殊tag "all", 表示标记所有
 		/// </summary>
@@ -276,7 +277,7 @@ namespace MiiAsset.Runtime
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus =
- null) where T : UnityEngine.Object
+			null) where T : UnityEngine.Object
 		{
 			CheckAddress(address);
 			return Consumer.LoadAsset<T>(address, loadStatus);
@@ -342,7 +343,7 @@ namespace MiiAsset.Runtime
 
 		public static int CheckTimeout()
 		{
-			var time = UnityEngine.Time.time;
+			var time = Time.time;
 			var timeoutCount = 0;
 			foreach (var node in TimeoutMap.ToEnumerable())
 			{
@@ -377,7 +378,7 @@ namespace MiiAsset.Runtime
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
-			where T : UnityEngine.Object
+			where T : Object
 		{
 			if (_enableTimeout)
 			{
@@ -390,14 +391,14 @@ namespace MiiAsset.Runtime
 		}
 
 		public static Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus = null)
-			where T : UnityEngine.Object
+			where T : Object
 		{
 			CheckAddress(address);
 			return Consumer.LoadAssetByReferSync<T>(address, loadStatus);
 		}
 
 		private static async Task<T> LoadAssetByReferWithInternal<T>(string address,
-			AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+			AssetLoadStatusGroup loadStatus = null) where T : Object
 		{
 			try
 			{
@@ -413,9 +414,9 @@ namespace MiiAsset.Runtime
 		}
 
 		private static async Task<T> LoadAssetByReferWithTimeout<T>(string address,
-			AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+			AssetLoadStatusGroup loadStatus = null) where T : Object
 		{
-			var timeStart = UnityEngine.Time.time;
+			var timeStart = Time.time;
 			var timeEnd = timeStart + _timeout;
 			var node = TimeoutMap.AddLast((timeEnd, address));
 			try
@@ -424,7 +425,7 @@ namespace MiiAsset.Runtime
 				var ret = await Consumer.LoadAssetByRefer<T>(address, loadStatus);
 				if (!TimeoutMap.Remove(node))
 				{
-					var time2 = UnityEngine.Time.time;
+					var time2 = Time.time;
 					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {address},TimeCost: {time2 - timeStart}");
 				}
 
@@ -448,7 +449,7 @@ namespace MiiAsset.Runtime
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		public static AsyncLoadingStatus<T> LoadAssetByReferWrapped<T>(string address, bool createStatus = false)
-			where T : UnityEngine.Object
+			where T : Object
 		{
 			AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
 			var task = LoadAssetByRefer<T>(address, loadStatus);
@@ -497,7 +498,7 @@ namespace MiiAsset.Runtime
 			LoadSceneParameters parameters = new(),
 			AssetLoadStatusGroup loadStatus = null)
 		{
-			var timeStart = UnityEngine.Time.time;
+			var timeStart = Time.time;
 			var timeEnd = timeStart + _timeout;
 			var node = TimeoutMap.AddLast((timeEnd, sceneAddress));
 			try
@@ -506,7 +507,7 @@ namespace MiiAsset.Runtime
 				var ret = await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 				if (!TimeoutMap.Remove(node))
 				{
-					var time2 = UnityEngine.Time.time;
+					var time2 = Time.time;
 					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {sceneAddress},TimeCost: {time2 - timeStart}");
 				}
 
@@ -602,12 +603,18 @@ namespace MiiAsset.Runtime
 
 		public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key, bool createStatus = false)
 		{
+			return InstantiateAsync(key, null, createStatus);
+		}
+
+		public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key, Transform parent,
+			bool createStatus = false)
+		{
 			var status = LoadAssetByReferWrapped<GameObject>(key, createStatus);
 
 			async Task<GameObject> Load()
 			{
 				var asset = await status.Task;
-				var obj = GameObject.Instantiate(asset);
+				var obj = Object.Instantiate(asset, parent);
 				return obj;
 			}
 
@@ -642,6 +649,11 @@ namespace MiiAsset.Runtime
 			}
 		#endif
 			CheckAddress(address);
+			if (string.IsNullOrEmpty(address))
+			{
+				return false;
+			}
+
 			return Consumer.ExistAddress(address);
 		}
 

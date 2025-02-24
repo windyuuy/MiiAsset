@@ -3,17 +3,18 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
-using UnityEngine;
 
 namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadCatalogPkgFromMemoryPipeline : ILoadTextAssetPipeline
 	{
 		protected byte[] Bytes;
+		protected string RemoteCatalogUri;
 
-		public LoadCatalogPkgFromMemoryPipeline Init(byte[] bytes)
+		public LoadCatalogPkgFromMemoryPipeline Init(string remoteCatalogUri, byte[] bytes)
 		{
 			this.Bytes = bytes;
+			this.RemoteCatalogUri = remoteCatalogUri;
 			Result = new();
 			this.Build();
 			return this;
@@ -21,7 +22,6 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
-			
 		}
 
 		public PipelineResult Result { get; set; }
@@ -34,19 +34,31 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 			try
 			{
-				MyLogger.Log($"load catalog.zip: {Bytes.Length}");
+				MyLogger.Log($"load catalog.zip: {Bytes.Length}, {RemoteCatalogUri}");
 				try
 				{
-					var stream = new MemoryStream(Bytes);
-					using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
-					var entry = zipArchive.GetEntry("catalog.json");
-					Debug.Assert(entry != null, "entry!=null");
-					using var streamReader = new StreamReader(entry.Open());
-					var text = await streamReader.ReadToEndAsync();
-					Text = text;
-					MyLogger.Log("load catalog.zip done");
-					
-					if (string.IsNullOrWhiteSpace(text))
+					try
+					{
+						var stream = new MemoryStream(Bytes);
+						using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
+						var entry = zipArchive.GetEntry("catalog.json");
+						MyLogger.Assert(entry != null, "entry!=null");
+						using var streamReader = new StreamReader(entry.Open());
+					#if UNITY_WEBGL
+						// ReSharper disable once MethodHasAsyncOverload
+						var text = streamReader.ReadToEnd();
+					#else
+						var text = await streamReader.ReadToEndAsync();
+					#endif
+						Text = text;
+						MyLogger.Log($"load catalog.zip done: {RemoteCatalogUri}");
+					}
+					catch (Exception exception)
+					{
+						MyLogger.LogException(exception);
+					}
+
+					if (string.IsNullOrWhiteSpace(Text))
 					{
 						Result.ErrorType = PipelineErrorType.DataIncorrect;
 					}

@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using MiiAsset.Runtime.Pipelines;
+﻿using MiiAsset.Runtime.Pipelines;
 using UnityEngine;
 using Application = UnityEngine.Device.Application;
 
@@ -8,7 +7,7 @@ namespace MiiAsset.Runtime
 	public static class AssetBundlePipelineHelper
 	{
 		public static ILoadAssetBundlePipeline GetLoadAssetBundlePipeline(this AssetBundleInfo assetBundleInfo,
-			IResourceLoadSource loadSource, uint crc)
+			IResourceLoadSource loadSource, uint crc, Hash128 hash128)
 		{
 			ILoadAssetBundlePipeline pipeline;
 
@@ -21,31 +20,49 @@ namespace MiiAsset.Runtime
 
 			if (cacheUri == null)
 			{
+				// 从包内加载
 				if (remoteUri?.StartsWith("jar:") ?? false)
 				{
 					pipeline = new LoadAssetBundleFromRemoteMemoryPipeline().Init(remoteUri, crc);
 				}
 				else if (Application.platform == RuntimePlatform.WebGLPlayer)
 				{
+				#if SUPPORT_WECHATGAME
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
 					pipeline = new LoadAssetBundleFromLocalBytesPipeline().Init(remoteUri, crc);
+				#else
+					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+				#endif
 				}
 				else
 				{
+				#if UNITY_WEBGL
+					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+				#else
 					// pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri);
-					pipeline = new LoadAssetBundlePipeline().Init(remoteUri, crc);
+					pipeline = new LoadAssetBundlePipelineFromLocalStream().Init(remoteUri, crc);
+				#endif
 				}
 			}
 			else
 			{
+				// 从缓存或网络加载
 				if (Application.platform == RuntimePlatform.WebGLPlayer)
 				{
+				#if SUPPORT_WECHATGAME
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
 					pipeline = new LoadAssetBundleFromRemoteBytesPipeline().Init(remoteUri, cacheUri, crc);
+				#else
+					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+				#endif
 				}
 				else
 				{
+				#if UNITY_WEBGL
+					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+				#else
 					pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri, crc);
+				#endif
 				}
 			}
 

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using MiiAsset.Runtime.Adapter;
 
@@ -166,7 +165,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogError($"invalid bundle not exist: {bundleName}");
+				MyLogger.LogError($"cannot GetAssetBundleInfo, invalid bundle, not exist: {bundleName}");
 				return null;
 			}
 		}
@@ -179,7 +178,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogError($"invalid bundle not exist: {bundleName}");
+				MyLogger.LogError($"cannot GetFileSize, invalid bundle, not exist: {bundleName}");
 				return -1;
 			}
 		}
@@ -203,8 +202,8 @@ namespace MiiAsset.Runtime
 		{
 			return this.AddressBundleMap.ContainsKey(address);
 		}
-		
-		
+
+
 		public bool ExistGuid(string address)
 		{
 			return this.GuidAddressMap.ContainsKey(address);
