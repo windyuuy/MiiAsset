@@ -154,21 +154,21 @@ namespace MiiAsset.Runtime.Pipelines
 			if (loadInternalHashPipeline != null && loadInternalHashPipeline.Result.IsOk == false)
 			{
 				Result = loadInternalHashPipeline.Result;
-				MyLogger.LogError("LoadInternalHashPipeline-failed");
+				MyLogger.LogError($"LoadInternalHashPipeline-failed: {ToHashFileName(internalCatalogUri)}");
 				return Result;
 			}
 
 			if (loadRemoteHashPipeline != null && loadRemoteHashPipeline.Result.IsOk == false)
 			{
 				Result = loadRemoteHashPipeline.Result;
-				MyLogger.LogError("LoadRemoteHashPipeline-failed");
+				MyLogger.LogError($"LoadRemoteHashPipeline-failed: {ToHashFileName(remoteCatalogUri)}");
 				return Result;
 			}
 
 			if (loadExternalHashPipeline != null && loadExternalHashPipeline.Result.IsOk == false)
 			{
 				Result = loadExternalHashPipeline.Result;
-				MyLogger.LogError("LoadExternalHashPipeline-failed");
+				MyLogger.LogError($"LoadExternalHashPipeline-failed: {ToHashFileName(externalCatalogUri)}");
 				return Result;
 			}
 
@@ -236,14 +236,14 @@ namespace MiiAsset.Runtime.Pipelines
 			if (loadInternalCatalogPipeline != null && loadInternalCatalogPipeline.Result.IsOk == false)
 			{
 				Result = loadInternalCatalogPipeline.Result;
-				MyLogger.LogError("LoadInternalCatalogPipeline-failed");
+				MyLogger.LogError($"LoadInternalCatalogPipeline-failed: {internalCatalogUri}");
 				return Result;
 			}
 
 			if (loadExternalCatalogPipeline != null && loadExternalCatalogPipeline.Result.IsOk == false)
 			{
 				Result = loadExternalCatalogPipeline.Result;
-				MyLogger.LogError("LoadExternalCatalogPipeline-failed");
+				MyLogger.LogError($"LoadExternalCatalogPipeline-failed: {externalCatalogUri}");
 				return Result;
 			}
 

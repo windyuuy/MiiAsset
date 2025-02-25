@@ -94,12 +94,21 @@ namespace MiiAsset.Runtime
 
 		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
+			CheckUri(remoteBaseUri);
 			if (!remoteBaseUri.EndsWith("/"))
 			{
 				remoteBaseUri = $"{remoteBaseUri}/";
 			}
 
 			return Consumer.UpdateCatalog(remoteBaseUri);
+		}
+
+		private static void CheckUri(string remoteBaseUri)
+		{
+			if (remoteBaseUri.Contains(":/") && remoteBaseUri.Contains("://") == false)
+			{
+				Debug.LogError($"Uri格式错误: {remoteBaseUri}");
+			}
 		}
 
 		public static Task<PipelineResult> LoadLocalCatalog()

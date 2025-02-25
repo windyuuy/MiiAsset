@@ -72,7 +72,13 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 			#if UNITY_EDITOR
 				AssetLoader.IsValid() &&
 			#endif
-				(RawAsset != null || AssetLoader.ExistAddress(Address));
+				(!string.IsNullOrEmpty(Address)) &&
+				(
+				#if UNITY_EDITOR
+					RawAsset != null ||
+				#endif
+					AssetLoader.ExistAddress(Address)
+				);
 		}
 
 	#if UNITY_EDITOR

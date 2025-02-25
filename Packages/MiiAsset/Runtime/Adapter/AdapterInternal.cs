@@ -1,5 +1,4 @@
 ﻿using MiiAsset.Runtime.IOManagers;
-using UnityEngine;
 
 namespace MiiAsset.Runtime.Adapter
 {
@@ -18,7 +17,7 @@ namespace MiiAsset.Runtime.Adapter
 		#if UNITY_WEBGL && SUPPORT_WECHATGAME && !UNITY_EDITOR
 			this.Adapt(new WXAdapter());
 		#elif UNITY_WEBGL && !SUPPORT_WECHATGAME && !UNITY_EDITOR
-			MyLogger.LogError($"cur webgl platform not support: {Application.platform}");
+			// MyLogger.LogError($"cur webgl platform not support: {Application.platform}");
 		#endif
 		}
 
