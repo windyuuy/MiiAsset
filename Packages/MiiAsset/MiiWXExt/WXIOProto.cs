@@ -45,12 +45,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
-#if UNITY_EDITOR
-	
+		#if UNITY_EDITOR
+
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
-#else
+		#else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
-#endif
+		#endif
 			var persistentDataPath = WX.env.USER_DATA_PATH;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
@@ -58,7 +58,8 @@ namespace MiiAsset.Runtime.IOManagers
 			this.CatalogName = options.CatalogName;
 			this.Timeout = options.Timeout;
 
-			MyLogger.Log($"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
+			MyLogger.Log(
+				$"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
 			FileSystemManager = WX.GetFileSystemManager();
 
@@ -182,7 +183,9 @@ namespace MiiAsset.Runtime.IOManagers
 			{
 				BundleExistMap = new();
 				var files1 = FileSystemManager.ReaddirSync(CacheDir);
-				var files2 = ExistsDir(InternalDir) ? FileSystemManager.ReaddirSync(InternalDir) : Array.Empty<string>();
+				var files2 = ExistsDir(InternalDir)
+					? FileSystemManager.ReaddirSync(InternalDir)
+					: Array.Empty<string>();
 				foreach (var file in files1.Concat(files2))
 				{
 					var fileName = Path.GetFileName(file);
@@ -199,10 +202,19 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public bool EnsureBundle(string bundleName)
 		{
+			// Debug.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
+		#if SUPPORT_WECHATGAME
+			// 修复微信小游戏崩溃
+			if (BundleExistMap.ContainsKey(bundleName))
+			{
+				return true;
+			}
+		#else
 			if (BundleExistMap.TryGetValue(bundleName, out var exist))
 			{
 				return exist;
 			}
+		#endif
 			else
 			{
 				var exists = Exists(CacheDir + bundleName) || Exists(InternalDir + bundleName);
@@ -211,7 +223,7 @@ namespace MiiAsset.Runtime.IOManagers
 					BundleExistMap.Add(bundleName, true);
 				}
 
-				return exist;
+				return false;
 			}
 		}
 
@@ -329,7 +341,7 @@ namespace MiiAsset.Runtime.IOManagers
 			var isOk = uwr.result == UnityWebRequest.Result.Success;
 			if (!isOk)
 			{
-				MyLogger.Log($"EnsureStreamingAssets-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
+				MyLogger.Log($"EnsureStreamingAssets-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
 			}
 
 			var maxTimes = 100;
@@ -360,7 +372,7 @@ namespace MiiAsset.Runtime.IOManagers
 				var isOk = uwr.result == UnityWebRequest.Result.Success;
 				if (!isOk)
 				{
-					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
+					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
 				}
 				else
 				{

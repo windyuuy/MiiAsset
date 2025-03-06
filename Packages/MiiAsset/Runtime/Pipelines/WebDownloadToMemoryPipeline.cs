@@ -14,7 +14,7 @@ namespace MiiAsset.Runtime.IOStreams
 		public byte[] Bytes;
 
 		protected bool UseCache = false;
-		
+
 		public WebDownloadToMemoryPipeline Init(string uri)
 		{
 			Uri = uri;
@@ -24,6 +24,7 @@ namespace MiiAsset.Runtime.IOStreams
 		}
 
 		protected UnityWebRequest Uwr;
+
 		public Task<PipelineResult> Run()
 		{
 			if (Ts == null)
@@ -38,7 +39,7 @@ namespace MiiAsset.Runtime.IOStreams
 					IOManager.LocalIOProto.SetUwr(Uwr);
 					var op = uwr.SendWebRequest();
 					await op.GetTask();
-					var code = uwr.responseCode;
+					var code = (int)uwr.responseCode;
 					var msg = uwr.error;
 
 					Bytes = uwr.downloadHandler.data;
@@ -53,6 +54,7 @@ namespace MiiAsset.Runtime.IOStreams
 					{
 						Result.ErrorType = PipelineErrorType.NetError;
 					}
+
 					Result.Status = PipelineStatus.Done;
 
 					Ts.SetResult(Result);
@@ -83,6 +85,7 @@ namespace MiiAsset.Runtime.IOStreams
 		protected PipelineProgress Progress = new PipelineProgress();
 
 		protected long PresetSize = -1;
+
 		public PipelineProgress GetProgress()
 		{
 			if (Result.Status == PipelineStatus.Init)
@@ -106,7 +109,8 @@ namespace MiiAsset.Runtime.IOStreams
 				ulong waitDoneAddition = 100;
 				Progress = new()
 				{
-					Total = Math.Max(uwrDownloadedBytes, (ulong)(uwrDownloadedBytes / Uwr.downloadProgress)) + waitDoneAddition,
+					Total = Math.Max(uwrDownloadedBytes, (ulong)(uwrDownloadedBytes / Uwr.downloadProgress)) +
+					        waitDoneAddition,
 					Count = uwrDownloadedBytes,
 				};
 			}

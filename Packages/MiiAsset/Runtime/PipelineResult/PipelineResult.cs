@@ -58,7 +58,7 @@ namespace MiiAsset.Runtime
 			var isOk = uwr.result == UnityWebRequest.Result.Success;
 			this.IsOk = isOk;
 			this.Exception = isOk ? null : new Exception(uwr.error);
-			this.Code = uwr.responseCode;
+			this.Code = (int)uwr.responseCode;
 			this.Msg = uwr.error;
 			this.ErrorType = PipelineErrorType.NetError;
 			this.Status = PipelineStatus.Done;
