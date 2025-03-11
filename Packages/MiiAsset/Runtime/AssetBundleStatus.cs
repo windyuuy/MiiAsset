@@ -197,6 +197,7 @@ namespace MiiAsset.Runtime
 
 		protected async Task<PipelineResult> LoadInternal(CatalogInfo catalogInfo, bool autoLoad)
 		{
+			MyLogger.Log($"AssetBundle-Loading: {this.BundleName}");
 			UpdateFileSizeInfo(catalogInfo);
 
 			var unloadTask = UnloadTask;
