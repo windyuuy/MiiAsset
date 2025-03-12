@@ -44,7 +44,8 @@ namespace MiiAsset.Runtime
 
 				async Task<PipelineResult> LoadCatalogInternal()
 				{
-					using var pipeline = new UpdateCatalogPipeline().Init(CatalogName, InternalBaseUri, ExternalBaseUri, RemoteBaseUri);
+					using var pipeline = new UpdateCatalogPipeline().Init(CatalogName, InternalBaseUri, ExternalBaseUri,
+						RemoteBaseUri);
 					Result = await pipeline.Run();
 					if (Result.IsOk)
 					{
@@ -114,6 +115,11 @@ namespace MiiAsset.Runtime
 					}
 					else
 					{
+						if (sourceUri == null)
+						{
+							sourceUri = IOManager.LocalIOProto.InternalDir;
+						}
+
 						var loadSource = new ResourceLoadSource(sourceUri, null);
 						LoadCatalogInfo(internalCatalog, loadSource);
 					}
@@ -268,7 +274,8 @@ namespace MiiAsset.Runtime
 			return CatalogInfo.ExistGuid(address);
 		}
 
-		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters,
+			AssetLoadStatusGroup loadStatus)
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
@@ -310,7 +317,8 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		protected Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : UnityEngine.Object
+		protected Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus)
+			where T : UnityEngine.Object
 		{
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
 			if (bundleLoadStatus != null)
@@ -323,14 +331,16 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus)
+			where T : UnityEngine.Object
 		{
 			var task = LoadByReferInternalSync<T>(address, loadStatus);
 			CatalogAddressStatus.RegisterAddress(address, task);
 			return task;
 		}
 
-		protected async Task<T> LoadByReferInternalSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		protected async Task<T> LoadByReferInternalSync<T>(string address, AssetLoadStatusGroup loadStatus)
+			where T : UnityEngine.Object
 		{
 			var subStatus = loadStatus?.AllocSyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
@@ -349,7 +359,8 @@ namespace MiiAsset.Runtime
 			return task;
 		}
 
-		protected async Task<T> LoadByReferInternal<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		protected async Task<T> LoadByReferInternal<T>(string address, AssetLoadStatusGroup loadStatus)
+			where T : UnityEngine.Object
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
@@ -366,7 +377,8 @@ namespace MiiAsset.Runtime
 			await CatalogStatus.UnLoadBundlesByRefer(address, deps);
 		}
 
-		public async Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		public async Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters,
+			AssetLoadStatusGroup loadStatus)
 		{
 			// await LoadAssetByRefer<UnityEngine.Object>(sceneAddress);
 			var task = LoadSceneInternal(sceneAddress, parameters, loadStatus);
@@ -378,7 +390,8 @@ namespace MiiAsset.Runtime
 			return scene;
 		}
 
-		private async Task<AsyncOperation> LoadSceneInternal(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		private async Task<AsyncOperation> LoadSceneInternal(string sceneAddress, LoadSceneParameters parameters,
+			AssetLoadStatusGroup loadStatus)
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
 			CatalogInfo.GetAssetDependBundles(sceneAddress, out var deps);
@@ -404,7 +417,9 @@ namespace MiiAsset.Runtime
 			var failedList = new List<string>();
 			{
 				var cacheDir = IOManager.LocalIOProto.CacheDir;
-				var files = IOManager.LocalIOProto.ExistsDir(cacheDir) ? IOManager.LocalIOProto.ReadDir(cacheDir) : Array.Empty<FilePathInfo>();
+				var files = IOManager.LocalIOProto.ExistsDir(cacheDir)
+					? IOManager.LocalIOProto.ReadDir(cacheDir)
+					: Array.Empty<FilePathInfo>();
 				CatalogInfo.BundlesToClean.Clear();
 				foreach (var fileInfo in files)
 				{
@@ -446,7 +461,9 @@ namespace MiiAsset.Runtime
 			if (IOManager.LocalIOProto.IsInternalDirUpdating)
 			{
 				var internalDir = IOManager.LocalIOProto.InternalDir;
-				var files = IOManager.LocalIOProto.ExistsDir(internalDir) ? IOManager.LocalIOProto.ReadDir(internalDir) : Array.Empty<FilePathInfo>();
+				var files = IOManager.LocalIOProto.ExistsDir(internalDir)
+					? IOManager.LocalIOProto.ReadDir(internalDir)
+					: Array.Empty<FilePathInfo>();
 				foreach (var fileInfo in files)
 				{
 					var fileName = fileInfo.FileName;
