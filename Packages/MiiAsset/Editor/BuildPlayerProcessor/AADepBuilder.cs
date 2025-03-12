@@ -84,14 +84,29 @@ namespace MiiAsset.Editor.Build
 					BundleCompression = bundleCompression,
 				};
 			buildParams.TempOutputFolder = tmpPath;
-
+			
 			var buildOptions = new BuildOptions
 			{
 				GenerateBuildLayout = false,
 				MonoScriptBundleName = null,
 				BuiltinShaderBundleName = "builtinshader",
 			};
+			
+			//TODO: 加密资源
+			foreach (var assetBundleBuild in bundleBuilds)
+			{
+				foreach (var addressableName in assetBundleBuild.addressableNames)
+				{
+					var path = addressableName;
+					AESEncrypter.EncryptAndSave(path,path);
+				}
+			}
+			
+			AssetDatabase.Refresh();
+			
 			var buildResult = AssetBuildScript.BuildBundles(bundleBuilds, buildParams, buildOptions);
+			//TODO: 重写本地资源
+			// AESEncrypter.RecoverFile();
 
 			if (buildResult.ExitCode == 0)
 			{
