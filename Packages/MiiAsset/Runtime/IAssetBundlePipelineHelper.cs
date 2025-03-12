@@ -7,7 +7,8 @@ namespace MiiAsset.Runtime
 {
 	public static class AssetBundlePipelineHelper
 	{
-		public static ILoadAssetBundlePipeline GetLoadAssetBundlePipeline(this AssetBundleInfo assetBundleInfo, IResourceLoadSource loadSource, uint crc)
+		public static ILoadAssetBundlePipeline GetLoadAssetBundlePipeline(this AssetBundleInfo assetBundleInfo,
+			IResourceLoadSource loadSource, uint crc)
 		{
 			ILoadAssetBundlePipeline pipeline;
 
@@ -20,7 +21,7 @@ namespace MiiAsset.Runtime
 
 			if (cacheUri == null)
 			{
-				if (remoteUri.StartsWith("jar:"))
+				if (remoteUri?.StartsWith("jar:") ?? false)
 				{
 					pipeline = new LoadAssetBundleFromRemoteMemoryPipeline().Init(remoteUri, crc);
 				}
