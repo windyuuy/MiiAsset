@@ -19,7 +19,7 @@ MonoBehaviour:
     groupRoot: '{0}*'
     scanRoot: Assets/Bundles/AA
     tags: 
-    isOffline: 0
+    isOffline: 1
   - title: BB
     path: Assets/Bundles/BB/
     groupName: bb
@@ -33,7 +33,7 @@ MonoBehaviour:
     groupRoot: '{0}*'
     scanRoot: Assets/Bundles/CC
     tags: 
-    isOffline: 0
+    isOffline: 1
   excludeExtensions: []
   excludePaths: []
   isShaderGroupOffline: 1

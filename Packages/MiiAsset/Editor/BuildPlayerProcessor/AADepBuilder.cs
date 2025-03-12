@@ -92,7 +92,7 @@ namespace MiiAsset.Editor.Build
 				BuiltinShaderBundleName = "builtinshader",
 			};
 			
-			//TODO: 加密资源
+			//加密资源
 			foreach (var assetBundleBuild in bundleBuilds)
 			{
 				foreach (var addressableName in assetBundleBuild.addressableNames)
@@ -101,12 +101,12 @@ namespace MiiAsset.Editor.Build
 					AESEncrypter.EncryptAndSave(path,path);
 				}
 			}
-			
 			AssetDatabase.Refresh();
 			
 			var buildResult = AssetBuildScript.BuildBundles(bundleBuilds, buildParams, buildOptions);
-			//TODO: 重写本地资源
-			// AESEncrypter.RecoverFile();
+			//重写本地资源
+			AESEncrypter.RecoverFile();
+			AssetDatabase.Refresh();
 
 			if (buildResult.ExitCode == 0)
 			{

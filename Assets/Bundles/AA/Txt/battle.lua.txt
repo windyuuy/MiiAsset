@@ -1,0 +1,524 @@
+require("class")
+
+import("battle/init.lua");  
+import("common/common.lua");
+import("common/time.lua");
+import("client/json.lua");
+import("client/gm.lua");
+import("battle/agentHandler.lua");
+import("battle/protocolHandler.lua");
+
+local tableUtils = import("common/tableUtils.lua");
+local tools = import("common/tools.lua");
+local message = import("common/message.lua");
+local battleMgr = import("battle/battleMgr.lua");
+local clientMgr = import("battle/clientMgr.lua");
+local battleIntent = import("battle/battleIntent.lua");
+local robotUtil = import("common/robotUtil.lua");
+
+_G.s2lb = _G.s2lb or {};
+_G.s2bc = _G.s2bc or {};
+_G.LOCAL_ROBOT_UID = robotUtil.robotUserIdStart
+
+_G.OriginType = {
+    ORIGIN_BASIC = 1; --根基
+    ORIGIN_GOLD  = 2; --金
+    ORIGIN_WOOD  = 3; --木
+    ORIGIN_WATER = 4; --水
+    ORIGIN_FIRE  = 5; --火
+    ORIGIN_LAND  = 6; --土
+}
+
+-- tick频率为100ms
+local tickFrequency = 100;
+
+dive.Run = tools.LogDecorator(function()
+    dive.startTime = dive.startTime or dive.GetTimeMS()
+    local costTime = dive.GetTimeMS() - dive.startTime;
+    -- 改成100ms一次tick
+    if tickFrequency * dive.frame - costTime <= 10 then
+        dive.now = (tickFrequency * dive.frame + dive.startTime) / 1000;
+    
+        -- TODO 需要看下已经延迟的情况是不是会导致异常？
+        if costTime - tickFrequency * dive.frame > tickFrequency then
+            LogWarn("battle tick warn dive.frame={} costTime={}", dive.frame, costTime);
+            dive.frame = math.floor(costTime / tickFrequency);
+        else
+            dive.frame = dive.frame + 1;
+        end
+
+        local ok, err = xpcall(OnTick, debug.traceback, dive.frame);
+        if not ok then
+            LogErr("OnTick error: {}", err);
+            -- tick连续出错5次, 严重bug, 把进程干掉
+            dive.tickErrorCount = dive.tickErrorCount + 1
+            if dive.tickErrorCount > 3 then
+                local stop_ok, stop_err = xpcall(dive.Stop, debug.traceback);
+                if not stop_ok then
+                    LogErr("OnTick error to stop error: {}", stop_err);
+                end
+            end
+        else
+            -- 未出错则把tick恢复
+            dive.tickErrorCount = 0;
+        end
+    end
+end);
+
+dive.CreateBattle = function(modeId, cardsInfo, formationId, avgLevel, formations, spellCards, robotCfgId, pveTowerId, pveTowerLevel, refineStage, spiritData, battleDataStr)
+    LogInfo("开始游戏")
+    -- 重新加载数据
+    -- for k, v in pairs(_G.diveServerConfigData) do
+    --     rawset(_G.diveServerConfigData, k, nil)
+    -- end
+
+    local battleId = _G.CLIENT_BATTLE_ID
+    local ss = {
+        battleId = battleId,
+        Call = function(msg, data) message.SendProtoMsgToCs(msg, data) end
+    }
+
+    battleIntent.ClearBattleIntent(battleId);
+    _G.timer.stop();
+
+    local playerUid = dive.playerUid
+    _G.AgentTable[playerUid] = ss
+
+    local battleTeams = {
+        {
+            players = {
+                [playerUid] = {
+                    id = playerUid,
+                    svr = "client",
+                    playerIndex = 1,
+                    score=0
+                }
+            }
+        }
+    }
+
+    modeId = tonumber(modeId)
+    local cfg = _G.MatchModelTable[modeId];
+    if not cfg then
+        LogErr("modeId={} not found", modeId);
+        return;
+    end
+    
+    cardsInfo = _G.jsonDecode(cardsInfo)
+    spellCards = _G.jsonDecode(spellCards)
+    formations = _G.jsonDecode(formations)
+    spiritData = _G.jsonDecode(spiritData)
+    
+    local tmpSpellCards = {}
+    for _, spellCard in pairs(spellCards) do
+        table.insert(tmpSpellCards, spellCard)
+    end
+    spellCards = tmpSpellCards
+
+    -- 添加机器人
+    local robotUid = nil
+    if cfg.needTeam > 1 then
+        robotUid = _G.LOCAL_ROBOT_UID
+        local robotSs = {
+            Call = function(msg, data) message.HandleMsgFromLocalRobot(msg, data) end,
+            robotConfigId = robotCfgId,
+        }
+        local ss = {
+            uid = robotUid,
+            battleId = battleId,
+            Call = function(msg, data)
+                message.SendMsgToLocalRobot(msg, data, robotSs)
+            end,
+        }
+        _G.AgentTable[robotUid] = ss
+        table.insert(battleTeams, {
+            players = {
+                [robotUid] = {id = robotUid, svr = "client", score=0, playerIndex = 1}
+            }
+        })
+    end
+
+    local battleConfigId = cfg.battleConfigId;
+    if battleDataStr == "" then
+        battleDataStr = nil
+    end
+    c2c.CPrepareBattle(modeId, battleTeams, battleDataStr);
+
+    --元神信息
+    local spiritInfo = {}
+    spiritInfo.spiritId =  spiritData.spiritId
+    spiritInfo.spiritLv = spiritData.spiritLevel
+    spiritInfo.spiritSkill = GetRobotSpiritSkill(spiritInfo.spiritId, spiritInfo.spiritLevel)
+    spiritInfo.originInfo = spiritData.spiritInfo
+
+    --卡牌信息
+    local cardTeamInfo = {}
+     -- 卡牌信息
+    for _, card in pairs(cardsInfo) do
+        table.insert(cardTeamInfo, {
+            id          = card.id,
+            level       = card.level,
+            quality     = card.quality,
+            attributes  = CalPlayerCardAttribute(card, spiritInfo, refineStage, cardsInfo),
+        })
+   end
+
+    -- 更新玩家信息SyncPlayerInfo
+    local playerInfo = {
+        cardTeam = {
+            cards = cardTeamInfo,
+            avgLevel = avgLevel,
+            spellCards = spellCards,
+            formations = formations,
+        },
+        pveTowerId = pveTowerId,
+        pveTowerLevel = pveTowerLevel,
+        spiritInfo = spiritInfo,
+    }
+
+    local robotPlayerInfo    = CalRobotCardTeam(robotCfgId)
+
+    c2c.CSyncPlayerInfo(battleId, playerUid, playerInfo, robotPlayerInfo)
+    c2c.CJoinBattle(playerUid, battleId)
+end
+
+dive.ReadyBattle = function()
+    c2c.CReadyBattle(_G.CLIENT_BATTLE_ID)
+end
+
+dive.OnReload = tools.LogDecorator(function()
+    LogInfo("on reload");
+    -- 因为在init中初始化，会导致热更新时未刷新函数
+    battleMgr.OnReload();
+end);
+
+dive.OnStop = tools.LogDecorator(function()
+    if not dive.stopFlag then
+        dive.stopFlag = true;
+        -- 服务发现取消注册
+        _G.diveSDMgr.deregister_instance();
+        LogInfo("recv quit signal, save for exiting ...");
+    end
+    return true;
+end);
+
+dive.OnRemoteInvoke = tools.LogDecorator(message.HandleP2PMessage);
+dive.OnProtoMsgFromCS = tools.LogDecorator(message.HandleProtoMsgFrmCs)
+dive.RemoteInvoke = tools.LogDecorator(function(serviceId, instanceId, data)
+    LogInfo("RemoteInvoke")
+    return "ok";
+end);
+
+if tableUtils == nil then LogWarn("tableUtils is nil") end
+
+function OnTick(frame)
+    -- 结束游戏放最前面，避免下面的出现traceback，导致无法停止的问题
+    if dive.stopFlag then
+        -- 等所有战斗都结束了再关闭
+        LogInfo("service quit for signal !");
+        if not battleMgr.CheckHasBattle() then
+            LogInfo("not battle dive.Run stop!");
+            dive.Run = nil;
+            return;
+        end
+    end
+
+    -- 定时器
+    _G.timer.BattleUpdate(frame);
+
+    clientMgr.Update(frame);
+    battleMgr.Update(frame);
+end
+
+function CalMapLevel(mode, battleTeams)
+    -- 计算地图等级信息
+    local battleConfig = _G.BattleConfigTable[tonumber(mode)];
+    local mapConfig = _G.MapTable[battleConfig.mapId];
+    local mapLevel = mapConfig.mapLevel;
+
+    if mapLevel <= 0 then
+        mapLevel = 18;
+        for _, team in pairs(battleTeams) do
+            for playerId, player in pairs(team.players) do
+                if mapLevel <= 0 then
+                    mapLevel = player.levelAverage;
+                else
+                    mapLevel = math.min(mapLevel, player.levelAverage);
+                end
+            end
+        end
+    end
+    -- LogInfo("yjl CalMapLevel mapLevel={}", mapLevel);
+    return mapLevel;
+end
+
+-- 机器人卡组配置
+function CalRobotCardTeam(robotCfgId)
+    local cardTeamInfo = {
+        cards = {},
+        avgLevel = 1,
+        spellCards = {},
+    }
+
+    -- 初始化robot卡组
+    local robotConfig = _G.RobotConfigTable[robotCfgId]
+    if not robotConfig then
+        return
+    end
+    
+    -- 初始化robot元神
+    local spiritInfo = {};
+
+    local spiritIndex = math.random(#aiLevelConfig.spirits);
+    spiritInfo.spiritId = aiLevelConfig.spirits[spiritIndex];
+    spiritInfo.spiritSkill = GetRobotSpiritSkill(spiritInfo.spiritId);
+    spiritInfo.spiritLv = 0;
+    spiritInfo.originInfo = {};
+    for _, originType in pairs(_G.OriginType) do
+        spiritInfo.originInfo[originType] = aiLevelConfig.spiritOriginLevel;
+    end
+
+
+    local totalLevel = 0
+    for idx, cardId in pairs(robotConfig.cardId) do
+        local level = robotConfig.cardLevel[idx]
+        local quality = robotConfig.cardQuality[idx]
+        table.insert(cardTeamInfo.cards, {
+            id = cardId,
+            level = level,
+            quality = quality,
+            attributes = CalCardAttribute(cardId, quality, level),
+        })
+
+        totalLevel = totalLevel + level
+    end
+    
+    for idx, spellId in pairs(robotConfig.spellId) do
+        table.insert(cardTeamInfo.spellCards, spellId)
+    end
+    
+    cardTeamInfo.avgLevel = math.floor(totalLevel / #robotConfig.cardId)
+    
+    return { cardTeam = cardTeamInfo, robotConfigId = robotCfgId, spiritInfo = spiritInfo}
+end
+
+-- 处理词缀列表数据为局内需要的数据
+function CalCardAttribute(cardId, cardQuality, cardLevel)
+    -- 计算基础属性
+    local sutraQualityLevelGroup = _G.SutraQualityLevelTable[cardId]
+    if not sutraQualityLevelGroup then
+        LogErr("CalRobotCardAttribute, invalid card, id:{}", cardId)
+        return nil
+    end
+
+    local sutraQualityGroup = sutraQualityLevelGroup[cardQuality]
+    if not sutraQualityGroup then
+        LogErr("CalRobotCardAttribute, invalid card, id:{} quality:{}", cardId, cardQuality)
+        return nil
+    end
+
+    local sutraQualityLevelConfig = sutraQualityGroup[cardLevel]
+    if not sutraQualityLevelConfig then
+        LogErr("CalRobotCardAttribute, invalid card, id:{} quality:{} level:{}", cardId, cardQuality, cardLevel)
+        return nil
+    end
+
+    local attributes = {}
+    attributes.baseAttack = sutraQualityLevelConfig.baseAttack
+    attributes.baseAttackSpeed = sutraQualityLevelConfig.baseAttackSpeed
+    attributes.baseCritRate = sutraQualityLevelConfig.baseCritRate
+    attributes.baseCritDamage = sutraQualityLevelConfig.baseCritDamage
+    attributes.baseTowerHp = sutraQualityLevelConfig.baseTowerHp
+
+    -- 如果没有数值的属性 则从属性表中获取基础数值
+    for _, data in pairs(_G.UnitAttributeTable) do
+        attributes[data.codename] = attributes[data.codename] or data.baseValue
+    end
+
+    return attributes
+end
+
+function GetRobotSpiritSkill(spiritId, spiritLevel)
+    local skill = {}
+    if not spiritId then
+        return skill;
+    end
+
+    local spiritLv = 0;
+    if spiritLevel and spiritLevel > 0 then
+        spiritLv = spiritLevel;
+    end
+
+    local levelData = _G.SpiritStarTable[spiritId][spiritLv]
+    if not levelData then
+        return skill;
+    end
+
+    for skillId, lock in pairs(levelData.spiritSkill) do
+        if lock > 0 then
+            skill[#skill] = skillId;
+        end
+    end
+
+    return skill;
+end
+
+function CalPlayerCardAttribute(card, spiritInfo, refineStage, cardsInfo)
+    local sutraConfig = _G.SutraTable[card.id]
+    if not sutraConfig then
+        LogErr("CalCardAttribute, invalid card, id:{}", card.id)
+        return nil
+    end
+
+    -- 计算基础属性
+    local attributes = {}
+    for attr, affixValue in pairs(card.attributes) do
+        attributes[attr] = (attributes[attr] or 0) + affixValue
+    end
+
+    for _, affix in pairs(card.affixlist or {}) do
+        local affixConfig = _G.SutraAffixLevelTable[affix.Quality][affix.AffixId]
+        if not affixConfig then
+            LogErr("CalCardAttribute, cannot find affix level config, quality:{} affixId:{}", affix.quality,
+                affix.affixId)
+            goto cal_attribute_continue
+        end
+
+        local attr = _G.AttrShortName[affixConfig.linkAttribute]
+        attributes[attr] = (attributes[attr] or 0) + affix.AffixValue
+
+        ::cal_attribute_continue::
+    end
+
+    -- 如果没有数值的属性 则从属性表中获取基础数值
+    for _, data in pairs(_G.UnitAttributeTable) do
+        attributes[data.codename] = attributes[data.codename] or data.baseValue
+    end
+
+    -- 计算所有法宝等级词条增益
+    CalCardLevelAffix(cardsInfo, attributes, card)
+
+    -- 计算段位加成
+    CalRefineStageAttribute(refineStage, attributes)
+
+    --计算元神加成
+    CalSpiritAttribute(spiritInfo, attributes, sutraConfig.element)
+    
+    return attributes
+end
+
+-- 计算所有法宝等级词条增益
+function CalCardLevelAffix(cardsInfo, attributes, card)
+    local affixesConfig = {}
+
+    for _, sutraCard in pairs(cardsInfo) do
+        local sutraConfig = _G.SutraTable[sutraCard.id]
+        if not sutraConfig then
+            LogErr("CalCardLevelAffix, can not find sutra config, cardId:{}", sutraCard.id)
+            goto cal_card_level_affix_continue
+        end
+
+        local sutraLevelAffixConfig = _G.SutraLevelAffixTable[sutraConfig.levelAffixType]
+        if not sutraLevelAffixConfig then
+            LogErr("CalCardLevelAffix, can not find sutra level affix config, cardId:{} levelAffixType:{}",
+                sutraCard.id, sutraConfig.levelAffixType)
+            goto cal_card_level_affix_continue
+        end
+
+        for _, config in pairs(sutraLevelAffixConfig) do
+            if config.level <= sutraCard.level then
+                table.insert(affixesConfig, config)
+            end
+        end
+
+        ::cal_card_level_affix_continue::
+    end
+
+    for _, affixConfig in pairs(affixesConfig) do
+        local res, config = CheckLevelAffixCondition(affixConfig, card)
+        if res then
+            local attr = _G.AttrShortName[config.linkAttribute]
+         
+            attributes[attr] = (attributes[attr] or 0) + config.value
+        end
+    end
+end
+
+function CheckLevelAffixCondition(affixConfig, card)
+    if affixConfig then
+        if affixConfig.type == 1 then
+            -- 全部法宝
+            return true, affixConfig
+        elseif affixConfig.type == 2 then
+            -- 指定羁绊法宝
+            local sutraConfig = _G.SutraTable[card.id]
+            if not sutraConfig then
+                return false
+            else
+                return table.contains(sutraConfig.fates, affixConfig.param), affixConfig
+            end
+        end
+    end
+end
+
+-- 计算炼器境界属性加成
+function CalRefineStageAttribute(refinerStage, attributes)
+    local refinerStageConfig = _G.RefinerRealmTable[refinerStage]
+    if not refinerStageConfig then
+        LogErr("CalRefineStageAttribute, can not find refiner stage config, refiner stage:{}", refinerStage)
+        return
+    end
+
+    for _, addition in pairs(refinerStageConfig.attrAddition) do
+        local attrId = addition.attrId
+        local attrValue = addition.attrValue
+
+        local attr = _G.AttrShortName[attrId]
+        if not attr then
+            LogErr("CalRefineStageAttribute, attrId:{} is valid in RefineStage", attrId)
+            goto continue
+        end
+
+        attributes[attr] = attributes[attr] or 0
+        attributes[attr] = attributes[attr] + attrValue
+
+        ::continue::
+    end
+end
+
+--获得元神加成
+function CalSpiritAttribute(spiritData, attributes, element)
+    local levelData = _G.SpiritStarTable[spiritData.spiritId][spiritData.spiritLv]
+    if not levelData then
+        return;
+    end
+
+    --元神加成
+    for attrId, value in pairs(levelData.spiritAttrAdds) do
+        local attr = _G.AttrShortName[attrId]
+        attributes[attr] = (attributes[attr] or 0) + value;
+    end
+
+    --本源加成
+    for originType, originLv in pairs(spiritData.originInfo) do
+        local typeConfig =   _G.SpiritOrigin[tonumber(originType)];
+        if not typeConfig then
+            goto continue;
+        end
+
+        local config = typeConfig[originLv];
+        if config then
+            if config.originTargetType ~= 1 and config.originTargetParam ~= element then
+                goto continue;
+            end
+
+            for attrId, value in pairs(config.originAttrAdd) do
+                local attr = _G.AttrShortName[attrId]
+                attributes[attr] = (attributes[attr] or 0) + value;
+            end
+        end
+        ::continue::
+    end
+
+    return;
+end

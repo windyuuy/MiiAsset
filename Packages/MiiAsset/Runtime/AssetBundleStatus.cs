@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using GameLib.MonoUtils;
@@ -431,17 +432,41 @@ namespace MiiAsset.Runtime
 				return default;
 			}
 
-			// var t1 = Date.Now();
-			// var fc1 = Time.frameCount;
+			var t1 = Date.Now();
+			var fc1 = Time.frameCount;
 			var op = AssetBundle.LoadAssetAsync<T>(address);
 			loadStatus?.Set(op);
 			var task = op.GetTask();
 			await task;
-			// var t2 = Date.Now();
-			// var fc2 = Time.frameCount;
-			// Debug.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
+			var t2 = Date.Now();
+			var fc2 = Time.frameCount;
+			// Debug.Log($"{address} LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
 			if (op.asset is T asset)
 			{
+				//文本文件需要解密
+				if (Path.GetExtension(address) is ".json" or ".txt" && asset is TextAsset textAsset)
+				{
+					try
+					{
+						var decrypt = AESEncrypter.Decrypt(textAsset.text);
+						// 创建新的 TextAsset
+						var decryptedTextAsset = new TextAsset(decrypt);
+						// 替换原始的 TextAsset
+						asset = decryptedTextAsset as T;
+					}
+					catch (Exception e)
+					{
+						Debug.LogError($"{address}文件内容解密失败");
+						Debug.LogException(e);
+					}
+					finally
+					{
+						var t3 = Date.Now();
+						var fc3 = Time.frameCount;
+						Debug.Log($"{address} 解密耗时: {t3 - t2}, {fc3 - fc2}, from: {fc2}");
+					}
+				}
+				
 				return asset;
 			}
 			else
@@ -491,15 +516,39 @@ namespace MiiAsset.Runtime
 				return System.Threading.Tasks.Task.FromResult<T>(default);
 			}
 
-			// var t1 = Date.Now();
-			// var fc1 = Time.frameCount;
+			var t1 = Date.Now();
+			var fc1 = Time.frameCount;
 			var asset = AssetBundle.LoadAsset<T>(address);
 			loadStatus?.Set(asset);
-			// var t2 = Date.Now();
-			// var fc2 = Time.frameCount;
+			var t2 = Date.Now();
+			var fc2 = Time.frameCount;
 			// Debug.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
 			if (asset != null)
 			{
+				//文本文件需要解密
+				if (Path.GetExtension(address) is ".json" or ".txt" && asset is TextAsset textAsset)
+				{
+					try
+					{
+						var decrypt = AESEncrypter.Decrypt(textAsset.text);
+						// 创建新的 TextAsset
+						var decryptedTextAsset = new TextAsset(decrypt);
+						// 替换原始的 TextAsset
+						asset = decryptedTextAsset as T;
+					}
+					catch (Exception e)
+					{
+						Debug.LogError($"{address}文件内容解密失败");
+						Debug.LogException(e);
+					}
+					finally
+					{
+						var t3 = Date.Now();
+						var fc3 = Time.frameCount;
+						Debug.Log($"{address} 解密耗时: {t3 - t2}, {fc3 - fc2}, from: {fc2}");
+					}
+				}
+				
 				return System.Threading.Tasks.Task.FromResult(asset);
 			}
 			else
