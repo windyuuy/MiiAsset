@@ -1,0 +1,144 @@
+-- 状态管理
+
+local battleIntent = import("battle/battleIntent.lua")
+
+function Init()
+    _G.EntryStatus = {
+        ENTRY_STATUS_IDLE       = 4320001,     -- 空闲
+        ENTRY_STATUS_MOVE       = 4320002,     -- 移动
+        ENTRY_STATUS_ATTACK     = 4320003,     -- 攻击
+        --ENTRY_STATUS_SKILL      = 4320004,     -- 技能
+        ENTRY_STATUS_DIZZY      = 4320005,     -- 眩晕
+        ENTRY_STATUS_REPEL      = 4320007,     -- 击退
+    }
+
+    -- 怪物状态转换表
+    _G.MonsterStatusTransitionTable = {
+        [_G.EntryStatus.ENTRY_STATUS_MOVE] = { _G.EntryStatus.ENTRY_STATUS_REPEL, _G.EntryStatus.ENTRY_STATUS_DIZZY },
+        [_G.EntryStatus.ENTRY_STATUS_DIZZY] = { _G.EntryStatus.ENTRY_STATUS_DIZZY },
+        [_G.EntryStatus.ENTRY_STATUS_REPEL] = {},
+    }
+    -- 怪物状态处理函数
+    _G.MonsterStatusHandler = {
+        [_G.EntryStatus.ENTRY_STATUS_MOVE] = function(monster)
+            -- 重置移动时间
+            -- local nowMS = _G.GetCurTimeMS()
+            -- monster.lastMoveTime = nowMS
+        end,
+        [_G.EntryStatus.ENTRY_STATUS_DIZZY] = function(monster)
+        end,
+        [_G.EntryStatus.ENTRY_STATUS_REPEL] = function(monster)
+            -- 重置移动时间
+            -- local nowMS = _G.GetCurTimeMS()
+            -- monster.lastMoveTime = nowMS
+        end,
+    }
+
+    -- 法宝召唤物状态转换表
+    _G.SutraStatusTransitionTable = {
+        [_G.EntryStatus.ENTRY_STATUS_IDLE] = { _G.EntryStatus.ENTRY_STATUS_ATTACK, _G.EntryStatus.ENTRY_STATUS_DIZZY },
+        [_G.EntryStatus.ENTRY_STATUS_ATTACK] = { _G.EntryStatus.ENTRY_STATUS_DIZZY, _G.EntryStatus.ENTRY_STATUS_ATTACK },
+        [_G.EntryStatus.ENTRY_STATUS_DIZZY] = { _G.EntryStatus.ENTRY_STATUS_DIZZY },
+        [_G.EntryStatus.ENTRY_STATUS_REPEL] = {},
+    }
+
+    -- 法宝召唤物状态处理函数
+    _G.SutraStatusHandler = {
+        [_G.EntryStatus.ENTRY_STATUS_IDLE] = function(entry)
+            if entry.lastDizzyTime and entry.lastDizzyTime > 0 then
+                local nowMS = _G.GetCurTimeMS()
+                entry.nextActiveSkillTime = entry.nextActiveSkillTime - entry.lastDizzyTime + nowMS
+
+                -- 重置眩晕时间
+                entry.lastDizzyTime = 0
+            end
+        end,
+        [_G.EntryStatus.ENTRY_STATUS_ATTACK] = function(entry) end,
+        [_G.EntryStatus.ENTRY_STATUS_REPEL] = function(entry) end,
+        [_G.EntryStatus.ENTRY_STATUS_DIZZY] = function(entry)
+            local nowMS = _G.GetCurTimeMS()
+            if not entry.lastDizzyTime or entry.lastDizzyTime <= 0 then
+                entry.lastDizzyTime = nowMS
+            else
+                -- 不重置眩晕时间
+            end
+        end,
+    }
+end
+
+function CheckStatusEnd(entry)
+    local statusComp = entry.statusComponent
+    if statusComp.status == statusComp.defaultStatus then
+        return;
+    end
+
+    local nowMS = _G.GetCurTimeMS();
+
+    -- 状态结束, 都变为IDLE状态
+    if statusComp.duration > 0 and nowMS - statusComp.startTime > statusComp.duration then
+        statusComp.status = statusComp.defaultStatus;
+        statusComp.startTime = _G.GetCurTimeMS();
+        statusComp.duration = 0;
+        statusComp.statusHandler[statusComp.status](entry);
+    end
+end
+
+function ChangeStatus(entry, newStatus, duration, param)
+    local statusComp = entry.statusComponent
+    if not statusComp then
+        return
+    end
+
+    CheckStatusEnd(entry)
+
+    if statusComp.defaultStatus == newStatus or canChangeStatus(statusComp.transitionTable, statusComp.status, newStatus) then
+        statusComp.status = newStatus;
+        statusComp.startTime = _G.GetCurTimeMS();
+        statusComp.duration = duration or 0;
+        statusComp.param = param
+
+        statusComp.statusHandler[statusComp.status](entry);
+
+        if entry.attributeComponent then
+            return entry.attributeComponent:OnStatusChange(newStatus, param)
+        end
+    else
+        LogInfo("transitionToStatus can not transition from status:{} to status:{}", statusComp.status, newStatus)
+        return
+    end
+end
+
+function CheckStatus(entry, newStatus)
+    local nowMS = _G.GetCurTimeMS();
+    local statusComp = entry.statusComponent
+
+    CheckStatusEnd(entry)
+
+    if statusComp.status == newStatus then
+        return true;
+    end
+
+    if canChangeStatus(statusComp.transitionTable, statusComp.status, newStatus) then
+        return true
+    else
+        return false
+    end
+end
+
+function syncEntryStatus(entry, status, duration)
+    local statusComp = entry.statusComponent
+
+
+end
+
+function canChangeStatus(transitionTable, oldStatus, newStatus)
+    for _, status in pairs(transitionTable[oldStatus]) do
+        if status == newStatus then
+            return true
+        end
+    end
+
+    return false
+end
+
+Init()

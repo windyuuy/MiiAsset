@@ -1,0 +1,129 @@
+local battleMgr = import("battle/battleMgr.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+local eventManager = import("battle/event/eventManager.lua")
+local battleIntent = import("battle/battleIntent.lua")
+
+local ELEM_DURATION = 60000
+
+---@class Element 元素
+---@field elementType number 元素类型
+---@field endTime number 结束时间
+---@field provider Entry 元素提供者
+
+---@class ElementReactionCD 元素反应cd
+---@field nextTime number 下次反应时间
+
+---@class ElementComponent 元素组件
+---@field element Element 当前元素
+---@field reactionCoolDown table<number, ElementReactionCD> 反应cd
+
+_G.ElementType = {
+    GOLD  = 991001,   -- 金
+    WOOD  = 991002,   -- 木
+    WATER = 991003,  -- 水
+    FIRE  = 991004,   -- 火
+    EARTH = 991005,  -- 土
+}
+
+--elementComponent = {
+--    element = {
+--        elementType,      -- 元素类型
+--        endTime,          -- 结束时间
+--        provider,         -- 元素提供者
+--    },
+--    reactionCoolDown = {
+--        [id] = {
+--            nextTime      -- 该反应下次cd
+--        }
+--    }
+--}
+
+function CreateElementComponent()
+    local component = {
+        element = nil,   -- 当前元素
+        reactionCoolDown = {},  -- 反应cd
+    }
+
+    return component
+end
+
+function AddElement(elementComponent, elementType, attacker, attacked, damageInfo)
+    local nowMS = _G.GetCurTimeMS()
+
+    local isTrigger = triggerReaction(elementComponent, elementType, attacker, attacked, damageInfo, nowMS)
+    if not isTrigger then
+        local element = {
+            elementType = elementType,
+            endTime = nowMS + ELEM_DURATION,
+            provider = attacker -- 附加该元素的英雄
+        }
+        elementComponent.element = element
+    end
+
+    sendElementAttach(elementComponent, attacked)
+end
+
+function Update(elementComponent, nowMS)
+    if elementComponent.element.endTime <= nowMS then
+        elementComponent.element = nil
+    end
+end
+
+-- @return 是否触发反应 true为触发 false为没触发
+function triggerReaction(elementComponent, newElem, attacker, attacked, damageInfo, nowMS)
+    if not elementComponent.element then
+        return false
+    end
+
+    local battle = battleMgr.GetBattle(elementComponent.element.provider.battleId)
+    for id, data in pairs(_G.FReactionTable) do
+        if data.preAttr == elementComponent.element.elementType and data.triggerAttr == newElem then
+            -- 判断反应是否在cd中
+            if not elementComponent.reactionCoolDown[id] then
+                elementComponent.reactionCoolDown[id] = {
+                    nextTime = 0
+                }
+            end
+            if elementComponent.reactionCoolDown[id].nextTime > nowMS then
+                return false
+            end
+
+            for _, skillId in pairs(data.skills) do
+                battleFightSkillLogic.ProcessElementReaction(battle, attacker, attacked, skillId)
+            end
+
+            -- 触发反应后事件
+            local eventTriggerReaction = eventManager.CreateTriggerReactionEvent(attacker, attacked)
+            eventManager.DispatchEvent(battle.eventManager, eventTriggerReaction)
+
+            -- 伤害反应类型
+            damageInfo.reactionType = data.type
+
+            elementComponent.element = nil
+            -- 重置反应cd
+            elementComponent.reactionCoolDown[id].nextTime = nowMS + data.cd
+            return true
+        end
+    end
+
+    return false
+end
+
+-- 通知元素附着
+function sendElementAttach(elementComponent, entry)
+    local elementType = 0
+    local endTime = 0
+    if elementComponent.element then
+        elementType = elementComponent.element.elementType
+        endTime = elementComponent.element.endTime
+end
+
+    battleIntent.InsertBattleIntent(entry.battleId, _G.INTENT_TYPE.ELEMENT_ATTACH, {
+        teamId = entry.teamId,
+        entryId = entry.entryId,
+        element = {
+            elementType = elementType,
+            endTime = endTime
+        }
+    })
+end

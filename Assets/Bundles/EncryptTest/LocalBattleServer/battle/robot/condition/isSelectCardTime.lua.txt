@@ -1,0 +1,10 @@
+-- 能否选择卡牌
+
+function Execute(robot, param)
+    local battleData = robot.battleData
+    local lastSelectCardTime = battleData.lastSelectCardTime or 0
+    local interval = param.selectInterval
+
+    local curTime = _G.GetCurTime()
+    return curTime >= lastSelectCardTime + interval
+end

@@ -1,0 +1,18 @@
+local battleMgr = import("battle/battleMgr.lua")
+
+function SkillEffect(context, effectId)
+    LogDebug("skillEffectSummonMonster:SkillEffect effectId={}", effectId)
+    local targetTeam = context.targetTeam
+    local effectConfig = _G.FEffectTable[effectId]
+    local monsterIds = _G.GetTableDataParam(effectConfig.monsterIds, context.skillLevel)
+    local battle = context.battle
+    for _, monsterId in ipairs(monsterIds) do
+        LogDebug("skillEffectSummonMonster:SkillEffect monsterId={}", monsterId)
+        local createMonsterParam = {
+            teamId = targetTeam.teamId,
+            monsterId = monsterId,
+            isReborn = false,
+        }
+        table.insert(battle.monsterQueue, createMonsterParam)
+    end
+end

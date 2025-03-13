@@ -1,0 +1,208 @@
+local robotUtil = import("common/robotUtil.lua");
+
+
+function _G.SetUserProperties(ss, key, value)
+    _G.usersProperties[ss.uid]      = _G.usersProperties[ss.uid] or {};
+    _G.usersProperties[ss.uid][key] = value;
+end
+
+function _G.RemoveUserProperties(ss)
+    _G.usersProperties[ss.uid] = nil
+end
+
+_G.usersProperties = _G.usersProperties or {["0"] = {
+    role_id   = "0",
+    role_name = "system",
+}};
+
+function _G.LogPlayer(ss, eventType, data)
+    if dive.isStandalone then
+        return;
+    end
+
+    if robotUtil.IsRobotUid(ss.uid) then
+        -- 机器人不输出日志
+        return;
+    end
+
+    LogInfo("LogPlayer {} {} {}", ss.uid, eventType, data or {});
+end
+
+function _G.LogGravity(ss, eventType, data)
+    if dive.isStandalone then
+        return;
+    end
+
+    if robotUtil.IsRobotUid(ss.uid) then
+        -- 机器人不输出日志
+        return;
+    end
+
+    GravityLog(ss, eventType, data or {});
+end
+
+function GravityLog(ss, eventType, data)
+    if not _G.shushuLog then
+        _G.shushuLog = require("shushulog");
+    end
+    if not _G.shushuLog then
+        return;
+    end
+
+    -- 添加公共事件属性
+    ShushuAddPublicEvnetData(ss, data);
+
+    data["#zone_offset"] = 0;
+
+    local encodeData = data;
+
+    local ok, dataStr = xpcall(dive.JsonEncode, debug.traceback, data);
+    if not ok then
+        LogErr("LogPlayer failed to encode data type={}, dataStr={}", eventType, dataStr);
+        return;
+    end
+
+    local userProperties = _G.usersProperties[ss.uid];
+    local userPropertiesStr;
+    if userProperties and next(userProperties) then
+        ok, userPropertiesStr = xpcall(dive.JsonEncode, debug.traceback, userProperties);
+        if not ok then
+            LogErr("LogPlayer failed to encode userProperties type={}, userPropertiesStr={}", eventType, userPropertiesStr);
+            return;
+        end
+        _G.RemoveUserProperties(ss)
+    end
+
+    -- 这个是游客ID，后面需要客户端传递
+    local distinctid = ss.distinctid or ""
+    LogInfo("LogPlayer {} {} {} {} {} {}", ss.uid, ss.openid, distinctid, eventType, dataStr, userPropertiesStr);
+
+    local gravityOK, gravityRes = xpcall(_G.shushuLog.PutGravityEventAsync, debug.traceback, ss.uid, ss.weixinOpenid, eventType, dataStr, userPropertiesStr or "{}");
+    if not gravityOK or not gravityRes then
+        LogInfo("shushuLog error {} {}", gravityOK, gravityRes);
+    end
+end
+
+function _G.LogShuShu(ss, eventType, data)
+    if dive.isStandalone then
+        return;
+    end
+
+    if robotUtil.IsRobotUid(ss.uid) then
+        -- 机器人不输出日志
+        return;
+    end
+
+    SendShushuLog(ss, eventType, data or {});
+end
+
+-- copy from roleTasks
+function GetMainTaskId(ss)
+    if not ss.data or not ss.data.roleTasks or not ss.data.roleTasks.taskList then
+        return 0
+    end
+
+    local roleTasks = ss.data.roleTasks
+    local typeTasks = roleTasks.taskList[_G.TaskType.MAIN_TASK] or {}
+    for taskId, task in pairs(typeTasks) do
+        local taskConfig = _G.TaskTable[taskId]
+        if not taskConfig then
+            goto continue
+        end
+        if task.staus ~= _G.TaskStatus.REWARD_RECEIVED then
+            return taskId
+        end
+        ::continue::
+    end
+    return 0
+end
+
+function ShushuAddPublicEvnetData(ss, data)
+    if not ss or not ss.data then
+        return;
+    end
+
+    -- 游戏账号
+    data.account_id     = ss.uid;
+    -- 炼器境界
+    data.role_level     = ss.data.roleRefiner.refinerStage;
+    data.money          = ss.data.roleData.gold;
+    data.ingot          = ss.data.roleData.diamond;
+    -- 正在进行的主线任务
+    data.main_task_id   = GetMainTaskId(ss);
+    -- 当前段位
+    data.current_rank   = ss.data.battleData.rank;
+end
+
+function SendShushuLog(ss, eventType, data)
+    if not _G.shushuLog then
+        _G.shushuLog = require("shushulog");
+    end
+    if not _G.shushuLog then
+        return;
+    end
+
+    -- 添加公共事件属性
+    ShushuAddPublicEvnetData(ss, data);
+
+    data["#zone_offset"] = 0;
+
+    local encodeData = data;
+
+    local ok, dataStr = xpcall(dive.JsonEncode, debug.traceback, data);
+    if not ok then
+        LogErr("LogPlayer failed to encode data type={}, dataStr={}", eventType, dataStr);
+        return;
+    end
+
+    local userProperties = _G.usersProperties[ss.uid];
+    local userPropertiesStr;
+    if userProperties and next(userProperties) then
+        ok, userPropertiesStr = xpcall(dive.JsonEncode, debug.traceback, userProperties);
+        if not ok then
+            LogErr("LogPlayer failed to encode userProperties type={}, userPropertiesStr={}", eventType, userPropertiesStr);
+            return;
+        end
+        _G.RemoveUserProperties(ss)
+    end
+
+    -- 这个是游客ID，后面需要客户端传递
+    local distinctid = ss.distinctid or ""
+    LogInfo("LogPlayer {} {} {} {} {} {}", ss.uid, ss.openid, distinctid, eventType, dataStr, userPropertiesStr);
+
+    local shushuOK, shushuRes = xpcall(_G.shushuLog.PutStatisticsEventAsync, debug.traceback, ss.uid, distinctid, eventType, dataStr, userPropertiesStr or "{}");
+    if not shushuOK or not shushuRes then
+        LogInfo("shushuLog error {} {}", shushuOK, shushuRes);
+    end
+end
+
+function SendKinesisLog(ss, event, data)
+    if not _G.kinesis then
+        _G.kinesis = require("kinesis");
+    end
+    if not _G.kinesis then
+        return;
+    end
+
+    local encodeData = {
+        appId     = dive.GetProperty("fabao.statisticsAppId", 1000),
+        event     = event,
+        uid       = ss.uid,
+        ip        = ss.ip,
+        openid    = ss.openid;
+        attribute = data,
+    };
+
+    local ok, encodeDataStr = xpcall(dive.JsonEncode, debug.traceback, encodeData);
+    if not ok then
+        LogErr("LogPlayer failed to encode data type={}, encodeDataStr={}", eventType, encodeDataStr);
+        return;
+    end
+
+    LogInfo("LogPlayer {} {}", event, encodeDataStr);
+
+    local kinesisOK, kinesisRes = xpcall(_G.kinesis.PutStatisticsEventAsync, debug.traceback, string.format('partition-key-%s', ss.uid), encodeDataStr)
+    if not kinesisOK or not kinesisRes then
+        LogInfo("LogPlayer {} {} {}", kinesisOK, kinesisRes, encodeDataStr);
+    end
+end

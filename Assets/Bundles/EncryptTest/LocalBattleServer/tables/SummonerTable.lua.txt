@@ -1,0 +1,25 @@
+-- SummonerTable
+_G.SummonerTable =
+{
+    [510531211] = {id = 510531211, description = "火尖枪1星被动——攻击单个目标，对目标造成100%（满星200%）的物理伤害", name = "1053", asset = "Summoner_1053_HuoJianQiang", baseAttackSpeed = 2000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 110531212, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+    [510531231] = {id = 510531231, description = "火尖枪3星被动——攻击单个目标，对目标造成100%（满星200%）的物理伤害", name = "1053", asset = "Summoner_1053_HuoJianQiang", baseAttackSpeed = 2000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 110531232, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+    [510541211] = {id = 510541211, description = "九龙神火罩1星被动——对范围目标造成20%（满星40%）的法术伤害，并附加减速效果，移动速度减少40%（满星80%），持续2秒", name = "1054", asset = "Summoner_1054_JiuLongShenHuoZhao", baseAttackSpeed = 2000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 110541211, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+    [510541231] = {id = 510541231, description = "九龙神火罩3星被动——对范围目标造成20%（满星40%）的法术伤害，并附加减速效果，移动速度减少40%（满星80%），持续2秒", name = "1054", asset = "Summoner_1054_JiuLongShenHuoZhao", baseAttackSpeed = 2000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 110541231, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+    [510551211] = {id = 510551211, description = "风火轮1星被动——对范围目标造成35%（满星70%）的法术伤害", name = "1055", asset = "Summoner_1055_FengHuoLun", baseAttackSpeed = 2000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 110551211, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+    [510551231] = {id = 510551231, description = "风火轮3星被动——对范围目标造成35%（满星70%） 的法术伤害", name = "1055", asset = "Summoner_1055_FengHuoLun", baseAttackSpeed = 2000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 110551231, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+    [510421211] = {id = 510421211, description = "出尘莲1星被动——召唤1个具有自身50%攻击力的分身单位，持续10秒；", name = "1042", asset = "Summoner_1042_ChuChenLian", baseAttackSpeed = 1500, dependAttr = 310006, dependPercent = 50, fixedBaseAttack = 0, activeSkill = 110421111, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {10, 80},},
+    [510501211] = {id = 510501211, description = "封神榜1星被动——召唤1个具有自身100%攻击力的分身单位，持续3秒；", name = "1050", asset = "Summoner_1050_FengShenBang", baseAttackSpeed = 1500, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 110501111, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {10, 80},},
+    [541041221] = {id = 541041221, description = "2级【龙】", name = "4104", asset = "Summoner_JiBan_Long", baseAttackSpeed = 1500, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 141041221, passiveSkill = 0, spawnPosType = 2, spawnPosParam = {5},},
+    [541041231] = {id = 541041231, description = "4级【龙】", name = "4104", asset = "Summoner_JiBan_Long", baseAttackSpeed = 1500, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 141041231, passiveSkill = 0, spawnPosType = 2, spawnPosParam = {5},},
+    [510791211] = {id = 510791211, description = "螭龙杖1星被动——召唤1个具有自身50%攻击力的分身单位，持续5秒；", name = "1079", asset = "Summoner_1079_ChiLongZhang", baseAttackSpeed = 1500, dependAttr = 310006, dependPercent = 50, fixedBaseAttack = 0, activeSkill = 110791111, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {10, 80},},
+    [530121211] = {id = 530121211, description = "【神魔虚影】基础", name = "4104", asset = "Summoner_Fomation_ShenMoXuYing", baseAttackSpeed = 10000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 130121211, passiveSkill = 0, spawnPosType = 2, spawnPosParam = {5},},
+    [530121231] = {id = 530121231, description = "【神魔虚影】共鸣", name = "4104", asset = "Summoner_Fomation_ShenMoXuYing", baseAttackSpeed = 10000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 130121231, passiveSkill = 0, spawnPosType = 2, spawnPosParam = {5},},
+    [564031110] = {id = 564031110, description = "嫦娥降世", name = "6403", asset = "", baseAttackSpeed = 10000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 164031111, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+    [564031120] = {id = 564031120, description = "嫦娥降世", name = "6403", asset = "", baseAttackSpeed = 7500, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 164031111, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+    [564031130] = {id = 564031130, description = "嫦娥降世", name = "6403", asset = "", baseAttackSpeed = 5000, dependAttr = 310006, dependPercent = 100, fixedBaseAttack = 0, activeSkill = 164031111, passiveSkill = 0, spawnPosType = 1, spawnPosParam = {0, 0},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("SummonerTable")
+end

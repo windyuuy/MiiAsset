@@ -1,0 +1,10 @@
+-- SutraStarTable
+_G.SutraStarTable =
+{
+    [620001] = {id = 620001, attributeId = 310004, starValues = {1, 2, 4},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("SutraStarTable")
+end

@@ -1,0 +1,26 @@
+-- 29. 位移效果
+
+local statusMgr = import("battle/fight/status/statusMgr.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local owner     = buff.owner
+    local config    = _G.BuffTable[buff.buffId]
+    local speed     = config.effectData[1]
+    local duration  = config.effectData[2]
+    --LogDebug("skillEffectChangeDistance:SkillEffect, effectId:{} speed:{} duration:{}", effectId, speed, duration)
+    if owner:GetEntryType() == _G.EntryType.MONSTER then
+        statusMgr.ChangeStatus(owner, _G.EntryStatus.ENTRY_STATUS_REPEL, duration, { speed = speed })
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

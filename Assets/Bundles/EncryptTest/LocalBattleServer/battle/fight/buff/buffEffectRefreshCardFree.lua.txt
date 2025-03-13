@@ -1,0 +1,34 @@
+-- 32. 持续时间内D牌免费
+
+local battleMgr = import("battle/battleMgr.lua")
+
+-- 持续时间内，D牌免费
+-- 不需要buff参数配置
+-- 需要通知客户端，若当前玩家sp不够，也要能D牌，或在此段时间，D牌消耗的sp临时为0
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    ---@type Battle
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    for _, player in pairs(battle.players) do
+        if player.teamId == buff.owner.teamId then
+            player.gameCardComponent.freeRefreshBuffCount = player.gameCardComponent.freeRefreshBuffCount + 1
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    ---@type Battle
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    for _, player in pairs(battle.players) do
+        if player.teamId == buff.owner.teamId then
+            player.gameCardComponent.freeRefreshBuffCount = math.max(player.gameCardComponent.freeRefreshBuffCount - 1, 0)
+        end
+    end
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

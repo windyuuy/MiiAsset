@@ -1,0 +1,112 @@
+function Format_Map(data)
+    if type(data) ~= "table" then
+        return data
+    end
+
+    -- 递归调用 Format_Map 处理嵌套的 table
+    for k, v in pairs(data) do
+        data[k] = Format_Map(v)
+    end
+
+    -- 如果当前 table 为空，则返回 nil
+    if next(data) == nil then
+        return nil
+    end
+
+    return data
+end
+
+local formatFileds = {
+    ["playerId"] = tostring,
+    ["battleId"] = tostring
+}
+local ignoreFileds = {
+    ["openType"] = 1,
+    ["timerId"] = 1,
+}
+
+-- 对一些特定字段进行类型修复
+function Format_FiledType(t)
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            Format_FiledType(v);
+        elseif formatFileds[k] then
+            t[k] = formatFileds[k](v);
+        elseif ignoreFileds[k] then
+            t[k] = nil
+        end
+    end
+end
+
+function Format_NotifyBattleStart(data)
+    local msg = _G.DeepClone(data)
+    for _, team in pairs(msg.teams) do
+        for _, player in pairs(team.players) do
+            for key, value in pairs(player.gameCardData.prepareList) do
+                player.gameCardData.prepareList[tostring(key)] = value
+            end
+
+            for key, value in pairs(player.gameCardData.equipList) do
+                player.gameCardData.equipList[tostring(key)] = value
+            end
+
+            for key, value in pairs(player.gameCardData.spellCardOptionalList) do
+                player.gameCardData.spellCardOptionalList[tostring(key)] = value
+            end
+            if not next(player.gameCardData.spellCardOptionalList) then
+                player.gameCardData.spellCardOptionalList["0"] = {
+                    id = "0",
+                }
+            end
+
+            for key, value in pairs(player.gameCardData.spellCardPrepareList) do
+                player.gameCardData.spellCardPrepareList[tostring(key)] = value
+            end
+            if not next(player.gameCardData.spellCardPrepareList) then
+                player.gameCardData.spellCardPrepareList["0"] = {
+                    id = "0",
+                }
+            end
+
+            player.playerId = tostring(player.playerId)
+        end
+    end
+
+    -- 将空的map类型字段赋值为nil
+    Format_Map(msg)
+
+    return msg
+end
+
+function Format_BattleLogic_NotifyBattleUpdate(data)
+    for _, intent in pairs(data.playersIntentList) do
+        if intent.intentType == _G.INTENT_TYPE.SETTLE then
+            local tmpKillMonsterCount = {}
+            for teamId, killMonsterCountData in pairs(intent.settle.killMonsterCount) do
+                local tmpTypeCount = {}
+                for type, count in pairs(killMonsterCountData.typeCount) do
+                    tmpTypeCount[tostring(type)] = count
+                end
+                killMonsterCountData.typeCount = tmpTypeCount
+                tmpKillMonsterCount[tostring(teamId)] = killMonsterCountData
+            end
+            intent.settle.killMonsterCount = tmpKillMonsterCount
+        end
+    end
+    Format_FiledType(data)
+    Format_Map(data)
+    return data
+end
+
+local PBFormatFunc = {
+    ["BattleLogic_NotifyBattleStart"] = Format_NotifyBattleStart,
+    ["BattleLogic_NotifyBattleUpdate"] = Format_BattleLogic_NotifyBattleUpdate,
+}
+
+function FormatData(msg, data)
+    if PBFormatFunc[msg] then
+        return PBFormatFunc[msg](data)
+    end
+
+    return data
+end

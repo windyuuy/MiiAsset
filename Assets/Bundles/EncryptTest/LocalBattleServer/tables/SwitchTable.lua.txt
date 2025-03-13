@@ -1,0 +1,33 @@
+-- LabelSwitchTable
+_G.LabelSwitchTable =
+{
+    [1] = {id = 1, desc = "是否开启IOS支付", testValue = "1.10.540", preValue = "1.10.540", onlineValue = "1.7.839",},
+    [2] = {id = 2, desc = "是否显示版本号", testValue = "1.10.540", preValue = "1.10.540", onlineValue = "1.7.839",},
+    [3] = {id = 3, desc = "是否可以飞升仙界", testValue = "1.1.10", preValue = "1.1.10", onlineValue = "1.1.10",},
+    [4] = {id = 4, desc = "是否保持元神正常形象", testValue = "1.10.540", preValue = "1.10.540", onlineValue = "1.10.540",},
+}
+
+-- ServerConfigTable
+_G.ServerConfigTable =
+{
+    [1] = {id = 1, notes = "GM指令开关", testValue = {1}, preValue = {1}, onlineValue = {0},},
+}
+
+-- GamePlatformTable
+_G.GamePlatformTable =
+{
+    [1] = {id = 1, platformStr = "wechatgame", matchStr = "wechatgame",},
+    [2] = {id = 2, platformStr = "editor", matchStr = "wechatgame",},
+}
+
+-- ABTestTable
+_G.ABTestTable =
+{
+    [1] = {id = 1, desc = "A组_奇数", jumpLevelFour = true,},
+    [2] = {id = 2, desc = "B组_偶数", jumpLevelFour = false,},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("SwitchTable")
+end

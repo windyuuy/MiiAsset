@@ -1,0 +1,9 @@
+-- 刷新法术牌
+
+function Execute(robot)
+    local battleData = robot.battleData;
+    if battleData.spellRefreshCount > 0 and #battleData.spellCards < 2 then
+        robot.lastRequest = "BattleLogic_SpellRefreshRequest"
+        c2s.BattleLogic_SpellRefreshRequest(robot, {});
+    end
+end

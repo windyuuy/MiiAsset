@@ -1,0 +1,35 @@
+-- 35. 复制该妖怪到敌方场上
+
+local battleMgr = import("battle/battleMgr.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local battle       = battleMgr.GetBattle(buff.owner.battleId)
+    local buffConfig   = _G.BuffTable[buff.buffId]
+    local strengthenHP = buffConfig.effectData[1]    -- 血量强化比例
+
+
+    if buff.owner:GetEntryType() ~= _G.EntryType.MONSTER then
+        return;
+    end
+
+    -- 敌方
+    for teamId, battleTeam in pairs(battle.battleTeams) do
+        if teamId ~= buff.owner.teamId then
+            for routeGroupId, _ in pairs(battleTeam.monsterPaths) do
+                battle:PushMonsterQueue(teamId, routeGroupId, buff.owner.monsterId, false, false, battle.roundNumber)
+            end
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

@@ -1,0 +1,18 @@
+-- 10. 基地无敌只能使用此buff
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local entry = buff.owner
+    entry.invincibleCount = entry.invincibleCount + 1
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local entry = buff.owner
+    entry.invincibleCount = math.max(entry.invincibleCount - 1, 0)
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

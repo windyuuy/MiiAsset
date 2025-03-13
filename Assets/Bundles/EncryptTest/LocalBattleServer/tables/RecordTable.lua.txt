@@ -1,0 +1,16 @@
+-- RecordTable
+_G.RecordTable =
+{
+    [1] = {id = 1, desc = "", recordEvent = 1, recordTxt = "【[color=#bb5300]{0}[/color]】第一次降临到了【{1}】。", recordCycleType = 1, recordCycleParam = 0,},
+    [2] = {id = 2, desc = "", recordEvent = 2, recordTxt = "【[color=#bb5300]{0}[/color]】从【{1}】飞升到了【{3}】，他是【{1}】的[color=#38a0e6]第{2}名[/color]飞升者。", recordCycleType = 1, recordCycleParam = 0,},
+    [3] = {id = 3, desc = "", recordEvent = 3, recordTxt = "【[color=#bb5300]{0}[/color]】所在的宗门{1}从【{2}】飞升到了【{4}】，成为【{2}】的[color=#38a0e6]第{3}个[/color]飞升宗门。", recordCycleType = 1, recordCycleParam = 0,},
+    [4] = {id = 4, desc = "", recordEvent = 4, recordTxt = "【[color=#bb5300]{0}[/color]】加入了宗门{1}。", recordCycleType = 2, recordCycleParam = 72,},
+    [5] = {id = 5, desc = "", recordEvent = 5, recordTxt = "【[color=#bb5300]{0}[/color]】创建了宗门{1}。", recordCycleType = 2, recordCycleParam = 72,},
+    [6] = {id = 6, desc = "", recordEvent = 6, recordTxt = "【[color=#bb5300]{0}[/color]】离开了宗门{1}。", recordCycleType = 2, recordCycleParam = 72,},
+    [7] = {id = 7, desc = "", recordEvent = 7, recordTxt = "【[color=#bb5300]{0}[/color]】跟【{1}】结成了道友。", recordCycleType = 2, recordCycleParam = 72,},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("RecordTable")
+end

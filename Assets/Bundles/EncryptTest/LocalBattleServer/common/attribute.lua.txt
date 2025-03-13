@@ -1,0 +1,138 @@
+_G.AttributeType = {
+    BASE_ATTACK                 = 310001, -- 基础攻击力
+    EXTRA_ATTACK                = 310002, -- 额外攻击力
+    PER_ATTACK                  = 310003, -- 百分比攻击力加成
+    LEVEL_PER_ATTACK            = 310004, -- 等级攻击力加成
+    FIXED_ATTACK                = 310005, -- 固定攻击力加成
+    FINAL_ATTACK                = 310006, -- 最终攻击力加成
+
+    BASE_ATTACK_SPEED           = 310021, -- 基础攻击速度
+    PER_ATTACK_SPEED            = 310022, -- 百分比攻击速度加成
+    FINAL_ATTACK_SPEED          = 310023, -- 最终攻击速度
+
+    BASE_MOVE_SPEED             = 310030, -- 基础移动速度
+    EXTRA_MOVE_SPEED            = 310031, -- 额外移动速度
+    PER_MOVE_SPEED              = 310032, -- 百分比移动速度加成
+    FIXED_MOVE_SPEED            = 310033, -- 固定移动速度加成
+    FINAL_MOVE_SPEED            = 310034, -- 最终移动速度
+
+    BASE_HEALTH                 = 310041, -- 基础生命值
+    EXTRA_HEALTH                = 310042, -- 额外生命值
+    PER_HEALTH                  = 310043, -- 百分比生命值加成
+    FIXED_HEALTH                = 310044, -- 固定生命值加成
+    FINAL_HEALTH                = 310045, -- 最终生命值
+
+    BASE_CRIT_RATE              = 310061, -- 基础暴击率
+    EXTRA_CRIT_RATE             = 310062, -- 额外暴击率
+    FINAL_CRIT_RATE             = 310063, -- 最终暴击率
+
+    BASE_CRIT_DAMAGE            = 310071, -- 基础暴击伤害
+    EXTRA_CRIT_DAMAGE           = 310072, -- 额外暴击伤害
+    FINAL_CRIT_DAMAGE           = 310073, -- 最终暴击伤害
+
+    FIXED_PHYSI_PENE            = 310081, -- 固定物理穿透
+
+    PER_PHYSI_PENE              = 310091, -- 百分比物理穿透加成
+
+    FIXED_MAGIC_PENE            = 310101, -- 固定法术穿透
+
+    PER_MAGIC_PENE              = 310111, -- 百分比法术穿透加成
+
+    BASE_PHYSI_RESISTANCE       = 310121, -- 基础物理抗性
+    PER_PHYSI_RESISTANCE        = 310122, -- 百分比物理抗性加成
+    FIXED_PHYSI_RESISTANCE      = 310123, -- 固定物理抗性加成
+    FINAL_PHYSI_RESISTANCE      = 310124, -- 最终物理抗性
+
+    BASE_MAGIC_RESISTANCE       = 310131, -- 基础物理抗性
+    PER_MAGIC_RESISTANCE        = 310132, -- 百分比法术抗性加成
+    FIXED_MAGIC_RESISTANCE      = 310133, -- 固定法术抗性加成
+    FINAL_MAGIC_RESISTANCE      = 310134, -- 最终法术抗性
+
+    FINAL_DAMAGE_BONUS          = 310141, -- 最终伤害加成
+
+    FINAL_INJURY_BONUS          = 310151, -- 最终承伤加成
+
+    FINAL_PRICE                 = 310161, -- 最终出售价格
+
+    PER_CONTROL_TIME            = 310171, -- 控制时间百分比加成
+
+    FINAL_DAMAGE_REDUCE         = 310181, -- 最终伤害减免
+
+    BASE_TOWER_HP               = 310191, -- 基础道心加成
+    PER_TOWER_HP                = 310192, -- 百分比道心加成
+    FIXED_TOWER_HP              = 310193, -- 固定道心加成
+    FINAL_TOWER_HP              = 310194, -- 最终道心加成
+
+    STUN_RATE                   = 310201, -- 击晕概率
+
+    TWO_HIT_RATE                = 310211, -- 二连击概率
+
+    THREE_HIT_RATE              = 310221, -- 三连击概率
+
+    FOUR_HIT_RATE               = 310231, -- 四连击概率
+
+    EXTRA_DEPEND_PERCENT        = 310241, -- 额外伤害依赖万分比
+
+    SKILL_EFFECTIVE_PROBABILITY = 310251, -- 技能生效概率
+
+    BUFF_EFFECTIVE_PROBABILITY  = 310261, -- BUFF生效概率
+
+    EXTRA_ATTACK_TARGET_COUNT   = 310271, -- 额外普攻目标数量
+}
+
+_G.AttrShortName = {
+    [_G.AttributeType.BASE_ATTACK] = "baseAttack",
+    [_G.AttributeType.EXTRA_ATTACK] = "extraAttack",
+    [_G.AttributeType.PER_ATTACK] = "perAttack",
+    [_G.AttributeType.LEVEL_PER_ATTACK] = "levelPerAttack",
+    [_G.AttributeType.FIXED_ATTACK] = "fixedAttack",
+    [_G.AttributeType.FINAL_ATTACK] = "finalAttack",
+    [_G.AttributeType.BASE_ATTACK_SPEED] = "baseAttackSpeed",
+    [_G.AttributeType.PER_ATTACK_SPEED] = "perAttackSpeed",
+    [_G.AttributeType.FINAL_ATTACK_SPEED] = "finalAttackSpeed",
+    [_G.AttributeType.BASE_MOVE_SPEED] = "baseMoveSpeed",
+    [_G.AttributeType.EXTRA_MOVE_SPEED] = "extraMoveSpeed",
+    [_G.AttributeType.PER_MOVE_SPEED] = "perMoveSpeed",
+    [_G.AttributeType.FIXED_MOVE_SPEED] = "fixedMoveSpeed",
+    [_G.AttributeType.FINAL_MOVE_SPEED] = "finalMoveSpeed",
+    [_G.AttributeType.BASE_HEALTH] = "baseHealth",
+    [_G.AttributeType.EXTRA_HEALTH] = "extraHealth",
+    [_G.AttributeType.PER_HEALTH] = "perHealth",
+    [_G.AttributeType.FIXED_HEALTH] = "fixedHealth",
+    [_G.AttributeType.FINAL_HEALTH] = "finalHealth",
+    [_G.AttributeType.BASE_CRIT_RATE] = "baseCritRate",
+    [_G.AttributeType.EXTRA_CRIT_RATE] = "extraCritRate",
+    [_G.AttributeType.FINAL_CRIT_RATE] = "finalCritRate",
+    [_G.AttributeType.BASE_CRIT_DAMAGE] = "baseCritDamage",
+    [_G.AttributeType.EXTRA_CRIT_DAMAGE] = "extraCritDamage",
+    [_G.AttributeType.FINAL_CRIT_DAMAGE] = "finalCritDamage",
+    [_G.AttributeType.FIXED_PHYSI_PENE] = "fixedPhysiPene",
+    [_G.AttributeType.PER_PHYSI_PENE] = "perPhysiPene",
+    [_G.AttributeType.FIXED_MAGIC_PENE] = "fixedMagicPene",
+    [_G.AttributeType.PER_MAGIC_PENE] = "perMagicPene",
+    [_G.AttributeType.BASE_PHYSI_RESISTANCE] = "basePhysiResistance",
+    [_G.AttributeType.PER_PHYSI_RESISTANCE] = "perPhysiResistance",
+    [_G.AttributeType.FIXED_PHYSI_RESISTANCE] = "fixedPhysiResistance",
+    [_G.AttributeType.FINAL_PHYSI_RESISTANCE] = "finalPhysiResistance",
+    [_G.AttributeType.BASE_MAGIC_RESISTANCE] = "baseMagicResistance",
+    [_G.AttributeType.PER_MAGIC_RESISTANCE] = "perMagicResistance",
+    [_G.AttributeType.FIXED_MAGIC_RESISTANCE] = "fixedMagicResistance",
+    [_G.AttributeType.FINAL_MAGIC_RESISTANCE] = "finalMagicResistance",
+    [_G.AttributeType.FINAL_DAMAGE_BONUS] = "finalDamageBonus",
+    [_G.AttributeType.FINAL_INJURY_BONUS] = "finalInjuryBonus",
+    [_G.AttributeType.FINAL_PRICE] = "finalPrice",
+    [_G.AttributeType.PER_CONTROL_TIME] = "perControlTime",
+    [_G.AttributeType.FINAL_DAMAGE_REDUCE] = "finalDamageReduce",
+    [_G.AttributeType.BASE_TOWER_HP] = "baseTowerHp",
+    [_G.AttributeType.PER_TOWER_HP] = "perTowerHp",
+    [_G.AttributeType.FIXED_TOWER_HP] = "fixedTowerHp",
+    [_G.AttributeType.FINAL_TOWER_HP] = "finalTowerHp",
+    [_G.AttributeType.STUN_RATE] = "stunRate",
+    [_G.AttributeType.TWO_HIT_RATE] = "twoHitRate",
+    [_G.AttributeType.THREE_HIT_RATE] = "threeHitRate",
+    [_G.AttributeType.FOUR_HIT_RATE] = "fourHitRate",
+    [_G.AttributeType.EXTRA_DEPEND_PERCENT] = "extraDependPercent",
+    [_G.AttributeType.SKILL_EFFECTIVE_PROBABILITY] = "skillEffectiveProbability",
+    [_G.AttributeType.BUFF_EFFECTIVE_PROBABILITY] = "buffEffectiveProbability",
+    [_G.AttributeType.EXTRA_ATTACK_TARGET_COUNT] = "extraAttackTargetCount",
+}

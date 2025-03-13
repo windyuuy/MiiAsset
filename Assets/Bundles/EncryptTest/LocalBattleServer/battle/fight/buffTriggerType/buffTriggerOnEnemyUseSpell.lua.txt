@@ -1,0 +1,33 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    local callback = function(listener, properties, event)
+        local teamId = event.teamId
+        local spellId = event.spellId
+        local useCampType = properties.useCampType
+        -- com.zhiyou.projectf.properties.teamId ： buff作用的实体队伍ID    teamId : 使用法术牌的队伍ID
+        if useCampType == 1 then
+            -- 敌方使用法术牌
+            if teamId == properties.teamId then
+                return false
+            end
+        elseif useCampType == 2 then
+            -- 己方使用法术牌
+            if teamId ~= properties.teamId then
+                return false
+            end
+        elseif useCampType == 3 then
+            -- 双方使用法术牌
+        end
+        buffComponent.buffEffect(properties.buffComponent, properties.buff)
+        return true
+    end
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local triggerTypeData = buffConfig.triggerTypeDatas[triggerTypeIndex]
+    local useCampType = triggerTypeData[1]
+    local properties = { teamId = buff.owner.teamId, originTeamId = buff.origin.teamId, buff = buff, buffComponent = component, useCampType = useCampType }
+    local listenerId = eventManager.AddEventListener(battle.eventManager, _G.EventType.USE_SPELL, callback, properties, false)
+    buff.listenerEventType = _G.EventType.USE_SPELL
+    table.insert(buff.listenerIds, listenerId)
+end

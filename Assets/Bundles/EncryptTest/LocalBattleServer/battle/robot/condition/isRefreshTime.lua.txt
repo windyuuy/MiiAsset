@@ -1,0 +1,11 @@
+-- 能否刷新卡牌
+
+function Execute(robot, param)
+    local battleData = robot.battleData
+    local lastRefreshTime = battleData.lastRefreshTime or 0
+    local interval = robot.robotLevelTable.refreshInterval
+
+    local curTime = _G.GetCurTime()
+
+    return curTime >= lastRefreshTime + interval / 1000
+end

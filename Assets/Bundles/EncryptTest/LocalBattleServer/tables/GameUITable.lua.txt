@@ -1,0 +1,45 @@
+-- GameUITable
+_G.GameUITable =
+{
+    [1001] = {gameUIId = 1001, layerName = "MainLayer", notes = "主界面", uiParam = {}, uiParamDesc = "",},
+    [1002] = {gameUIId = 1002, layerName = "BattleLayer", notes = "战斗界面", uiParam = {}, uiParamDesc = "",},
+    [1003] = {gameUIId = 1003, layerName = "GetNewSutraDialog", notes = "获取新法宝弹窗", uiParam = {}, uiParamDesc = "",},
+    [1004] = {gameUIId = 1004, layerName = "PickAffixDialog", notes = "法宝选词缀弹窗", uiParam = {}, uiParamDesc = "",},
+    [1005] = {gameUIId = 1005, layerName = "MatchDialog", notes = "匹配弹窗", uiParam = {}, uiParamDesc = "",},
+    [1006] = {gameUIId = 1006, layerName = "PvPSettleDialog", notes = "Pvp结算界面", uiParam = {}, uiParamDesc = "",},
+    [1007] = {gameUIId = 1007, layerName = "ChooseSutraLayer", notes = "法宝三选一界面", uiParam = {}, uiParamDesc = "",},
+    [1008] = {gameUIId = 1008, layerName = "MatchLayer", notes = "匹配界面", uiParam = {}, uiParamDesc = "",},
+    [1009] = {gameUIId = 1009, layerName = "SpiritDialog", notes = "元神信息弹窗", uiParam = {}, uiParamDesc = "",},
+    [1010] = {gameUIId = 1010, layerName = "RuinCaveLayer", notes = "界墟界面", uiParam = {}, uiParamDesc = "",},
+    [1011] = {gameUIId = 1011, layerName = "InGameShopDialog", notes = "市集", uiParam = {}, uiParamDesc = "",},
+    [1012] = {gameUIId = 1012, layerName = "WenDaoChallengeDialog", notes = "问道挑战列表", uiParam = {}, uiParamDesc = "",},
+    [1013] = {gameUIId = 1013, layerName = "DungeonComp", notes = "主界面-历练页签", uiParam = {}, uiParamDesc = "",},
+    [1014] = {gameUIId = 1014, layerName = "AutoRefineDialog", notes = "自动炼器弹窗", uiParam = {}, uiParamDesc = "",},
+    [1015] = {gameUIId = 1015, layerName = "SaviorsTowerLayer", notes = "浮屠塔界面", uiParam = {}, uiParamDesc = "",},
+    [1016] = {gameUIId = 1016, layerName = "WenDaoTopLayer", notes = "问道界面", uiParam = {}, uiParamDesc = "",},
+    [1017] = {gameUIId = 1017, layerName = "RankBattleLayer", notes = "斗法界面", uiParam = {}, uiParamDesc = "",},
+    [1018] = {gameUIId = 1018, layerName = "SpiritDeploy", notes = "元神界面_编队页签", uiParam = {}, uiParamDesc = "",},
+    [1019] = {gameUIId = 1019, layerName = "ShopEntryListDialog", notes = "仙坊", uiParam = {}, uiParamDesc = "",},
+    [1020] = {gameUIId = 1020, layerName = "IaaAdDialog", notes = "广告领火种弹窗", uiParam = {}, uiParamDesc = "",},
+}
+
+-- GameUINodeTable
+_G.GameUINodeTable =
+{
+    [100201] = {nodeId = 100201, notes = "战斗界面备战区",},
+    [100202] = {nodeId = 100202, notes = "战斗界面表情按钮",},
+    [100203] = {nodeId = 100203, notes = "战斗界面投降按钮",},
+    [100204] = {nodeId = 100204, notes = "战斗界面聊天按钮",},
+    [100206] = {nodeId = 100206, notes = "战斗界面羁绊列表",},
+    [100207] = {nodeId = 100207, notes = "战斗界面法阵按钮",},
+    [100208] = {nodeId = 100208, notes = "战斗界面获取法术牌按钮",},
+    [100209] = {nodeId = 100209, notes = "战斗界面D牌按钮",},
+    [100101] = {nodeId = 100101, notes = "主界面任务栏",},
+    [100801] = {nodeId = 100801, notes = "匹配界面返回按钮",},
+    [100701] = {nodeId = 100701, notes = "局内法宝三选一界面法阵按钮",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("GameUITable")
+end

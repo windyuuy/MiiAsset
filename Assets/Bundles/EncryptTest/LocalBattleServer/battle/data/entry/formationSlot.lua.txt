@@ -1,0 +1,33 @@
+---@class FormationSlot: Entry 阵眼
+---@field formationId number 阵眼id
+
+_G.FormationSlot = class(Entry)
+
+function CreateFormationSlot(...)
+    return FormationSlot.new(...)
+end
+
+function FormationSlot:ctor(entryId, battleId, teamId, position, level, formationId)
+    self.formationId = formationId
+end
+
+function FormationSlot:GetEntryType()
+    return _G.EntryType.FORMATION_SLOT
+end
+
+function FormationSlot:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+        level = self.level,
+    }
+end
+
+function FormationSlot:GetFormationSlotData()
+    return {
+        formationId = self.formationId,
+        entry = self:GetEntryData(),
+    }
+end
+

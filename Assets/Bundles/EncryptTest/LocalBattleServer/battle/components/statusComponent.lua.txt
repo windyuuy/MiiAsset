@@ -1,0 +1,104 @@
+local statusMgr = import("battle/fight/status/statusMgr.lua")
+
+-- 实体状态
+
+---@class StatusComponent 状态组件
+---@field status number 当前状态
+---@field startTime number 状态开始时间
+---@field duration number 状态持续时间
+---@field transitionTable table<number, table> 状态转换表 状态id: [可转换状态列表]
+---@field statusHandler table<number, function> 状态处理函数表
+---@field defaultStatus number 默认状态
+---@field dizzyStatusBuff table<number, number> 眩晕状态buff
+
+_G.StatusComponent = class()
+
+function CreateStatusComponent(...)
+    return StatusComponent.new(...)
+end
+
+function StatusComponent:ctor()
+    self.status = 0
+    self.startTime = 0
+    self.duration = 0
+    self.transitionTable = nil
+    self.statusHandler = nil
+    self.defaultStatus = 0
+    self.dizzyStatusBuff = {}
+end
+
+function StatusComponent:Init(entryType)
+    if entryType == _G.EntryType.MONSTER then
+        self.status = _G.EntryStatus.ENTRY_STATUS_MOVE
+        self.transitionTable = _G.MonsterStatusTransitionTable
+        self.statusHandler = _G.MonsterStatusHandler
+        self.defaultStatus = _G.EntryStatus.ENTRY_STATUS_MOVE
+    elseif entryType == _G.EntryType.SUTRA then
+        self.status = _G.EntryStatus.ENTRY_STATUS_IDLE
+        self.transitionTable = _G.SutraStatusTransitionTable
+        self.statusHandler = _G.SutraStatusHandler
+        self.defaultStatus = _G.EntryStatus.ENTRY_STATUS_IDLE
+    elseif entryType == _G.EntryType.SUMMONER then
+        self.status = _G.EntryStatus.ENTRY_STATUS_IDLE
+        self.transitionTable = _G.SummonerStatusTransitionTable
+        self.statusHandler = _G.SummonerStatusHandler
+        self.defaultStatus = _G.EntryStatus.ENTRY_STATUS_IDLE
+    end
+end
+
+function StatusComponent:AddDizzyStatusBuff(owner, buffId, endTime)
+    self.dizzyStatusBuff[buffId] = {
+        buffId  = buffId,
+        endTime = endTime
+    }
+
+    -- 获取最晚结束的时间
+    local lastEndTime = 0
+    for _, buffInfo in pairs(self.dizzyStatusBuff) do
+        if buffInfo.endTime == 0 then
+            lastEndTime = buffInfo.endTime
+            break
+        end
+
+        if buffInfo.endTime > lastEndTime then
+            lastEndTime = buffInfo.endTime
+        end
+    end
+
+    local duration = 0
+    if lastEndTime > 0 then
+        duration = lastEndTime - _G.GetCurTimeMS()
+    end
+
+    statusMgr.ChangeStatus(owner, _G.EntryStatus.ENTRY_STATUS_DIZZY, duration)
+end
+
+function StatusComponent:RemoveDizzyStatusBuff(owner, buffId)
+    local removeBuffInfo = self.dizzyStatusBuff[buffId]
+    if not removeBuffInfo then
+        return
+    end
+
+    self.dizzyStatusBuff[buffId] = nil
+
+    if not next(self.dizzyStatusBuff) then
+        statusMgr.ChangeStatus(owner, self.defaultStatus, 0)
+        return
+    end
+
+    -- 获取最晚结束的时间
+    local lastEndTime = 0
+    for _, buffInfo in pairs(self.dizzyStatusBuff) do
+        if buffInfo.endTime == 0 then
+            lastEndTime = buffInfo.endTime
+            break
+        end
+
+        if buffInfo.endTime > lastEndTime then
+            lastEndTime = buffInfo.endTime
+        end
+    end
+
+    statusMgr.ChangeStatus(owner, _G.EntryStatus.ENTRY_STATUS_DIZZY, lastEndTime)
+end
+

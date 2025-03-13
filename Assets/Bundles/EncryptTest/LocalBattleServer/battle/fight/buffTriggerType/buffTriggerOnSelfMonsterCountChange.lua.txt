@@ -1,0 +1,19 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    local callback = function(listener, properties, event)
+        local battleTeam = event.battleTeam
+
+        if battleTeam.teamId ~= properties.teamId then
+            return false
+        end
+
+        buffComponent.buffEffect(properties.buffComponent, properties.buff)
+        return true
+    end
+    local properties = { teamId = buff.owner.teamId, buff = buff, buffComponent = component }
+    local listenerId = eventManager.AddEventListener(battle.eventManager, _G.EventType.MONSTER_COUNT_CHANGE, callback, properties, false)
+    buff.listenerEventType = _G.EventType.MONSTER_COUNT_CHANGE
+    table.insert(buff.listenerIds, listenerId)
+end

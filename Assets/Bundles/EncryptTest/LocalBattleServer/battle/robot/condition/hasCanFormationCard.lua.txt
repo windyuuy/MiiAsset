@@ -1,0 +1,41 @@
+-- 是否有可结阵的卡牌
+
+function Execute(robot)
+    local battleData = robot.battleData;
+
+    if battleData.roundNumber < 4 then
+        return false;
+    end
+
+    -- 没有法阵
+    if not battleData.formationId then
+        return false;
+    end
+
+    local equipIds = {}     -- 所有已装备法宝的id列表
+    for _, slot in pairs(battleData.equipList) do
+        if slot.card and slot.card.id and slot.card.id ~= 0 then
+            equipIds[slot.card.id] = true
+        end
+    end
+
+    local formationConfig = _G.FormationTable[battleData.formationId]
+    if not formationConfig then
+        return false;
+    end
+
+    local targetElement = formationConfig.formulas[1][5];
+
+    for idx, card in pairs(battleData.optionalList) do
+        if equipIds[card.id] then
+            goto continue;
+        end
+
+        if targetElement == card.element then
+            return true;
+        end
+        ::continue::
+    end
+
+    return false
+end

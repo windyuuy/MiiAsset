@@ -1,0 +1,7 @@
+TestStr = "=========123123123"
+
+function Test()
+    LogErr("try log err")
+end
+
+Test()

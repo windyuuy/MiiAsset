@@ -1,0 +1,1721 @@
+local errCode               = import("common/errCode.lua")
+local robotUtil             = import("common/robotUtil.lua")
+local battleMgr             = import("battle/battleMgr.lua")
+local battleIntent          = import("battle/battleIntent.lua")
+local eventManager          = import("battle/event/eventManager.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+local skillCondition        = import("battle/fight/skillCondition/skillCondition.lua")
+local buffComp              = import("battle/components/buffComponent.lua")
+local resourceComp          = import("battle/components/resourceComponent.lua")
+
+local PER_CARD_COUNT = 4        -- 单张卡牌数
+local PER_CARD_ELEM_COUNT = 4   -- 单张卡牌元素数
+local PREPARE_COUNT = 4
+local MAX_SUTRA_COUNT = 5       -- 最大上阵法宝数
+
+_G.MAX_SUTRA_STAR = 3
+
+_G.OpRegionType = {
+    SELECT = 0,
+    PREPARE = 1,
+    EQUIP = 2,
+}
+
+_G.CardType = {
+    CARD_TYPE_SUTRA         = 0,    -- 法宝
+    CARD_TYPE_SPELL        = 1,    -- 符箓
+}
+
+_G.CardChangeType = {
+    ADD = 0,            -- 新增
+    DELETE = 1,         -- 删除
+    ASCEND_STAR = 2,    -- 升星（或降星）
+    UNLOCK = 3,         -- 解锁
+}
+
+_G.CardFromChooseOne = {
+    SpellCardOptional = 0,  -- 法术牌选择列表
+    SpellCardPrepare = 1,   -- 法术牌备选列表
+}
+
+-- 法术牌顺序：通用，攻击，增益
+_G.SpellRandomType = {1, 4, 3}
+
+---@class MaterialCardData 合成材料卡牌数据
+---@field id number 卡牌id
+---@field element number 属性类型
+---@field playerUid number 玩家uid
+
+
+---@class GameCard 卡牌
+---@field id number 卡牌id
+---@field level number 卡牌等级
+---@field quality number 卡牌品质
+---@field star number 卡牌星级
+---@field element number 属性类型
+---@field sutra Sutra 对应的法宝实体
+---@field playerUid number 玩家uid
+---@field materials GameCard[] 合成材料列表
+
+---@class SlotData 卡槽信息
+---@field isLocked boolean 是否解锁卡槽
+---@field card GameCard 卡牌
+
+---@class GameCardComponent 卡牌组件
+---@field cards table<number, GameCard> 携带的卡组
+---@field formations table<number, number> 解锁的阵法
+---@field optionalList table<number, GameCard> 选项列表
+---@field prepareList table<number, SlotData> 备战区列表
+---@field equipList table<number, SlotData> 装备区列表
+---@field cardPoolCount table<number, number> 卡池数量
+---@field spellCardPool table<number, number> 法术牌卡池
+---@field spellCardOptionalList table<number, number> 法术牌选择列表
+---@field spellCardPrepareList table<number, number> 法术牌备选列表
+---@field slots table<number, Position> 阵眼坐标
+---@field preQueue table<number, table> 预选队列
+---@field preSpellQueue table<number, table> 预选法术牌队列
+---@field refreshCount number 刷新次数
+---@field unlockedCount number 解锁次数
+---@field formationId number 当前法阵id
+---@field formationSkillId number 当前法阵技能id
+---@field freeRefreshCount number 免费刷新次数
+---@field spellRefreshCount number 法术牌刷新次数
+---@field nextElementType number 下次d牌元素
+---@field totalFreeRefreshCount number 总共使用免费刷新次数
+---@field freeRefreshBuffCount number 免费刷新buff数量
+---@field spellCardDoubleReleaseBuff table<number, buff> 双重释放法术牌buff
+---@field buyCardIds table<number, number> 购买的法宝id列表
+---@field useSpellsIds table<number, number> 使用的法术牌id列表
+---@field specifiedElementQueue number[] 指定元素队列
+---@field specifiedFateQueue number[] 指定羁绊队列
+
+--component = {
+--    cards = {
+--        {
+--            id = 0,
+--            level = 0
+--        }
+--    },
+--    optionalList = { id },   -- 选项列表
+--    prepareList = {
+--        [1] = {
+--            card = {
+--                id = 0, -- 卡牌id
+--                level = 0,  -- 卡牌等级
+--                star = 0,   -- 卡牌星级
+--            },
+--            isLocked = false,
+--        }
+--    },
+--    equipList = {
+--        [1] = {
+--            card = {
+--                id = 0, -- 卡牌id
+--                level = 0,  -- 卡牌等级
+--                star = 0,   -- 卡牌星级
+--            },
+--            isLocked = true,
+--        }
+--    },
+--    slots = {},   -- 阵眼坐标
+--    preQueue = {},    -- 预选队列
+--}
+
+function CreateGameCardComponent(cards, formations, spellCards)
+    local cardMap = {}
+    for _, card in pairs(cards) do
+        cardMap[card.id] = card
+    end
+
+    local component = {
+        formationId         = 0,            -- 法阵id
+        formationSkillId    = 0,            -- 当前法阵技能id
+        cards               = cardMap,      -- 携带的卡组
+        formations          = formations,   -- 解锁的阵法
+        spellCards          = spellCards,   -- 法术牌卡组
+        optionalList        = {},           -- 选项列表
+        prepareList         = {},           -- 备战列表
+        equipList           = {},           -- 上阵列表
+        cardPoolCount       = {},
+        spellCardPool       = {},           -- 法术牌卡池
+        spellCardOptionalList = {},         -- 法术牌选择列表
+        spellCardPrepareList  = {},         -- 法术牌备选列表
+        refreshCount        = 0,            -- 刷新次数
+        unlockedCount       = 0,            -- 当前解锁数量
+        slots               = {},           -- 阵眼坐标
+        preQueue            = {},           -- 预选队列
+        preSpellQueue       = {},           -- 预选法术牌队列
+        freeRefreshCount    = 0,            -- 免费刷新次数
+        spellRefreshCount   = 0,            -- 法术牌刷新次数
+        totalFreeRefreshCount = 0,          -- 总共使用免费刷新次数
+        freeRefreshBuffCount  = 0,          -- 免费刷新buff数量
+        spellCardDoubleReleaseBuff = {},    -- 双重释放法术牌buff
+        buyCardIds          = {},           -- 购买的法宝id列表
+        useSpellsIds        = {},           -- 使用的法术牌id列表
+        specifiedElementQueue = {},         -- 指定元素队列
+        specifiedFateQueue    = {},         -- 指定羁绊队列
+    }
+
+    return component
+end
+
+---@param battle Battle
+function Init(component, battle, player, formationPosition, slotPositions)
+    -- 初始化卡池数据
+    InitCardPool(player, component)
+
+    -- 初始化备战区
+    for i = 1, PREPARE_COUNT do
+        table.insert(component.prepareList, InitSlotData(false))
+    end
+
+    -- 初始化上阵区
+    for i = 1, MAX_SUTRA_COUNT do
+        table.insert(component.equipList, InitSlotData(true))
+    end
+
+    -- 阵眼坐标
+    component.slots = slotPositions
+
+    -- 预选队列
+    local preQueueConfig = battle.battleConfig.preQueue[player.teamId]
+    if preQueueConfig then
+        component.preQueue = _G.DeepClone(preQueueConfig)
+    end
+
+    local preSpellQueueConfig = battle.battleConfig.preSpellQueue[player.teamId]
+    if preSpellQueueConfig then
+        component.preSpellQueue = preSpellQueueConfig
+    end
+
+    component.refreshCount = 1
+end
+
+-- 初始化槽位信息
+function InitSlotData(isLocked)
+    return {
+        isLocked = isLocked,
+        card = nil,
+    }
+end
+
+-- 初始化卡池
+---@param player Player
+---@param component GameCardComponent
+function InitCardPool(player, component)
+    -- 每种卡牌不同属性各4张
+    for _, card in pairs(component.cards) do
+        local cardConfig = _G.SutraTable[card.id]
+        if not cardConfig then
+            LogDebug("InitCardPool, cardConfig is nil, cardId:{}", card.id)
+            return false
+        end
+
+        component.cardPoolCount[card.id] = PER_CARD_ELEM_COUNT
+    end
+
+    for _, card in pairs(component.spellCards) do
+        local spellCardConfig = _G.SpellTable[card.id]
+        if not spellCardConfig then
+            goto continue
+        end
+        component.spellCardPool[spellCardConfig.spellType] = component.spellCardPool[spellCardConfig.spellType] or {}
+        table.insert(component.spellCardPool[spellCardConfig.spellType], {
+            id = card.id,
+            level = card.level
+        })
+        ::continue::
+    end
+
+    return true
+end
+
+---@param card GameCard
+function GetCardData(card)
+    if not card then
+        return nil
+    end
+
+    return {
+        id      = card.id,
+        level   = card.level,
+        star    = card.star,
+        element = card.element,
+        quality = card.quality,
+    }
+end
+
+---@param component GameCardComponent
+function GetGameCardData(component)
+    local data = {
+        formationId             = component.formationId,
+        optionalList            = {},
+        prepareList             = {},
+        equipList               = {},
+        freeRefreshCount        = component.freeRefreshCount,
+        spellCardOptionalList   = component.spellCardOptionalList,
+        spellCardPrepareList    = component.spellCardPrepareList,
+        refreshCount            = component.refreshCount,
+        spellRefreshCount       = component.spellRefreshCount,
+    }
+
+    for _, cardData in pairs(component.optionalList) do
+        table.insert(data.optionalList, GetCardData(cardData))
+    end
+
+    for _, slotData in pairs(component.prepareList) do
+        table.insert(data.prepareList, {
+            card = GetCardData(slotData.card),
+            isLocked = slotData.isLocked,
+        })
+    end
+
+    for _, slotData in pairs(component.equipList) do
+        table.insert(data.equipList, {
+            card = GetCardData(slotData.card),
+            isLocked = slotData.isLocked,
+        })
+    end
+
+    return data
+end
+
+function GetGameCardSnapshotData(component)
+    local data = {
+        cards                   = component.cards,
+        formationId             = component.formationId,
+        optionalList            = {},
+        prepareList             = {},
+        equipList               = {},
+        freeRefreshCount        = component.freeRefreshCount,
+        spellCardOptionalList   = component.spellCardOptionalList,
+        spellCardPrepareList    = component.spellCardPrepareList,
+        refreshCount            = component.refreshCount,
+        spellRefreshCount       = component.spellRefreshCount,
+    }
+
+    for _, cardData in pairs(component.optionalList) do
+        table.insert(data.optionalList, GetCardData(cardData))
+    end
+
+    for _, slotData in pairs(component.prepareList) do
+        table.insert(data.prepareList, {
+            card = GetCardData(slotData.card),
+            isLocked = slotData.isLocked,
+        })
+    end
+
+    for _, slotData in pairs(component.equipList) do
+        table.insert(data.equipList, {
+            card = GetCardData(slotData.card),
+            isLocked = slotData.isLocked,
+        })
+    end
+
+    return data
+end
+
+---@param player Player
+function InitFromGameCardData(player, data)
+    ---@type GameCardComponent
+    local component = player.gameCardComponent
+
+    component.cards                 = {}
+    component.formationId           = data.formationId
+    component.prepareList           = data.prepareList
+    component.refreshCount          = data.refreshCount
+    component.spellCardPrepareList  = data.spellCardPrepareList
+    component.spellCardOptionalList = data.spellCardOptionalList
+    component.freeRefreshCount      = data.freeRefreshCount
+    component.equipList             = data.equipList
+    component.spellRefreshCount     = data.spellRefreshCount
+    component.optionalList          = data.optionalList
+
+    for idx, card in pairs(data.cards) do
+        component.cards[tonumber(idx)] = card
+    end
+
+    -- 根据equipList初始化实体
+    for idx, slotData in pairs(component.equipList) do
+        if slotData.card then
+            slotData.card.playerUid = player.id
+            onCardEquipOn(player, slotData.card, component.slots[idx])
+        end
+    end
+
+    local changeList = {}
+    for idx, slotData in pairs(component.equipList) do
+        if slotData.card then
+            table.insert(changeList, CreateCardChange(_G.OpRegionType.EQUIP, idx, slotData, _G.CardChangeType.ADD))
+        end
+    end
+    processChangeList(component, player, changeList)
+end
+
+---@param player Player
+---@param cardId number
+---@param isFromCardPool boolean
+function InitGameCard(player, cardId, isFromCardPool)
+    local cardConfig = _G.SutraTable[cardId]
+    if not cardConfig then
+        LogErr("InitGameCard, cardConfig is nil, uid:{} cardId:{}", player.id, cardId)
+        return nil
+    end
+
+    local cardInfo = player.gameCardComponent.cards[cardId]
+    if not cardInfo then
+        local cardIds = {}
+        for id, _ in pairs(player.gameCardComponent.cards) do
+            table.insert(cardIds, id)
+        end
+        LogErr("InitGameCard, cardInfo is nil, uid:{} cardId:{} cardIds:{}", player.id, cardId, cardIds)
+        return nil
+    end
+
+    local card = {
+        id       = cardId,
+        level    = cardInfo.level,
+        star     = 1,
+        element  = cardConfig.element,
+        quality  = cardInfo.quality,
+        materials = {},
+        playerUid = player.id,
+    }
+
+    if isFromCardPool then
+        card.materials[1] = {
+            id = cardId,
+            level = cardInfo.level,
+            star = 1,
+            element = cardConfig.element,
+            materials = {},
+            quality = cardInfo.quality,
+            playerUid = player.id,
+        }
+    end
+
+    return card
+end
+
+---@param component GameCardComponent
+---@param battle Battle
+---@param player Player
+function RefreshGameCard(component, battle, player)  --执行刷新卡牌逻辑
+    local resp = {}
+
+    --能否刷新卡牌
+    if component.cannotRefreshCard and component.cannotRefreshCard > 0 then
+        resp.errCode = errCode.BATTLE_ERROR_REFRESH_CANNOT_REFRESH
+        return resp
+    end
+
+    -- 检查法力
+    local cost = 0
+    if component.freeRefreshCount <= 0 and component.freeRefreshBuffCount <= 0 then
+        local sumMoney = battle.battleConfig.sumMoney
+        cost = sumMoney[component.refreshCount] or sumMoney[#sumMoney]
+        if player.resourceComponent.mana < cost then
+            resp.errCode = errCode.BATTLE_ERROR_REFRESH_NOT_ENOUGH_MANA
+            return resp
+        end
+    end
+
+    refreshGameCard(component, battle, player)
+
+    -- 消耗法力
+    if cost > 0 then
+        resourceComp.ChangeMana(player.resourceComponent, player, -cost)
+    end
+
+    battleIntent.InsertUserIntent(battle.battleId, player.id, _G.INTENT_TYPE.CARD_OPTIONAL_LIST, {
+        optionalList = component.optionalList,
+    })
+
+    -- 触发刷新卡牌事件
+    local eventRefreshGameCard = eventManager.CreateRefreshGameCardEvent(player)
+    eventManager.DispatchEvent(battle.eventManager, eventRefreshGameCard)
+
+    resp.errCode = errCode.SUCCESS
+    return resp
+end
+
+---@param component GameCardComponent
+function ChosenGameCard(component, player, chosenIdx, targetRegion, targetSlot, robotSelectCardId, robotFormationId)
+    local resp = {}
+    local selectedCard;
+
+    if (player.useGmAddSutra or robotUtil.IsRobotUid(player.id)) and chosenIdx == -1 and targetSlot < 5 then
+        player.useGmAddSutra = false
+        if robotSelectCardId == 0 then
+            resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+            return resp
+        else
+            -- 机器人前4个坑位直接上阵
+            if component.cardPoolCount[robotSelectCardId] then
+                component.cardPoolCount[robotSelectCardId] = component.cardPoolCount[robotSelectCardId] - 1
+                selectedCard = InitGameCard(player, robotSelectCardId, true)
+            end
+        end
+    else
+        selectedCard = component.optionalList[chosenIdx]
+        if not selectedCard then
+            LogDebug("ChosenGameCard, chosenIdx is invalid, uid:{} chosenIdx:{}", player.id, chosenIdx)
+            resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+            return resp
+        end
+    end
+
+    if not selectedCard then
+        LogDebug("ChosenGameCard, selectedCard is nil, uid:{} chosenIdx:{} robotFormationId:{} targetSlot:{}",
+            player.id, chosenIdx, robotFormationId, targetSlot)
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    if targetRegion == _G.OpRegionType.EQUIP then
+        -- 检查是否有相同id的法宝同时上阵
+        if not checkSameCardEquip(component, selectedCard) then
+            LogDebug("ChosenGameCard, there are the same sutra in equip list")
+            resp.errCode = errCode.BATTLE_ERROR_BATTLE_REPEAT
+            return resp
+        end
+
+        -- 检查槽位是否合法
+        local slotData = component.equipList[targetSlot]
+        if not slotData then
+            LogDebug("ChosenGameCard, targetSlot is invalid, uid:{} targetSlot:{}", player.id, targetSlot)
+            resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+            return resp
+        end
+        if slotData.card and (slotData.card.id ~= selectedCard.id or slotData.card.star ~= 1 or
+                (slotData.card.id == selectedCard.id and slotData.card.element ~= selectedCard.element)) then
+            -- 当前槽位已经有法宝 且法宝不能和所选择的卡牌进行合成
+            LogDebug("ChosenGameCard, targetSlot is invalid, uid:{} targetSlot:{} cardId:{} cardStar:{} selectedCardId:{} selectedCardStar:{}",
+                player.id, targetSlot, slotData.card.id, slotData.card.star, selectedCard.id, selectedCard.star)
+            resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+            return resp
+        end
+    end
+
+    local res, changeList = AutoMerge(player, selectedCard, targetRegion, targetSlot)
+    if not res then
+        LogDebug("ChosenGameCard, AutoMerge failed, uid:{} chosenIdx:{} targetRegion:{} targetSlot:{}",
+            player.id, chosenIdx, targetRegion, targetSlot)
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    -- 将多余的卡牌放回卡池
+    for idx, card in pairs(component.optionalList) do
+        if idx ~= chosenIdx and component.cardPoolCount[card.id] then
+            component.cardPoolCount[card.id] = component.cardPoolCount[card.id] + 1
+        end
+    end
+    component.optionalList = {}
+
+    processChangeList(component, player, changeList)
+
+    table.insert(component.buyCardIds, selectedCard.id)
+
+    resp.errCode = errCode.SUCCESS
+    return resp
+end
+
+-- 卡牌自动合成逻辑
+function AutoMerge(player, selectedCard, targetRegion, targetSlot)
+    local changeList = {}
+    local component = player.gameCardComponent
+
+    local isMerge = false
+    local data = nil        -- 第一次合成的change数据
+
+    local equipOnCardData = nil     -- 装备的卡牌
+
+    if selectedCard.star == 1 then
+        -- 一星法宝合成
+        for idx, slotData in pairs(component.equipList) do
+            if slotData.card and slotData.card.id == selectedCard.id and slotData.card.star == 1
+                and slotData.card.element == selectedCard.element then
+                MergeSutraCard(slotData, selectedCard)
+                data = CreateCardChange(_G.OpRegionType.EQUIP, idx, slotData, _G.CardChangeType.ASCEND_STAR)
+
+                -- 记录装备卡牌数据
+                equipOnCardData = { card = slotData.card, slot = idx }
+                isMerge = true
+                break
+            end
+        end
+
+        if not isMerge then
+            for idx, slotData in pairs(component.prepareList) do
+                if slotData.card and slotData.card.id == selectedCard.id and slotData.card.star == 1
+                    and slotData.card.element == selectedCard.element then
+                    MergeSutraCard(slotData, selectedCard)
+                    data = CreateCardChange(_G.OpRegionType.PREPARE, idx, slotData, _G.CardChangeType.ASCEND_STAR)
+                    isMerge = true
+
+                    -- 如果选择上阵到上阵区，则优先合成到上阵区
+                    if targetRegion == _G.OpRegionType.EQUIP then
+                        pushChangeList(changeList, data.region, data.slot, slotData, _G.CardChangeType.DELETE)
+                        data.slot       = targetSlot
+                        data.region     = _G.OpRegionType.EQUIP
+                        data.changeType = _G.CardChangeType.ADD
+
+                        slotData.card, component.equipList[targetSlot].card = component.equipList[targetSlot].card, slotData.card
+
+                        -- 记录装备卡牌数据
+                        equipOnCardData = { card = component.equipList[targetSlot].card, slot = targetSlot }
+                    end
+                    break
+                end
+            end
+        end
+    elseif selectedCard.star == 2 then
+        local list;
+        if targetRegion == _G.OpRegionType.PREPARE then
+            list = component.prepareList
+        elseif targetRegion == _G.OpRegionType.EQUIP then
+            list = component.equipList
+        end
+        if list then
+            list[targetSlot].card = selectedCard
+            data = CreateCardChange(_G.OpRegionType.PREPARE, targetSlot, list[targetSlot], _G.CardChangeType.ADD)
+            isMerge = true
+        end
+    end
+
+    -- 二星法宝合成
+    if isMerge then
+        local isMerge2 = false
+        for idx, slotData in pairs(component.prepareList) do
+            -- 排除第一次合成的法宝
+            if not (data.region == _G.OpRegionType.PREPARE and idx == data.slot) then
+                if slotData.card and slotData.card.id == selectedCard.id and slotData.card.star == 2
+                    and slotData.card.element == selectedCard.element then
+                    -- 优先合成已装备的卡牌
+                    if data.region == _G.OpRegionType.EQUIP then
+                        local tmp = component.equipList[data.slot]
+                        MergeSutraCard(tmp, component.prepareList[idx].card)
+                        data.data.card = GetCardData(tmp.card)
+
+                        -- 记录装备卡牌数据
+                        equipOnCardData = { card = tmp.card, slot = data.slot }
+
+                        -- 备战区卡牌因合成而删除
+                        pushChangeList(changeList, _G.OpRegionType.PREPARE, idx, component.prepareList[idx], _G.CardChangeType.DELETE)
+                        component.prepareList[idx].card = nil
+                    else
+                        local tmpSlotData = component.prepareList[data.slot]
+
+                        local tmp = component.prepareList[idx]
+                        MergeSutraCard(tmp, tmpSlotData.card)
+
+                        component.prepareList[data.slot].card = nil
+                        pushChangeList(changeList, data.region, data.slot, tmpSlotData, _G.CardChangeType.DELETE)
+                        data = CreateCardChange(_G.OpRegionType.PREPARE, idx, tmp, _G.CardChangeType.ASCEND_STAR)
+                    end
+                    isMerge2 = true
+                    break
+                end
+            end
+        end
+
+        if not isMerge2 then
+            for idx, slotData in pairs(component.equipList) do
+                -- 排除第一次合成的法宝
+                if not (data.region == _G.OpRegionType.EQUIP and idx == data.slot) then
+                    if slotData.card and slotData.card.id == selectedCard.id and slotData.card.star == 2
+                        and slotData.card.element == selectedCard.element then
+                        -- 因为无法同时装备相同卡牌，所以第一次升星的卡牌一定在备战区
+                        local tmpSlotData = component.prepareList[data.slot]
+                        if not tmpSlotData.card then
+                            LogDebug("AutoMerge, prepareList card is nil, uid:{} slot:{}", player.id, data.slot)
+                            return false
+                        end
+                        pushChangeList(changeList, data.region, data.slot, tmpSlotData, _G.CardChangeType.DELETE)
+
+                        local tmp = component.equipList[idx]
+                        MergeSutraCard(tmp, tmpSlotData.card)
+                        data = CreateCardChange(_G.OpRegionType.EQUIP, idx, tmp, _G.CardChangeType.ASCEND_STAR)
+                        tmpSlotData.card = nil
+                        equipOnCardData = { card = tmp.card, slot = data.slot }
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    -- 如果没有合成，则直接放置到对应位置
+    if not data then
+        local tmpList = nil
+        if targetRegion == _G.OpRegionType.PREPARE then
+            tmpList = component.prepareList
+        elseif targetRegion == _G.OpRegionType.EQUIP then
+            tmpList = component.equipList
+
+            -- 判断阵眼是否解锁
+            if not tmpList[targetSlot] or tmpList[targetSlot].isLocked then
+                LogDebug("ChosenGameCard, targetSlot is locked, targetSlot:{}", targetSlot)
+                return false
+            end
+        else
+            LogDebug("ChosenGameCard, targetRegion is invalid, targetRegion:{}", targetRegion)
+            return false
+        end
+
+        if tmpList[targetSlot] and tmpList[targetSlot].card then
+            -- 选择的位置存在卡牌
+            LogDebug("ChosenGameCard, targetSlot has card, targetRegion:{} targetSlot:{}", targetRegion, targetSlot)
+            return false
+        end
+
+        tmpList[targetSlot].card = selectedCard
+
+        data = CreateCardChange(targetRegion, targetSlot, tmpList[targetSlot], _G.CardChangeType.ADD)
+
+        -- 记录解锁卡牌信息
+        if targetRegion == _G.OpRegionType.EQUIP then
+            equipOnCardData = { card = tmpList[targetSlot].card, slot = targetSlot }
+        end
+    end
+    table.insert(changeList, data)
+
+    -- 处理上阵
+    if equipOnCardData then
+        onCardEquipOn(player, equipOnCardData.card, component.slots[equipOnCardData.slot])
+    end
+
+    return true, changeList
+end
+
+---@param regionType number 区域类型(_G.RegionType)
+---@param idx number 槽位索引
+---@param slotData SlotData 槽位数据
+---@param changeType number 变化类型(_G.CardChangeType)
+function CreateCardChange(regionType, idx, slotData, changeType)
+    return {
+        region = regionType,
+        slot = idx,
+        data = {
+            card = GetCardData(slotData.card),
+            isLocked = slotData.isLocked,
+        },
+        changeType = changeType,
+    }
+end
+
+---@param oldSlotData SlotData
+---@param newCard GameCard
+function MergeSutraCard(oldSlotData, newCard)
+    if not oldSlotData then
+        LogErr("MergeSutraCard, oldSlotData is nil")
+        return false
+    end
+
+    if not newCard then
+        LogErr("MergeSutraCard, newCard is nil")
+        return false
+    end
+
+    if not oldSlotData.card then
+        oldSlotData.card = newCard
+        LogDebug("MergeSutraCard, oldCard is nil, newCardId:{} newElement:{} newStar:{}",
+            newCard.id, newCard.element, newCard.star)
+        return true
+    end
+
+    -- 卡牌星级已达到最大星级，不可合成
+    if oldSlotData.card.star >= _G.MAX_SUTRA_STAR then
+        LogDebug("MergeSutraCard, star is max, star:{}", oldSlotData.card.star)
+        return false
+    end
+
+    -- 卡牌id或元素或星级不同，不可合成
+    if oldSlotData.card.id ~= newCard.id or
+        oldSlotData.card.element ~= newCard.element or
+        oldSlotData.card.star ~= newCard.star then
+        LogDebug("MergeSutraCard, oldCardId:{} newCardId:{} oldElement:{} newElement:{} oldStar:{} newStar:{}",
+            oldSlotData.card.id, newCard.id, oldSlotData.card.element, newCard.element, oldSlotData.card.star, newCard.star)
+        return false
+    end
+
+    -- 处理合成数据
+    oldSlotData.card.star = oldSlotData.card.star + 1
+    oldSlotData.card.materials = oldSlotData.card.materials or {}
+    if next(newCard.materials) then
+        for _, material in pairs(newCard.materials) do
+            table.insert(oldSlotData.card.materials, material)
+        end
+    else
+        table.insert(oldSlotData.card.materials, newCard)
+    end
+
+    return true
+end
+
+function SwapGameCard(component, player, fromRegion, fromSlot, toRegion, toSlot)
+    local resp = {}
+    local changeList = {}
+
+    local fromList = nil
+    local toList = nil
+    if fromRegion == _G.OpRegionType.EQUIP then
+        fromList = component.equipList
+    else
+        fromList = component.prepareList
+    end
+
+    if toRegion == _G.OpRegionType.EQUIP then
+        toList = component.equipList
+    else
+        toList = component.prepareList
+    end
+
+    -- 校验from操作的卡牌
+    local fromCard = fromList[fromSlot].card
+    if not fromCard then
+        LogDebug("SwapGameCard, from card is nil, player id:{}", player.id)
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    local toCard = toList[toSlot].card
+
+    -- 交换
+    toList[toSlot].card, fromList[fromSlot].card = fromList[fromSlot].card, toList[toSlot].card
+
+    -- 检查装备区是否有相同法宝
+    if checkEquipSameCard(component) then
+        -- 交换回来
+        toList[toSlot].card, fromList[fromSlot].card = fromList[fromSlot].card, toList[toSlot].card
+        LogDebug("SwapGameCard, cannot equip same card in equipList, id:{}", fromCard.id)
+        resp.errCode = errCode.BATTLE_ERROR_BATTLE_REPEAT
+        return resp
+    end
+
+    if fromRegion == _G.OpRegionType.EQUIP and toRegion == _G.OpRegionType.EQUIP then
+        -- 上阵区域互换
+
+        -- 处理from操作的卡牌
+        onCardEquipOn(player, fromCard, component.slots[toSlot])
+        pushChangeList(changeList, toRegion, toSlot, toList[toSlot], _G.CardChangeType.ADD)
+
+        -- 处理to操作的卡牌
+        if toCard then
+            onCardEquipOn(player, toCard, component.slots[fromSlot])
+            pushChangeList(changeList, fromRegion, fromSlot, fromList[fromSlot], _G.CardChangeType.ADD)
+        else
+            pushChangeList(changeList, fromRegion, fromSlot, fromList[fromSlot], _G.CardChangeType.DELETE)
+        end
+    elseif fromRegion == _G.OpRegionType.PREPARE and toRegion == _G.OpRegionType.PREPARE then
+        -- 备战区域互换
+
+        -- 处理from操作的卡牌
+        pushChangeList(changeList, toRegion, toSlot, toList[toSlot], _G.CardChangeType.ADD)
+
+        -- 处理to操作的卡牌
+        if toCard then
+            pushChangeList(changeList, _G.OpRegionType.PREPARE, fromSlot, fromList[fromSlot], _G.CardChangeType.ADD)
+        else
+            pushChangeList(changeList, _G.OpRegionType.PREPARE, fromSlot, fromList[fromSlot], _G.CardChangeType.DELETE)
+        end
+    elseif fromRegion == _G.OpRegionType.EQUIP and toRegion == _G.OpRegionType.PREPARE then
+        -- 卸载操作
+
+        -- 需要先调用off，防止相同id不同星级的法宝互相交换时出错
+
+        -- 处理from操作的卡牌
+        onCardEquipOff(player, fromCard)
+        pushChangeList(changeList, toRegion, toSlot, toList[toSlot], _G.CardChangeType.ADD)
+
+        -- 处理to操作的卡牌
+        if toCard then
+            onCardEquipOn(player, toCard, component.slots[fromSlot])
+            pushChangeList(changeList, fromRegion, fromSlot, fromList[fromSlot], _G.CardChangeType.ADD)
+        else
+            pushChangeList(changeList, fromRegion, fromSlot, fromList[fromSlot], _G.CardChangeType.DELETE)
+        end
+
+    elseif fromRegion == _G.OpRegionType.PREPARE and toRegion == _G.OpRegionType.EQUIP then
+        -- 装备操作
+
+        -- 需要先调用off，防止相同id不同星级的法宝互相交换时出错
+
+        -- 处理to操作的卡牌
+        if toCard then
+            onCardEquipOff(player, toCard)
+            pushChangeList(changeList, fromRegion, fromSlot, fromList[fromSlot], _G.CardChangeType.ADD)
+        else
+            pushChangeList(changeList, fromRegion, fromSlot, fromList[fromSlot], _G.CardChangeType.DELETE)
+        end
+
+        -- 处理from操作的卡牌
+        onCardEquipOn(player, fromCard, component.slots[toSlot])
+        pushChangeList(changeList, toRegion, toSlot, toList[toSlot], _G.CardChangeType.ADD)
+    end
+
+    processChangeList(component, player, changeList)
+
+    resp.errCode = errCode.SUCCESS
+    return resp
+end
+
+function SellGameCard(component, player, region, slot)
+    local resp = {}
+    local changeList = {}
+
+    local tmpList = nil
+    if region == _G.OpRegionType.PREPARE then
+        tmpList = component.prepareList
+    elseif region == _G.OpRegionType.EQUIP then
+        tmpList = component.equipList
+    end
+
+    if not tmpList[slot] then
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    ---@type GameCard
+    local card = tmpList[slot].card
+    if not card then
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    local sellPrice = 0
+
+    if region == _G.OpRegionType.EQUIP then
+        sellPrice = card.sutra:GetAttribute(_G.AttributeType.FINAL_PRICE)
+        onCardEquipOff(player, card)
+    end
+
+    tmpList[slot].card = nil
+
+    pushChangeList(changeList, region, slot, tmpList[slot], _G.CardChangeType.DELETE)
+
+    ---@type Battle
+    local battle = battleMgr.GetBattle(player.battleId)
+
+    -- 放入卡池
+    if card.materials and next(card.materials) then
+        -- 实际通过抽卡获取的卡牌需要被放入卡池
+        for _, material in pairs(card.materials) do
+            local owner = battle.players[material.playerUid]
+            if not owner then
+                LogErr("SellGameCard, cannot find material player, uid:{}", material.playerUid)
+                goto sell_game_card_continue
+            end
+
+            if owner.gameCardComponent.cardPoolCount[material.id] then
+                owner.gameCardComponent.cardPoolCount[material.id] = owner.gameCardComponent.cardPoolCount[material.id] + 1
+            end
+
+            ::sell_game_card_continue::
+        end
+    end
+
+    -- 处理changeList
+    processChangeList(component, player, changeList)
+
+    -- 出售获得灵力
+    if sellPrice > 0 then
+        resourceComp.ChangeMana(player.resourceComponent, player, sellPrice)
+    end
+
+    -- 分发售出法宝
+    if card.sutra then
+        local event = eventManager.CreateSutraSellEvent(card.sutra.entryId)
+        eventManager.DispatchEvent(self.eventManager, event)
+    end
+
+    resp.errCode = errCode.SUCCESS
+    return resp
+end
+
+---@param player Player
+function ChangeGameCardStar(player, cardId, changeValue)
+    if changeValue == 0 then
+        return
+    end
+
+    local changeList = {}
+    local component  = player.gameCardComponent
+    local battle     = battleMgr.GetBattle(player.battleId)
+
+    local idx, slotData = getCardInEquipList(component.equipList, cardId)
+
+    if not idx or not slotData or not slotData.card then
+        return
+    end
+
+    -- 单独特殊处理上阵区两星备战区一星降一星的情况
+    if slotData.card.star == 2 and changeValue == -1 then
+        local prepareIdx = -1
+        local prepareSlotData = nil
+        for slot, data in pairs(component.prepareList) do
+            if data.card and data.card.id == cardId and data.card.star == 1 then
+                prepareIdx = slot
+                prepareSlotData = data
+                break
+            end
+        end
+
+        if prepareSlotData then
+            local changeType = _G.CardChangeType.DELETE
+            pushChangeList(changeList, _G.OpRegionType.PREPARE, prepareIdx, prepareSlotData, changeType)
+            prepareSlotData.card = nil
+            processChangeList(component, player, changeList)
+            return
+        end
+    end
+
+    local card    = slotData.card
+    local oldStar = card.star
+    local changeType = _G.CardChangeType.ASCEND_STAR
+
+    card.star = math.max(card.star + changeValue, 0)
+    card.star = math.min(card.star, _G.MAX_SUTRA_STAR)
+
+    changeValue = card.star - oldStar
+
+    if changeValue == 0 then
+        return
+    end
+
+    if changeValue > 0 then
+        -- 卡牌升星
+        local needCount = 2 ^ (card.star - 1) - 2 ^ (oldStar - 1)
+        for _ = 1, needCount do
+            local isFromCardPool = false
+            if player.gameCardComponent.cardPoolCount[card.id] then
+                if player.gameCardComponent.cardPoolCount[card.id] > 0 then
+                    isFromCardPool = true
+                end
+                player.gameCardComponent.cardPoolCount[card.id] = player.gameCardComponent.cardPoolCount[card.id] - 1
+            end
+
+            local newCard = InitGameCard(player, card.id, isFromCardPool)
+            table.insert(card.materials, newCard)
+        end
+    else
+        -- 卡牌降星
+        local returnCount = 0
+        if card.star == 0 then
+            returnCount = 2 ^ (oldStar - 1)
+        else
+            returnCount = 2 ^ (oldStar - 1) - 2 ^ (card.star - 1)
+        end
+
+        for _ = 1, returnCount do
+            local material = table.remove(card.materials)
+            if not material then
+                goto falling_game_card_star_continue
+            end
+
+            local owner = battle.players[material.playerUid]
+            if not owner then
+                LogErr("SellGameCard, cannot find material player, uid:{}", material.playerUid)
+                goto falling_game_card_star_continue
+            end
+
+            if owner.gameCardComponent.cardPoolCount[material.id] then
+                owner.gameCardComponent.cardPoolCount[material.id] = owner.gameCardComponent.cardPoolCount[material.id] + 1
+            end
+
+            ::falling_game_card_star_continue::
+        end
+    end
+
+    if card.star <= 0 then
+        -- 卡牌下阵
+        onCardEquipOff(player, card)
+
+        -- 销毁法宝
+        changeType = _G.CardChangeType.DELETE
+        pushChangeList(changeList, _G.OpRegionType.EQUIP, idx, slotData, changeType)
+        slotData.card = nil
+    else
+        -- 卡牌上阵
+        onCardEquipOn(player, card, component.slots[idx])
+        pushChangeList(changeList, _G.OpRegionType.EQUIP, idx, slotData, changeType)
+    end
+
+    processChangeList(component, player, changeList)
+end
+
+-- 返回idx和slotData
+---@return number, SlotData
+function getCardInEquipList(equipList, cardId)
+    for idx, slotData in pairs(equipList) do
+        if slotData and slotData.card and slotData.card.id == cardId then
+            return idx, slotData
+        end
+    end
+
+    return nil, nil
+end
+
+-- 处理卡牌刷新
+---@param component GameCardComponent
+---@param battle Battle
+---@param player Player
+function refreshGameCard(component, battle, player)
+    -- 返还剩余卡牌
+    for _, card in pairs(component.optionalList) do
+        if component.cardPoolCount[card.id] then
+            component.cardPoolCount[card.id] = component.cardPoolCount[card.id] + 1
+        end
+    end
+
+    local optionalList = {}
+    local selectedIds = {}
+
+    -- 创建一个有效卡牌的表
+    local validCardList = {}
+    for cardId, count in pairs(component.cardPoolCount) do
+        if count > 0 then
+            for _ = 1, count do
+                table.insert(validCardList, cardId)
+            end
+        end
+    end
+
+    local targetCardList = {}
+    if next(player.gameCardComponent.specifiedElementQueue) then
+        -- 指定元素的卡牌列表
+        local targetElement = table.remove(player.gameCardComponent.specifiedElementQueue, 1)
+        if targetElement then
+            for i = #validCardList, 1, -1 do
+                local cardId = validCardList[i]
+                local cardConfig = _G.SutraTable[cardId]
+                if cardConfig.element == targetElement then
+                    table.remove(validCardList, i)
+                    table.insert(targetCardList, cardId)
+                end
+            end
+        end
+    elseif next(player.gameCardComponent.specifiedFateQueue) then
+        -- 指定元素的卡牌列表
+        local targetFate = table.remove(player.gameCardComponent.specifiedFateQueue, 1)
+        if targetFate then
+            for i = #validCardList, 1, -1 do
+                local cardId = validCardList[i]
+                local cardConfig = _G.SutraTable[cardId]
+                if table.contains(cardConfig.fates, targetFate) then
+                    table.remove(validCardList, i)
+                    table.insert(targetCardList, cardId)
+                end
+            end
+        end
+    end
+
+    -- 从备选队列中获取卡牌
+    if #component.preQueue > 0 then
+        while #optionalList < 3 do
+            local card = table.remove(component.preQueue, 1)
+            if not card then
+                break
+            end
+            card.level = component.cards[card.id].level
+            card.star = 1
+            card.materials = {
+                [1] = {
+                    id = card.id,
+                    level = card.level,
+                    star = 1,
+                    element = card.element,
+                    materials = {},
+                    playerUid = player.id,
+                }
+            }
+
+            card.quality = component.cards[card.id].quality
+            card.playerUid = player.id
+            table.insert(optionalList, card)
+        end
+    else
+        while #optionalList < 3 do
+            local randomList = {}
+            if #targetCardList > 0 then
+                randomList = targetCardList
+            else
+                randomList = validCardList
+            end
+
+            if #randomList <= 0 then
+                LogErr("refreshGameCard, randomList is empty, mode:{} uid:{}", battle.mode, player.id)
+                break
+            end
+
+            local random       = math.random(#randomList)
+            local randomCardId = randomList[random]
+            local randomCard   = InitGameCard(player, randomCardId, true)
+
+            table.insert(optionalList, randomCard)
+            component.cardPoolCount[randomCard.id] = component.cardPoolCount[randomCard.id] - 1
+
+            -- 删除所有相同卡牌
+            for i = #randomList, 1, -1 do
+                if randomList[i] == randomCardId then
+                    table.remove(randomList, i)
+                end
+            end
+
+            ::continue::
+        end
+    end
+
+    component.optionalList = optionalList
+
+    if component.freeRefreshBuffCount > 0 then
+        -- 免费刷新
+        component.totalFreeRefreshCount = component.totalFreeRefreshCount + 1
+    elseif component.freeRefreshCount > 0 then
+        ChangeFreeRefreshCount(component, battle, player, -1)
+        component.totalFreeRefreshCount = component.totalFreeRefreshCount + 1
+    else
+        component.refreshCount = component.refreshCount + 1
+    end
+end
+
+function UnlockFormation(component, player, slot)
+    if slot > MAX_SUTRA_COUNT then
+        LogDebug("UnlockFormation, slot is invalid, slot:{}", slot)
+        return false
+    end
+
+    local slotData = component.equipList[slot]
+    if slotData and not slotData.isLocked then
+        LogDebug("UnlockFormation, slot is already unlocked, slot:{}", slot)
+        return false
+    end
+
+    component.equipList[slot].isLocked = false
+    component.unlockedCount = component.unlockedCount + 1
+
+    local changeList = {}
+    pushChangeList(changeList, _G.OpRegionType.EQUIP, slot, component.equipList[slot], _G.CardChangeType.UNLOCK)
+    battleIntent.InsertBattleIntent(player.battleId, _G.INTENT_TYPE.CARD_CHANGE_LIST, {
+        teamId = player.teamId,
+        playerId = player.id,
+        changeList = changeList,
+    })
+
+    return true
+end
+
+---@param player Player
+function SpellRefresh(player)
+    local resp = {}
+    local component = player.gameCardComponent
+
+    if component.spellRefreshCount <= 0 then
+        resp.errCode = errCode.BATTLE_ERROR_SPELL_REFRESH_NOT_ENOUGH
+        return resp
+    end
+
+    -- 备战区已满则不能刷新
+    -- if table.tablen(component.spellCardPrepareList) >= 2 then
+    --     resp.errCode = errCode.BATTLE_ERROR_SPELL_PREPARE_IS_FULL
+    --     return resp
+    -- end
+    local randomCards = {}
+    while #randomCards < 3 do
+        if next(component.preSpellQueue) then
+            local spellCard = table.remove(component.preSpellQueue, 1)
+            table.insert(randomCards, spellCard)
+        else
+            break
+        end
+    end
+    if next(component.preSpellQueue) then
+        local spellCard = table.remove(component.preSpellQueue, 1)
+        table.insert(randomCards, spellCard)
+    end
+
+    local needCount  = 3 - #randomCards
+    if needCount > 0 then
+        for i=3, #randomCards + 1, -1 do
+            local randomSpellType = _G.SpellRandomType[i]
+            local spellCardPool = component.spellCardPool[randomSpellType]
+            if not spellCardPool or not next(spellCardPool) then
+                goto continue
+            end
+            local extraCard = _G.RandomOne(spellCardPool)
+            table.insert(randomCards, 4-needCount, extraCard)
+            ::continue::
+        end
+    end
+
+    component.spellCardOptionalList = randomCards
+    component.spellRefreshCount = component.spellRefreshCount - 1
+
+    resp.errCode = errCode.SUCCESS
+    resp.cards = component.spellCardOptionalList
+    -- LogDebug("SpellRefresh component.spellCardOptionalList:{}", component.spellCardOptionalList)
+    return resp
+end
+
+---@param player Player
+function SpellSelect(player, idx)
+    local resp = {}
+    local component = player.gameCardComponent
+
+    local spellCard = component.spellCardOptionalList[idx]
+    if not spellCard then
+        LogErr("SpellSelect, component.spellCardOptionalList:{} idx:{}", component.spellCardOptionalList, idx)
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    -- 获取空闲slot
+    local freeSlot = 0
+    for i = 1, 2 do
+        local card = component.spellCardPrepareList[i]
+        if not card then
+            freeSlot = i
+            break
+        end
+    end
+
+    if freeSlot <= 0 then
+        resp.errCode = errCode.BATTLE_ERROR_SPELL_PREPARE_IS_FULL
+        return resp
+    end
+
+    component.spellCardPrepareList[freeSlot] = spellCard
+    component.spellCardOptionalList = {}
+
+    --battleIntent.InsertBattleIntent(player.battleId, _G.INTENT_TYPE.GAME_SPELL_CARDS_UPDATE, {
+    --    playerId = player.id,
+    --    spellCards = component.spellCardPrepareList,
+    --})
+    LogDebug("SpellSelect, component.spellCardPrepareList:{}, freeSlot:{} component.spellCardOptionalList:{}", component.spellCardPrepareList, freeSlot, component.spellCardOptionalList)
+    resp.errCode = errCode.SUCCESS
+    return resp
+end
+
+---@param player Player
+function SpellUse(player, idx, fromChooseOne)
+    local resp      = {}
+    local nowMS     = _G.GetCurTimeMS()
+    local component = player.gameCardComponent
+    local battle    = battleMgr.GetBattle(player.battleId)
+
+    -- 检查符箓cd
+    if player.nextSpellTime > 0 and player.nextSpellTime > nowMS then
+        --LogDebug("nextSymbolTime:{}", nowMS - player.nextSymbolTime)
+        resp.errCode = errCode.BATTLE_ERROR_SYMBOL_IN_CD
+        return resp
+    end
+
+    local card = nil
+    local cardList = {}
+    if fromChooseOne == _G.CardFromChooseOne.SpellCardOptional then
+        cardList = component.spellCardOptionalList
+    elseif fromChooseOne == _G.CardFromChooseOne.SpellCardPrepare then
+        cardList = component.spellCardPrepareList
+    end
+
+    card = cardList[idx]
+
+    if not card then
+        LogDebug("SpellUse, card is nil, idx:{} fromChooseOne:{} cardList:{}", idx, fromChooseOne, cardList)
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    -- 使用符箓事件
+    local event = eventManager.CreateUseSpellEvent(player, player.teamId, card.id)
+    eventManager.DispatchEvent(battle.eventManager, event)
+
+    if fromChooseOne == _G.CardFromChooseOne.SpellCardOptional then
+        component.spellCardOptionalList = {}
+    elseif fromChooseOne == _G.CardFromChooseOne.SpellCardPrepare then
+        component.spellCardPrepareList[idx] = nil
+    end
+
+    --battleIntent.InsertBattleIntent(player.battleId, _G.INTENT_TYPE.GAME_SPELL_CARDS_UPDATE, {
+    --    playerId = player.id,
+    --    spellCards = component.spellCardPrepareList,
+    --})
+
+    local releaseCount = GetSpellCardReleaseCount(component, battle, player);
+
+    battleFightSkillLogic.ProcessSpellActiveSkill(battle, player, card, nowMS, releaseCount)
+    resp.errCode = errCode.SUCCESS
+
+    table.insert(component.useSpellsIds, card.id)
+    return resp
+end
+
+function GiveCard(player, slotId, toPlayerUid)
+    local resp = {}
+    local component = player.gameCardComponent
+    local battle = battleMgr.GetBattle(player.battleId)
+
+    -- 给予cd
+    local now = _G.GetCurTimeMS()
+    player.nextGiveTime = player.nextGiveTime or 0
+    if now < player.nextGiveTime then
+        resp.errCode = errCode.BATTLE_ERROR_GIVE_CARD_IN_COOLING
+        return resp
+    end
+
+    -- 获取需要给予的卡牌
+    local card = component.prepareList[slotId].card
+    if not card then
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+    local giveCardStar = card.star
+
+    -- 被给予的玩家
+    local toPlayer = battle.players[toPlayerUid]
+    if not toPlayer then
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    local toComponent = toPlayer.gameCardComponent
+    local firstFreeSlotIndex = 0
+    for idx, slotData in pairs(toComponent.prepareList) do
+        if not slotData.card then
+            firstFreeSlotIndex = idx
+            break
+        end
+    end
+
+    if firstFreeSlotIndex <= 0 then
+        resp.errCode = errCode.BATTLE_ERROR_GIVE_CARD_PREPARE_IS_FULL
+        return resp
+    end
+
+    local res, changeList = AutoMerge(toPlayer, card, _G.OpRegionType.PREPARE, firstFreeSlotIndex)
+    if not res then
+        resp.errCode = errCode.BATTLE_ERROR_PARAM_ERROR
+        return resp
+    end
+
+    processChangeList(toComponent, toPlayer, changeList)
+
+    -- 移除给予的卡牌
+    component.prepareList[slotId].card = nil
+    local selfChangeList = {}
+    pushChangeList(selfChangeList, _G.OpRegionType.PREPARE, slotId, component.prepareList[slotId], _G.CardChangeType.DELETE)
+    processChangeList(component, player, selfChangeList)
+
+    -- 更新给予cd
+    player.nextGiveTime = now + (_G.CoopRule.giveCardCd[giveCardStar] or _G.CoopRule.giveCardCd[#_G.CoopRule.giveCardCd])
+
+    resp.errCode = errCode.SUCCESS
+    resp.nextGiveTime = player.nextGiveTime
+    return resp
+end
+
+-- 检查是否有相同id不同星级的卡牌同时上阵
+function checkSameCardEquip(component, card)
+    -- 检查是否有相同id的法宝同时上阵
+    for _, slotData in pairs(component.equipList) do
+        if slotData.card then
+            if slotData.card.id == card.id and slotData.card.star ~= card.star then
+                return false
+            end
+
+            if slotData.card.id == card.id and slotData.card.element ~= card.element then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+---@param component GameCardComponent
+---@return boolean true表示存在相同id法宝 false表示不存在
+function checkEquipSameCard(component)
+    local sutraIds = {}
+    for _, slotData in pairs(component.equipList) do
+        if slotData.card then
+            if sutraIds[slotData.card.id] then
+                return true
+            end
+
+            sutraIds[slotData.card.id] = true
+        end
+    end
+
+    return false
+end
+
+-- 统一处理change list，发送数据帧包
+---@param component GameCardComponent
+---@param player Player
+function processChangeList(component, player, changeList)
+    local battle = battleMgr.GetBattle(player.battleId)
+    local battleTeam = battle.battleTeams[player.teamId]
+
+    battleIntent.InsertBattleIntent(player.battleId, _G.INTENT_TYPE.CARD_CHANGE_LIST, {
+        teamId = player.teamId,
+        playerId = player.id,
+        changeList = changeList,
+    })
+
+    -- 处理结阵
+    local isFormation, formationId, skillId, allMaxStar = CheckFormationCondition(component)
+    if component.formationSkillId ~= skillId then
+        if component.formationSkillId ~= 0 then
+            -- 取消旧的结阵效果
+            battleFightSkillLogic.ProcessFormationCancelPassiveSkill(battle, player, component.formationSkillId)
+
+            component.formationSkillId = 0
+        end
+
+        if skillId ~= 0 then
+            -- 增加新的结阵效果
+            component.formationSkillId = skillId
+            battleFightSkillLogic.ProcessFormationPassiveSkill(battle, battleTeam, skillId)
+        end
+
+        -- 结阵信息
+        battleIntent.InsertBattleIntent(player.battleId, _G.INTENT_TYPE.FORMATION_STATUS, {
+            teamId = player.teamId,
+            playerId = player.id,
+            isActive = isFormation,
+            formationId = formationId,
+        })
+    end
+
+    -- 结阵特效
+    if isFormation and battle.battleType ~= _G.BattleType.BATTLE_TYPE_COOP then
+        battle:AttachFormationEffect(player.teamId, formationId, allMaxStar)
+    end
+
+    component.formationId = formationId
+
+    -- 检查法宝被动
+    for _, slotData in pairs(component.equipList) do
+        if slotData.card then
+            if slotData.card.sutra then
+                -- 处理被动技能
+                slotData.card.sutra:ProcessPassiveSkill(component.equipList)
+            else
+                LogErr("processChangeList, sutra is nil, cardId:{}", slotData.card.id)
+            end
+        end
+    end
+
+    -- A
+    battleTeam:UpdateFates()
+
+    -- TODO: 需要细化一下星级变化的判断逻辑
+    -- 是否有星级变化
+    local isChange = false
+    for _, change in pairs(changeList) do
+        if change.region == _G.OpRegionType.EQUIP then
+            if change.changeType ~= _G.CardChangeType.UNLOCK then
+                isChange = true
+                break
+            end
+        end
+    end
+    -- 法宝星级变化事件
+    local event = eventManager.CreateSutraStarChangeEvent(battleTeam)
+    eventManager.DispatchEvent(battle.eventManager, event)
+
+    -- 场上法宝存在
+    local event2 = eventManager.CreateSutraOnEvent(battleTeam.teamId, component.equipList)
+    eventManager.DispatchEvent(battle.eventManager, event2)
+end
+
+function AddCardToList(player, regionType, slot, card)
+    local component = player.gameCardComponent
+    if not component.prepareList[slot] or component.prepareList[slot].isLocked then
+        return
+    end
+
+    local res, changeList = AutoMerge(player, card, regionType, slot)
+    if not res then
+        return
+    end
+
+    --component.prepareList[slot].card = card
+    processChangeList(component, player, changeList)
+end
+
+-- 处理装备卡牌
+function onCardEquipOn(player, card, position)
+    if not card or card.id == 0 then
+        return
+    end
+
+    local battle = battleMgr.GetBattle(player.battleId)
+
+    -- 召唤对应法宝实体
+    local sutra = battle:CreateSutra(player.teamId, card, player.id, position)
+    card.sutra = sutra
+end
+
+-- 处理卸载卡牌
+function onCardEquipOff(player, card)
+    if not card or card.id == 0 then
+        return
+    end
+
+    local battle = battleMgr.GetBattle(player.battleId)
+
+    -- 销毁对应法宝实体
+    battle:DestroySutra(player.teamId, player.playerIndex, card.id)
+
+    card.sutra = nil
+end
+
+function emptyCard()
+    return {
+        id = 0,
+        level = 0,
+        star = 0,
+
+        sutra = nil      -- 对应的召唤物
+    }
+end
+
+function pushChangeList(changeList, region, slot, slotData, changeType)
+    if not slotData then
+        LogErr("pushChangeList, slotData is nil, region:{} slot:{} changeType:{}", region, slot, changeType)
+        return
+    end
+
+    table.insert(changeList, {
+        region = region,
+        slot = slot,
+        data = {
+            card = GetCardData(slotData.card),
+            isLocked = slotData.isLocked,
+        },
+        changeType = changeType,
+    })
+end
+
+-- @return 是否满足结阵条件, 阵法id, 技能id, 是否全部满星
+function CheckFormationCondition(component)
+    local allMaxStar = true
+
+    for _, formation in pairs(component.formations) do
+        local formationId     = tonumber(formation.id)
+        local formationConfig = _G.FormationTable[formationId]
+        if not formationConfig then
+            LogErr("CheckFormationCondition, cannot find formationConfig, formationId:{}", tonumber(formation.id))
+            goto check_formation_continue
+        end
+
+        for _, formula in pairs(formationConfig.formulas) do
+            local match = true
+
+            for idx, element in ipairs(formula) do
+                local slotData = component.equipList[idx]
+                if not slotData or not slotData.card or element ~= slotData.card.element then
+                    match = false
+                    break
+                end
+                if slotData.card.star < _G.MAX_SUTRA_STAR then
+                    allMaxStar = false
+                end
+            end
+
+            if match then
+                -- 如果所有法宝都满星
+                local skills = allMaxStar and formationConfig.superSkill or formationConfig.baseSkill
+                local skill = skills[formation.level] or skills[#skills]
+                LogDebug("CheckFormationCondition, formationId:{} skill:{} allMaxStar:{}", formation.id, skill, allMaxStar)
+                return true, tonumber(formation.id), skill, allMaxStar
+            end
+        end
+
+        ::check_formation_continue::
+    end
+
+    return false, 0, 0, false
+end
+
+---@param component GameCardComponent
+---@param battle Battle
+---@param player Player
+function ChangeFreeRefreshCount(component, battle, player, delta)
+    if dive.isAutoBattle then
+        return
+    end
+
+    component.freeRefreshCount = math.max(component.freeRefreshCount + delta, 0)
+
+    battleIntent.InsertUserIntent(battle.battleId, player.id, _G.INTENT_TYPE.GAME_CARDS_UPDATE, {
+        freeRefreshCount = component.freeRefreshCount,
+        spellRefreshCount = component.spellRefreshCount,
+    })
+end
+
+function ChangeSpellRefreshCount(component, battle, player, delta)
+    if dive.isAutoBattle then
+        return
+    end
+
+    component.spellRefreshCount = math.max(component.spellRefreshCount + delta, 0)
+
+    battleIntent.InsertUserIntent(battle.battleId, player.id, _G.INTENT_TYPE.GAME_CARDS_UPDATE, {
+        freeRefreshCount = component.freeRefreshCount,
+        spellRefreshCount = component.spellRefreshCount,
+    })
+end
+
+function AddFateBuff(component, battle, player, buff)
+    component.spellCardDoubleReleaseBuff[buff.buffId] = buff
+end
+
+function RemoveFateBuff(component, battle, player, buff)
+    component.spellCardDoubleReleaseBuff[buff.buffId] = nil
+end
+
+function GetSpellCardReleaseCount(component, battle, player)
+    if not next(component.spellCardDoubleReleaseBuff) then
+        return 1;
+    end
+
+    local buffId, buff = next(component.spellCardDoubleReleaseBuff)
+    buffComp.RemoveBuff(battle, buffId, buff.owner)
+    return 2;
+end
+
+function printComponent(component)
+    local printCard = function(card)
+        if not card then
+            return "nil"
+        end
+
+        return {
+            id = card.id,
+            level = card.level,
+            star = card.star,
+            element = card.element,
+        }
+    end
+
+    local equipListData = {}
+    for idx, slotData in pairs(component.equipList) do
+        equipListData[idx] = {
+            card = printCard(slotData.card),
+            isLocked = slotData.isLocked,
+        }
+    end
+
+    local prepareListData = {}
+    for idx, slotData in pairs(component.prepareList) do
+        prepareListData[idx] = {
+            card = printCard(slotData.card),
+            isLocked = slotData.isLocked,
+        }
+    end
+
+    LogInfo("printComponent, equipList:{} prepareList:{} optionalList:{}", equipListData, prepareListData, component.optionalList)
+end

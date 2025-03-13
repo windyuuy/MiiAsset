@@ -1,0 +1,247 @@
+--#!/usr/local/bin/lua
+--repository: https://github.com/trumanzhao/misc
+--trumanzhao, 2016/08/03, trumanzhao@foxmail.com
+--[[
+函数: LogTree(desc, var)
+功能: 打印变量,特别是对table类型做树形输出
+desc: 变量描述
+var: 要输出的变量,可以是任何类型table, bool, number, nil
+注意: 不保证性能,仅供调试用;对table中的多个key不保证输出顺序.
+示例:
+local player = {name="bitch", level=10, id=123};
+LogTree("player_data", player);
+--]]
+local tostring = tostring
+local type = type
+local sgsub = string.gsub
+local tinsert = table.insert
+local sformat = string.format
+
+local function Var2string(var)
+	local text = tostring(var);
+	text = sgsub(text, "\r", "\\r");
+	text = sgsub(text, "\n", "\\n");
+	text = sgsub(text, "%c", "\\^");
+	return text;
+end
+
+local function TabToString(visited, path, base, tab)
+    local pre = visited[tab];
+    if pre then
+        return pre;
+    end
+
+	visited[tab] = path;
+
+	local size = 0;
+    for k, v in pairs(tab) do
+        size = size + 1;
+    end
+
+    if size == 0 then
+        return "{ }";
+    end
+
+    local lines = {};
+    local idx = 1;
+	for k, v in pairs(tab) do
+        local vtype = type(v);
+        local header = base..(idx < size and "├─ " or "└─ ")..Var2string(k);
+        if vtype == "table" then
+        	local vpath = visited[v];
+        	if vpath then
+        		lines[#lines + 1] = header..": "..vpath;
+        	else
+                local out = TabToString(visited, path.."/"..Var2string(k), base..(idx < size and "│  " or "   "), v);
+                if type(out) == "string" then
+                    lines[#lines + 1] = header..": "..out;
+                else
+                    lines[#lines + 1] = header;
+                    for _, one in ipairs(out) do
+                        tinsert(lines, one);
+                    end
+                end
+            end
+        else
+            local txt = Var2string(v);
+            if vtype == "string" then
+                txt = '\"'..txt..'\"';
+            end
+            lines[#lines + 1] = header..": "..txt;
+        end
+        idx = idx + 1;
+	end
+
+    return lines;
+end
+
+function _G.LogTree(desc, var)
+    if type(var) ~= "table" then
+        print(Var2string(desc)..": "..Var2string(var));
+        return;
+    end
+
+    local visited = {};
+    local out = TabToString(visited, "", "", var);
+
+    if type(out) == "string" then
+        print(Var2string(desc)..": "..out);
+        return;
+    end
+
+    _G.print(Var2string(desc));
+    for i, line in ipairs(out) do
+        print(line);
+    end
+end
+
+function _G.LogTreeInfo(desc, var)
+    if type(var) ~= "table" then
+        print(Var2string(desc)..": "..Var2string(var));
+        return;
+    end
+
+    local visited = {};
+    local out = TabToString(visited, "", "", var);
+
+    if type(out) == "string" then
+        print(Var2string(desc)..": "..out);
+        return;
+    end
+
+    print(Var2string(desc));
+    for i, line in ipairs(out) do
+        print(line);
+    end
+end
+
+function _G.GetLogTreeStr(var, is_sep_line)
+    if type(var) ~= "table" then
+        return Var2string(var);
+    end
+
+    local visited = {};
+    local out = TabToString(visited, "", "", var);
+    if type(out) == "string" then
+        return out;
+    end
+
+    local sep = is_sep_line and "\n" or "";
+    local realout = "";
+    for i, line in ipairs(out) do
+        realout = realout .. sep .. line;
+    end
+
+    return realout;
+
+end
+
+--[[
+    功能：以lua table或者伪json的格式显示table ，
+
+    @desc 描述字符串
+    @t: 要打印的table
+    @luaFormat:
+        不填或者为true, 以lua table的形式打印
+        为false, 以不严格的json形式打印，因为json:encode似乎有bug，大的table 转成json会卡住，可以试试这个打印，但不要作为json发送，
+        该函数有序数组转换后不是严格的json list, 只打印出来看看就好。
+    @noPrint:
+        不填或者为true, 打印
+        为false, 不打印，返回拼装好的字符串
+--]]
+function _G.LogTree2(desc, t, luaFormat, noPrint)
+    local mark = {}
+    local retStr = ""
+    luaFormat = (luaFormat) and true or false
+    noPrint = (noPrint) and true or false
+    local sep =  luaFormat and "=" or ":" -- not luaFormat == json_format
+    local nil_val = luaFormat and "nil" or "null"
+
+    local function show(line)
+        if noPrint then
+            retStr = (retStr .. "\n" .. line)
+        else
+            print(line)
+        end
+    end
+
+    local function GetPos(key)
+        local pos = key
+        if type(key) == "string" or (not luaFormat) then -- json 的key全部用"" 包裹起来
+            pos = '"' .. key .. '"'
+        end
+
+        if luaFormat then
+            pos = "[" .. pos .. "]" -- lua format
+        end
+
+        return pos
+    end
+
+    local function SubLogTree(t, indent)
+        if (mark[tostring(t)]) then
+            show(indent .. "*" .. tostring(t))
+        else
+            mark[tostring(t)] = true
+            if (type(t) == "table") then
+                local key, val = nil, nil
+
+                key, val = next(t)
+                if (key ~= nil) then
+                    local nextKey, next_val = nil, nil
+                    repeat
+                        local tail = ","
+                        nextKey, next_val = next(t, key)
+                        if (nextKey == nil) then
+                            tail = "";
+                        end
+
+                        local pos = GetPos(key)
+
+                        if type(val) == 'table' then
+                            show(sformat('%s%s %s {', indent, pos, sep) )
+
+                            SubLogTree(val, indent .. string.rep(' ', string.len(key) + 4) )
+
+                            show(indent .. string.rep(' ', string.len(key) + 2) .. '}' .. tail)
+
+                        elseif type(val) == 'string' then
+                            val = sgsub(val, '\n', '\t')
+                            val = sgsub(val, '\r', '')
+                            show(sformat('%s%s %s "%s"%s', indent, pos, sep, val, tail))
+
+                        elseif type(val) == 'number' or type(val) == 'boolean' then
+                            show(sformat('%s%s %s %s%s', indent, pos, sep, tostring(val), tail))
+
+                        elseif type(val) == 'nil' then
+                            show(sformat('%s%s %s %s%s' , indent, pos, sep, nil_val, tail))
+
+                        else
+                            -- function, userdata, thread
+                            val = sgsub(tostring(val), ': ', '_')
+                            show(sformat('%s%s %s "%s"%s' , indent, pos, sep, val, tail))
+                        end
+
+                        key, val = nextKey, next_val
+                    until (nextKey == nil)
+                end
+
+            else
+                show(indent .. tostring(t))
+            end
+        end
+    end
+
+    show(tostring(desc));
+    if type(t) == "table" then
+        --show(sgsub(tostring(t), ": ", "_") .. " = {")
+        show("{")
+
+        SubLogTree(t, "  ")
+
+        show("}")
+    else
+        SubLogTree(t, "  ")
+    end
+    return retStr
+end

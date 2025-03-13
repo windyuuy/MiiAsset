@@ -1,0 +1,417 @@
+local battleIntent = import("battle/battleIntent.lua")
+local reason = import("common/reason.lua")
+local buffEffectAttribute = import("battle/fight/buff/buffEffectAttribute.lua")
+
+---@class AttributeComponent 属性组件
+---@field entry Entry 所属实体
+---@field attributeBaseData table<string, number> 基础属性数据
+---@field attributeDeltaData table<string, number> 局内附加属性数据
+---@field attributeBuff table<number, table<number, Buff>> 影响属性的buff[属性id: [buffId: Buff]]
+---@field attributeChangeFlags table<number, boolean> 是否改变属性
+_G.AttributeComponent = class()
+
+NOT_STATUS_SPEED = -99999
+
+function CreateAttributeComponent(...)
+    return AttributeComponent.new(...)
+end
+
+function AttributeComponent:ctor(entry)
+    self.entry = entry
+    self.attributeBaseData = {}
+    self.attributeDeltaData = {}
+    self.attributeBuff = {}
+    self.attributeChangeFlags = {}
+
+    self.statusMoveSpeed = NOT_STATUS_SPEED
+end
+
+function AttributeComponent:Init(config)
+    self:InitBaseAttr(config)
+end
+
+function AttributeComponent:GetAttribute(attrId)
+    return GetAttribute(self, attrId)
+end
+
+---@param buff Buff
+function AttributeComponent:AddAttributeBuff(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local effectData = buffConfig.effectData
+    --LogDebug("AddAttributeBuff, buffId:{} effectData:{}", buff.buffId, effectData)
+    local attrId = effectData[2]
+
+    local oldHp = self:GetAttribute(_G.AttributeType.FINAL_HEALTH)
+
+    self.attributeBuff[attrId] = self.attributeBuff[attrId] or {}
+    self.attributeBuff[attrId][buff.buffId] = buff
+    self.attributeChangeFlags[attrId] = true
+
+    local newHp = self:GetAttribute(_G.AttributeType.FINAL_HEALTH)
+
+    if oldHp ~= newHp then
+        local oldCurHp = self.entry.curHP
+        self.entry.curHP = newHp < oldHp and math.min(self.entry.curHP, newHp) or self.entry.curHP + (newHp - oldHp)
+
+        battleIntent.InsertBattleIntent(self.entry.battleId, _G.INTENT_TYPE.ENTRY_ATTRIBUTE_CHANGE, {
+            teamId = self.entry.teamId,
+            entry = self.entry:GetEntryData(),
+            attributeType = _G.ATTRIBUTE_TYPE.HEALTH,
+            oldValue = oldCurHp,
+            newValue = math.ceil(self.entry.curHP),
+            reason = reason.BUFF_EFFECT_UPDATE_HP,
+        })
+    end
+end
+
+function AttributeComponent:RemoveAttributeBuff(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local attrId = buffConfig.effectData[2]
+
+    self.attributeBuff[attrId] = self.attributeBuff[attrId] or {}
+    self.attributeBuff[attrId][buff.buffId] = nil
+    self.attributeChangeFlags[attrId] = true
+end
+
+function AttributeComponent:UpdateAttribute(attrId)
+    local attr = _G.AttrShortName[attrId]
+    --local oldValue = self.attributeDeltaData[attr] or 0
+    local value = 0
+    for _, buff in pairs(self.attributeBuff[attrId]) do
+        value = value + buffEffectAttribute.GetBuffValue(buff)
+    end
+
+    self.attributeDeltaData[attr] = value
+    self.attributeChangeFlags[attrId] = false
+
+    --LogDebug("UpdateAttribute, attr:{} attrId:{} old:{} new:{}", attr, attrId, oldValue, value)
+    -- TODO: 需要变更时通知客户端的属性
+    if attrId == _G.AttributeType.BASE_MOVE_SPEED or attrId == _G.AttributeType.EXTRA_MOVE_SPEED
+        or attrId == _G.AttributeType.PER_MOVE_SPEED or attrId == _G.AttributeType.FIXED_MOVE_SPEED then
+        -- 发送属性变化信息
+        battleIntent.InsertBattleIntent(self.entry.battleId, _G.INTENT_TYPE.ENTRY_ATTRIBUTE_CHANGE, {
+            teamId = self.entry.teamId,
+            entry = self.entry:GetEntryData(),
+            attributeType = _G.ATTRIBUTE_TYPE.MOVE_SPEED,
+            newValue = getMoveSpeed(self),
+            reason = reason.BUFF_UPDATE_MOVE_SPEED,
+            position = self.entry.position,
+            totalMoveDistance = self.entry.totalMoveDistance,
+        })
+    end
+end
+
+function AttributeComponent:InitBaseAttr(config)
+    local attributeConfig = _G.UnitAttributeTable
+
+    self.attributeBaseData = {
+        baseAttack = config.baseAttack or attributeConfig[_G.AttributeType.BASE_ATTACK].baseValue,
+        extraAttack = config.extraAttack or attributeConfig[_G.AttributeType.EXTRA_ATTACK].baseValue,
+        perAttack = config.perAttack or attributeConfig[_G.AttributeType.PER_ATTACK].baseValue,
+        levelPerAttack = config.levelPerAttack or attributeConfig[_G.AttributeType.LEVEL_PER_ATTACK].baseValue,
+        fixedAttack = config.fixedAttack or attributeConfig[_G.AttributeType.FIXED_ATTACK].baseValue,
+        finalAttack = config.finalAttack or attributeConfig[_G.AttributeType.FINAL_ATTACK].baseValue,
+        baseAttackSpeed = config.baseAttackSpeed or attributeConfig[_G.AttributeType.BASE_ATTACK_SPEED].baseValue,
+        perAttackSpeed = config.perAttackSpeed or attributeConfig[_G.AttributeType.PER_ATTACK_SPEED].baseValue,
+        finalAttackSpeed = config.finalAttackSpeed or attributeConfig[_G.AttributeType.FINAL_ATTACK_SPEED].baseValue,
+        baseMoveSpeed = config.baseMoveSpeed or attributeConfig[_G.AttributeType.BASE_MOVE_SPEED].baseValue,
+        extraMoveSpeed = config.extraMoveSpeed or attributeConfig[_G.AttributeType.EXTRA_MOVE_SPEED].baseValue,
+        perMoveSpeed = config.perMoveSpeed or attributeConfig[_G.AttributeType.PER_MOVE_SPEED].baseValue,
+        fixedMoveSpeed = config.fixedMoveSpeed or attributeConfig[_G.AttributeType.FIXED_MOVE_SPEED].baseValue,
+        finalMoveSpeed = config.finalMoveSpeed or attributeConfig[_G.AttributeType.FINAL_MOVE_SPEED].baseValue,
+        baseHealth = config.baseHealth or attributeConfig[_G.AttributeType.BASE_HEALTH].baseValue,
+        extraHealth = config.extraHealth or attributeConfig[_G.AttributeType.EXTRA_HEALTH].baseValue,
+        perHealth = config.perHealth or attributeConfig[_G.AttributeType.PER_HEALTH].baseValue,
+        fixedHealth = config.fixedHealth or attributeConfig[_G.AttributeType.FIXED_HEALTH].baseValue,
+        finalHealth = config.finalHealth or attributeConfig[_G.AttributeType.FINAL_HEALTH].baseValue,
+        baseCritRate = config.baseCritRate or attributeConfig[_G.AttributeType.BASE_CRIT_RATE].baseValue,
+        extraCritRate = config.extraCritRate or attributeConfig[_G.AttributeType.EXTRA_CRIT_RATE].baseValue,
+        finalCritRate = config.finalCritRate or attributeConfig[_G.AttributeType.FINAL_CRIT_RATE].baseValue,
+        baseCritDamage = config.baseCritDamage or attributeConfig[_G.AttributeType.BASE_CRIT_DAMAGE].baseValue,
+        extraCritDamage = config.extraCritDamage or attributeConfig[_G.AttributeType.EXTRA_CRIT_DAMAGE].baseValue,
+        finalCritDamage = config.finalCritDamage or attributeConfig[_G.AttributeType.FINAL_CRIT_DAMAGE].baseValue,
+        fixedPhysiPene = config.fixedPhysiPene or attributeConfig[_G.AttributeType.FIXED_PHYSI_PENE].baseValue,
+        perPhysiPene = config.perPhysiPene or attributeConfig[_G.AttributeType.PER_PHYSI_PENE].baseValue,
+        fixedMagicPene = config.fixedMagicPene or attributeConfig[_G.AttributeType.FIXED_MAGIC_PENE].baseValue,
+        perMagicPene = config.perMagicPene or attributeConfig[_G.AttributeType.PER_MAGIC_PENE].baseValue,
+        basePhysiResistance = config.basePhysiResistance or attributeConfig[_G.AttributeType.BASE_PHYSI_RESISTANCE].baseValue,
+        perPhysiResistance = config.perPhysiResistance or attributeConfig[_G.AttributeType.PER_PHYSI_RESISTANCE].baseValue,
+        fixedPhysiResistance = config.fixedPhysiResistance or attributeConfig[_G.AttributeType.FIXED_PHYSI_RESISTANCE].baseValue,
+        finalPhysiResistance = config.finalPhysiResistance or attributeConfig[_G.AttributeType.FINAL_PHYSI_RESISTANCE].baseValue,
+        baseMagicResistance = config.baseMagicResistance or attributeConfig[_G.AttributeType.BASE_MAGIC_RESISTANCE].baseValue,
+        perMagicResistance = config.perMagicResistance or attributeConfig[_G.AttributeType.PER_MAGIC_RESISTANCE].baseValue,
+        fixedMagicResistance = config.fixedMagicResistance or attributeConfig[_G.AttributeType.FIXED_MAGIC_RESISTANCE].baseValue,
+        finalMagicResistance = config.finalMagicResistance or attributeConfig[_G.AttributeType.FINAL_MAGIC_RESISTANCE].baseValue,
+        finalDamageBonus = config.finalDamageBonus or attributeConfig[_G.AttributeType.FINAL_DAMAGE_BONUS].baseValue,
+        finalInjuryBonus = config.finalInjuryBonus or attributeConfig[_G.AttributeType.FINAL_INJURY_BONUS].baseValue,
+        finalPrice = config.finalPrice or attributeConfig[_G.AttributeType.FINAL_PRICE].baseValue,
+        perControlTime = config.perControlTime or attributeConfig[_G.AttributeType.PER_CONTROL_TIME].baseValue,
+        finalDamageReduce = config.finalDamageReduce or attributeConfig[_G.AttributeType.FINAL_DAMAGE_REDUCE].baseValue,
+        baseTowerHp = config.baseTowerHp or attributeConfig[_G.AttributeType.BASE_TOWER_HP].baseValue,
+        perTowerHp = config.perTowerHp or attributeConfig[_G.AttributeType.PER_TOWER_HP].baseValue,
+        fixedTowerHp = config.fixedTowerHp or attributeConfig[_G.AttributeType.FIXED_TOWER_HP].baseValue,
+        finalTowerHp = config.finalTowerHp or attributeConfig[_G.AttributeType.FINAL_TOWER_HP].baseValue,
+        stunRate = config.stunRate or attributeConfig[_G.AttributeType.STUN_RATE].baseValue,
+        twoHitRate = config.twoHitRate or attributeConfig[_G.AttributeType.TWO_HIT_RATE].baseValue,
+        threeHitRate = config.threeHitRate or attributeConfig[_G.AttributeType.THREE_HIT_RATE].baseValue,
+        fourHitRate = config.fourHitRate or attributeConfig[_G.AttributeType.FOUR_HIT_RATE].baseValue,
+        extraDependPercent = config.extraDependPercent or attributeConfig[_G.AttributeType.EXTRA_DEPEND_PERCENT].baseValue,
+        skillEffectiveProbability = config.skillEffectiveProbability or attributeConfig[_G.AttributeType.SKILL_EFFECTIVE_PROBABILITY].baseValue,
+        buffEffectiveProbability = config.buffEffectiveProbability or attributeConfig[_G.AttributeType.BUFF_EFFECTIVE_PROBABILITY].baseValue,
+        extraAttackTargetCount = config.extraAttackTargetCount or attributeConfig[_G.AttributeType.EXTRA_ATTACK_TARGET_COUNT].baseValue,
+    }
+end
+
+function AttributeComponent:OnStatusChange(status, param)
+    local notifyClient = false;
+    if status == _G.EntryStatus.ENTRY_STATUS_REPEL then
+        if self.statusMoveSpeed ~= param.speed then
+            self.statusMoveSpeed = param.speed
+            notifyClient = true
+        end
+    elseif status == _G.EntryStatus.ENTRY_STATUS_DIZZY then
+        if self.statusMoveSpeed ~= 0 then
+            self.statusMoveSpeed = 0
+            notifyClient = true
+        end
+    else
+        if self.statusMoveSpeed ~= NOT_STATUS_SPEED then
+            self.statusMoveSpeed = NOT_STATUS_SPEED
+            notifyClient = true
+        end
+    end
+
+    if notifyClient then
+        -- 发送属性变化信息
+        battleIntent.InsertBattleIntent(self.entry.battleId, _G.INTENT_TYPE.ENTRY_ATTRIBUTE_CHANGE, {
+            teamId = self.entry.teamId,
+            entry = self.entry:GetEntryData(),
+            attributeType = _G.ATTRIBUTE_TYPE.MOVE_SPEED,
+            newValue = getMoveSpeed(self),
+            reason = reason.BUFF_UPDATE_MOVE_SPEED,
+            position = self.entry.position,
+            totalMoveDistance = self.entry.totalMoveDistance,
+        })
+    end
+end
+
+---@param attributeComponent AttributeComponent
+function GetAttribute(attributeComponent, attrId)
+    if attributeComponent.attributeChangeFlags[attrId] then
+        attributeComponent:UpdateAttribute(attrId)
+    end
+
+    local finalAttrFunc = _G.FinalAttrFunc[attrId]
+    if finalAttrFunc then
+        local ok, ret = xpcall(finalAttrFunc, debug.traceback, attributeComponent)
+        if not ok then
+            LogErr("GetAttribute failed, err:{} attributeId:{}", ret, attrId)
+            return 0
+        end
+
+        return ret
+    end
+
+    local attr = _G.AttrShortName[attrId]
+    if not attr then
+        LogErr("GetAttribute failed, cannot find attr short name, attrId:{}", attrId)
+        return 0
+    end
+
+    return attributeComponent.attributeBaseData[attr] + (attributeComponent.attributeDeltaData[attr] or 0)
+end
+
+-- 计算攻击力数值
+function getAttack(attributeComponent)
+    local baseAttack = GetAttribute(attributeComponent, _G.AttributeType.BASE_ATTACK)
+    local extraAttack = GetAttribute(attributeComponent, _G.AttributeType.EXTRA_ATTACK)
+    local perAttack = GetAttribute(attributeComponent, _G.AttributeType.PER_ATTACK)
+    local levelPerAttack = GetAttribute(attributeComponent, _G.AttributeType.LEVEL_PER_ATTACK)
+    local fixedAttack = GetAttribute(attributeComponent, _G.AttributeType.FIXED_ATTACK)
+
+    --LogDebug("baseAttack:{} extraAttack:{} perAttack:{} levelPerAttack:{} fixedAttack:{}", baseAttack, extraAttack, perAttack, levelPerAttack, fixedAttack)
+    return ((baseAttack * levelPerAttack / 10000) + extraAttack) * (1 + perAttack / 10000) + fixedAttack
+end
+
+-- 计算攻击速度数值
+function getAttackSpeed(attributeComponent)
+    local baseAttackSpeed = GetAttribute(attributeComponent, _G.AttributeType.BASE_ATTACK_SPEED)
+    local perAttackSpeed = GetAttribute(attributeComponent, _G.AttributeType.PER_ATTACK_SPEED)
+
+    return baseAttackSpeed / (1 + perAttackSpeed / 10000)
+end
+
+-- 计算移动速度
+function getMoveSpeed(attributeComponent)
+    if attributeComponent.statusMoveSpeed ~= NOT_STATUS_SPEED then
+        return attributeComponent.statusMoveSpeed
+    end
+
+    local baseMoveSpeed = GetAttribute(attributeComponent, _G.AttributeType.BASE_MOVE_SPEED)
+    local perMoveSpeed = GetAttribute(attributeComponent, _G.AttributeType.PER_MOVE_SPEED)
+
+    local ret = baseMoveSpeed * (1 + perMoveSpeed / 10000)
+    ret = math.max(0, ret)
+    ret = math.min(300, ret)
+    return ret
+end
+
+-- 计算最大血量数值
+function getHealth(attributeComponent)
+    local baseHealth = GetAttribute(attributeComponent, _G.AttributeType.BASE_HEALTH)
+    local extraHealth = GetAttribute(attributeComponent, _G.AttributeType.EXTRA_HEALTH)
+    local perHealth = GetAttribute(attributeComponent, _G.AttributeType.PER_HEALTH)
+    local fixedHealth = GetAttribute(attributeComponent, _G.AttributeType.FIXED_HEALTH)
+
+    local res = (baseHealth + extraHealth) * (1 + perHealth / 10000) + fixedHealth
+    return res
+end
+
+-- 计算暴击率数值
+function getCritRate(attributeComponent)
+    local baseCritRate = GetAttribute(attributeComponent, _G.AttributeType.BASE_CRIT_RATE)
+    local extraCritRate = GetAttribute(attributeComponent, _G.AttributeType.EXTRA_CRIT_RATE)
+
+    return baseCritRate + extraCritRate
+end
+
+-- 计算暴击伤害数值
+function getCritDamage(attributeComponent)
+    local baseCritDamage = GetAttribute(attributeComponent, _G.AttributeType.BASE_CRIT_DAMAGE)
+    local extraCritDamage = GetAttribute(attributeComponent, _G.AttributeType.EXTRA_CRIT_DAMAGE)
+
+    return (baseCritDamage + extraCritDamage)
+end
+
+-- 计算固定物理穿透
+function getFixedPhysiPene(attributeComponent)
+    return attributeComponent.attributeBaseData.fixedPhysiPene + (attributeComponent.attributeDeltaData.fixedPhysiPene or 0)
+end
+
+-- 计算百分比物理穿透
+function getPerPhysiPene(attributeComponent)
+    return (attributeComponent.attributeBaseData.perPhysiPene + (attributeComponent.attributeDeltaData.perPhysiPene or 0))
+end
+
+-- 计算固定法术穿透
+function getFixedMagicPene(attributeComponent)
+    return attributeComponent.attributeBaseData.fixedMagicPene + (attributeComponent.attributeDeltaData.fixedMagicPene or 0)
+end
+
+-- 计算百分比法术穿透
+function getPerMagicPene(attributeComponent)
+    return (attributeComponent.attributeBaseData.perMagicPene + (attributeComponent.attributeDeltaData.perMagicPene or 0))
+end
+
+-- 计算物理抗性数值
+function getPhysiResistance(attributeComponent)
+    local basePhysiResistance = GetAttribute(attributeComponent, _G.AttributeType.BASE_PHYSI_RESISTANCE)
+    local perPhysiResistance = GetAttribute(attributeComponent, _G.AttributeType.PER_PHYSI_RESISTANCE)
+    local fixedPhysiResistance = GetAttribute(attributeComponent, _G.AttributeType.FIXED_PHYSI_RESISTANCE)
+    return basePhysiResistance * (1 + perPhysiResistance / 10000) + fixedPhysiResistance
+end
+
+-- 计算法术抗性数值
+function getMagicResistance(attributeComponent)
+    local baseMagicResistance = GetAttribute(attributeComponent, _G.AttributeType.BASE_MAGIC_RESISTANCE)
+    local perMagicResistance = GetAttribute(attributeComponent, _G.AttributeType.PER_MAGIC_RESISTANCE)
+    local fixedMagicResistance = GetAttribute(attributeComponent, _G.AttributeType.FIXED_MAGIC_RESISTANCE)
+    return baseMagicResistance * (1 + perMagicResistance / 10000) + fixedMagicResistance
+end
+
+-- 计算最终伤害加成数值
+function getDamageBonus(attributeComponent)
+    return (attributeComponent.attributeBaseData.finalDamageBonus + (attributeComponent.attributeDeltaData.finalDamageBonus or 0))
+end
+
+-- 计算最终承伤加成数值
+function getInjuryBonus(attributeComponent)
+    return (attributeComponent.attributeBaseData.finalInjuryBonus + (attributeComponent.attributeDeltaData.finalInjuryBonus or 0))
+end
+
+-- 计算出售价格
+function getPrice(attributeComponent)
+    return attributeComponent.attributeBaseData.finalPrice + (attributeComponent.attributeDeltaData.finalPrice or 0)
+end
+
+-- 计算控制时长
+function getPerControlTime(attributeComponent)
+    return (attributeComponent.attributeBaseData.perControlTime + (attributeComponent.attributeDeltaData.perControlTime or 0))
+end
+
+-- 计算最终伤害减免
+function getFinalDamageReduce(attributeComponent)
+    return (attributeComponent.attributeBaseData.finalDamageReduce + (attributeComponent.attributeDeltaData.finalDamageReduce or 0))
+end
+
+-- 计算基地血量
+function getTowerHp(attributeComponent)
+    local baseTowerHp = GetAttribute(attributeComponent, _G.AttributeType.BASE_TOWER_HP)
+    local perTowerHp = GetAttribute(attributeComponent, _G.AttributeType.PER_TOWER_HP)
+    local fixedTowerHp = GetAttribute(attributeComponent, _G.AttributeType.FIXED_TOWER_HP)
+
+    return baseTowerHp * (1 + perTowerHp / 10000) + fixedTowerHp
+end
+
+-- 计算击晕概率
+function getStunRate(attributeComponent)
+    return attributeComponent.attributeBaseData.stunRate + (attributeComponent.attributeDeltaData.stunRate or 0)
+end
+
+-- 计算二连击概率
+function getTwoHitRate(attributeComponent)
+    return attributeComponent.attributeBaseData.twoHitRate + (attributeComponent.attributeDeltaData.twoHitRate or 0)
+end
+
+-- 计算三连击概率
+function getThreeHitRate(attributeComponent)
+    return attributeComponent.attributeBaseData.threeHitRate + (attributeComponent.attributeDeltaData.threeHitRate or 0)
+end
+
+-- 计算四连击概率
+function getFourHitRate(attributeComponent)
+    return attributeComponent.attributeBaseData.fourHitRate + (attributeComponent.attributeDeltaData.fourHitRate or 0)
+end
+
+-- 计算主动伤害技能加成
+function getExtraDependPercent(attributeComponent)
+    return attributeComponent.attributeBaseData.extraDependPercent + (attributeComponent.attributeDeltaData.extraDependPercent or 0)
+end
+
+-- 计算技能生效概率
+function getSkillEffectiveProbability(attributeComponent)
+    return attributeComponent.attributeBaseData.skillEffectiveProbability + (attributeComponent.attributeDeltaData.skillEffectiveProbability or 0)
+end
+
+-- 计算buff生效概率
+function getBuffEffectiveProbability(attributeComponent)
+    return attributeComponent.attributeBaseData.buffEffectiveProbability + (attributeComponent.attributeDeltaData.buffEffectiveProbability or 0)
+end
+
+_G.FinalAttrFunc = {
+    [_G.AttributeType.FINAL_ATTACK] = getAttack,
+    [_G.AttributeType.FINAL_ATTACK_SPEED] = getAttackSpeed,
+    [_G.AttributeType.FINAL_MOVE_SPEED] = getMoveSpeed,
+    [_G.AttributeType.FINAL_HEALTH] = getHealth,
+    [_G.AttributeType.FINAL_CRIT_RATE] = getCritRate,
+    [_G.AttributeType.FINAL_CRIT_DAMAGE] = getCritDamage,
+    [_G.AttributeType.FIXED_PHYSI_PENE] = getFixedPhysiPene,
+    [_G.AttributeType.PER_PHYSI_PENE] = getPerPhysiPene,
+    [_G.AttributeType.FIXED_MAGIC_PENE] = getFixedMagicPene,
+    [_G.AttributeType.PER_MAGIC_PENE] = getPerMagicPene,
+    [_G.AttributeType.FINAL_PHYSI_RESISTANCE] = getPhysiResistance,
+    [_G.AttributeType.FINAL_MAGIC_RESISTANCE] = getMagicResistance,
+    [_G.AttributeType.FINAL_DAMAGE_BONUS] = getDamageBonus,
+    [_G.AttributeType.FINAL_INJURY_BONUS] = getInjuryBonus,
+    [_G.AttributeType.FINAL_PRICE] = getPrice,
+    [_G.AttributeType.PER_CONTROL_TIME] = getPerControlTime,
+    [_G.AttributeType.FINAL_DAMAGE_REDUCE] = getFinalDamageReduce,
+    [_G.AttributeType.FINAL_TOWER_HP] = getTowerHp,
+    [_G.AttributeType.STUN_RATE] = getStunRate,
+    [_G.AttributeType.TWO_HIT_RATE] = getTwoHitRate,
+    [_G.AttributeType.THREE_HIT_RATE] = getThreeHitRate,
+    [_G.AttributeType.FOUR_HIT_RATE] = getFourHitRate,
+    [_G.AttributeType.EXTRA_DEPEND_PERCENT] = getExtraDependPercent,
+    [_G.AttributeType.SKILL_EFFECTIVE_PROBABILITY] = getSkillEffectiveProbability,
+    [_G.AttributeType.BUFF_EFFECTIVE_PROBABILITY] = getBuffEffectiveProbability,
+}

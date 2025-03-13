@@ -1,0 +1,25 @@
+---@class Halo 光环
+---@field haloId number 光环id
+---@field layer number 层数
+---@field skillId number 所属技能id
+_G.HaloEffectType = {
+    CHANGE_ATTRIBUTE = 0,           -- 改变属性
+    SKILL_CONDITION_COUNT = 1,      -- 影响技能条件法宝数量
+    SPELL_CD = 2,                   -- 影响符箓cd
+}
+
+Halo = class()
+
+function CreateHalo(...)
+    return Halo.new(...)
+end
+
+function Halo:ctor(haloId, skillId)
+    self.haloId = haloId
+    self.layer = 1
+    self.skillId = skillId
+end
+
+function Halo:GetConfig()
+    return _G.FHaloBuffTable[self.haloId]
+end

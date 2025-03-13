@@ -1,0 +1,598 @@
+local statusMgr = import("battle/fight/status/statusMgr.lua")
+local skillContext = import("battle/fight/skill/skillContext.lua")
+local skillTarget = import("battle/fight/skill/skillTarget.lua")
+local buffComp = import("battle/components/buffComponent.lua")
+local battleIntent = import("battle/battleIntent.lua")
+local errCode = import("common/errCode.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+local skillEffectAddBuff = import("battle/fight/skill/skillEffectAddBuff.lua")
+local skillEffectDamage = import("battle/fight/skill/skillEffectDamage.lua")
+local skillEffectRangeEffect = import("battle/fight/skill/skillEffectRangeEffect.lua")
+
+local grid = import("battle/utils/grid.lua")
+
+_G.SkillType = {
+    SKILL_TYPE_ATTACK  = 0,    -- 普攻
+    SKILL_TYPE_SKILL   = 1,    -- 技能
+}
+
+-- 技能目标阵营
+_G.SkillTargetCamp = {
+    SKILL_TARGET_CAMP_SELF   = 1,     -- 己方阵营
+    SKILL_TARGET_CAMP_ENEMY  = 2,    -- 敌方阵营
+    SKILL_TARGET_CAMP_RANDOM = 3,   -- 随机阵营
+}
+
+-- 技能目标选择类型
+_G.SkillMonsterPriority = {
+    SKILL_MONSTER_PRIORITY_ALL = 1,     -- 所有怪物
+    SKILL_MONSTER_PRIORITY_RANDOM = 2,  -- 随机怪物
+    SKILL_MONSTER_PRIORITY_CLOSET = 3,  -- 距离基地最近
+    SKILL_MONSTER_PRIORITY_HP_HIGHEST = 4,  -- 血量最高
+    SKILL_MONSTER_PRIORITY_HP_PERCENT_LOWEST = 5,   -- 血量百分比最低
+    SKILL_MONSTER_PRIORITY_SPECIFIED_BUFF = 6,  -- 拥有指定buff
+}
+
+_G.SkillSutraPriority = {
+    SKILL_SUTRA_PRIORITY_ALL = 1,     -- 所有法宝
+    SKILL_SUTRA_PRIORITY_RANDOM = 2,  -- 随机法宝
+    SKILL_SUTRA_PRIORITY_RANDOM_NOT_MAX = 3,  -- 随机不满星法宝
+    SKILL_SUTRA_PRIORITY_ATK_HIGHEST = 4,  -- 攻击力最高
+    SKILL_SUTRA_PRIORITY_STAR_HIGHEST = 5,   -- 星级最高
+    SKILL_SUTRA_PRIORITY_SPECIFIED_BUFF = 6,    -- 拥有指定buff
+    SKILL_SUTRA_PRIORITY_FIVE_ELEMENT = 7,      -- 指定五行的法宝
+    SKILL_SUTRA_PRIORITY_SPECIFIED_FATE = 8,    -- 指定羁绊的法宝
+    SKILL_SUTRA_PRIORITY_SPECIFIED_FATE_COUNT = 9,    -- 指定羁绊的法宝（支持技能目标数量）
+    SKILL_SUTRA_PRIORITY_SPECIFIED_ID = 10,  -- 指定id法宝
+}
+
+_G.SkillTargetType = {
+    SKILL_TARGET_TYPE_SELF      = 0,        -- 自己
+    SKILL_TARGET_TYPE_MONSTER   = 1,        -- 怪物
+    SKILL_TARGET_TYPE_SUTRA     = 2,        -- 法宝
+    SKILL_TARGET_TYPE_TOWER     = 3,        -- 基地
+    SKILL_TARGET_TYPE_SUMMON    = 4,        -- 召唤物
+    SKILL_TARGET_TYPE_SLOT      = 5,        -- 阵眼
+    SKILL_TARGET_TYPE_POINT     = 6,        -- 路点
+}
+
+-- 技能目标选择优先级：召唤物
+_G.SkillSummonerPriority = {
+    SKILL_SUMMONER_PRIORITY_ALL = 1,           -- 所有召唤物
+    SKILL_SUMMONER_PRIORITY_RANDOM = 2,        -- 随机召唤物
+    SKILL_SUMMONER_PRIORITY_SPECIFIED_ID = 3,  -- 指定召唤物id的召唤物
+}
+
+-- 技能目标选择优先级：阵眼
+_G.SkillSlotPriority = {
+    SKILL_SLOT_PRIORITY_RANDOM = 1,          -- 随机已经解锁阵眼
+    SKILL_SLOT_PRIORITY_SPECIFIED_ID = 2     -- 指定阵眼id的阵眼
+}
+
+-- 技能目标选择优先级：召唤物
+_G.SkillSummonerPriority = {
+    SKILL_SUMMONER_PRIORITY_ALL = 1,           -- 所有召唤物
+    SKILL_SUMMONER_PRIORITY_RANDOM = 2,        -- 随机召唤物
+    SKILL_SUMMONER_PRIORITY_SPECIFIED_ID = 3,  -- 指定召唤物id的召唤物
+}
+
+-- 路点
+_G.SkillPointPriority = {
+    SKILL_POINT_PRIORITY_RANDOM = 1,          -- 随机路点
+}
+
+-- 飞行物命中
+function ProcessFlyerAttack(battle, flyer, skillId, targetEntry)
+    local releaseEntry = flyer.releaseEntry
+    -- 获取飞行物技能
+    local context = skillContext.CreateSkillContext(battle, releaseEntry, skillId)
+    table.insert(context.targetEntries, targetEntry)
+
+    -- 释放技能
+    releaseSkill(context)
+end
+
+---@param battle Battle
+---@param sutra Sutra
+function ProcessSutraAttack(battle, sutra, nowMS)
+    local skillId = sutra:GetActiveSkill()
+    if not skillId or skillId == 0 then return end
+
+    if sutra:CanUseSkill(skillId) then
+        local skillConfig = _G.SkillTable[skillId]
+        if not skillConfig then
+            LogErr("ProcessSutraAttack, cannot find skill config in table, sutraId:{} skillId:{}", sutra.sutraId, skillId)
+            return
+        end
+        local context = skillContext.CreateSkillContext(battle, sutra, skillId)
+
+        -- 释放技能
+        releaseSkill(context)
+    end
+end
+
+---@param summoner Summoner
+function ProcessSummonerAttack(battle, summoner, nowMS)
+    local skillId = summoner:GetActiveSkill()
+    if not skillId or skillId == 0 then return end
+
+    if summoner:CanUseSkill(skillId) then
+        local skillConfig = _G.SkillTable[skillId]
+        if not skillConfig then
+            LogErr("ProcessSutraAttack, cannot find skill config in table, summonerId:{} skillId:{}", summoner.summonerId, skillId)
+            return
+        end
+        local context = skillContext.CreateSkillContext(battle, summoner, skillId)
+
+        -- 释放技能
+        releaseSkill(context)
+    end
+end
+
+-- 被动释放技能
+function ProcessEntrySkill(battle, entry, skillId)
+    local skillConfig = _G.SkillTable[skillId]
+    if not skillConfig then return end
+
+    if entry:CanUseSkill(skillId) then
+        -- 释放自动释放的技能
+        local context = skillContext.CreateSkillContext(battle, entry, skillId)
+        context.isTriggerUseSkillEvent = false
+
+        -- 释放技能
+        releaseSkill(context)
+    end
+end
+
+-- 取消所有范围效果类型技能
+function ProcessEntryCancelPassiveSkill(battle, entry, skillId)
+    ---@type SkillTableData
+    local skillConfig = _G.SkillTable[skillId]
+    if not skillConfig then
+        LogErr("ProcessFormationCancelPassiveSkill, cannot find skill config in table, skillId:{}", skillId)
+        return
+    end
+    local battleTeam = battle.battleTeams[entry.teamId]
+
+    for _, addAreaEffect in pairs(skillConfig.addAreaEffects) do
+        local rangeEffectConfig = _G.AreaEffectTable[addAreaEffect]
+        if not rangeEffectConfig then
+            LogErr("ProcessFormationCancelPassiveSkill, cannot find range effect config in table, skillId:{} addAreaEffect:{}", skillId, addAreaEffect)
+            goto process_entry_cancel_passive_skill_continue
+        end
+
+        if rangeEffectConfig.targetTeamType == 1 then
+            -- 己方阵营
+            battle:RemoveRangeEffect(battleTeam.teamId, addAreaEffect, battleTeam.tower.entryId)
+        elseif rangeEffectConfig.targetTeamType == 2 then
+            -- 敌方阵容
+            for teamId, team in pairs(battle.battleTeams) do
+                if teamId ~= battleTeam.teamId then
+                    battle:RemoveRangeEffect(teamId, addAreaEffect, team.tower.entryId)
+                end
+            end
+        end
+
+        ::process_entry_cancel_passive_skill_continue::
+    end
+end
+
+-- 范围效果 对单体释放技能
+function ProcessRangeEffectSkill(battle, rangeEffect, skillId, entry)
+    -- 如果范围技能不是由实体释放的，释放者就为范围技能本身
+    local releaseEntry = rangeEffect.releaseEntry
+    if not releaseEntry then
+        releaseEntry = rangeEffect
+    end
+
+    local context = skillContext.CreateSkillContext(battle, releaseEntry, skillId)
+    table.insert(context.targetEntries, entry)
+    context.isTriggerUseSkillEvent = false
+
+    releaseSkill(context)
+end
+
+-- 范围效果 对多实体释放技能
+function ProcessRangeEffectSkillToEntries(battle, rangeEffect, skillId, entries)
+    -- 如果范围技能不是由实体释放的，释放者就为范围技能本身
+    local releaseEntry = rangeEffect.releaseEntry
+    if not releaseEntry then
+        releaseEntry = rangeEffect
+    end
+
+    local context = skillContext.CreateSkillContext(battle, releaseEntry, skillId)
+    for _, entry in pairs(entries) do
+        table.insert(context.targetEntries, entry)
+    end
+    context.isTriggerUseSkillEvent = false
+
+    releaseSkill(context)
+end
+
+-- 释放符箓
+---@param battle Battle
+function ProcessSpellActiveSkill(battle, player, card, nowMS, count)
+    -- 获取法术牌技能
+    local config = _G.SpellTable[card.id]
+    if not config then
+        LogErr("ProcessSpellActiveSkill Spell config is nil, cardId:{}", card.id)
+        return errCode.BATTLE_ERROR_SERVER_CFG
+    end
+
+    local skillId    = config.spellSkill[card.level]
+    local battleTeam = battle.battleTeams[player.teamId]
+    local tower      = battleTeam.tower
+
+    -- 释放主动释放的技能
+    local context = skillContext.CreateSkillContext(battle, tower, skillId)
+    context.skillCoolingDown = battleTeam:GetSpellCD()
+
+    -- 释放技能
+    for i=1, count do
+        releaseSkill(context)
+    end
+
+    return errCode.SUCCESS
+end
+
+---@param battle Battle
+---@param sutra Sutra
+function ProcessSutraPassiveSkill(battle, sutra, passiveSkillId)
+    ---@type SutraTableData
+    local config = _G.SutraTable[sutra.sutraId]
+    if not config then
+        LogErr("ProcessSutraPassiveSkill sutra config is nil, cardId:{}", sutra.sutraId)
+        return
+    end
+
+    if sutra:CanUseSkill(passiveSkillId) then
+        local skillConfig = _G.SkillTable[passiveSkillId]
+        if not skillConfig then
+            LogErr("ProcessSutraPassiveSkill skill config is nil, skillId:{}", passiveSkillId)
+            return
+        end
+
+        -- 释放被动技能
+        local context = skillContext.CreateSkillContext(battle, sutra, passiveSkillId)
+        context.isTriggerUseSkillEvent = false
+
+        -- 释放技能
+        releaseSkill(context)
+    end
+end
+
+function ProcessSummonerPassiveSkill(battle, summoner, passiveSkillId)
+    if passiveSkillId <= 0 then
+        return
+    end
+
+    local config = _G.SummonerTable[summoner.summonerId]
+    if not config then
+        LogErr("ProcessSummonerPassiveSkill summoner config is nil, summonerId:{}", summoner.summonerId)
+        return
+    end
+
+    if summoner:CanUseSkill(passiveSkillId) then
+        local skillConfig = _G.SkillTable[passiveSkillId]
+        if not skillConfig then
+            LogDebug("ProcessSummonerPassiveSkill skill config is nil, skillId:{}", passiveSkillId)
+            return
+        end
+
+        -- 释放被动技能
+        local context = skillContext.CreateSkillContext(battle, summoner, passiveSkillId)
+        context.isTriggerUseSkillEvent = false
+        -- 释放技能
+        releaseSkill(context)
+    end
+end
+
+---@param battle Battle
+---@param monster Monster
+function ProcessMonsterPassiveSkill(battle, monster)
+    local config = monster.monsterConfig
+    for _, skillId in pairs(config.passiveSkills) do
+        if monster:CanUseSkill(skillId) then
+            local skillConfig = _G.SkillTable[skillId]
+            if not skillConfig then
+                LogErr("ProcessMonsterPassiveSkill skill config is nil, skillId:{}", skillId)
+                return
+            end
+
+            -- 释放被动技能
+            local context = skillContext.CreateSkillContext(battle, monster, skillId)
+            -- 释放等级
+            releaseSkill(context)
+        end
+    end
+end
+
+-- 取消被动技能，如果是buff就取消buff
+---@param battle Battle
+---@param sutra Sutra
+function ProcessSutraCancelPassiveSkill(battle, sutra, passiveSkillId)
+    ---@type SkillTableData
+    local skillConfig = _G.SkillTable[passiveSkillId]
+    if not skillConfig then
+        LogErr("ProcessSutraCancelPassiveSkill skill config is nil, skillId:{}", passiveSkillId)
+        return
+    end
+
+    local battleTeam = battle.battleTeams[sutra.teamId]
+
+    for _, buffId in pairs(skillConfig.addBuffs) do
+        buffComp.RemoveBuff(battle, buffId, sutra)
+    end
+
+    for _, addAreaEffect in pairs(skillConfig.addAreaEffects) do
+        local rangeEffectConfig = _G.AreaEffectTable[addAreaEffect]
+        if rangeEffectConfig.targetTeamType == 1 then
+            -- 己方阵营
+            battle:RemoveRangeEffect(battleTeam.teamId, addAreaEffect, sutra.entryId)
+        elseif rangeEffectConfig.targetTeamType == 2 then
+            -- 敌方阵容
+            for teamId, _ in pairs(battle.battleTeams) do
+                if teamId ~= battleTeam.teamId then
+                    battle:RemoveRangeEffect(teamId, addAreaEffect, sutra.entryId)
+                end
+            end
+        end
+    end
+end
+
+---@param battleTeam BattleTeam
+function ProcessFormationPassiveSkill(battle, battleTeam, skillId)
+    LogDebug("ProcessFormationPassiveSkill, skillId:{}", skillId)
+    local context = skillContext.CreateSkillContext(battle, battleTeam.tower, skillId)
+
+    -- 释放技能
+    releaseSkill(context)
+end
+
+function ProcessFormationCancelPassiveSkill(battle, player, skillId)
+    ---@type SkillTableData
+    local skillConfig = _G.SkillTable[skillId]
+    if not skillConfig then
+        LogErr("ProcessFormationCancelPassiveSkill, cannot find skill config in table, skillId:{}", skillId)
+        return
+    end
+    local battleTeam = battle.battleTeams[player.teamId]
+
+    for _, addAreaEffect in pairs(skillConfig.addAreaEffects) do
+        local rangeEffectConfig = _G.AreaEffectTable[addAreaEffect]
+        if not rangeEffectConfig then
+            LogErr("ProcessFormationCancelPassiveSkill, cannot find range effect config in table, skillId:{} addAreaEffect:{}", skillId, addAreaEffect)
+            goto process_formation_cancel_passive_skill_continue
+        end
+
+        if rangeEffectConfig.targetTeamType == 1 then
+            -- 己方阵营
+            battle:RemoveRangeEffect(battleTeam.teamId, addAreaEffect, battleTeam.tower.entryId)
+        elseif rangeEffectConfig.targetTeamType == 2 then
+            -- 敌方阵容
+            for teamId, team in pairs(battle.battleTeams) do
+                if teamId ~= battleTeam.teamId then
+                    battle:RemoveRangeEffect(teamId, addAreaEffect, team.tower.entryId)
+                end
+            end
+        end
+
+        ::process_formation_cancel_passive_skill_continue::
+    end
+end
+
+function ProcessFateSkill(battle, battleTeam, fateSkillId)
+    local context = skillContext.CreateSkillContext(battle, battleTeam.tower, fateSkillId)
+
+    -- 释放技能
+    releaseSkill(context)
+end
+
+function ProcessCancelFateSkill(battle, battleTeam, fateSkillId)
+    ---@type SkillTableData
+    local skillConfig = _G.SkillTable[fateSkillId]
+    if not skillConfig then
+        LogErr("ProcessCancelFateSkill, cannot find skill config in table, skillId:{}", fateSkillId)
+        return
+    end
+
+    for _, addAreaEffect in pairs(skillConfig.addAreaEffects) do
+        local rangeEffectConfig = _G.AreaEffectTable[addAreaEffect]
+        if not rangeEffectConfig then
+            LogErr("ProcessCancelFateSkill, cannot find range effect config in table, skillId:{} addAreaEffect:{}", fateSkillId, addAreaEffect)
+            goto process_cancel_fate_skill_continue
+        end
+
+        if rangeEffectConfig.targetTeamType == 1 then
+            -- 己方阵营
+            battle:RemoveRangeEffect(battleTeam.teamId, addAreaEffect, battleTeam.tower.entryId)
+        elseif rangeEffectConfig.targetTeamType == 2 then
+            -- 敌方阵容
+            for teamId, team in pairs(battle.battleTeams) do
+                if teamId ~= battleTeam.teamId then
+                    battle:RemoveRangeEffect(teamId, addAreaEffect, team.tower.entryId)
+                end
+            end
+        end
+
+        ::process_cancel_fate_skill_continue::
+    end
+end
+
+---@param context SkillContext
+function releaseSkill(context)
+    if not context then
+        return false
+    end
+
+    -- 判断技能cd
+    local battle       = context.battle
+    local skillId      = context.skillId
+    local skillConfig  = context.skillConfig
+    local releaseEntry = context.releaseEntry
+
+    -- 选择目标阵营
+    skillTarget.UpdateSkillTargetTeam(context)
+
+    if not context.targetTeam then
+        return true
+    end
+
+    if not next(context.targetEntries) then
+        -- 选择作用目标
+        local targetCount = skillTarget.UpdateSkillTarget(context)
+        if targetCount <= 0 then
+            return false
+        end
+    end
+
+    -- 技能概率
+    local probability = skillConfig.probability + releaseEntry:GetAttribute(_G.AttributeType.SKILL_EFFECTIVE_PROBABILITY)
+    local random      = math.random(1, 10000)
+    if random <= probability then
+        -- 如果有前摇，则修改状态
+        if context.skillConfig.preActionTime > 0 then
+            statusMgr.ChangeStatus(releaseEntry, _G.EntryStatus.ENTRY_STATUS_ATTACK, context.skillConfig.preActionTime)
+
+            -- 前摇结束后再释放技能
+            local timerId = battle.timer:AddTimer(nil, context.skillConfig.preActionTime / 1000, releaseSkillImpl, context)
+            releaseEntry.skillTimerId = timerId
+        else
+            releaseSkillImpl(context)
+        end
+    end
+
+    -- 更新技能cd
+    local nextSkillTime = releaseEntry.skillComponent:UpdateSkillCD(skillId, context.skillCoolingDown)
+
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.USE_SKILL, {
+        teamId  = releaseEntry.teamId,
+        entryId = releaseEntry.entryId,
+        skillId = skillId,
+        targetInfo = getSkillContextTargetInfo(context),
+        nextSkillTime = nextSkillTime
+    });
+    return true;
+end
+
+function releaseSkillImpl(context)
+    local battle       = context.battle
+    local releaseEntry = context.releaseEntry
+
+    -- 删除前摇回调
+    releaseEntry.skillTimerId = nil
+    if context.isTriggerUseSkillEvent then
+        -- 触发技能前事件
+        local eventBeforeAttack = eventManager.CreateBeforeUseSkillEvent(releaseEntry, context)
+        eventManager.DispatchEvent(battle.eventManager, eventBeforeAttack)
+    end
+
+    -- 技能生效
+    if context.skillConfig.effectDelay > 0 then
+        battle.timer:AddTimer(nil, context.skillConfig.effectDelay / 1000, SkillEffectExec, context)
+    else
+        SkillEffectExec(context)
+    end
+
+    if context.isTriggerUseSkillEvent then
+        -- 触发技能后事件
+        local eventAfterAttack = eventManager.CreateAfterUseSkillEvent(releaseEntry, context)
+        eventManager.DispatchEvent(battle.eventManager, eventAfterAttack)
+    end
+end
+
+---@param context SkillContext
+function SkillEffectExec(context)
+    local battle = context.battle
+    if not battle or battle.status == _G.BattleStatus.END then
+        return
+    end
+
+    for _, targetEntry in pairs(context.targetEntries) do
+        -- 判断技能生效是否通过飞行物
+        if context.skillConfig.byFlyer then
+            local flyer = battle:CreateFlyer(context.targetTeam.teamId, context.skillConfig.flyerId,
+                context.releaseEntry, targetEntry)
+            if not flyer then
+                goto continue
+            end
+
+            local distance = grid.GetDistance(context.releaseEntry.position, targetEntry.position)
+            local speed = flyer:GetAttribute(_G.AttributeType.FINAL_MOVE_SPEED)
+
+            battle.timer:AddTimer(nil, distance / speed, SkillEffectFlyerHit, flyer, context, targetEntry);
+        else
+            SkillEffectToTarget(context, targetEntry, 10000)
+        end
+
+        ::continue::
+    end
+
+    local skillConfig = context.skillConfig
+    if skillConfig.skillType == _G.SkillType.SKILL_TYPE_ATTACK then
+        -- 攻击后事件
+        local event = eventManager.CreateEntryAfterAttackEvent(context.releaseEntry, context)
+        eventManager.DispatchEvent(context.battle.eventManager, event)
+    end
+end
+
+function SkillEffectToTarget(context, targetEntry, damageRate)
+    damageRate = damageRate or 10000
+
+    -- 造成伤害
+    skillEffectDamage.Execute(context, targetEntry, damageRate)
+
+    -- 施加buff
+    skillEffectAddBuff.Execute(context, targetEntry)
+
+    -- 生成范围效果
+    skillEffectRangeEffect.Execute(context, targetEntry)
+end
+
+---@param flyer Flyer
+function SkillEffectFlyerHit(flyer, context, targetEntry)
+    local battle = context.battle;
+    --LogDebug("SkillEffectFlyerHit battleId={} flyerId={}", battle.battleId, flyer.flyerId)
+    -- 目标已经死亡，则换一个目标
+    if flyer:CheckTargetIsDead() then
+        if battle:ChangeFlyerTarget(flyer) then
+            CalFlyerEffectTime(flyer, context, targetEntry)
+        end
+        return
+    end
+
+    local flayerDamageRate = flyer:PopDamageRate()
+
+    -- 计算伤害
+    SkillEffectToTarget(context, targetEntry, flayerDamageRate)
+
+    if battle:UpdateFlyerCatapultTarget(flyer) then
+        CalFlyerEffectTime(flyer, context, targetEntry)
+    end
+end
+
+function CalFlyerEffectTime(flyer, context, targetEntry)
+    -- 换了目标
+    local distance = grid.GetDistance(targetEntry.position, flyer.targetEntry.position)
+    local speed = flyer:GetAttribute(_G.AttributeType.FINAL_MOVE_SPEED)
+
+    if distance / speed < 0.1 then
+        SkillEffectFlyerHit(flyer, context, flyer.targetEntry)
+    else
+        context.battle.timer:AddTimer(nil, distance / speed, SkillEffectFlyerHit, flyer, context, flyer.targetEntry);
+    end
+end
+
+------------------------------------------------------
+
+function getSkillContextTargetInfo(context)
+    local skillTargetInfo = {
+        targetEntries = {}
+    }
+
+    for _, targetEntry in pairs(context.targetEntries) do
+        table.insert(skillTargetInfo.targetEntries, targetEntry:GetEntryData())
+    end
+    return skillTargetInfo
+end

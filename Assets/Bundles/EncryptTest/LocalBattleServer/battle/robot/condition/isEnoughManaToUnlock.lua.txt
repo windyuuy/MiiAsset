@@ -1,0 +1,12 @@
+-- 灵力是否足够解锁
+
+function Execute(robot)
+    local battleData = robot.battleData
+    local curMana = battleData.mana or 0
+    local cost = battleData.unlockCosts[battleData.curUnlockCount + 1] or battleData.unlockCosts[#battleData.unlockCosts]
+
+    if curMana >= cost then
+        LogDebug("isEnoughManaToUnlock curMana:{} cost:{} battleData.curUnlockCount:{}", curMana, cost, battleData.curUnlockCount)
+    end
+    return curMana >= cost
+end

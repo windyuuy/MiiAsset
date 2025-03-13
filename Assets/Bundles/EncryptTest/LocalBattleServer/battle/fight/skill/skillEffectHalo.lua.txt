@@ -1,0 +1,15 @@
+local battleMgr = import("battle/battleMgr.lua")
+
+function SkillEffect(context, effectId)
+    local releaseEntry = context.releaseEntry
+    local skillId = context.skillId
+    local effectConfig = _G.FEffectTable[effectId]
+    LogDebug("skillEffectHalo:SkillEffect effectId:{} buffs:{}", effectId, effectConfig.haloBuffs)
+
+    local battleTeam = battleMgr.GetBattleTeam(context.battle.battleId, context.releaseTeamId)
+
+    -- 添加光环
+    for _, buffId in pairs(effectConfig.haloBuffs) do
+        battleTeam:AddHalo(buffId, skillId)
+    end
+end

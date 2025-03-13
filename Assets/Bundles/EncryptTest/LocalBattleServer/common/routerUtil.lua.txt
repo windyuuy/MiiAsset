@@ -1,0 +1,256 @@
+local message = import("common/message.lua");
+local robotUtil = import("common/robotUtil.lua");
+
+_G.CallOtherUser = function(uid, toUid, offMsgType, msg, ...)
+    if robotUtil.IsRobotUid(toUid) then
+        return true;
+    end
+
+    if _G.uidTable and _G.uidTable[toUid] then
+        local selfSvrId = _G.diveSDMgr.get_local_instance_id();
+
+        local func = _G.s2s[msg];
+        func(selfSvrId, toUid, uid, selfSvrId, offMsgType, ...);
+
+        return true;
+    end
+
+    local instatus = _G.diveSDMgr.get_random_instance_id("online");
+    if instatus then
+        -- 请求online服务，申请切磋
+        message.SendP2PMessage("online", instatus, "RouterToUser", uid, toUid, offMsgType, msg, ...);
+        return true;
+    end
+
+    return false;
+end
+
+_G.CallLobbyMessage = function(req, ...)
+    -- 获取lobby服
+    local instance = _G.diveSDMgr.get_random_instance_id("lobby");
+    if not instance then
+        LogErr("CallLobbyMessage no lobby server!!!")
+        return false;
+    end
+
+    -- 请求lobby服
+    return message.SendP2PMessage("lobby", instance, req, ...);
+end
+
+_G.CallAllLobbyMessage = function(req, ...)
+    -- 获取lobby服
+    local instances = _G.diveSDMgr.get_all_instance_id("lobby");
+    if not instances then
+        LogErr("CallAllLobbyMessage no lobby server!!!")
+        return false;
+    end
+
+    for _, instance in pairs(instances) do
+        -- 请求lobby服
+        message.SendP2PMessage("lobby", instance, req, ...);
+    end
+    return true;
+end
+
+-- match服 单例
+_G.CallMatchMessage = function(req, ...)
+    -- 获取匹配服
+    local instatus =_G.diveSDMgr.get_all_instance_id("match")[1];
+    if not instatus then
+        LogErr("CallMatchMessage no match server!!!")
+        return false;
+    end
+
+    -- 请求匹配服
+    return message.SendP2PMessage("match", instatus, req, ...);
+end
+
+-- match服 单例
+_G.CallAllMatchMessage = function(req, ...)
+    -- 获取battleAgent服
+    local instances = _G.diveSDMgr.get_all_instance_id("match");
+    if not instances then
+        LogErr("CallAllMatchMessage no match server!!!")
+        return false;
+    end
+
+    for _, instance in pairs(instances) do
+        -- 请求match服
+        message.SendP2PMessage("match", instance, req, ...);
+    end
+    return true;
+end
+
+-- chat服 当前做单例 人多的话再后面做分组
+_G.CallChatMessage = function(req, ...)
+    -- 获取聊天服
+    local instance = _G.diveSDMgr.get_all_instance_id("chat")[1];
+    if not instance then
+        LogErr("CallChatMessage no chat server!!!")
+        return false;
+    end
+
+    -- 请求聊天服
+    return message.SendP2PMessage("chat", instance, req, ...);
+end
+
+-- 军团服 可平行扩容
+_G.CallAllGuildMessage = function(req, ...)
+    -- 获取军团服
+    local instances = _G.diveSDMgr.get_all_instance_id("guild");
+    if not instances then
+        LogErr("CallAllGuildMessage no guild server!!!")
+        return false;
+    end
+
+    for _, instance in pairs(instances) do
+        -- 请求军团服
+        message.SendP2PMessage("guild", instance, req, ...);
+    end
+    return true;
+end
+
+-- 军团服 可平行扩容
+_G.CallGuildMessage = function(req, ...)
+    -- 获取军团服
+    local instance = _G.diveSDMgr.get_random_instance_id("guild");
+    if not instance then
+        LogErr("CallGuildMessage no guild server!!!")
+        return false;
+    end
+
+    -- 请求军团服
+    return message.SendP2PMessage("guild", instance, req, ...);
+end
+
+-- online服 可平行扩容
+_G.CallOnlineMessage = function(req, ...)
+    -- 获取在线服
+    local instance = _G.diveSDMgr.get_random_instance_id("online");
+    if not instance then
+        LogErr("CallOnlineMessage no online server!!!")
+        return false;
+    end
+
+    -- 请求在线服
+    return message.SendP2PMessage("online", instance, req, ...);
+end
+
+_G.CallAllOnlineMessage = function(req, ...)
+    local instances = _G.diveSDMgr.get_all_instance_id("online");
+    if not instances then
+        LogErr("CallOnlineMessage no online server!!!")
+        return false;
+    end
+
+    for _, instance in pairs(instances) do
+        -- 请求在线服
+        message.SendP2PMessage("online", instance, req, ...);
+    end
+
+    return true
+end
+
+-- rank服
+_G.CallRankMessage = function(req, ...)
+    -- 获取排行榜服
+    local instance = _G.diveSDMgr.get_random_instance_id("rank");
+    if not instance then
+        LogErr("CallRankMessage no rank server!!!")
+        return false;
+    end
+
+    -- 请求rank服
+    return message.SendP2PMessage("rank", instance, req, ...);
+end
+
+_G.CallAllRankMessage = function(req, ...)
+    -- 获取排行榜服
+    local instances = _G.diveSDMgr.get_all_instance_id("rank");
+    if not instances then
+        LogErr("CallAllRankMessage no rank server!!!")
+        return false;
+    end
+
+    for _, instance in pairs(instances) do
+        -- 请求rank服
+        message.SendP2PMessage("rank", instance, req, ...);
+    end
+    return true;
+end
+
+_G.CallOtherRankMessage = function(req, ...)
+    -- 获取排行榜服
+    local instances = _G.diveSDMgr.get_all_instance_id("rank");
+    if not instances then
+        LogErr("CallRankMessage no rank server!!!")
+        return false;
+    end
+
+    local local_instance_id = _G.diveSDMgr.get_local_instance_id();
+    for _, instance in pairs(instances) do
+        -- 请求rank服
+        if instance ~= local_instance_id then
+            message.SendP2PMessage("rank", instance, req, ...);
+        end
+    end
+    return true;
+end
+
+-- room服 单例
+_G.CallRoomMessage = function(req, ...)
+    -- 获取房间服
+    local instance = _G.diveSDMgr.get_all_instance_id("room")[1];
+    if not instance then
+        LogErr("CallRoomMessage no room server!!!")
+        return false;
+    end
+
+    -- 请求房间服
+    return message.SendP2PMessage("room", instance, req, ...);
+end
+
+-- BattleAgen 可平行扩容
+_G.CallAllBattleAgentMessage = function(req, ...)
+    -- 获取battleAgent服
+    local instances = _G.diveSDMgr.get_all_instance_id("battleAgent");
+    if not instances then
+        LogErr("CallAllLobbyMessage no battleAgent server!!!")
+        return false;
+    end
+
+    for _, instance in pairs(instances) do
+        -- 请求battleAgent服
+        message.SendP2PMessage("battleAgent", instance, req, ...);
+    end
+    return true;
+end
+
+-- Battle 可平行扩容
+_G.CallAllBattleMessage = function(req, ...)
+    -- 获取battle服
+    local instances = _G.diveSDMgr.get_all_instance_id("battle");
+    if not instances then
+        LogErr("CallAllLobbyMessage no battle server!!!")
+        return false;
+    end
+
+    for _, instance in pairs(instances) do
+        -- 请求battle服
+        message.SendP2PMessage("battle", instance, req, ...);
+    end
+    return true;
+end
+
+-- 单例
+_G.CallGlobalMessage = function(req, ...)
+    -- 获取全局服
+    local instance = _G.diveSDMgr.get_all_instance_id("global")[1];
+    if not instance then
+        LogErr("CallGlobalMessage no global server!!!")
+        return false;
+    end
+
+    -- 请求全局服
+    return message.SendP2PMessage("global", instance, req, ...);
+end

@@ -1,0 +1,54 @@
+-- 存储局内需要的资源信息
+local battleIntent = import("battle/battleIntent.lua")
+local battleMgr = import("battle/battleMgr.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+---@class ResourceComponent 资源组件
+---@field mana number 法力资源
+
+function CreateResourceComponent(mode)
+    local config = _G.BattleGameTypeTable[mode]
+    local component = {
+        mana = config.defaultMoney,
+    }
+
+    return component
+end
+
+function GetResourceData(component)
+    return {
+        mana = component.mana,
+    }
+end
+
+function InitFromResourceData(player, data)
+    local component = player.resourceComponent
+    component.mana = data.mana
+end
+
+---@return number 灵力改变值
+function ChangeMana(component, player, delta)
+    if dive.isAutoBattle then
+        -- 自动战斗不改变灵力
+        return 0
+    end
+
+    if delta == 0 then
+        return 0
+    end
+
+    local oldMana = component.mana
+    component.mana = math.min(math.max(component.mana + delta, 0), _G.CommonValue.maxMoney)
+
+    -- 资源同步数据帧
+    battleIntent.InsertUserIntent(player.battleId, player.id, _G.INTENT_TYPE.RESOURCE, {
+        mana = component.mana,
+    })
+
+    -- 法力变化事件
+    local battle = battleMgr.GetBattle(player.battleId)
+    local event = eventManager.CreateManaChangeEvent(player)
+    eventManager.DispatchEvent(battle.eventManager, event)
+
+    return component.mana - oldMana
+end

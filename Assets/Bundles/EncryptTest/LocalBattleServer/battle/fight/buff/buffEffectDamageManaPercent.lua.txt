@@ -1,0 +1,62 @@
+-- 27. 根据灵力计算伤害
+local battleMgr = import("battle/battleMgr.lua")
+local battleFightAttackLogic = import("battle/fight/battleFightAttackLogic.lua")
+
+function getSideMana(sideMana, enemyMana)
+    return sideMana
+end
+
+function getEnemyMana(sideMana, enemyMana)
+    return enemyMana
+end
+
+function getSideAndEnemyMane(sideMana, enemyMana)
+    return sideMana + enemyMana
+end
+
+_G.CampType = {
+    SIDE = 0, -- 己方
+    ENEMY = 1, -- 敌方
+    SIDE_AND_ENEMY = 2 -- 己方和敌方
+}
+
+_G.GetManaMethod = {
+    [_G.CampType.SIDE] = getSideMana,
+    [_G.CampType.ENEMY] = getEnemyMana,
+    [_G.CampType.SIDE_AND_ENEMY] = getSideAndEnemyMane
+}
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local campId = buffConfig.effectData[1]
+
+    local sideMana = 0
+    local enemyMana = 0
+    for _, player in pairs(battle.players) do
+        -- 判断是否是己方
+        if player.teamId == buff.owner.teamId then
+            sideMana = player.resourceComponent.mana
+        else
+            -- 敌方
+            enemyMana = player.resourceComponent.mana
+        end
+    end
+
+    local func = _G.GetManaMethod[campId]
+    if not func then
+        return false
+    end
+    local mana = xpcall(func, LogErr, sideMana, enemyMana)
+    battleFightAttackLogic.BuffDamageHandlerByMana(buff.origin, buff.owner, buff, mana)
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

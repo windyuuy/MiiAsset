@@ -1,0 +1,165 @@
+local grid = import("battle/utils/grid.lua")
+local battleIntent = import("battle/battleIntent.lua")
+local reason = import("common/reason.lua")
+local statusMgr = import("battle/fight/status/statusMgr.lua")
+local eventManager = import("battle/event/eventManager.lua")
+local battleFightAttackLogic = import("battle/fight/battleFightAttackLogic.lua")
+
+_G.MonsterMoveType = {
+    MONSTER_MOVE_TYPE_NORMAL   = 0, -- 普通移动
+    MONSTER_MOVE_TYPE_TRANSFER = 1, -- 传送
+}
+
+_G.MonsterEndType = {
+    MONSTER_END_TYPE_NORMAL    = 1, -- 到达终点死亡
+    MONSTER_END_TYPE_OVER_END  = 2, -- 到达终点继续移动
+}
+
+---处理怪物移动
+---@param battle Battle 战局
+---@param battleTeam BattleTeam 队伍
+---@param monster Monster 怪物信息
+---@param path table 怪物移动的路径
+---@param nowMS number 当前时间
+function ProcessMonsterMove(battle, battleTeam, monster, path, nowMS)
+    -- 判断怪物状态
+    local resetMoveStatus = false
+    if monster.statusComponent.status ~= _G.EntryStatus.ENTRY_STATUS_MOVE then
+        if statusMgr.CheckStatus(monster, _G.EntryStatus.ENTRY_STATUS_MOVE) then
+            resetMoveStatus = true
+        else
+            -- LogInfo("yjl ProcessMonsterMove entryId={} status={}", monster.entryId, monster.statusComponent.status)
+            -- 处理怪物击退状态
+            if monster.statusComponent.status ~= _G.EntryStatus.ENTRY_STATUS_REPEL then
+                monster.lastMoveTime = nowMS;
+                return
+            end
+        end
+    end
+
+    -- 计算移动速度
+    local moveSpeed = monster:GetAttribute(_G.AttributeType.FINAL_MOVE_SPEED);
+    if moveSpeed == 0 then
+        return
+    end
+
+    -- 计算移动距离
+    local moveDistance = moveSpeed * (nowMS - monster.lastMoveTime) / 1000;
+
+    -- if moveSpeed < 0 then
+    --     LogInfo("yjl ProcessMonsterMove entryId={} moveSpeed={} time={} moveDistance={}", monster.entryId, moveSpeed, nowMS - monster.lastMoveTime, moveDistance)
+    -- end
+
+    -- 计算怪物总位移
+    local totalMoveDistance = monster.totalMoveDistance + moveDistance;
+
+    if totalMoveDistance < 0 then
+        totalMoveDistance = 0;
+    end
+
+    -- 计算移动后的坐标
+    local movePosition = grid.CalculatePosition(path, totalMoveDistance);
+
+    -- 移动
+    monster.position = movePosition;
+
+    -- 记录怪物总位移
+    local totalPathLength = grid.GetLength(path);
+
+    if battle.battleConfig.monsterEndType == _G.MonsterEndType.MONSTER_END_TYPE_OVER_END then
+        -- 公会战中怪物到达终点循环移动
+        monster.totalMoveDistance = totalMoveDistance;
+    else
+        if totalMoveDistance >= totalPathLength then
+            monster.totalMoveDistance = -1; -- 位移为-1表示怪物已经到达终点
+            monster.curHP = 0;
+            monsterReach(battle, battleTeam, monster);
+        else
+            monster.totalMoveDistance = totalMoveDistance;
+        end
+    end
+
+    -- 记录本次移动时间
+    monster.lastMoveTime = nowMS;
+
+    -- 广播怪物移动
+    -- battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.MONSTER_MOVE, {
+    --     teamId = battleTeam.teamId,
+    --     monster = monster:GetMonsterData(),
+    --     moveType = _G.MonsterMoveType.MONSTER_MOVE_TYPE_NORMAL
+    -- });
+
+    if resetMoveStatus then
+        statusMgr.ChangeStatus(monster, _G.EntryStatus.ENTRY_STATUS_MOVE)
+    end
+end
+
+function ProcessRangeEffectMove(battle, battleTeam, rangeEffect, path, nowMS)
+
+    local moveSpeed = rangeEffect:GetMoveSpeed()
+
+    -- 计算移动距离
+    local moveDistance = moveSpeed * (nowMS - rangeEffect.lastMoveTime) / 1000;
+
+    -- 计算总位移
+    local totalMoveDistance = rangeEffect.totalMoveDistance + moveDistance;
+
+    -- 计算移动后的坐标
+    local movePosition = grid.CalculatePosition(path, totalMoveDistance);
+
+    --LogInfo("ProcessRangeEffectMove, new position:{}, path:{}, totalMoveDistance:{}", movePosition, path, totalMoveDistance)
+
+    rangeEffect.position = movePosition;
+
+    -- 记录总位移
+    local totalPathLength = grid.GetLength(path);
+    if totalMoveDistance >= totalPathLength then
+        rangeEffect.totalMoveDistance = -1; -- 位移为-1表示已经到达终点
+        rangeEffect.curHP = 0;
+        rangeEffectReach(battle, battleTeam, rangeEffect);
+    else
+        rangeEffect.totalMoveDistance = totalMoveDistance;
+    end
+
+    -- 记录本次移动时间
+    rangeEffect.lastMoveTime = nowMS;
+
+    -- 广播范围效果移动
+    -- battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.RANGE_EFFECT_MOVE, {
+    --     teamId = battleTeam.teamId,
+    --     rangeEffect = rangeEffect:GetRangeEffectData(),
+    -- });
+
+end
+
+---@param monster Monster
+function monsterReach(battle, battleTeam, monster)
+    if monster.totalMoveDistance ~= -1 then
+        return;
+    end
+
+    battleFightAttackLogic.MonsterDamageHandler(battle, battleTeam, monster)
+
+    if monster.isBoss then
+        battleTeam.isBossReach = true
+    end
+
+    -- 广播怪物到达
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.MONSTER_DESTROY, {
+        teamId = battleTeam.teamId,
+        monster = monster:GetMonsterData(),
+        reason = reason.MONSTER_REACH_DESTROY
+    });
+end
+
+function rangeEffectReach(battle, battleTeam, rangeEffect)
+    if rangeEffect.totalMoveDistance ~= -1 then
+        return;
+    end
+
+    -- 广播范围效果到达
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.RANGE_EFFECT_DESTROY, {
+        teamId = battleTeam.teamId,
+        rangeEffect = rangeEffect:GetRangeEffectData(),
+    });
+end

@@ -1,0 +1,5 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    buffComponent.buffEffect(component, buff)
+end

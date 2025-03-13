@@ -1,0 +1,12 @@
+---@class ShieldComponent 护盾组件
+---@field shieldValue number 当前护盾值
+
+ShieldComponent = class()
+
+function CreateShieldComponent(...)
+    return ShieldComponent.new(...)
+end
+
+function ShieldComponent:ctor()
+    self.shieldValue = 0
+end

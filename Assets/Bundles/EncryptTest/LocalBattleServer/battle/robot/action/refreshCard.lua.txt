@@ -1,0 +1,10 @@
+-- 刷新卡组
+
+function Run(robot)
+    local battleData = robot.battleData
+    battleData.lastRefreshTime = _G.GetCurTime()
+
+    robot.lastRequest = "BattleLogic_RefreshGameCardsRequest"
+    --LogDebug("robot:{} refresh card", robot.id)
+    c2s.BattleLogic_RefreshGameCardsRequest(robot, {})
+end

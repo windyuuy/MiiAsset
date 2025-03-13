@@ -1,0 +1,190 @@
+import("common/tree.lua");
+import("common/time.lua");
+import("common/timer.lua");
+import("common/messageUtil.lua");
+local tools    = import("common/tools.lua");
+local errCode  = import("common/errCode.lua");
+local battleMgr     = import("battle/battleMgr.lua");
+
+_G.sessions  = _G.sessions or {};       -- 已遍历的ss指针
+_G.uid_table = _G.uid_table or {};
+
+---------- 提供给外部的接口 ------------
+_G.SetUidSession = function(uid, session)
+    _G.uid_table[uid] = session
+end
+
+_G.GetSessionByUid = function(uid)
+    return _G.uid_table[uid];
+end
+
+-- 服务器关闭中，不再接受连接
+_G.IsInSvrOpenTime = function()
+    local svr_open_time  = dive.GetProperty("dive.service.taco.lobby.svr_open_time");
+    local svr_close_time = dive.GetProperty("dive.service.taco.lobby.svr_open_time");
+    if svr_open_time and svr_close_time then
+        local now = dive.now;
+        if now < begin_time or now >= end_time then
+            return false;
+        end
+    end
+    return true;
+end
+
+-- 心跳
+function c2s.HeartBeatRequest(ss, param)
+    -- LogInfo("c2s.HeartBeatRequest");
+    local now = _G.GetCurTime();
+    if ss then
+        ss.lastHeartBeat = now;
+
+        local resp = _G.CreateResponse(param);
+        resp["key"] = param.key;
+        resp["time"] = now;
+
+        ss.Call("HeartBeatResponse", resp);
+    end
+end
+
+---------- 内部步骤逻辑点 ------------
+-- 创建客户端的ss
+function ClientCreateSession(socketNode)
+    LogInfo("new session, token={}", socketNode.token);
+
+    ss = {
+        token=socketNode.token,    -- 连接token
+        ip=socketNode.ip,          -- 客户端ip
+        uid="0",                   -- uid
+    };
+
+    ss.Call = function(msg, data)
+        socketNode.Call(msg, data);
+    end
+    ss.Close = function()
+        socketNode.Close();
+    end
+
+    _G.sessions[socketNode.token] = ss;
+end
+
+-- logout 事件统一处理入口
+function OnLogout(ss)
+    -- 投降
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss);
+    if not activeBattleId then
+        return;
+    end
+
+    battleMgr.GiveUpBattle(ss, activeBattleId);
+end
+
+-- 断开链接
+function DetachSession(ss, reason, close_session, battleId)
+    if dive.isStandalone then
+        return;
+    end
+
+    LogInfo("detach session, openid={}, uid={}, token={}, clientType={}, reason={}, close_session={}",
+        ss.openid, ss.uid, ss.token, ss.clientType, reason, close_session);
+
+    -- 如果保存失败了,目前只能检查日志
+    _G.sessions[ss.token] = nil;
+    _G.uid_table[ss.uid] = nil;
+
+    -- 登出事件
+    OnLogout(ss);
+
+    -- 断开链接
+    if close_session and ss.battleId and battleId == ss.battleId then
+        ss.Close();
+    end
+end
+
+---------- 客户端连接相关 ------------
+-- 每个服务的对外监听
+if not listener and not dive.isStandalone then
+    local port = dive.GetProperty("dive.service.taco.battle.netty.port", 9001);
+    listener, err = _G.socketMgr.listen(port);
+    if not listener then
+        log_alert("failed to listen port:{} err:{}", port, err);
+        os.exit(1);
+    end
+    _G.LogInfo("listen port:{} err:{}", port, err);
+end
+
+local ClientOnAccept = function(socketNode)
+    if dive.stopFlag then
+        socketNode.Close(); --服务器正在关闭,拒绝连接
+        return;
+    end
+
+    -- 服务器正在关闭,拒绝连接
+    if not IsInSvrOpenTime() then
+        socketNode.Call("LoginLogic_LoginFailed", errCode.LOGIN_ERROR_NOT_IN_OPEN_TIME);
+        socketNode.Close();
+        return;
+    end
+
+    socketNode.OnCall = tools.LogDecorator(function(msg, data)
+        local token = socketNode.token;
+        if not _G.sessions[token] then
+            -- 因为AWS会自己连接探活，因此在收到第一条消息时才创建session
+            ClientCreateSession(socketNode);
+        end
+        local ss = _G.sessions[token];
+
+        if not msg then
+            LogErr("nil msg from session {}", token);
+            return;
+        end
+
+        local proc = _G.c2s[msg];
+        if not proc then
+            LogErr("undefined msg {} from session {}", msg, token);
+            return;
+        end
+
+        local ok, err = xpcall(proc, debug.traceback, ss, data);
+        if not ok then
+            LogErr("failed to call msg c2s.{}", msg);
+            LogErr("{}", err);
+        end
+    end);
+
+    socketNode.on_error = tools.LogDecorator(function(err)
+        LogInfo("close session: {}", err);
+        local token = socketNode.token;
+        local ss = sessions[token];
+        if ss then
+            -- session 已经被close
+            DetachSession(ss, "session-stop", false, ss.battleId);
+        end
+    end);
+end
+
+local ClientOnClose = function(socketNode)
+    local ss = _G.sessions[socketNode.token];
+    if not ss then
+        return;
+    end
+
+    DetachSession(ss, "session-close", false, ss.battleId);
+end
+
+-- 需要客户端来连接
+if not dive.isStandalone then
+    listener.OnAccept = tools.LogDecorator(ClientOnAccept);
+    listener.OnClose = tools.LogDecorator(ClientOnClose);
+else
+    ss = {
+        Call = function(msg, data)
+            message.SendProtoMsgToCs(msg, data)
+        end
+    }
+end
+
+
+---------- tick逻辑 ------------
+function Update(frame)
+    return true;
+end

@@ -1,0 +1,215 @@
+local common        = import("common/common.lua")
+local errCode       = import("common/errCode.lua")
+local battleMgr     = import("battle/battleMgr.lua")
+local resourceComp  = import("battle/components/resourceComponent.lua")
+local gameCardComp  = import("battle/components/gameCardComponent.lua")
+local buffComp      = import("battle/components/buffComponent.lua")
+
+function GmExec(ss, battle, cmd, args)
+    if not _G.ServerConfigTable[_G.ServerConfigEnum.SWITCH_GM] or _G.ServerConfigTable[_G.ServerConfigEnum.SWITCH_GM] < 1 then
+        LogErr("error gm switch not open!");
+        return;
+    end
+    --LogDebug("GmExec: cmd:{} args:{}", cmd, args)
+    local func = _G.GmFunctions[cmd]
+    if func then
+        return func(ss, battle, table.unpack(args))
+    else
+        LogErr("GmExec: invalid cmd:{} args:{}", cmd, args)
+    end
+end
+
+---@param battle Battle
+function GmSummonerMonster(ss, battle, monsterId)
+    local player = battle:GetPlayer(ss.uid)
+    if not player then
+        return
+    end
+
+    local battleTeam = battle.battleTeams[player.teamId]
+    if not battleTeam then
+        return
+    end
+
+    for routeGroupId, _ in pairs(battleTeam.monsterPaths) do
+        battle:PushMonsterQueue(player.teamId, routeGroupId, tonumber(monsterId), false, false)
+    end
+end
+
+function GmAddMana(ss, battle, addValue)
+    local player = battle:GetPlayer(ss.uid)
+    if not player then
+        return
+    end
+
+    resourceComp.ChangeMana(player.resourceComponent, player, tonumber(addValue))
+end
+
+function GmAddSpellCount(ss, battle, count)
+    local player = battle:GetPlayer(ss.uid)
+    if not player then
+        return
+    end
+
+    gameCardComp.ChangeSpellRefreshCount(player.gameCardComponent, battle, player, tonumber(count))
+end
+
+function GmSaveBattle(ss, battle)
+    local player = battle:GetPlayer(ss.uid)
+    if not player then
+        return
+    end
+
+    local battleData = battle:GetBattleSnapshotData()
+    local data = _G.jsonEncode(battleData)
+
+    LogDebug("GmSaveBattle: uid:{} data:{}", ss.uid, data)
+    return data
+end
+
+-- 上阵指定法宝
+function GmAddSutra(ss, battle, cardId)
+    local player = battle:GetPlayer(ss.uid)
+    if not player then
+        return
+    end
+
+    local targetSlot = 1
+
+    for i, slotData in pairs(player.gameCardComponent.equipList) do
+        if not slotData then
+            break
+        elseif slotData.isLocked then
+            break
+        elseif not slotData.card then
+            targetSlot = i
+            break
+        end
+    end
+
+    player.useGmAddSutra = true
+
+    gameCardComp.ChosenGameCard(player.gameCardComponent, player, -1, 2, targetSlot, tonumber(cardId), -999)
+end
+
+-- 关闭机器人操作
+function GmRobotStop(ss, battle, isStop)
+    if not isStop or isStop == "0" then
+        battle.robotStop = nil
+    else
+        battle.robotStop = isStop
+    end
+end
+
+function GmTestKillCount(ss, battle, teamId)
+    local resp = battleMgr.GetBattleKillCount(ss, battle.battleId, { teamId = tonumber(teamId) })
+    LogDebug("GmTestKillCount: teamId:{} resp:{}", teamId, resp)
+end
+
+-- 双方道心无敌
+function GmTowerInvincible(ss, battle)
+    battle.gmTowerInvincible = not battle.gmTowerInvincible
+    LogInfo("GmTowerInvincible GmTowerInvincible gmTowerInvincible={}", battle.gmTowerInvincible)
+end
+
+-- 查看法宝详细属性
+function GmShowSutraData(ss, battle, cardId)
+    local player = battle:GetPlayer(ss.uid)
+    if not player then
+        return
+    end
+
+    local idx, slotData = gameCardComp.getCardInEquipList(player.gameCardComponent.equipList, tonumber(cardId))
+    if not idx or not slotData or not slotData.card then
+        return "cardId 未上阵"
+    end
+
+    local sutra = slotData.card.sutra
+
+    local showMsg = ""
+    for attrId, config in pairs(_G.UnitAttributeTable) do
+        if config.needShow then
+            local value = sutra:GetAttribute(attrId)
+            showMsg = string.format("%s %s=%s\n", showMsg, config.name, tostring(value))
+        end
+    end
+    return showMsg
+end
+
+-- 己方上阵区法宝全部三星
+function GmAscendAllStar(ss, battle)
+    local player = battle:GetPlayer(ss.uid)
+    if not player then
+        return
+    end
+
+    for idx, slotData in pairs(player.gameCardComponent.equipList) do
+        if slotData and slotData.card then
+            gameCardComp.ChangeGameCardStar(player, slotData.card.id, _G.MAX_SUTRA_STAR)
+        end
+    end
+end
+
+-- 局内暂停
+function GmBattlePause(ss, battle)
+    if _G.freezingStartTime == 0 then
+        _G.FreezingBattleTime()
+    else
+        _G.RecoverBattleTime()
+    end
+    LogInfo("GmBattlePause timeMS={}", _G.GetCurTimeMS())
+end
+
+-- 给法宝添加指定buff
+function GmAddBuffToSutra(ss, battle, cardId, buffId)
+    local player = battle:GetPlayer(ss.uid)
+    if not player then
+        return
+    end
+    local buffConfig = _G.BuffTable[buffId]
+    if not buffConfig then
+        return "buffId 不存在"
+    end
+
+    local idx, slotData = gameCardComp.getCardInEquipList(player.gameCardComponent.equipList, tonumber(cardId))
+    if not idx or not slotData or not slotData.card then
+        return "cardId 未上阵"
+    end
+
+    local sutra = slotData.card.sutra
+    LogInfo("GmAddBuffToSutra sutraId={} buffId={}", sutra.sutraId, tonumber(buffId))
+    buffComp.AddBuff(battle, buffId, sutra, sutra, 1, nil)
+end
+
+-- 对手投降
+function GmOppoGiveup(ss, battle)
+    local oppoUidPlayer;
+    for uid, player in pairs(battle.players) do
+        if ss.uid ~= uid then
+            oppoUidPlayer = player
+        end
+    end
+
+    if not oppoUidPlayer then
+        return
+    end
+
+    oppoUidPlayer.isGiveUp = true
+    oppoUidPlayer.giveUpTime = _G.GetCurTimeMS()
+end
+
+_G.GmFunctions = {
+    ["GmSummonerMonster"]  = GmSummonerMonster,
+    ["GmAddMana"]          = GmAddMana,
+    ["GmAddSpellCount"]    = GmAddSpellCount,
+    ["GmSaveBattle"]       = GmSaveBattle,
+    ["GmAddSutra"]         = GmAddSutra,
+    ["GmRobotStop"]        = GmRobotStop,
+    ["GmTestKillCount"]    = GmTestKillCount,
+    ["GmTowerInvincible"]  = GmTowerInvincible,
+    ["GmShowSutraData"]    = GmShowSutraData,
+    ["GmAscendAllStar"]    = GmAscendAllStar,
+    ["GmBattlePause"]      = GmBattlePause,
+    ["GmAddBuffToSutra"]   = GmAddBuffToSutra,
+    ["GmOppoGiveup"]       = GmOppoGiveup,
+}

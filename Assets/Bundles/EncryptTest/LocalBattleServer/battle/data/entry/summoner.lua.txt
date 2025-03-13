@@ -1,0 +1,115 @@
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+local battleMgr = import("battle/battleMgr.lua")
+
+---@class Summoner: Entry 召唤物
+---@field summonerId number 召唤物id
+---@field fatherEntry Entry 父实体
+---@field skillComponent SkillComponent 技能组件
+---@field buffComponent BuffComponent buff组件
+---@field attributeComponent AttributeComponent 属性组件
+---@field nextActiveSkillTime number 下次释放主动技能时间
+
+_G.SpawnPosType = {
+    FATHER = 1,
+    FIXED_POS = 2,
+}
+
+_G.Summoner = class(Entry)
+
+function CreateSummoner(...)
+    return Summoner.new(...)
+end
+
+function Summoner:ctor(entryId, battleId, teamId, position, level, summonerId, fatherEntry)
+    self.summonerId = summonerId
+    self.fatherEntry = fatherEntry
+    self.skillComponent = SkillComponent.new()
+    self.buffComponent = BuffComponent.new()
+    self.statusComponent = StatusComponent.new()
+    self.nextActiveSkillTime = 0
+end
+
+function Summoner:Init(fatherEntry, siteId)
+    local attributeConfig = self:CalSummonerAttributeConfig()
+
+    self.attributeComponent = AttributeComponent.new(self)
+    self.attributeComponent:Init(attributeConfig)
+    self.statusComponent:Init(_G.EntryType.SUTRA)
+
+    -- 初始化召唤物坐标
+    local summonerConfig = _G.SummonerTable[self.summonerId]
+    if summonerConfig.spawnPosType == _G.SpawnPosType.FATHER then
+        self.position = self.fatherEntry.position
+    elseif summonerConfig.spawnPosType == _G.SpawnPosType.FIXED_POS then
+        local pointId = summonerConfig.spawnPosParam[1]
+        ---@type BattleTeam
+        local battleTeam = battleMgr.GetBattleTeam(self.battleId, self.teamId)
+        local playerSiteData = battleTeam.playerSiteDatas[siteId]
+        self.position = playerSiteData.summonerPoints[pointId] or self.fatherEntry.position
+    end
+end
+
+function Summoner:CalSummonerAttributeConfig()
+    local summonerConfig = _G.SummonerTable[self.summonerId]
+    local baseAttack = summonerConfig.fixedBaseAttack
+    local dependAttrValue = self.fatherEntry:GetAttribute(summonerConfig.dependAttr)
+
+    local copyConfig = _G.DeepClone(summonerConfig)
+    copyConfig.baseAttack = baseAttack + dependAttrValue * summonerConfig.dependPercent / 100
+    return copyConfig
+end
+
+function Summoner:Reset()
+
+end
+
+function Summoner:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+        level = self.level,
+    }
+end
+
+function Summoner:GetEntryType()
+    return _G.EntryType.SUMMONER
+end
+
+function Summoner:GetSummonerData()
+    return {
+        summonerId = self.summonerId,
+        entry = self:GetEntryData(),
+        fatherEntryId = self.fatherEntry.entryId
+    }
+end
+
+function Summoner:Update(battle, nowMS)
+    if self.nextActiveSkillTime <= nowMS then
+        battleFightSkillLogic.ProcessSutraAttack(battle, self, nowMS)
+        self:ResetActiveSkill()
+    end
+end
+
+function Summoner:GetActiveSkill()
+    local summonerConfig = _G.SummonerTable[self.summonerId]
+    return summonerConfig.activeSkill
+end
+
+function Summoner:ResetActiveSkill()
+    local coolingDown = self:GetAttribute(_G.AttributeType.FINAL_ATTACK_SPEED)
+    self.nextActiveSkillTime = _G.GetCurTimeMS() + coolingDown
+end
+
+function Summoner:GetPassiveSkill()
+    local summonerConfig = _G.SummonerTable[self.summonerId]
+    return summonerConfig.passiveSkill
+end
+
+function Summoner:ReleasePassiveSkill(battle)
+    battleFightSkillLogic.ProcessSummonerPassiveSkill(battle, self, self:GetPassiveSkill());
+end
+
+function Summoner:CanUseSkill(skillId)
+    return self.skillComponent:CanUseSkill(skillId, _G.GetCurTimeMS())
+end

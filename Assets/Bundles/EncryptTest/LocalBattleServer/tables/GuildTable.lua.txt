@@ -1,0 +1,60 @@
+-- GuildLevelTable
+_G.GuildLevelTable =
+{
+    [1] = {id = 1, notes = "", needContribution = 900, maxMembers = 10, lordNum = 1, elderNum = 1,},
+    [2] = {id = 2, notes = "", needContribution = 1700, maxMembers = 15, lordNum = 1, elderNum = 2,},
+    [3] = {id = 3, notes = "", needContribution = 2600, maxMembers = 20, lordNum = 1, elderNum = 3,},
+    [4] = {id = 4, notes = "", needContribution = 3200, maxMembers = 25, lordNum = 1, elderNum = 4,},
+    [5] = {id = 5, notes = "", needContribution = 9999999, maxMembers = 30, lordNum = 1, elderNum = 5,},
+}
+
+-- GuildOfficeTable
+_G.GuildOfficeTable =
+{
+    [1] = {id = 1, notes = "", officeName = "宗主", purviewLord = true, purviewElder = true, purviewIn = true, purviewOut = true, purviewDev = true, purviewInfo = true, purviewKick = true, purviewSignRuin = true,},
+    [2] = {id = 2, notes = "", officeName = "副宗主", purviewLord = false, purviewElder = true, purviewIn = true, purviewOut = true, purviewDev = true, purviewInfo = true, purviewKick = true, purviewSignRuin = true,},
+    [3] = {id = 3, notes = "", officeName = "长老", purviewLord = false, purviewElder = false, purviewIn = true, purviewOut = true, purviewDev = false, purviewInfo = false, purviewKick = false, purviewSignRuin = false,},
+}
+
+-- GuildDonationTable
+_G.GuildDonationTable =
+{
+    [1] = {id = 1, name = "免费贡献", times = 1, quantity = 0, rewards = {{1006, 50}}, titleIcon = "", cardDes = "",},
+    [2] = {id = 2, name = "付费贡献", times = 2, quantity = 50, rewards = {{1006, 100}}, titleIcon = "", cardDes = "",},
+}
+
+-- GuildActivityRewardsTable
+_G.GuildActivityRewardsTable =
+{
+    [1] = {id = 1, value = 30, rewards = {{1006, 30}},},
+    [2] = {id = 2, value = 60, rewards = {{1006, 30}},},
+    [3] = {id = 3, value = 90, rewards = {{1006, 30}},},
+    [4] = {id = 4, value = 120, rewards = {{1006, 30}},},
+    [5] = {id = 5, value = 150, rewards = {{1006, 30}, {1001, 50}},},
+}
+
+-- GuildLogoTable
+_G.GuildLogoTable =
+{
+    [1] = {id = 1, name = "头像1", icon = "c_guild_icon_1",},
+    [2] = {id = 2, name = "头像2", icon = "c_guild_icon_2",},
+    [3] = {id = 3, name = "头像3", icon = "c_guild_icon_3",},
+    [4] = {id = 4, name = "头像4", icon = "c_guild_icon_4",},
+    [5] = {id = 5, name = "头像5", icon = "c_guild_icon_5",},
+    [6] = {id = 6, name = "头像6", icon = "c_guild_icon_6",},
+}
+
+-- GuildCaveTable
+_G.GuildCaveTable =
+{
+    [1] = {id = 1, caveLevel = 0, caveName = "废弃洞天", cavePicRes = "c_guild_cave_01", caveHealth = 500, gameType = 9301, caveTimeAwards = {}, battleTime = 240, successCdTime = 1440, failCdTime = 120, holdCondition = 1, holdConditionParam = 6, holdConditionDesc = "仅宗主/副宗主可开拓（需宗门人数达到6）",},
+    [2] = {id = 2, caveLevel = 1, caveName = "小型洞天", cavePicRes = "c_guild_cave_02", caveHealth = 1500, gameType = 9302, caveTimeAwards = {"1009|500", "300010|50", "1000|350"}, battleTime = 240, successCdTime = 1440, failCdTime = 120, holdCondition = 2, holdConditionParam = 2, holdConditionDesc = "仅宗主/副宗主可开拓（需宗门等级达到2）",},
+    [3] = {id = 3, caveLevel = 2, caveName = "中型洞天", cavePicRes = "c_guild_cave_03", caveHealth = 4500, gameType = 9303, caveTimeAwards = {"1009|1000", "300010|100", "1000|700"}, battleTime = 240, successCdTime = 1440, failCdTime = 120, holdCondition = 2, holdConditionParam = 3, holdConditionDesc = "仅宗主/副宗主可开拓（需宗门等级达到3）",},
+    [4] = {id = 4, caveLevel = 3, caveName = "大型洞天", cavePicRes = "c_guild_cave_04", caveHealth = 15000, gameType = 9304, caveTimeAwards = {"1009|1500", "300010|150", "1000|1050"}, battleTime = 240, successCdTime = 1440, failCdTime = 120, holdCondition = 2, holdConditionParam = 4, holdConditionDesc = "仅宗主/副宗主可开拓（需宗门等级达到5）",},
+    [5] = {id = 5, caveLevel = 4, caveName = "超大型洞天", cavePicRes = "c_guild_cave_05", caveHealth = 0, gameType = 0, caveTimeAwards = {"1009|2000", "300010|200", "1000|1400"}, battleTime = 0, successCdTime = 0, failCdTime = 0, holdCondition = 0, holdConditionParam = 0, holdConditionDesc = "",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("GuildTable")
+end

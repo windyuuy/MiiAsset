@@ -1,0 +1,28 @@
+---@class SkillComponent 技能组件
+---@field nextSkillTime table<number, number> 下一个技能的CD时间
+
+_G.SkillComponent = class()
+
+function CreateSkillComponent(...)
+    return SkillComponent.new(...)
+end
+
+function SkillComponent:ctor()
+    self.nextSkillTime = {}
+end
+
+function SkillComponent:UpdateSkillCD(skillId, coolingDown)
+    local nextSkillTime = 0
+
+    if coolingDown > 0 then
+        nextSkillTime = _G.GetCurTimeMS() + coolingDown
+    end
+
+    self.nextSkillTime[skillId] = nextSkillTime
+    return nextSkillTime
+end
+
+function SkillComponent:CanUseSkill(skillId, nowMS)
+    local nextSkillTime = self.nextSkillTime[skillId]
+    return not nextSkillTime or nowMS >= nextSkillTime
+end

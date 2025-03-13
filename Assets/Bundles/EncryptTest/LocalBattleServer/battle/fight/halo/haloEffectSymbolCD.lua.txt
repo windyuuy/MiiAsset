@@ -1,0 +1,28 @@
+---改变符箓cd
+
+---@param halo Halo 光环
+---@param haloComponent HaloComponent 光环组件
+---@param battleTeam BattleTeam 所属队伍
+function HaloEffect(halo, haloComponent, battleTeam)
+    haloComponent.symbolCDHalo[halo.haloId] = halo
+
+    Update(haloComponent)
+end
+
+function HaloUnEffect(halo, haloComponent)
+    haloComponent.symbolCDHalo[halo.haloId] = nil
+
+    Update(haloComponent)
+end
+
+function Update(haloComponent)
+    -- 更新条件数量
+    local value = 0
+    for _, h in pairs(haloComponent.symbolCDHalo) do
+        local config = h:GetConfig()
+        local params = _G.GetTableDataParam(config.effectParam, 1)
+        value = value + params[1]
+    end
+    haloComponent.symbolCD = value
+    LogDebug("haloEffectSymbolCD:Update, symbolCD:{} teamId:{}", haloComponent.symbolCD, haloComponent.battleTeam.teamId)
+end

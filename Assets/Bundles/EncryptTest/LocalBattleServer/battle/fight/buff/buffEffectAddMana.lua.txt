@@ -1,0 +1,31 @@
+-- 5. buff增加灵力的效果
+local resourceComp = import("battle/components/resourceComponent.lua")
+local battleMgr = import("battle/battleMgr.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    local fixed  = buffConfig.effectData[1]
+    local rate   = buffConfig.effectData[2]
+
+    --LogDebug("buffEffectAddMana:BuffEffect, buffId:{} fixed:{} rate:{}", buff.buffId, fixed, rate)
+    for _, player in pairs(battle.players) do
+        if player.teamId == buff.owner.teamId then
+            local addValue = fixed + player.resourceComponent.mana * rate / 1000
+            resourceComp.ChangeMana(player.resourceComponent, player, addValue)
+            --LogDebug("buffEffectAddMana:BuffEffect, buffId:{} fixed:{} rate:{} cur mana:{} config.effectParam:{} addValue:{}", buff.buffId, fixed, rate, player.resourceComponent.mana, buffConfig.effectData, addValue)
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

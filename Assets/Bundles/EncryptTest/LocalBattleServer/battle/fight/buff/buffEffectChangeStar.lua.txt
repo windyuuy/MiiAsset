@@ -1,0 +1,36 @@
+-- 42. 改变法宝星级
+
+local battleMgr = import("battle/battleMgr.lua")
+local gameCardComp = import("battle/components/gameCardComponent.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local owner = buff.owner
+    local battle = battleMgr.GetBattle(owner.battleId)
+
+    if owner:GetEntryType() ~= _G.EntryType.SUTRA then
+        return
+    end
+
+    local player = battle.players[owner.playerId]
+    if not player then
+        LogDebug("buffEffectCopySutra:BuffEffect, can not find player:{}", owner.playerId)
+        return;
+    end
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local changeStarCount = buffConfig.effectData[1]
+
+    gameCardComp.ChangeGameCardStar(player, owner.sutraId, changeStarCount)
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

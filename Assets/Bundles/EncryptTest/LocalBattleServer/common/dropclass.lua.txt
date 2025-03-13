@@ -1,0 +1,271 @@
+-- 通用掉落逻辑
+
+local errCode    = import("common/errCode.lua");
+
+-- 掉落物类型
+_G.DROP_ITEM_TYPE = {
+    DROP_CLASS_ID = 1; -- 1.DC组
+    ITEM_ID       = 2; -- 2.ItemID
+}
+
+_G.DROP_TYPE = {
+    NORMAL = 1, -- 1.普通掉落
+    INDEPENDENT = 2 -- 2.独立掉落
+}
+
+_G.DROP_FILTER_TYPE = {
+    NONE = 0,
+    SUTRA_EXP = 1,  -- 法宝经验碎片，需要过滤未拥有的法宝
+}
+
+----------------------------------- 过滤接口 -----------------------------------
+-- 法宝经验碎片，需要过滤未拥有的法宝
+function DropFilterSutraExp(ss, dropConfig)
+    if not _G.SutraExpTable[dropConfig.dropItemId] then
+        return false
+    end
+
+    local sutraExpConfig = _G.SutraExpTable[dropConfig.dropItemId]
+    local sutraId = sutraExpConfig.param
+
+    if ss.data.roleCards.sutraCards[sutraId] then
+        return false
+    end
+
+    return true
+end
+
+_G.DropFilterCal = {
+    [_G.DROP_FILTER_TYPE.SUTRA_EXP] = DropFilterSutraExp,
+}
+
+-- 过滤掉落
+-- true 过滤
+-- false 保留
+function CalDropFilter(ss, dropClassConfig)
+    local dropFilter = _G.DropFilterCal[dropClassConfig.filterType]
+    if dropFilter then
+        local ok, res = xpcall(dropFilter, debug.traceback, ss, dropClassConfig)
+        return res
+    end
+
+    return false
+end
+
+----------------------------------- 对外接口 -----------------------------------
+-- 获取掉落的奖励物品
+function GetDropClass(ss, dropGroupId, count, temNormalWeight)
+    if not _G.DropClassTable[dropGroupId] then
+        return errCode.DROP_NOT_GROUP_ID;
+    end
+
+    -- 掉落的物品
+    local dropInfos = {};
+    -- 计算掉落
+    RealCalDropClass(ss, dropGroupId, count, 0, dropInfos, temNormalWeight);
+    if not next(dropInfos) then
+        return errCode.SUCCESS, dropInfos;
+    end
+
+    return errCode.SUCCESS, dropInfos;
+end
+
+-- 同步客户端数据
+function GetClientDropInfos(dropInfos, dropGroup, nonFold)
+    if not next(dropGroup) then return; end
+
+    for _, data in pairs(dropGroup) do
+        -- table.insert(dropInfos, {itemId = data.dropItemId, count = data.dropCount})
+        if not nonFold then
+            dropInfos[data.dropItemId] = data.dropCount
+        else
+            dropInfos[#dropInfos + 1] = { itemId = data.dropItemId, count = data.dropCount}
+        end
+    end
+end
+
+-- 获取所有的掉落物品
+function GetAllDropItem(dropGroupId)
+    if not _G.DropClassTable[dropGroupId] then
+        return errCode.DROP_NOT_GROUP_ID;
+    end
+    -- 掉落概率
+    local dropWeights = {};
+    -- 掉落数据
+    local dropInfos = {};
+    -- 计算
+    CalAllDropItemWeight(dropGroupId, dropWeights, dropInfos, 1);
+    -- LogDebug("GetAllDropItem dropGroupId={} dropWeights={}, dropInfos={}", dropGroupId, dropWeights, dropInfos)
+    return errCode.SUCCESS, dropWeights, dropInfos;
+end
+
+----------------------------------- 内部使用-----------------------------------
+-- 实际计算掉落
+function RealCalDropClass(ss, dropGroupId, count, layer, dropInfos, temNormalWeight)
+    local dropClassGroup = _G.DropClassTable[dropGroupId];
+    if not dropClassGroup then
+        return;
+    end
+    if dropClassGroup.groupLayar <= layer then
+        return;
+    end
+
+    if dropClassGroup.dropGroupType == _G.DropGroupType.DROP_GROUP_TYPE_AVERAGE then
+        CalAvgDrop(ss, dropClassGroup.normalDrop, count, dropInfos, temNormalWeight);
+    else
+        for i = 1, count, 1 do
+            if _G.DROP_TYPE.NORMAL == dropClassGroup.dropType then
+                -- 普通掉落
+                CalNormalDrop(ss, dropClassGroup.normalDrop, dropInfos, temNormalWeight)
+            end
+
+            if _G.DROP_TYPE.INDEPENDENT == dropClassGroup.dropType then
+                -- 独立掉落
+                CalIndependentDrop(ss, dropClassGroup.independentDrop, dropInfos)
+            end
+        end
+    end
+end
+
+-- 普通掉落
+function CalNormalDrop(ss, normalDrop, dropInfos, temNormalWeight)
+    --权重替换
+    local temNormalDrop={
+        dropNormalConfig = normalDrop.dropNormalConfig
+    };
+
+    if not temNormalWeight or not next(temNormalWeight) then
+        temNormalDrop.dropNormalWeights = _G.DeepCopy(normalDrop.dropNormalWeights);
+    else
+        temNormalDrop.dropNormalWeights={};
+        for id, weights in pairs(normalDrop.dropNormalWeights) do
+            if not temNormalWeight[id] then
+                temNormalDrop.dropNormalWeights[id] = weights;
+            else
+                temNormalDrop.dropNormalWeights[id] = temNormalWeight[id];
+            end
+        end
+    end
+
+    for id, dropClassConfig in pairs(temNormalDrop.dropNormalConfig) do
+        if CalDropFilter(ss, dropClassConfig) then
+            temNormalDrop.dropNormalWeights[id] = 0;
+        end
+    end
+
+    -- 随机出来一个
+    local dropClassConfig = _G.RandomSize(temNormalDrop.dropNormalConfig, temNormalDrop.dropNormalWeights);
+    if not dropClassConfig then
+        LogWarn("CalNormalDrop no random normalDrop={}", temNormalDrop)
+        return;
+    end
+    UpdateDropInfos(ss, dropClassConfig, dropInfos);
+end
+
+-- 独立掉落
+function CalIndependentDrop(ss, independentDrop, dropInfos)
+    for _, dropClassConfig in pairs(independentDrop) do
+        if CalDropFilter(ss, dropClassConfig) then
+            goto continue
+        end
+
+        if math.random(10000) > dropClassConfig.weights then
+            goto continue
+        end
+
+        UpdateDropInfos(ss, dropClassConfig, dropInfos);
+
+        ::continue::
+    end
+end
+
+function CalAvgDrop(ss, normalDrop, count, dropInfos, temNormalWeight)
+    local weightCount = 0;
+    local dropNormalWeights = {};
+    for id, weight in pairs(normalDrop.dropNormalWeights) do
+        if weight > 0 and not CalDropFilter(ss, normalDrop.dropNormalConfig[id]) then
+            dropNormalWeights[id] = weight;
+            weightCount = weightCount + 1;
+        end
+    end
+
+    if weightCount <= 0 then
+        LogErr("CalAvgDrop uid={} weightCount={}", ss.uid, weightCount)
+        return;
+    end
+
+    local leftCount = count
+    local avgDropCount = math.floor(leftCount / weightCount);
+    if leftCount >= weightCount * 2 then
+        -- 平均
+        for id, dropClassConfig in pairs(normalDrop.dropNormalConfig) do
+            if dropClassConfig.dropItemType == _G.DROP_ITEM_TYPE.ITEM_ID then
+                dropInfos[dropClassConfig.dropItemId] = dropInfos[dropClassConfig.dropItemId] or {
+                    dropItemId   = dropClassConfig.dropItemId,
+                    dropCount    = 0,
+                }
+                dropInfos[dropClassConfig.dropItemId].dropCount = dropInfos[dropClassConfig.dropItemId].dropCount + dropClassConfig.dropCount * avgDropCount;
+            end
+        end
+    end
+
+    leftCount = leftCount - weightCount * avgDropCount;
+    for i = 1, leftCount do
+        CalNormalDrop(ss, normalDrop, dropInfos, temNormalWeight)
+    end
+
+    --LogDebug("CalAvgDrop count={} weightCount={} avgDropCount={} leftCount={} dropInfos={}", count, weightCount, avgDropCount, leftCount, dropInfos)
+end
+
+-- 更新掉落数据
+function UpdateDropInfos(ss, dropClassConfig, dropInfos)
+    if dropClassConfig.dropItemType == _G.DROP_ITEM_TYPE.DROP_CLASS_ID then
+        RealCalDropClass(ss, dropClassConfig.dropItemId, dropClassConfig.dropCount, dropClassConfig.layer, dropInfos);
+    else
+        -- 2/3/4走一样的
+        if dropInfos[dropClassConfig.dropItemId] then
+            dropInfos[dropClassConfig.dropItemId].dropCount = dropInfos[dropClassConfig.dropItemId].dropCount + dropClassConfig.dropCount;
+        else
+            dropInfos[dropClassConfig.dropItemId] = {
+                dropItemId   = dropClassConfig.dropItemId,
+                dropCount    = dropClassConfig.dropCount,
+            }
+        end
+    end
+end
+
+function CalAllDropItemWeight(dropGroupId, dropWeights, dropInfos, probability)
+    -- 掉落组信息
+    local dropClassGroup = _G.DropClassTable[dropGroupId];
+    -- 普通掉落
+    for _, dropClassConfig in pairs(dropClassGroup.normalDrop.dropNormalConfig) do
+        UpdateShowDropInfos(dropClassConfig, dropWeights, dropInfos, probability, dropClassGroup.normalWeightsSum);
+    end
+    -- 独立掉落
+    for _, dropClassConfig in pairs(dropClassGroup.independentDrop) do
+        UpdateShowDropInfos(dropClassConfig, dropWeights, dropInfos, probability, 10000);
+    end
+end
+
+-- 更新掉落数据
+function UpdateShowDropInfos(dropClassConfig, dropWeights, dropInfos, probability, weightsSum)
+    if dropClassConfig.dropItemType == _G.DROP_ITEM_TYPE.DROP_CLASS_ID then
+        -- LogDebug("UpdateShowDropInfos id={} weights={}", dropClassConfig.id, probability * dropClassConfig.weights * dropClassConfig.dropCount / weightsSum)
+        CalAllDropItemWeight(dropClassConfig.dropItemId, dropWeights, dropInfos, probability * dropClassConfig.weights * dropClassConfig.dropCount / weightsSum);
+    else
+        dropWeights[dropClassConfig.dropItemType] = dropWeights[dropClassConfig.dropItemType] or {};
+        local dropWeightsTypeInfo = dropWeights[dropClassConfig.dropItemType];
+        dropWeightsTypeInfo[dropClassConfig.id] = dropWeightsTypeInfo[dropClassConfig.id] or {};
+        local dropWeightsIdInfo = dropWeightsTypeInfo[dropClassConfig.id];
+        dropWeightsIdInfo[dropClassConfig.dropItemId] = dropWeightsIdInfo[dropClassConfig.dropItemId] or 0;
+        dropWeightsIdInfo[dropClassConfig.dropItemId] = {
+            probability = probability * dropClassConfig.weights / weightsSum,
+            dropCount   = dropClassConfig.dropCount;
+        }
+        -- LogDebug("UpdateShowDropInfos id={} weights={}", dropClassConfig.id, probability * dropClassConfig.weights * dropClassConfig.dropCount / weightsSum)
+
+        dropInfos[dropClassConfig.dropItemId] = dropInfos[dropClassConfig.dropItemId] or {
+            -- TODO 这里是将来提供给客户端的数据
+        };
+    end
+end

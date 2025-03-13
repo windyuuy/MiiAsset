@@ -1,0 +1,11 @@
+-- FurnaceSkinTable
+_G.FurnaceSkinTable =
+{
+    [1001] = {id = 1001, desc = "默认仙炉", name = "炼器炉", skinType = 1, changeType = 0, updateValue = {}, effectDes = "无效果",},
+    [2001] = {id = 2001, desc = "648仙炉", name = "绝世仙炉", skinType = 2, changeType = 2, updateValue = {-2, 2}, effectDes = "永久提升可炼出最高品质的掉落概率2%\r\n（同时，会减低当前最低品质法宝掉落概率）\r\n",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("SkinTable")
+end

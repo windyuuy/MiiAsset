@@ -1,0 +1,54 @@
+-- HeadIconTable
+_G.HeadIconTable =
+{
+    [11001] = {id = 11001, iconType = 1, name = "头像1", icon = "c_Headicon_Touxiang01", conditionType = 0, conditionDes = "",},
+    [11002] = {id = 11002, iconType = 1, name = "头像2", icon = "c_Headicon_Touxiang02", conditionType = 1, conditionDes = "通关历练1-4解锁",},
+    [11003] = {id = 11003, iconType = 1, name = "头像3", icon = "c_Headicon_Touxiang03", conditionType = 1, conditionDes = "通关历练4-4解锁",},
+    [11004] = {id = 11004, iconType = 1, name = "头像4", icon = "c_Headicon_Touxiang04", conditionType = 1, conditionDes = "通关历练6-5解锁",},
+    [11005] = {id = 11005, iconType = 1, name = "头像5", icon = "c_Headicon_Touxiang05", conditionType = 1, conditionDes = "锁妖塔100层解锁",},
+    [11006] = {id = 11006, iconType = 1, name = "头像6", icon = "c_Headicon_Touxiang06", conditionType = 1, conditionDes = "锁妖塔300层解锁",},
+    [21001] = {id = 21001, iconType = 2, name = "头像框1", icon = "c_common_head01", conditionType = 0, conditionDes = "",},
+    [21004] = {id = 21004, iconType = 2, name = "头像框4", icon = "c_common_head04", conditionType = 1, conditionDes = "仙界-斗法榜取得前三名",},
+    [21005] = {id = 21005, iconType = 2, name = "元旦头像框", icon = "c_common_head05", conditionType = 1, conditionDes = "元旦活动获取",},
+}
+
+-- TitleTable
+_G.TitleTable =
+{
+    [11000] = {id = 11000, titleType = 1, wordType = 1, wordTxt = "", wordRes = "", conditionType = 0, conditionDes = "", effectDes = "", attributeValue = {},},
+    [11001] = {id = 11001, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67700]练气[/b][/color]", wordRes = "", conditionType = 0, conditionDes = "", effectDes = "", attributeValue = {},},
+    [11002] = {id = 11002, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67700]筑基[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "达到筑基中期解锁", effectDes = "", attributeValue = {},},
+    [11003] = {id = 11003, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67700]结丹[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "达到结丹中期解锁", effectDes = "", attributeValue = {},},
+    [11004] = {id = 11004, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67700]化神[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "达到化神中期解锁", effectDes = "", attributeValue = {},},
+    [11005] = {id = 11005, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67701]元婴[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "达到元婴中期解锁", effectDes = "", attributeValue = {},},
+    [11006] = {id = 11006, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67701]炼虚[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "达到炼虚中期解锁", effectDes = "", attributeValue = {},},
+    [11007] = {id = 11007, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67702]合体[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "达到合体中期解锁", effectDes = "", attributeValue = {},},
+    [11008] = {id = 11008, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67702]大乘[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "达到大乘中期解锁", effectDes = "", attributeValue = {},},
+    [11009] = {id = 11009, titleType = 1, wordType = 1, wordTxt = "[b][color=#e67703]真仙[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "达到真仙中期解锁", effectDes = "", attributeValue = {},},
+    [12000] = {id = 12000, titleType = 1, wordType = 2, wordTxt = "", wordRes = "", conditionType = 0, conditionDes = "", effectDes = "", attributeValue = {},},
+    [12001] = {id = 12001, titleType = 1, wordType = 2, wordTxt = "一掷千金", wordRes = "a_common_pic_sc1", conditionType = 1, conditionDes = "累积充值648元", effectDes = "", attributeValue = {},},
+    [12002] = {id = 12002, titleType = 1, wordType = 2, wordTxt = "腰缠万贯", wordRes = "a_common_pic_sc2", conditionType = 1, conditionDes = "累积充值6480元", effectDes = "", attributeValue = {},},
+    [12003] = {id = 12003, titleType = 1, wordType = 2, wordTxt = "富可敌国", wordRes = "a_common_pic_sc3", conditionType = 1, conditionDes = "累积充值100000元", effectDes = "", attributeValue = {},},
+    [12004] = {id = 12004, titleType = 1, wordType = 2, wordTxt = "一夫当关", wordRes = "a_common_pic_sc4", conditionType = 1, conditionDes = "锁妖塔1600层解锁", effectDes = "", attributeValue = {},},
+    [12005] = {id = 12005, titleType = 1, wordType = 2, wordTxt = "力克千军", wordRes = "a_common_pic_sc5", conditionType = 1, conditionDes = "界墟-极乐谷仙缘奖励获得", effectDes = "", attributeValue = {},},
+    [12006] = {id = 12006, titleType = 1, wordType = 2, wordTxt = "名冠千古", wordRes = "a_common_pic_sc6", conditionType = 1, conditionDes = "达到仙界且天梯段位达到开天", effectDes = "", attributeValue = {},},
+    [12007] = {id = 12007, titleType = 1, wordType = 2, wordTxt = "苍穹独尊", wordRes = "a_common_pic_sc7", conditionType = 1, conditionDes = "冲榜活动排名获得前三名获得", effectDes = "赋予对局内（斗法、历练）：攻击+1%、道心+1%", attributeValue = {"310003|1", "310192|1"},},
+    [12008] = {id = 12008, titleType = 1, wordType = 2, wordTxt = "焚天龙皇", wordRes = "a_common_pic_sc8", conditionType = 1, conditionDes = "冲榜活动排名获得前三名获得", effectDes = "赋予对局内（斗法、历练）：攻击+1%、道心+1%", attributeValue = {"310003|1", "310192|1"},},
+    [12009] = {id = 12009, titleType = 1, wordType = 2, wordTxt = "逆天改命", wordRes = "a_common_pic_sc9", conditionType = 1, conditionDes = "冲榜活动排名获得前三名获得", effectDes = "赋予对局内（斗法、历练）：攻击+1%、道心+1%", attributeValue = {"310003|1", "310192|1"},},
+    [12010] = {id = 12010, titleType = 1, wordType = 2, wordTxt = "太初圣灵", wordRes = "a_common_pic_sc10", conditionType = 1, conditionDes = "冲榜活动排名获得前三名获得", effectDes = "赋予对局内（斗法、历练）：攻击+1%、道心+1%", attributeValue = {"310003|1", "310192|1"},},
+    [12011] = {id = 12011, titleType = 1, wordType = 2, wordTxt = "吞天魔帝", wordRes = "a_common_pic_sc11", conditionType = 1, conditionDes = "冲榜活动排名获得前三名获得", effectDes = "赋予对局内（斗法、历练）：攻击+1%、道心+1%", attributeValue = {"310003|1", "310192|1"},},
+    [21000] = {id = 21000, titleType = 2, wordType = 1, wordTxt = "", wordRes = "", conditionType = 0, conditionDes = "", effectDes = "", attributeValue = {},},
+    [21001] = {id = 21001, titleType = 2, wordType = 1, wordTxt = "[b][color=#e67700]的[/b][/color]", wordRes = "", conditionType = 0, conditionDes = "", effectDes = "", attributeValue = {},},
+    [21002] = {id = 21002, titleType = 2, wordType = 1, wordTxt = "[b][color=#e67700]地[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "锁妖塔50层解锁", effectDes = "", attributeValue = {},},
+    [21003] = {id = 21003, titleType = 2, wordType = 1, wordTxt = "[b][color=#e67700]得[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "锁妖塔250层解锁", effectDes = "", attributeValue = {},},
+    [31000] = {id = 31000, titleType = 3, wordType = 1, wordTxt = "", wordRes = "", conditionType = 0, conditionDes = "", effectDes = "", attributeValue = {},},
+    [31001] = {id = 31001, titleType = 3, wordType = 1, wordTxt = "[b][color=#e67700]凡人[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "飞升到灵界解锁", effectDes = "", attributeValue = {},},
+    [31002] = {id = 31002, titleType = 3, wordType = 1, wordTxt = "[b][color=#e67700]天才[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "飞升到仙界解锁", effectDes = "", attributeValue = {},},
+    [31003] = {id = 31003, titleType = 3, wordType = 1, wordTxt = "[b][color=#e67700]炼器奇才[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "炼器10000次解锁", effectDes = "", attributeValue = {},},
+    [31004] = {id = 31004, titleType = 3, wordType = 1, wordTxt = "[b][color=#e67700]斗帝[/b][/color]", wordRes = "", conditionType = 1, conditionDes = "斗法胜利500次解锁", effectDes = "", attributeValue = {},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("HeadIconTable")
+end

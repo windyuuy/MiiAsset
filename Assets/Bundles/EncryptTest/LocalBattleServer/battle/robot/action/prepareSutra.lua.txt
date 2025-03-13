@@ -1,0 +1,31 @@
+-- 备战法宝
+
+function Run(robot, chosenIdx)
+    local battleData = robot.battleData
+
+    local targetRegion = 1      -- 备战区id
+
+    -- 获取targetSlot
+    local targetSlot = 0
+    for idx, slot in pairs(battleData.prepareList) do
+        if not slot.isLocked and (not slot.card or not slot.card.id or slot.card.id == 0) then
+            targetSlot = idx
+            break
+        end
+    end
+
+    if targetSlot <= 0 then
+        targetSlot = 1
+    end
+
+    battleData.lastSelectCardTime = _G.GetCurTime()
+
+    local msg = {
+        chosenIdx = chosenIdx,
+        targetRegion = targetRegion,
+        targetSlot = targetSlot,
+    }
+    robot.lastRequest = "BattleLogic_ChosenGameCardRequest"
+
+    c2s.BattleLogic_ChosenGameCardRequest(robot, msg)
+end

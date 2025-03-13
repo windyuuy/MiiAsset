@@ -1,0 +1,233 @@
+--circular queue,循环队列
+_G.cqueue = _G.cqueue or {};
+
+--head: 第一个有效元素,有效元素区间为[head, tail),前开后闭区间
+--tail: 下一个空位置,嗯,是的,会浪费一个位置
+--head == tail 时,表示队列是空的
+--(tail + 1) == head 时,表示队列满了
+
+function cqueue:New(size)
+    local queue = {__index=cqueue, size=size, head=1, tail=1, nodes={}};
+    return setmetatable(queue, queue);
+end
+
+--返回成功与否: true/false
+function cqueue:PushHead(node)
+    local head = self.head;
+    local tail = self.tail;
+    local size = self.size;
+    local newHead = (head - 2 + size) % size + 1;
+    if newHead == tail then
+        return false;
+    end
+    self.nodes[newHead] = node;
+    self.head = newHead;
+    return true;
+end
+
+--返回成功与否: true/false
+function cqueue:PushBack(node)
+    local tail = self.tail;
+    local new_tail = tail % self.size + 1;
+    if new_tail == self.head then
+        return false;
+    end
+    self.nodes[tail] = node;
+    self.tail = new_tail;
+    return true;
+end
+
+--返回第一个元素,如果为空,则返回nil.
+--如果nil是一个允许的值,那么pop前请检查队列是否为空
+function cqueue:PopHead()
+    local head = self.head;
+    if head == self.tail then
+        return nil;
+    end
+
+    local node = self.nodes[head];
+    self.nodes[head] = nil;
+    self.head = head % self.size + 1;
+    return node;
+end
+
+--返回最后一个元素,如果为空,则返回nil.
+--如果nil是一个允许的值,那么pop前请检查队列是否为空
+function cqueue:PopBack()
+    local tail = self.tail;
+    if tail == self.head then
+        return nil;
+    end
+
+    local size = self.size;
+    tail = (tail - 2 + size) % size + 1;
+    local node = self.nodes[tail];
+    self.nodes[tail] = nil;
+    self.tail = tail;
+    return node;
+end
+
+function cqueue:Empty()
+    return (self.head == self.tail);
+end
+
+function cqueue:Full()
+    return (self.tail % self.size + 1 == self.head);
+end
+
+function cqueue:Size()
+    return self.size;
+end
+
+function cqueue:Count()
+    local head = self.head;
+    local tail = self.tail;
+    if tail >= head then
+        return tail - head;
+    end
+    return tail + self.size - head;
+end
+
+function cqueue:Random()
+    local count = self:Count();
+    if count == 0 then
+        return nil;
+    end
+    local pos = math.random(1, count);
+    local idx = (self.head + pos - 2) % self.size + 1;
+    return self.nodes[idx];
+end
+
+function cqueue:PeekHead()
+    local count = self:Count();
+    if count == 0 then
+        return nil;
+    end
+
+    return self.nodes[self.head];
+end
+
+function cqueue:PeekTail()
+    local count = self:Count();
+    if count == 0 then
+        return nil;
+    end
+
+    local tail = self.tail;
+    local size = self.size;
+    local idx =  (tail - 2 + size) % size + 1
+
+    return self.nodes[idx];
+end
+
+
+--不要在callback里面去修改队列
+function cqueue:ForEach(callback)
+    local head = self.head;
+    local tail = self.tail;
+    local size = self.size;
+    while head ~= tail and callback(self.nodes[head]) do
+        head = head % size + 1;
+    end
+end
+
+--注意,确保size > count,否则失败
+function cqueue:Resize(size)
+    local count = self:Count();
+    if size <= count then
+        return;
+    end
+
+    local head = self.head;
+    local tail = self.tail;
+    if tail >= head and tail <= size then
+        self.size = size;
+        return;
+    end
+
+    local nodes = {};
+    local idx = 1;
+    local callback = function(node)
+        nodes[idx] = node;
+        idx = idx + 1;
+        return true;
+    end
+    self:ForEach(callback);
+    self.nodes = nodes;
+    self.size = size;
+end
+
+--测试---
+--[[
+tree=import("common/tree.lua");
+function printq(q)
+    local s = "{";
+    local first = true;
+    local f = function(n)
+        if first then
+            first = false;
+        else
+            s = s..", ";
+        end
+        s = s..tostring(n);
+        return true;
+    end
+    q:for_each(f);
+    s=s.."}";
+    print(s);
+end
+
+local q = cqueue:new(5);
+print("#: push_back: A, B, C, D");
+q:push_back("A");
+q:push_back("B");
+q:push_back("C");
+q:push_back("D");
+printq(q);
+
+print("#: resize, push_back: X, Y, Z");
+q:resize(8);
+q:push_back("X");
+q:push_back("Y");
+q:push_back("Z");
+printq(q);
+
+print("#: pop_head: "..q:pop_head());
+print("#: pop_head: "..q:pop_head());
+print("#: pop_head: "..q:pop_head());
+printq(q);
+
+print("#: push_back: 1, 2, 3");
+q:push_back("1");
+q:push_back("2");
+q:push_back("3");
+printq(q);
+
+print("#: pop_head: "..q:pop_head());
+print("#: pop_head: "..q:pop_head());
+print("#: pop_head: "..q:pop_head());
+printq(q);
+print("#: count="..q:count());
+
+print("#: pop_head: "..q:pop_head());
+print("#: pop_head: "..q:pop_head());
+print("#: pop_head: "..q:pop_head());
+print("#: pop_head: "..q:pop_head());
+printq(q);
+print("#: count="..q:count());
+
+print("#: push_back: X, Y, Z");
+q:push_back("X");
+q:push_back("Y");
+q:push_back("Z");
+printq(q);
+
+print("#: pop_back: "..q:pop_back());
+print("#: pop_back: "..q:pop_back());
+print("#: pop_back: "..q:pop_back());
+printq(q);
+print("#: count="..q:count());
+print("#: pop_back: "..tostring(q:pop_back()));
+print("#: pop_head: "..tostring(q:pop_head()));
+
+--]]

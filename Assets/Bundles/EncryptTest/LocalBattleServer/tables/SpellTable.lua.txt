@@ -1,0 +1,85 @@
+-- SpellTable
+_G.SpellTable =
+{
+    [2201] = {id = 2201, desc = "降灵咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122010110, 122010210, 122010310, 122010410, 122010510, 122010610, 122010710, 122010810, 122010910, 122011010, 122011110}, defaultUnlock = 1, expItem = 12201, defaultSelected = 1, groupId = 1,},
+    [2202] = {id = 2202, desc = "降风咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122020110, 122020210, 122020310, 122020410, 122020510, 122020610, 122020710, 122020810, 122020910, 122021010, 122021110}, defaultUnlock = 0, expItem = 12202, defaultSelected = 0, groupId = 1,},
+    [2203] = {id = 2203, desc = "遮天咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122030110, 122030210, 122030310, 122030410, 122030510, 122030610, 122030710, 122030810, 122030910, 122031010, 122031110}, defaultUnlock = 0, expItem = 12203, defaultSelected = 0, groupId = 1,},
+    [2204] = {id = 2204, desc = "勤妖咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122040110, 122040210, 122040310, 122040410, 122040510, 122040610, 122040710, 122040810, 122040910, 122041010, 122041110}, defaultUnlock = 1, expItem = 12204, defaultSelected = 1, groupId = 2,},
+    [2205] = {id = 2205, desc = "衍魔咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122050110, 122050210, 122050310, 122050410, 122050510, 122050610, 122050710, 122050810, 122050910, 122051010, 122051110}, defaultUnlock = 1, expItem = 12205, defaultSelected = 1, groupId = 2,},
+    [2206] = {id = 2206, desc = "灵风咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122060110, 122060210, 122060310, 122060410, 122060510, 122060610, 122060710, 122060810, 122060910, 122061010, 122061110}, defaultUnlock = 0, expItem = 12206, defaultSelected = 0, groupId = 2,},
+    [2207] = {id = 2207, desc = "引魂咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122070110, 122070210, 122070310, 122070410, 122070510, 122070610, 122070710, 122070810, 122070910, 122071010, 122071110}, defaultUnlock = 0, expItem = 12207, defaultSelected = 0, groupId = 3,},
+    [2208] = {id = 2208, desc = "护魔咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122080110, 122080210, 122080310, 122080410, 122080510, 122080610, 122080710, 122080810, 122080910, 122081010, 122081110}, defaultUnlock = 0, expItem = 12208, defaultSelected = 0, groupId = 3,},
+    [2209] = {id = 2209, desc = "梵圣真魔咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122090110, 122090210, 122090310, 122090410, 122090510, 122090610, 122090710, 122090810, 122090910, 122091010, 122091110}, defaultUnlock = 0, expItem = 12209, defaultSelected = 0, groupId = 4,},
+    [2210] = {id = 2210, desc = "诛心咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122100110, 122100210, 122100310, 122100410, 122100510, 122100610, 122100710, 122100810, 122100910, 122101010, 122101110}, defaultUnlock = 0, expItem = 12210, defaultSelected = 0, groupId = 4,},
+    [2211] = {id = 2211, desc = "五谷丰魔咒", spellType = 4, spellCategory = 2, rarity = 1, spellSkill = {122110110, 122110210, 122110310, 122110410, 122110510, 122110610, 122110710, 122110810, 122110910, 122111010, 122111110}, defaultUnlock = 0, expItem = 12211, defaultSelected = 0, groupId = 18,},
+    [2302] = {id = 2302, desc = "天疾丹", spellType = 3, spellCategory = 1, rarity = 1, spellSkill = {123020110, 123020210, 123020310, 123020410, 123020510, 123020610, 123020710, 123020810, 123020910, 123021010, 123021110}, defaultUnlock = 1, expItem = 12302, defaultSelected = 1, groupId = 5,},
+    [2303] = {id = 2303, desc = "神烈丹", spellType = 3, spellCategory = 1, rarity = 1, spellSkill = {123030110, 123030210, 123030310, 123030410, 123030510, 123030610, 123030710, 123030810, 123030910, 123031010, 123031110}, defaultUnlock = 1, expItem = 12303, defaultSelected = 1, groupId = 5,},
+    [2304] = {id = 2304, desc = "神威丹", spellType = 3, spellCategory = 1, rarity = 1, spellSkill = {123040110, 123040210, 123040310, 123040410, 123040510, 123040610, 123040710, 123040810, 123040910, 123041010, 123041110}, defaultUnlock = 1, expItem = 12304, defaultSelected = 1, groupId = 5,},
+    [2112] = {id = 2112, desc = "聚灵符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121120110, 121120210, 121120310, 121120410, 121120510, 121120610, 121120710, 121120810, 121120910, 121121010, 121121110}, defaultUnlock = 1, expItem = 12112, defaultSelected = 1, groupId = 6,},
+    [2113] = {id = 2113, desc = "画圣符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121130110, 121130210, 121130310, 121130410, 121130510, 121130610, 121130710, 121130810, 121130910, 121131010, 121131110}, defaultUnlock = 0, expItem = 12113, defaultSelected = 0, groupId = 6,},
+    [2114] = {id = 2114, desc = "权衡造化符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121140110, 121140210, 121140310, 121140410, 121140510, 121140610, 121140710, 121140810, 121140910, 121141010, 121141110}, defaultUnlock = 0, expItem = 12114, defaultSelected = 0, groupId = 7,},
+    [2115] = {id = 2115, desc = "复神符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121150110, 121150210, 121150310, 121150410, 121150510, 121150610, 121150710, 121150810, 121150910, 121151010, 121151110}, defaultUnlock = 0, expItem = 12115, defaultSelected = 0, groupId = 7,},
+    [2116] = {id = 2116, desc = "仙甲符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121160110, 121160210, 121160310, 121160410, 121160510, 121160610, 121160710, 121160810, 121160910, 121161010, 121161110}, defaultUnlock = 0, expItem = 12116, defaultSelected = 0, groupId = 8,},
+    [2117] = {id = 2117, desc = "固心符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121170110, 121170210, 121170310, 121170410, 121170510, 121170610, 121170710, 121170810, 121170910, 121171010, 121171110}, defaultUnlock = 0, expItem = 12117, defaultSelected = 0, groupId = 8,},
+    [2118] = {id = 2118, desc = "释艮符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121180110, 121180210, 121180310, 121180410, 121180510, 121180610, 121180710, 121180810, 121180910, 121181010, 121181110}, defaultUnlock = 0, expItem = 12118, defaultSelected = 0, groupId = 9,},
+    [2119] = {id = 2119, desc = "六丁天甲符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121190110, 121190210, 121190310, 121190410, 121190510, 121190610, 121190710, 121190810, 121190910, 121191010, 121191110}, defaultUnlock = 0, expItem = 12119, defaultSelected = 0, groupId = 9,},
+    [2120] = {id = 2120, desc = "觅土符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121200110, 121200210, 121200310, 121200410, 121200510, 121200610, 121200710, 121200810, 121200910, 121201010, 121201110}, defaultUnlock = 0, expItem = 12120, defaultSelected = 0, groupId = 10,},
+    [2121] = {id = 2121, desc = "觅火符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121210110, 121210210, 121210310, 121210410, 121210510, 121210610, 121210710, 121210810, 121210910, 121211010, 121211110}, defaultUnlock = 0, expItem = 12121, defaultSelected = 0, groupId = 11,},
+    [2122] = {id = 2122, desc = "觅水符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121220110, 121220210, 121220310, 121220410, 121220510, 121220610, 121220710, 121220810, 121220910, 121221010, 121221110}, defaultUnlock = 0, expItem = 12122, defaultSelected = 0, groupId = 12,},
+    [2123] = {id = 2123, desc = "觅木符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121230110, 121230210, 121230310, 121230410, 121230510, 121230610, 121230710, 121230810, 121230910, 121231010, 121231110}, defaultUnlock = 0, expItem = 12123, defaultSelected = 0, groupId = 13,},
+    [2124] = {id = 2124, desc = "觅金符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121240110, 121240210, 121240310, 121240410, 121240510, 121240610, 121240710, 121240810, 121240910, 121241010, 121241110}, defaultUnlock = 1, expItem = 12124, defaultSelected = 1, groupId = 14,},
+    [2125] = {id = 2125, desc = "降魔符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121250110, 121250210, 121250310, 121250410, 121250510, 121250610, 121250710, 121250810, 121250910, 121251010, 121251110}, defaultUnlock = 1, expItem = 12125, defaultSelected = 1, groupId = 15,},
+    [2126] = {id = 2126, desc = "养心符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121260110, 121260210, 121260310, 121260410, 121260510, 121260610, 121260710, 121260810, 121260910, 121261010, 121261110}, defaultUnlock = 0, expItem = 12126, defaultSelected = 0, groupId = 16,},
+    [2127] = {id = 2127, desc = "疾风易心符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121270110, 121270210, 121270310, 121270410, 121270510, 121270610, 121270710, 121270810, 121270910, 121271010, 121271110}, defaultUnlock = 1, expItem = 12127, defaultSelected = 0, groupId = 17,},
+    [2128] = {id = 2128, desc = "烈风易心符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121280110, 121280210, 121280310, 121280410, 121280510, 121280610, 121280710, 121280810, 121280910, 121281010, 121281110}, defaultUnlock = 1, expItem = 12128, defaultSelected = 0, groupId = 17,},
+    [2129] = {id = 2129, desc = "暴风易心符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121290110, 121290210, 121290310, 121290410, 121290510, 121290610, 121290710, 121290810, 121290910, 121291010, 121291110}, defaultUnlock = 1, expItem = 12129, defaultSelected = 0, groupId = 17,},
+    [2130] = {id = 2130, desc = "添星符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121300110, 121300210, 121300310, 121300410, 121300510, 121300610, 121300710, 121300810, 121300910, 121301010, 121301110}, defaultUnlock = 0, expItem = 12130, defaultSelected = 0, groupId = 17,},
+    [2131] = {id = 2131, desc = "火墙符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121310110, 121310210, 121310310, 121310410, 121310510, 121310610, 121310710, 121310810, 121310910, 121311010, 121311110}, defaultUnlock = 0, expItem = 12131, defaultSelected = 0, groupId = 13,},
+    [2132] = {id = 2132, desc = "养灵符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121320110, 121320210, 121320310, 121320410, 121320510, 121320610, 121320710, 121320810, 121320910, 121321010, 121321110}, defaultUnlock = 0, expItem = 12132, defaultSelected = 0, groupId = 14,},
+    [2133] = {id = 2133, desc = "汲灵符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121330110, 121330210, 121330310, 121330410, 121330510, 121330610, 121330710, 121330810, 121330910, 121331010, 121331110}, defaultUnlock = 0, expItem = 12133, defaultSelected = 0, groupId = 15,},
+    [2134] = {id = 2134, desc = "神剑御雷符", spellType = 1, spellCategory = 0, rarity = 1, spellSkill = {121340110, 121340210, 121340310, 121340410, 121340510, 121340610, 121340710, 121340810, 121340910, 121341010, 121341110}, defaultUnlock = 0, expItem = 12134, defaultSelected = 0, groupId = 16,},
+}
+
+-- SpellLevelTable
+_G.SpellLevelTable =
+{
+    [1] = {id = 1, level = 1, rarity = 1, fragmentNum = 1,},
+    [2] = {id = 2, level = 2, rarity = 1, fragmentNum = 2,},
+    [3] = {id = 3, level = 3, rarity = 1, fragmentNum = 3,},
+    [4] = {id = 4, level = 4, rarity = 1, fragmentNum = 4,},
+    [5] = {id = 5, level = 5, rarity = 1, fragmentNum = 5,},
+    [6] = {id = 6, level = 6, rarity = 1, fragmentNum = 6,},
+    [7] = {id = 7, level = 7, rarity = 1, fragmentNum = 7,},
+    [8] = {id = 8, level = 8, rarity = 1, fragmentNum = 8,},
+    [9] = {id = 9, level = 9, rarity = 1, fragmentNum = 9,},
+    [10] = {id = 10, level = 10, rarity = 1, fragmentNum = 10,},
+    [11] = {id = 11, level = 11, rarity = 1, fragmentNum = 0,},
+}
+
+-- SpellGroupTable
+_G.SpellGroupTable =
+{
+    [1] = {id = 1, spellCards = {2201, 2202, 2203},},
+    [2] = {id = 2, spellCards = {2204, 2205, 2206},},
+    [3] = {id = 3, spellCards = {2207, 2208},},
+    [4] = {id = 4, spellCards = {2209, 2210},},
+    [5] = {id = 5, spellCards = {2302, 2303, 2304},},
+    [6] = {id = 6, spellCards = {2112, 2113},},
+    [7] = {id = 7, spellCards = {2114, 2115},},
+    [8] = {id = 8, spellCards = {2116, 2117},},
+    [9] = {id = 9, spellCards = {2118, 2119},},
+    [10] = {id = 10, spellCards = {2120},},
+    [11] = {id = 11, spellCards = {2121},},
+    [12] = {id = 12, spellCards = {2122},},
+    [13] = {id = 13, spellCards = {2123, 2131},},
+    [14] = {id = 14, spellCards = {2124, 2132},},
+    [15] = {id = 15, spellCards = {2125, 2133},},
+    [16] = {id = 16, spellCards = {2126, 2134},},
+    [17] = {id = 17, spellCards = {2127, 2128, 2129, 2130},},
+    [18] = {id = 18, spellCards = {2214},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("SpellTable")
+end

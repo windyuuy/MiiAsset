@@ -1,0 +1,16 @@
+---@class EventListener 事件监听器
+---@field eventType number 事件类型
+---@field listenerId number 监听器id
+---@field callback function 回调函数
+---@field com.zhiyou.projectf.properties table<string, any> 监听器额外参数
+---@field once boolean 是否只触发一次
+
+function CreateListener(eventType, listenerId, callback, properties, once)
+    local listener = {}
+    listener.eventType = eventType
+    listener.listenerId = listenerId
+    listener.callback = callback
+    listener.properties = properties
+    listener.once = once or false
+    return listener
+end

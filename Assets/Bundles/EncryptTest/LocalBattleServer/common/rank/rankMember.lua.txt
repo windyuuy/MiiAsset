@@ -1,0 +1,35 @@
+function concatUidSetKey(uidSet)
+    table.sort(uidSet, function(a, b)
+        return tonumber(a) < tonumber(b)
+    end)
+
+    return table.concat(uidSet, ",")
+end
+
+---@param rankInfo RankInfo
+function getRankMemberByRankCoop(rankInfo)
+    local uidSet = {}
+    for uid, _ in pairs(rankInfo.roleData) do
+        table.insert(uidSet, uid)
+    end
+
+    return concatUidSetKey(uidSet)
+end
+
+_G.RankMemberFunc = {
+    [_G.RANK_TYPE.Rank_Coop] = getRankMemberByRankCoop,
+}
+
+---@param rankType number
+---@param rankInfo RankInfo
+function GetRankMember(rankType, rankInfo)
+    local rankMember;
+    local func = _G.RankMemberFunc[rankType]
+    if func then
+        rankMember = func(rankInfo)
+    else
+        rankMember, _ = next(rankInfo.roleData)
+    end
+
+    return rankMember
+end

@@ -1,0 +1,62 @@
+-- FormationTable
+_G.FormationTable =
+{
+    [3004] = {id = 3004, name = "两仪微尘阵", description = "木|火|土|金|土;;水|木|火|水|金", formula = {"991002|991004|991001|991003|991001"}, conditions = {"1001|1001|1001|1002|1002", "1002|1002|1002|1001|1001"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "所有法宝攻速+{0}（共鸣后{1}）", descParam1 = {"50%", "55%", "60%", "65%", "70%", "75%"}, descParam2 = {"100%", "100%", "100%", "100%", "100%", "150%"}, descParam3 = {}, fragmentId = 13004, baseSkill = {130041210, 130042210, 130043210, 130044210, 130045210, 130046210}, superSkill = {130041230, 130042230, 130043230, 130044230, 130045230, 130046230}, image = "a_icon_formation_3004", basePrefabRes = "liangyiweichen_base", maxPrefabRes = "liangyiweichen_enhance",},
+    [3005] = {id = 3005, name = "十方灭炎阵", description = "水|木|土|金|金;;木|火|火|水|土", formula = {"991004|991002|991004|991001|991004"}, conditions = {"1001|1001|1002|1001|1002", "1002|1002|1001|1002|1001"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "引燃己方战场，所有妖怪每秒受到{0}（共鸣后{1}）攻击力的灼烧伤害（依赖所有法宝攻击力总和）", descParam1 = {"0.5%", "0.6%", "0.7%", "0.8%", "0.9%", "1.0%"}, descParam2 = {"1.0%", "1.0%", "1.0%", "1.0%", "1.0%", "2.0%"}, descParam3 = {}, fragmentId = 13005, baseSkill = {130051210, 130052210, 130053210, 130054210, 130055210, 130056210}, superSkill = {130051230, 130052230, 130053230, 130054230, 130055230, 130056230}, image = "a_icon_formation_3005", basePrefabRes = "shifangmieyan_base", maxPrefabRes = "shifangmieyan_enhance",},
+    [3006] = {id = 3006, name = "混沌迷天大阵", description = "火|土|金|木|金;;木|火|土|水|水", formula = {"991003|991004|991001|991005|991005"}, conditions = {"1002|1002|1002|1002|1003", "1003|1003|1003|1003|1002"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "召唤物造成伤害提高{0}（共鸣后{1}）", descParam1 = {"100%", "110%", "120%", "130%", "140%", "150%"}, descParam2 = {"200%", "200%", "200%", "200%", "200%", "300%"}, descParam3 = {}, fragmentId = 13006, baseSkill = {130061210, 130062210, 130063210, 130064210, 130065210, 130066210}, superSkill = {130061230, 130062230, 130063230, 130064230, 130065230, 130066230}, image = "a_icon_formation_3006", basePrefabRes = "huntiansixiang_base", maxPrefabRes = "huntiansixiang_enhance",},
+    [3007] = {id = 3007, name = "九曲黄河阵", description = "木|土|土|木|金;;火|火|金|水|水", formula = {"991001|991004|991002|991003|991004"}, conditions = {"1002|1003|1002|1003|1002", "1003|1002|1003|1002|1003"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "己方场地上所有妖怪受到持续减速，移速降低40%（共鸣后80%），并降低妖怪{0}抗性", descParam1 = {"0.5%", "2%", "4%", "6%", "8%", "10%（共鸣后20%）"}, descParam2 = {}, descParam3 = {}, fragmentId = 13007, baseSkill = {130071210, 130072210, 130073210, 130074210, 130075210, 130076210}, superSkill = {130071230, 130072230, 130073230, 130074230, 130075230, 130076230}, image = "a_icon_formation_3007", basePrefabRes = "jiuquhuanghe_base", maxPrefabRes = "jiuquhuanghe_enhance",},
+    [3008] = {id = 3008, name = "太极八卦阵", description = "火|火|金|水|金;;木|土|土|木|水", formula = {"991003|991005|991001|991002|991003"}, conditions = {"1003|1002|1003|1002|1002", "1002|1003|1002|1003|1003"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "根据灵力给所有法宝提供攻击力加成，每{0}（共鸣后50）灵力，攻击力+{1}", descParam1 = {"100", "95", "90", "85", "80", "75"}, descParam2 = {"25%", "25%", "25%", "25%", "25%", "25%（共鸣后40%）"}, descParam3 = {}, fragmentId = 13008, baseSkill = {130081210, 130082210, 130083210, 130084210, 130085210, 130086210}, superSkill = {130081230, 130082230, 130083230, 130084230, 130085230, 130086230}, image = "a_icon_formation_3008", basePrefabRes = "taijibagua_base", maxPrefabRes = "taijibagua_enhance",},
+    [3009] = {id = 3009, name = "五华虬龙阵", description = "木|木|土|金|水", formula = {"991001|991002|991004|991005|991002"}, conditions = {"1002|1001|1002|1001|1003"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "每隔10秒，召唤神龙对全体妖怪造成最大生命{1}的伤害，同时所有法宝攻速+100%，持续{0}秒（共鸣后10秒）", descParam1 = {"5", "6", "7", "8", "9", "10"}, descParam2 = {"30%", "30%", "30%", "30%", "30%", "45%"}, descParam3 = {}, fragmentId = 13009, baseSkill = {130091210, 130092210, 130093210, 130094210, 130095210, 130096210}, superSkill = {130091230, 130092230, 130093230, 130094230, 130095230, 130096230}, image = "a_icon_formation_3009", basePrefabRes = "wuhuaqiulong_base", maxPrefabRes = "wuhuaqiulong_enhance",},
+    [3010] = {id = 3010, name = "七星剑阵", description = "水|火|土|水|土;;木|木|火|金|金", formula = {"991005|991001|991003|991004|991005"}, conditions = {"1001|1002|1002|1002|1001", "1002|1001|1001|1001|1002"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "所有法宝每累计攻击{0}次（共鸣35次），召唤一把至尊神剑，对所有妖怪造成{1}攻击力伤害（依赖所有法宝攻击力总和）", descParam1 = {"75", "72", "69", "66", "63", "60"}, descParam2 = {"10%", "10%", "10%", "10%", "10%", "15%"}, descParam3 = {}, fragmentId = 13010, baseSkill = {130101210, 130102210, 130103210, 130104210, 130105210, 130106210}, superSkill = {130101230, 130102230, 130103230, 130104230, 130105230, 130106230}, image = "a_icon_formation_3010", basePrefabRes = "qixingjianzhen_base", maxPrefabRes = "qixingjianzhen_enhance",},
+    [3011] = {id = 3011, name = "十二都天门阵", description = "水|火|火|水|金;;木|木|土|金|土", formula = {"991002|991004|991004|991003|991001"}, conditions = {"1001|1002|1001|1002|1002", "1002|1001|1002|1001|1001"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "法宝暴击时，额外召唤紫霄神雷，攻击随机目标，造成{0}（共鸣后{1}）范围伤害", descParam1 = {"150%", "165%", "180%", "195%", "210%", "225%"}, descParam2 = {"300%", "300%", "300%", "300%", "300%", "450%"}, descParam3 = {}, fragmentId = 13011, baseSkill = {130111210, 130112210, 130113210, 130114210, 130115210, 130116210}, superSkill = {130111230, 130112230, 130113230, 130114230, 130115230, 130116230}, image = "a_icon_formation_3011", basePrefabRes = "shierdutianmen_base", maxPrefabRes = "shierdutianmen_enhance",},
+    [3012] = {id = 3012, name = "九真伏魔大阵", description = "水|火|金|水|土", formula = {"991002|991001|991002|991003|991005"}, conditions = {"1001|1002|1003|1002|1001"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "法阵上出现神魔虚影，挥击，对全屏妖怪造成{0}（共鸣后{1}）攻击力伤害（依赖所有法宝攻击力总和）", descParam1 = {"5%", "5.5%", "6%", "6.5%", "7%", "7.5%"}, descParam2 = {"10%", "10%", "10%", "10%", "10%", "15%"}, descParam3 = {}, fragmentId = 13012, baseSkill = {130121210, 130122210, 130123210, 130124210, 130125210, 130126210}, superSkill = {130121230, 130122230, 130123230, 130124230, 130125230, 130126230}, image = "a_icon_formation_3012", basePrefabRes = "jiuzhenfumo_base", maxPrefabRes = "jiuzhenfumo_enhance",},
+    [3013] = {id = 3013, name = "五行大阵", description = "水|木|火|金|土|;;木|火|土|水|金;;火|土|金|木|水", formula = {"991001|991002|991003|991004|991005"}, conditions = {"1001|1001|1001|1001|1001", "1002|1002|1002|1002|1002", "1003|1003|1003|1003|1003"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "所有法宝全属性增加，攻击力+{0}，攻速+15%，暴击概率+10%，暴击伤害+20%，抗性穿透+50；共鸣后加成强化", descParam1 = {"15%", "17%", "19%", "21%", "23%", "25%（共鸣后50%）"}, descParam2 = {}, descParam3 = {}, fragmentId = 13013, baseSkill = {130131210, 130132210, 130133210, 130134210, 130135210, 130136210}, superSkill = {130131230, 130132230, 130133230, 130134230, 130135230, 130136230}, image = "a_icon_formation_3013", basePrefabRes = "wuxingtongmai_base", maxPrefabRes = "wuxingtongmai_enhance",},
+    [3014] = {id = 3014, name = "五雷轰顶阵", description = "火|火|金|木|金;;木|土|土|水|水", formula = {"991005|991002|991001|991003|991002"}, conditions = {"1002|1003|1002|1002|1003", "1003|1002|1003|1003|1002"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "所有法宝在命中后，有{0}（共鸣后80%）召唤连锁闪电，攻击5个目标，造成{1}攻击力伤害", descParam1 = {"40%", "42%", "44%", "46%", "48%", "50%"}, descParam2 = {"25%", "25%", "25%", "25%", "25%", "25%（共鸣后40%）"}, descParam3 = {}, fragmentId = 13014, baseSkill = {130141210, 130142210, 130143210, 130144210, 130145210, 130146210}, superSkill = {130141230, 130142230, 130143230, 130144230, 130145230, 130146230}, image = "a_icon_formation_3014", basePrefabRes = "wuleihongding_base", maxPrefabRes = "wuleihongding_enhance",},
+    [3015] = {id = 3015, name = "星火风行阵", description = "水|木|土|水|土;;木|火|火|金|金", formula = {"991004|991001|991003|991003|991002"}, conditions = {"1001|1001|1002|1002|1001", "1002|1002|1001|1001|1002"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "根据激活的羁绊数量，每激活1个羁绊，所有法宝攻速+{0}（共鸣后{1}）", descParam1 = {"15%", "16.5%", "18%", "19.5%", "21%", "22.5%"}, descParam2 = {"30%", "30%", "30%", "30%", "30%", "45%"}, descParam3 = {}, fragmentId = 13015, baseSkill = {130151210, 130152210, 130153210, 130154210, 130155210, 130156210}, superSkill = {130151230, 130152230, 130153230, 130154230, 130155230, 130156230}, image = "a_icon_formation_3015", basePrefabRes = "xinghuofengxing_base", maxPrefabRes = "xinghuofengxing_enhance",},
+    [3016] = {id = 3016, name = "天眷吉星阵", description = "火|火|土|水|水;;木|土|金|木|金", formula = {"991004|991005|991001|991001|991003"}, conditions = {"1003|1002|1002|1002|1003", "1002|1003|1003|1003|1002"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "全部法宝攻击力+{0}，且每次刷新法宝，40%概率（共鸣后80%）使下次刷新法宝免费", descParam1 = {"1%", "4%", "8%", "12%", "16%", "20%（共鸣后40%）"}, descParam2 = {}, descParam3 = {}, fragmentId = 13016, baseSkill = {130161210, 130162210, 130163210, 130164210, 130165210, 130166210}, superSkill = {130161230, 130162230, 130163230, 130164230, 130165230, 130166230}, image = "a_icon_formation_3016", basePrefabRes = "tianjuanjixing_base", maxPrefabRes = "tianjuanjixing_enhance",},
+    [3017] = {id = 3017, name = "扶摇青云阵", description = "火|火|金|水|土", formula = {"991003|991002|991004|991001|991005"}, conditions = {"1003|1002|1003|1002|1001"}, maxDescription = "[color=#2F823C]Lv6可获得超强增益，大幅强化共鸣效果[/color]", longDescription = "全部法宝攻击力+{0}，所有未满层的感应效果计数+1（共鸣后+2）", descParam1 = {"1%", "4%", "8%", "12%", "16%", "20%（共鸣后40%）"}, descParam2 = {}, descParam3 = {}, fragmentId = 13017, baseSkill = {130171210, 130172210, 130173210, 130174210, 130175210, 130176210}, superSkill = {130171230, 130172230, 130173230, 130174230, 130175230, 130176230}, image = "a_icon_formation_3017", basePrefabRes = "fuyaoqingyun_base", maxPrefabRes = "fuyaoqingyun_enhance",},
+}
+
+-- FormationLevelTable
+_G.FormationLevelTable =
+{
+    [1] = {level = 1, fragmentNum = 1,},
+    [2] = {level = 2, fragmentNum = 2,},
+    [3] = {level = 3, fragmentNum = 4,},
+    [4] = {level = 4, fragmentNum = 6,},
+    [5] = {level = 5, fragmentNum = 8,},
+    [6] = {level = 6, fragmentNum = 0,},
+}
+
+-- ReactionStateTable
+_G.ReactionStateTable =
+{
+    [1001] = {id = 1001, name = "同", baseAttr = {991003, 991002, 991004, 991001, 991005}, sutraAttr = {991003, 991002, 991004, 991001, 991005}, stateEyeType = "", stateVfx = "",},
+    [1002] = {id = 1002, name = "生", baseAttr = {991003, 991002, 991004, 991001, 991005}, sutraAttr = {991002, 991004, 991005, 991003, 991001}, stateEyeType = "", stateVfx = "",},
+    [1003] = {id = 1003, name = "克", baseAttr = {991003, 991002, 991004, 991001, 991005}, sutraAttr = {991004, 991005, 991001, 991002, 991003}, stateEyeType = "", stateVfx = "",},
+}
+
+-- ReactionLineTable
+_G.ReactionLineTable =
+{
+    [1] = {id = 1, states = {1001, 1002}, line = 1, lineSkill = 200003210,},
+    [2] = {id = 2, states = {1002, 1003}, line = 2, lineSkill = 200003220,},
+}
+
+-- AdjacentTable
+_G.AdjacentTable =
+{
+    [1] = {id = 1, posId1 = 2, posId2 = 1,},
+    [2] = {id = 2, posId1 = 3, posId2 = 2,},
+    [3] = {id = 3, posId1 = 4, posId2 = 1,},
+    [4] = {id = 4, posId1 = 4, posId2 = 3,},
+    [5] = {id = 5, posId1 = 5, posId2 = 1,},
+    [6] = {id = 6, posId1 = 5, posId2 = 2,},
+    [7] = {id = 7, posId1 = 5, posId2 = 3,},
+    [8] = {id = 8, posId1 = 5, posId2 = 4,},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("FormationTable")
+end

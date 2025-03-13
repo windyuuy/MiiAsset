@@ -1,0 +1,12 @@
+-- 99. 改变怪物体型大小（空效果）
+
+function BuffEffect(buff)
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

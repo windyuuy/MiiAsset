@@ -1,0 +1,4 @@
+function Execute(robot, intent)
+    -- LogDebug("spellRefreshCount={}", intent.gameCardsUpdate.spellRefreshCount)
+    robot.battleData.spellRefreshCount = intent.gameCardsUpdate.spellRefreshCount
+end

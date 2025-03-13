@@ -1,0 +1,40 @@
+-- 4. 改变状态
+local statusMgr = import("battle/fight/status/statusMgr.lua")
+
+-- buff生效
+function BuffEffect(buff)
+    local nowMS      = _G.GetCurTimeMS()
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local newStatus  = buffConfig.effectData[1]
+
+    --LogDebug("buffEffectChangeStatus:BuffEffect, buff.duration:{} now:{} delta:{}", buff.duration, nowMS, buff.duration - nowMS)
+    if newStatus == _G.EntryStatus.ENTRY_STATUS_DIZZY then
+        buff.owner.statusComponent:AddDizzyStatusBuff(buff.owner, buff.buffId, buff.duration)
+    else
+        statusMgr.ChangeStatus(buff.owner, newStatus, buff.duration - nowMS)
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local newStatus  = buffConfig.effectData[1]
+
+    if newStatus == _G.EntryStatus.ENTRY_STATUS_DIZZY then
+        buff.owner.statusComponent:RemoveDizzyStatusBuff(buff.owner, buff.buffId)
+    end
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+    local nowMS      = _G.GetCurTimeMS()
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local newStatus  = buffConfig.effectData[1]
+
+    --LogDebug("buffEffectChangeStatus:OnBuffUpgrade, buff.duration:{} now:{} delta:{}", buff.duration, nowMS, buff.duration - nowMS)
+    if newStatus == _G.EntryStatus.ENTRY_STATUS_DIZZY then
+        buff.owner.statusComponent:AddDizzyStatusBuff(buff.owner, buff.buffId, buff.duration)
+    else
+        statusMgr.ChangeStatus(buff.owner, newStatus, buff.duration - nowMS)
+    end
+end

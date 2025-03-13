@@ -1,0 +1,47 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    -- 注册buff死亡事件
+    local callback = function(listener, properties, event)
+        local dead = event.dead
+        local monsterType = properties.monsterType
+        local monsterCamp = properties.monsterCamp
+
+        local monsterConfig = _G.MonsterInfoTable[dead.monsterId]
+        if not monsterConfig then
+            LogDebug("monsterConfig is nil, monsterId: {}", dead.monsterId)
+            return false
+        end
+
+        -- 校验怪物类型
+        if monsterType ~= monsterConfig.type then
+            return false
+        end
+
+        -- 校验怪物阵营
+        if monsterCamp == 1 then
+            -- 己方
+            if dead.teamId ~= properties.entry.teamId then
+                return false
+            end
+        elseif monsterCamp == 2 then
+            -- 敌方
+            if dead.teamId == properties.entry.teamId then
+                return false
+            end
+        end
+
+        buffComponent.buffEffect(properties.buffComponent, properties.buff)
+        return true
+    end
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local triggerTypeData = buffConfig.triggerTypeDatas[triggerTypeIndex]
+    local monsterCamp = triggerTypeData[1]
+    local monsterType = triggerTypeData[2]
+
+    local properties = { entry = buff.owner, buff = buff, buffComponent = component, monsterCamp = monsterCamp, monsterType = monsterType }
+    local listenerId = eventManager.AddEventListener(battle.eventManager, _G.EventType.MONSTER_DEAD, callback, properties, false)
+    buff.listenerEventType = _G.EventType.MONSTER_DEAD
+    table.insert(buff.listenerIds, listenerId)
+end

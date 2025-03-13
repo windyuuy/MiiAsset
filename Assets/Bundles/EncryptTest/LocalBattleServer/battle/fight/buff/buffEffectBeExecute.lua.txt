@@ -1,0 +1,48 @@
+-- 33. buff效果类型：斩杀
+
+local battleMgr              = import("battle/battleMgr.lua")
+local eventManager           = import("battle/event/eventManager.lua")
+local battleFightAttackLogic = import("battle/fight/battleFightAttackLogic.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    local owner = buff.owner
+    if buff.owner.curHP <= 0 then
+        return
+    end
+
+    local battle  = battleMgr.GetBattle(buff.owner.battleId)
+    local percent = buffConfig.effectData[1]  -- 万分比
+    local fixed   = buffConfig.effectData[2]  -- 固定值
+
+    if percent <= 0 and fixed <= 0 then
+        return;
+    end
+
+    if owner:GetEntryType() ~= _G.EntryType.MONSTER then
+        return;
+    end
+
+    local maxHp = owner:GetAttribute(_G.AttributeType.FINAL_HEALTH)  -- 得到最大生命值
+
+    if (percent <= 0 and owner.curHP < fixed) or (fixed <= 0 and owner.curHP < maxHp * percent / 10000) then
+        battleFightAttackLogic.SkillDamageHandlerByValue(buff.origin, owner, owner.curHP)
+
+        -- 触发斩杀事件
+        local event = eventManager.CreateMonsterBeExecuteEvent(owner.teamId, owner.monsterId)
+        eventManager.DispatchEvent(battle.eventManager, event)
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+    BuffEffect(buff)
+end

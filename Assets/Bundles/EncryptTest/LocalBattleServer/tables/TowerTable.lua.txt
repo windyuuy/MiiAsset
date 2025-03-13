@@ -1,0 +1,10 @@
+-- TowerTable
+_G.TowerTable =
+{
+    [1] = {id = 1, towerHp = 0, baseAttack = 0, baseAttackSpeed = 0, baseCritRate = 0, baseCritDamage = 0, awakeSkills = {100001001}, roundSkills = {},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("TowerTable")
+end

@@ -1,0 +1,9 @@
+-- 灵力是否足够刷新卡牌
+
+function Execute(robot)
+    local battleData = robot.battleData
+    local curMana = battleData.mana or 0
+    local cost = battleData.refreshCosts[battleData.refreshCount + 1] or battleData.refreshCosts[#battleData.refreshCosts]
+
+    return curMana >= cost
+end

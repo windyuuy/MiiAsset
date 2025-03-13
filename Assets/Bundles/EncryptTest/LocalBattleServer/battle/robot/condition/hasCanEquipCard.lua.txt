@@ -1,0 +1,15 @@
+-- 是否有可装备卡牌
+
+function Execute(robot)
+    local battleData = robot.battleData
+    local maxCount = math.min(5, battleData.roundNumber+1);
+    -- 检查坑位
+    for i=1, maxCount do
+        local slot = battleData.equipList[i];
+
+        if not slot.isLocked and (not slot.card or not slot.card.id or slot.card.id == 0) then
+            return true;
+        end
+    end
+    return false;
+end

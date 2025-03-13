@@ -1,0 +1,2029 @@
+local common = import("common/common.lua")
+
+
+-- 表读取好之后的回调
+_G.TableCallback = _G.TableCallback or {};
+
+function addTableCallback(key, callbackFunc)
+    _G.TableCallback[key] = callbackFunc;
+end
+
+function Init()
+    _G.TableFunctionMap = {
+        ["ActivityTable"]           = LoadActivityTable,
+        ["AnnouncementTable"]       = LoadAnnouncementTable,
+        ["AntiAddictionTable"]      = LoadAntiAddictionTable,
+        ["BattleTable"]             = LoadBattleTable,
+        ["BlackWhiteTable"]         = LoadBlackWhiteTable,
+        ["BuffTable"]               = LoadBuffTable,
+        ["CardTable"]               = LoadCardTable,
+        --["CommonQualityTable"]      = LoadCommonQualityTable,
+        --["CommonTipsTable"]         = LoadCommonTipsTable,
+        ["CommonValueTable"]        = LoadCommonValueTable,
+        --["CommonVideoTable"]        = LoadCommonVideoTable,
+        ["CoopRuleTable"]           = LoadCoopRuleTable,
+        ["DefaultNameTable"]        = LoadDefaultNameTable,
+        --["ErrorCodeTable"]          = LoadErrorCodeTable,
+        --["FHaloBuffTable"]          = LoadFHaloBuffTable,
+        ["FiveAttributeTable"]      = LoadFiveAttributeTable,
+        ["FlyerTable"]              = LoadFlyerTable,
+        ["FormationTable"]          = LoadFormationTable,
+        --["GameUITable"]             = LoadGameUITable,
+        ["GuildTable"]              = LoadGuildTable,
+        ["HeadIconTable"]           = LoadHeadIconTable,
+        ["InitialDataTable"]        = LoadInitialDataTable,
+        ["ItemTable"]               = LoadItemTable,
+        ["MailTable"]               = LoadMailTable,
+        ["MatchTable"]              = LoadMatchTable,
+        --["ModuleTable"]             = LoadModuleTable,
+        ["MonsterTable"]            = LoadMonsterTable,
+        ["PveTable"]                = LoadPveTable,
+        ["PveAdventureTable"]       = LoadPveAdventureTable,
+        ["PvpTable"]                = LoadPvpTable,
+        ["RankTable"]               = LoadRankTable,
+        --["RedeemTable"]             = LoadRedeemTable,
+        ["RefinerTable"]            = LoadRefinerTable,
+        --["ResourceVersionTable"]    = LoadResourceVersionTable,
+        ["RobotServerConfigTable"]  = LoadRobotServerConfigTable,
+        ["SeasonTimeTable"]         = LoadSeasonTimeTable,
+        ["ShopTable"]               = LoadShopTable,
+        ["SkillTable"]              = LoadSkillTable,
+        ["SpellTable"]              = LoadSpellTable,
+        --["StickerTable"]            = LoadStickerTable,
+        ["SummonerTable"]           = LoadSummonerTable,
+        ["SutraStarTable"]          = LoadSutraStarTable,
+        ["SutraSystemTable"]        = LoadSutraSystemTable,
+        ["SutraTable"]              = LoadSutraTable,
+        ["SwitchTable"]             = LoadSwitchTable,
+        ["TaskAchieveTaskTable"]    = LoadTaskAchieveTaskTable,
+        ["TaskDayTaskTable"]        = LoadTaskDayTaskTable,
+        ["TaskSevenDayTaskTable"]   = LoadTaskSevenDayTaskTable,
+        ["TaskTable"]               = LoadTaskTable,
+        --["TipsTable"]               = LoadTipsTable,
+        ["TowerTable"]              = LoadTowerTable,
+        --["TutorialShowTable"]       = LoadTutorialShowTable,
+        --["TutorialTable"]           = LoadTutorialTable,
+        ["UnitAttributeTable"]      = LoadUnitAttributeTable,
+        --["Version"]                 = LoadVersion,
+        ["NotificationTable"]       = LoadNotificationTable,
+        ["ServerTable"]             = LoadServerTable,
+        ["GuildRuinsTable"]         = LoadGuildRuinsTable,
+        ["SpiritTable"]             = LoadSpiritTable,
+        ["SpiritBattleTable"]       = LoadSpiritBattleTable,
+        ["GamePlayListTable"]       = LoadGamePlayListTable,
+        ["SpiritPveTable"]          = LoadSpiritPveTable,
+    }
+
+    -- 在key表更新之后需要重新load一次value表
+    _G.TableLoadAfter = {
+        ["TaskTable"]               = {"ShopTable.lua"},
+        ["ItemTable"]               = {"PveTable.lua", "GuildRuinsTable.lua"},
+    }
+end
+
+function Load()
+    for tableName, func in pairs(_G.TableFunctionMap) do
+        local ok, err = xpcall(func, debug.traceback);
+        if not ok then
+            LogErr("load table error: {}", err);
+        end
+    end
+    --for tableName, _ in pairs(tableNameList) do
+    --    local loadFunc = _G.TableFunctionMap[tableName];
+    --    if loadFunc then
+    --        loadFunc();
+    --    else
+    --        local dependTableName = _G.TableDependMap[tableName];
+    --        if dependTableName and not tableNameList[dependTableName] then
+    --            local loadDependFunc = _G.TableDependFunctionMap[tableName];
+    --            loadDependFunc();
+    --        end
+    --    end
+    --end
+
+    _G.TABLE_INITED = true;
+
+    for key, callbackFunc in pairs(_G.TableCallback) do
+        local ok, err = xpcall(callbackFunc, debug.traceback);
+        if not ok then
+            LogErr("TableCallback error: {}", err);
+        end
+    end
+
+    _G.TableCallback = {};
+
+    LogInfo("load table success");
+end
+
+function LoadTable(tableName)
+    local loadFunc = _G.TableFunctionMap[tableName];
+    if not loadFunc then
+        return
+    end
+
+    local ok, err = xpcall(loadFunc, debug.traceback);
+    if not ok then
+        LogErr("load table error:{}, tableName:{}", err, tableName);
+    else
+        local loadAfterNames = _G.TableLoadAfter[tableName];
+        for _, afterLuaName in pairs(loadAfterNames or {}) do
+            dive.Reload("tables/" .. afterLuaName)
+        end
+    end
+end
+
+-- 赛季表
+function LoadSeasonTimeTable()
+    _G.SeasonFutureTable    = {};
+    _G.LastSeason           = {};
+    local lastSeasonEndTime = {};
+    local seasonTimeTable   = {}
+    local curr              = _G.GetCurTime();
+
+    for id, data in pairs(_G.SeasonTimeTable) do
+        data.startTime = _G.GetUnixTimeStamp(data.seasonStartData)
+        if data.seasonStopData == "" then
+            data.stopTime = 0
+        else
+            data.stopTime  = _G.GetUnixTimeStamp(data.seasonStopData)
+        end
+
+        seasonTimeTable[data.serverType] = seasonTimeTable[data.serverType] or {}
+        seasonTimeTable[data.serverType][id] = data
+
+        if data.stopTime > 0 and data.stopTime < curr then
+            if data.stopTime > (lastSeasonEndTime[data.serverType] or -1) then
+                lastSeasonEndTime[data.serverType] = data.stopTime;
+                _G.LastSeason[data.serverType]     = id;
+            end
+            goto continue;
+        end
+
+        _G.SeasonFutureTable[data.serverType] = _G.SeasonFutureTable[data.serverType] or {}
+        local insert = false;
+        for idx, futureConf in ipairs(_G.SeasonFutureTable[data.serverType]) do
+            if data.startTime < futureConf.startTime then
+                insert = true;
+                table.insert(_G.SeasonFutureTable[data.serverType], idx, data);
+                break
+            end
+        end
+        if not insert then
+            table.insert(_G.SeasonFutureTable[data.serverType], data);
+        end
+
+        ::continue::
+    end
+    _G.SeasonTimeTable = seasonTimeTable
+
+    _G.SeasonRankAwardGroupTable = {}
+    for _, data in pairs(_G.SeasonRankAwardTable) do
+        local rankAward = {}
+        for _, info in pairs(data.rankAward) do
+            local v = _G.SplitString(info, "|");
+            table.insert(rankAward,{resId = tonumber(v[1]),count = tonumber(v[2])})
+        end
+        data.rankAward = rankAward
+
+        local paidRankAward = {}
+        for _, info in pairs(data.paidRankAward) do
+            local v = _G.SplitString(info, "|");
+            table.insert(paidRankAward, {resId = tonumber(v[1]),count = tonumber(v[2])})
+        end
+        data.paidRankAward = paidRankAward
+
+        _G.SeasonRankAwardGroupTable[data.groupId] = _G.SeasonRankAwardGroupTable[data.groupId] or {}
+        _G.SeasonRankAwardGroupTable[data.groupId][data.id] = data;
+    end
+end
+
+-- 成就任务
+function LoadTaskAchieveTaskTable()
+end
+
+function LoadTaskDayTaskTable()
+    for _, data in pairs(_G.DayTaskDayIntergralTable) do
+        local addList = {}
+        table.insert(addList, {
+            resId = tonumber(data.integralReward[1]),
+            count = tonumber(data.integralReward[2])
+        })
+        data.integralReward = addList
+    end
+
+    for _, data in pairs(_G.DayTaskWeekIntergralTable) do
+        local addList = {}
+        table.insert(addList, {
+            resId = tonumber(data.integralReward[1]),
+            count = tonumber(data.integralReward[2])
+        })
+        data.integralReward = addList
+    end
+end
+
+function LoadTaskSevenDayTaskTable()
+    for _, data in pairs(_G.SevenDayTaskIntergralTable) do
+        local addList = {}
+        for _, info in pairs(data.integralReward) do
+            local v = _G.SplitString(info, "|");
+            table.insert(addList,{resId = tonumber(v[1]),count = tonumber(v[2])})
+        end
+        data.integralReward = addList
+    end
+end
+
+function LoadSwitchTable()
+    local env = dive.GetProperty("fabao.env", "ONLINE");
+
+    local tmpLabelSwitchTable = {}
+    for id, data in pairs(_G.LabelSwitchTable) do
+        if env == "TEST" or env == "DEVELOP" then
+            tmpLabelSwitchTable[id] = data.testValue;
+        elseif env == "PRE" then
+            tmpLabelSwitchTable[id] = data.preValue;
+        elseif env == "ONLINE" then
+            tmpLabelSwitchTable[id] = data.onlineValue;
+        end
+    end
+    tmpLabelSwitchTable[1] = _G.versionAtoi(tmpLabelSwitchTable[1]);
+    tmpLabelSwitchTable[2] = _G.versionAtoi(tmpLabelSwitchTable[2]);
+    tmpLabelSwitchTable[3] = _G.versionAtoi(tmpLabelSwitchTable[3]);
+    tmpLabelSwitchTable[4] = _G.versionAtoi(tmpLabelSwitchTable[4]);
+    _G.LabelSwitchTable = tmpLabelSwitchTable
+
+    local tmpServerConfigTable = {};
+    for _, data in pairs(_G.ServerConfigTable) do
+        if env == "TEST" or env == "DEVELOP" then
+            tmpServerConfigTable[data.id] = data.testValue[1];
+        elseif env == "PRE" then
+            tmpServerConfigTable[data.id] = data.preValue[1];
+        elseif env == "ONLINE" then
+            tmpServerConfigTable[data.id] = data.onlineValue[1];
+        end
+    end
+    _G.ServerConfigTable = tmpServerConfigTable;
+
+    local tmpGamePlatformTable = {}
+    for _, gamePlatformConfig in pairs(_G.GamePlatformTable) do
+        tmpGamePlatformTable[gamePlatformConfig.platformStr] = gamePlatformConfig.matchStr
+    end
+    _G.GamePlatformTable = tmpGamePlatformTable
+end
+
+function LoadBuffTable()
+end
+
+function LoadFlyerTable()
+end
+
+---@class SkillTableData 技能表数据
+---@field id number 技能id
+---@field type number 技能类型(1.主动 2.被动)
+---@field skillCoolingDown number 技能cd(毫秒)
+---@field targetCampType number 目标所属阵营类型(1.己方 2.敌方 3.随机)
+---@field targetCount number 目标数量
+---@field targetType number 目标类型
+---@field sutraPriority number 法宝选取优先级
+---@field monsterPriority number 怪物选取优先级
+---@field probability number 技能触发概率
+---@field effectDelay number 效果延迟时间
+---@field preActionTime number 前摇动作时间
+---@field postActionTime number 后摇动作时间
+---@field byFlyer boolean 是否通过飞行物
+---@field flyerId number 飞行物id
+---@field isDamage boolean 是否造成伤害
+---@field isRange boolean 是否对范围造成伤害、施加buff
+---@field rangeType number 范围类型
+---@field rangeParam number 范围参数
+---@field damageType number 伤害类型
+---@field dependUnit number 伤害属性依赖目标(1.施法者 2.目标)
+---@field dependAttr table<number> 依赖属性id
+---@field dependPercent table<number> 依赖属性万分比
+---@field fixedValue number 固定值
+---@field addBuffs table<number> 对目标添加对buff
+---@field addAreaEffects number[] 生成范围效果
+---@field skillType number 技能类别(0.普工 1.技能)
+function LoadSkillTable()
+    for _, data in pairs(_G.SkillTable) do
+        local addBuffs = {}
+        for _, addBuff in pairs(data.addBuffs) do
+            local v = _G.SplitString(addBuff, "|");
+            table.insert(addBuffs, { id = tonumber(v[1]), layer = tonumber(v[2]) })
+        end
+        data.addBuffs = addBuffs
+    end
+end
+
+function LoadSummonerTable()
+end
+
+function LoadSutraStarTable()
+end
+
+function LoadHaloBuffTable()
+    local tmpHaloBuffTable = {};
+    for _, data in pairs(_G.FHaloBuffTable) do
+        local dataCopy = _G.DeepClone(data)
+        dataCopy.effectParam = parseLevelFiled(data.effectParam)
+        tmpHaloBuffTable[data.id] = dataCopy;
+    end
+    _G.FHaloBuffTable = tmpHaloBuffTable;
+end
+
+function LoadAnnouncementTable()
+end
+
+function LoadGuildTable()
+    for _, data in pairs(_G.GuildDonationTable) do
+        local addList = {}
+        for _, info in pairs(data.rewards) do
+            table.insert(addList, { resId = info[1], count = info[2] })
+        end
+        data.rewards = addList
+    end
+
+    for _, data in pairs(_G.GuildActivityRewardsTable) do
+        local addList = {}
+        for _, info in pairs(data.rewards) do
+            table.insert(addList, { resId = info[1], count = info[2] })
+        end
+        data.rewards = addList
+    end
+
+    for _, data in pairs(_G.GuildCaveTable) do
+        local rewards = {}
+        for _, reward in pairs(data.caveTimeAwards) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.caveTimeAwards = rewards
+    end
+end
+
+function LoadMonsterTable()
+    local tmpMonsterLevelTable = {};
+    for _, data in pairs(_G.MonsterLevelTable) do
+        local groupId = data.groupId
+        local level = data.level
+        tmpMonsterLevelTable[groupId] = tmpMonsterLevelTable[groupId] or {}
+        tmpMonsterLevelTable[groupId][level] = data
+    end
+    _G.MonsterLevelTable = tmpMonsterLevelTable
+
+    local tmpMonsterRoundTable = {};
+    for _, data in pairs(_G.MonsterRoundTable) do
+        local groupId = data.groupId
+        local round = data.round
+        tmpMonsterRoundTable[groupId] = tmpMonsterRoundTable[groupId] or {}
+        tmpMonsterRoundTable[groupId][round] = data
+    end
+    _G.MonsterRoundTable = tmpMonsterRoundTable
+end
+
+---@class TaskTableData
+---@field id number 任务id
+---@field name string 任务名称
+---@field type number 任务类型
+---@field conditionType number 条件类型
+---@field triggerType number 条件方式
+---@field finishConditionValue number 任务完成条件值
+---@field nextTask number 后续任务
+---@field rewards table 任务奖励
+---@field desc string 任务描述
+function LoadTaskTable()
+    -- 处理奖励字段
+    for _, data in pairs(_G.TaskTable) do
+        local rewards = {}
+        for _, reward in pairs(data.rewards) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.rewards = rewards
+    end
+    for id, data in pairs(_G.MainTaskTable) do
+        local rewards = {}
+        for _, reward in pairs(data.rewards) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.rewards = rewards
+
+        if _G.TaskTable[id] then
+            LogErr("LoadTaskTable 策划错误 两个表有重复的id={}!!", id)
+        end
+        -- 使用主线任务的数据
+        _G.TaskTable[id] = data
+    end
+end
+
+-- ActivityTable.xlsx
+function LoadActivityTable()
+    --所有配置合法的活动
+    _G.activityTableAll = {};
+
+    --当前时间区服有效的活动
+    _G.activityTable = {};
+
+    local activityAwardsTable = {};
+    for id, data in pairs(_G.ActivityAwardTable) do
+        activityAwardsTable[data.groupId] = activityAwardsTable[data.groupId] or {};
+
+        local awards = {};
+        local awardsClient = {};
+        for _, award in pairs(data.awards) do
+            local v = _G.SplitString(award, "|");
+            if next(v) then
+                awards[tonumber(v[1])] = tonumber(v[2]);
+                table.insert(awardsClient, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+
+        data.awards = awards;
+        data.awardsClient = awardsClient;
+
+        -- condParam只能用数值, LobbyCommonLogic.proto的AwardStatusData为int64
+        if data.condType == 1 then
+            data.condParam = tonumber(data.condParam)
+        else
+            LogErr("ActivityAwardTable 奖励类型还未实现 id={} condType={}", id, data.condType)
+        end
+        data.desc = nil;
+
+        -- 需要排序
+        local hasInsert = false;
+        for idx, award in ipairs(activityAwardsTable[data.groupId]) do
+            if award.id > id then
+                hasInsert = true
+                table.insert(activityAwardsTable[data.groupId], idx, data);
+                break
+            end
+        end
+        if not hasInsert then
+            table.insert(activityAwardsTable[data.groupId], data);
+        end
+    end
+
+    local now = _G.GetCurTime();
+    for id, data in pairs(_G.ActivityTable) do
+        if data.startType == 0 or data.startType == 1 then
+            if data.startTime and data.startTime ~= "" then
+                data.startTime = math.ceil(_G.GetUnixTimeStamp(data.startTime));
+            else
+                data.startTime = 0
+            end
+
+            if data.endTime and data.endTime ~= "" then
+                data.endTime = math.ceil(_G.GetUnixTimeStamp(data.endTime));
+            else
+                data.endTime = 0
+            end
+
+        elseif data.startType == 2 then
+            data.startTime = tonumber(data.startTime);
+            data.endTime = tonumber(data.endTime);
+        end
+
+
+        if data.dailyStartTime ~= "" then
+            data.dailyStartTime = _G.GetUnixTimeSec(data.dailyStartTime);
+        else
+            data.dailyStartTime = 0;
+        end
+        if data.dailyEndTime ~= "" then
+            data.dailyEndTime = _G.GetUnixTimeSec(data.dailyEndTime);
+        else
+            data.dailyEndTime = 0;
+        end
+
+        local activityAwards = activityAwardsTable[data.awardGroupId];
+        if activityAwards then
+            data.awardsConf = activityAwards;
+        else
+            data.awardsConf = {};
+        end
+
+        local awardsStepAwards = activityAwardsTable[data.awardStepGroupId];
+        if awardsStepAwards then
+            data.awardsStepConf = awardsStepAwards;
+        else
+            data.awardsStepConf = {};
+        end
+
+        _G.activityTableAll[id] = data;
+
+        if data.endTime <= 0 or now < data.endTime or data.startType == 2 then
+            _G.activityTable[id] = data;
+        end
+
+        local openServer = {};
+        for _, serverType in pairs(data.serverType) do
+            openServer[serverType] = 1;
+        end
+        data.serverType = openServer;
+    end
+
+    -- ActivityDailyFireSeed
+    _G.DailyFireSeedTable = {};
+    _G.DailyFireSeedClient = {};
+    for _, data in pairs(_G.ActivityDayFireTable) do
+        local rewards = {};
+        local rewardsClient = {};
+        for _, reward in pairs(data.awards) do
+            local v = _G.SplitString(reward, "|");
+            if next(v) then
+                rewards[tonumber(v[1])] = tonumber(v[2]);
+                table.insert(rewardsClient, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+
+        _G.DailyFireSeedTable[data.id] = {
+            rewards = rewards,
+            startTime = data.startTime,
+            overTime = data.overTime
+        }
+        _G.DailyFireSeedClient[data.id] = {
+            rewards = rewardsClient,
+            startTime = data.startTime,
+            overTime = data.overTime
+        }
+    end
+
+    _G.WorldCompetitionTable = {};
+    for id, data in pairs(_G.ActivityWorldCompetitionTable) do
+        local rewards = {};
+        for _, reward in pairs(data.items) do
+            local v = _G.SplitString(reward, "|");
+            if next(v) then
+                table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+            end
+        end
+        _G.WorldCompetitionTable[id] = {
+            rewards = rewards
+        }
+    end
+
+    -- ActivityOnlineReward
+    for _, data in pairs(_G.ActivityOnlineRewardTable) do
+        local addList = {}
+        for _, info in pairs(data.items) do
+            local v = _G.SplitString(info, "|");
+            table.insert(addList, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.items = addList
+    end
+
+    _G.ActivityTaskGroupTable = {}
+    for _, data in pairs(_G.ActivityTaskTable) do
+        if not _G.ActivityTaskGroupTable[data.groupId] then
+            _G.ActivityTaskGroupTable[data.groupId] ={}
+            _G.ActivityTaskGroupTable[data.groupId][data.id] = data;
+        else
+            _G.ActivityTaskGroupTable[data.groupId][data.id] = data;
+        end
+    end
+end
+
+function LoadFormationTable()
+    for _, data in pairs(_G.FormationTable) do
+        local conditions = {}
+        for _, condition in pairs(data.conditions) do
+            local cond = {}
+            local v = _G.SplitString(condition, "|")
+            for _, value in pairs(v) do
+                table.insert(cond, tonumber(value))
+            end
+            table.insert(conditions, cond)
+        end
+        local formulas = {}
+        for _, element in pairs(data.formula) do
+            local v = _G.SplitString(element, "|")
+            local elements = {}
+            for _, value in pairs(v) do
+                table.insert(elements, tonumber(value))
+            end
+            table.insert(formulas, elements)
+        end
+        data.conditions = conditions
+        data.formulas = formulas
+    end
+    _G.ReactionMap = {}
+    for _, data in pairs(_G.ReactionStateTable) do
+        for idx, attr in pairs(data.baseAttr) do
+            local formationAttr = data.baseAttr[idx]
+            local sutraAttr = data.sutraAttr[idx]
+            _G.ReactionMap[formationAttr] = _G.ReactionMap[formationAttr] or {}
+            _G.ReactionMap[formationAttr][sutraAttr] = data
+        end
+    end
+end
+
+function LoadPveTable()
+    -- 处理奖励字段
+    for _, data in pairs(_G.PveMainDungeonLevelTable) do
+        local rewards = {}
+        for _, reward in pairs(data.rewardItems) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.rewardItems = rewards
+
+        local revenueRate = {}
+        for _, reward in pairs(data.revenueRate) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(revenueRate, { itemId = tonumber(v[1]), minCount = tonumber(v[2]), maxCount = tonumber(v[3]) })
+        end
+        data.revenueRate = revenueRate
+    end
+
+    _G.PveMainDungeonChapterRewardTable = _G.PveMDChapterRewardTable;
+    -- 处理奖励字段
+    for _, data in pairs(_G.PveMDChapterRewardTable) do
+        local rewards = {}
+        for _, reward in pairs(data.rewards) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.rewards = rewards
+    end
+
+    -- 处理奖励字段
+    for i, data in pairs(_G.PveNpcDungeonLevelTable) do
+        local rewards = {}
+        for _, reward in pairs(data.rewardItems) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.rewardItems = rewards
+    end
+
+    for _, data in pairs(_G.GuildPveLevelTable) do
+        data.stageRewards = {}
+        for idx, value in ipairs(data.stageList) do
+            local rewardGroupId = data.stageRewardList[idx]
+            local rewardGroupConfig = (_G.RewardGroupTable or {})[rewardGroupId]
+            local rewardsClient = {}
+            if rewardGroupConfig then
+                for _, reward in pairs(rewardGroupConfig.rewards or {}) do
+                    local v = _G.SplitString(reward, "|");
+                    if next(v) then
+                        table.insert(rewardsClient, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+                    end
+                end
+            end
+            table.insert(data.stageRewards, { killMonsterCount = value, rewards = rewardsClient })
+        end
+    end
+
+    for _, data in pairs(_G.GuildBossLevelTable) do
+        local memberAwards = {};
+        for _, info in pairs(data.guildBossMemberRewards) do
+            local v = _G.SplitString(info, "|");
+            local rewardGroupConfig = (_G.RewardGroupTable or {})[tonumber(v[2])]
+            local rewardsClient = {}
+            if rewardGroupConfig then
+                for _, reward in pairs(rewardGroupConfig.rewards or {}) do
+                    local awardData = _G.SplitString(reward, "|");
+                    if next(awardData) then
+                        table.insert(rewardsClient, { resId = tonumber(awardData[1]), count = tonumber(awardData[2]) });
+                    end
+                end
+            end
+
+            table.insert( memberAwards, #memberAwards + 1, { cond = tonumber(v[1]),  rewards =  rewardsClient});
+        end
+        data.memberAwards = memberAwards;
+
+        local rewardsClient = {}
+        for _, reward in pairs(data.roundAwardItems) do
+            local v = _G.SplitString(reward, "|");
+            if next(v) then
+                table.insert(rewardsClient, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.rewardsClient = rewardsClient;
+    end
+end
+
+
+function LoadPveAdventureTable()
+    -- PveAdventureTable
+    for _, data in pairs(_G.PveAdventureTable) do
+        if data.openType == 2 then
+            if data.openParam and data.openParam ~= "" then
+                data.openParam = math.ceil(_G.GetUnixTimeStamp(data.openParam));
+            else
+                data.openParam = 0
+            end
+        elseif data.openType == 3 then
+            if data.openParam and data.openParam ~= "" then
+                data.openParam = tonumber(data.openParam)
+            else
+                data.openParam = 0
+            end
+        end
+    end
+
+    -- PveTowerTable
+
+    -- PveTowerGroupTable
+    for _, data in pairs(_G.PveTowerGroupTable) do
+        local rewards = {}
+        local extraRewards = {}
+        for _, reward in pairs(data.levelAward) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        for _, reward in pairs(data.levelExtraAward) do
+            local v = _G.SplitString(reward, "|")
+            table.insert(extraRewards, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.levelAward = rewards
+        data.levelExtraAward = extraRewards
+    end
+
+    -- PveTowerLevelTable
+    local tmpPveTowerLevelTable = {};
+    for _, data in pairs(_G.PveTowerLevelTable) do
+        tmpPveTowerLevelTable[data.groupId] = tmpPveTowerLevelTable[data.groupId] or {}
+        tmpPveTowerLevelTable[data.groupId][data.level] = data
+    end
+    _G.PveTowerLevelTable = tmpPveTowerLevelTable
+end
+
+function LoadPvpTable()
+    local tmpPvpRankInfoTable = {}
+    for id, data in pairs(_G.PvpRankInfoTable) do
+        tmpPvpRankInfoTable[data.rankGroup] = tmpPvpRankInfoTable[data.rankGroup] or {}
+        tmpPvpRankInfoTable[data.rankGroup][id] = data
+    end
+
+    _G.PvpRankInfoIdTable = _G.PvpRankInfoTable
+    _G.PvpRankInfoTable = tmpPvpRankInfoTable
+end
+
+--function LoadRedeemTable()
+--    _G.RedeemIdTable = {};
+--    for id, data in pairs(_G.RedeemTable) do
+--        local rewards = {};
+--        local rewardsClient = {};
+--        for _, reward in pairs(data.rewards) do
+--            local v = _G.SplitString(reward, "|");
+--            if next(v) then
+--                table.insert(rewards, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+--                rewardsClient[tonumber(v[1])] = tonumber(v[2]);
+--            end
+--        end
+--        data.rewards = rewards;
+--        data.rewardsClient = rewardsClient;
+--
+--        data.startTime = _G.GetUnixTimeStamp(data.startTime)
+--        data.endTime = _G.GetUnixTimeStamp(data.endTime)
+--
+--        if data.redeemType == 1 then
+--            _G.RedeemIdTable[data.redeemCode] = id;
+--        end
+--    end
+--
+--    _G.RedeemRandomCodeTable = {};
+--    for redeemId, redeemConfig in pairs(_G.RedeemRandomCodeTable) do
+--        local redeemCodes = redeemConfig.redeemCodes;
+--        for _, redeemCode in pairs(redeemCodes) do
+--            _G.RedeemRandomCodeTable[redeemCode] = redeemId;
+--        end
+--    end
+--end
+
+function LoadRefinerTable()
+    for _, data in pairs(_G.RefinerRealmTable) do
+        local attrAddition = {}
+        for _, addition in pairs(data.attrAddition) do
+            local attr = _G.SplitString(addition, "|")
+            table.insert(attrAddition, { attrId = tonumber(attr[1]), attrValue = tonumber(attr[2]) })
+        end
+        data.attrAddition = attrAddition
+    end
+
+    local tmpRefinerStageLevelTable = {};
+    for _, data in pairs(_G.RefinerLevelTable) do
+        local stage = data.realmStage
+        local level = data.realmLevel
+
+        tmpRefinerStageLevelTable[stage] = tmpRefinerStageLevelTable[stage] or {}
+        tmpRefinerStageLevelTable[stage][level] = data
+    end
+    _G.RefinerStageLevelTable = tmpRefinerStageLevelTable
+
+    for _, data in pairs(_G.RefinerFurnaceTable) do
+        local costs = {}
+        for _, cost in pairs(data.costs) do
+            local v = _G.SplitString(cost, "|")
+            table.insert(costs, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+
+        local getItems = {}
+        for _, getItem in pairs(data.getItems) do
+            local v = _G.SplitString(getItem, "|")
+            table.insert(getItems, { prob = tonumber(v[1]), itemId = tonumber(v[2]), count = tonumber(v[3]), limit = tonumber(v[4]), stack = tonumber(v[5]) })
+        end
+
+        data.costs = costs
+        data.getItems = getItems
+    end
+
+    _G.RefinerTask2PoolId = {}
+    for poolId, data in pairs(_G.RefinerCardPoolTable) do
+        if data.openType == 1 then
+            data.openParam = tonumber(data.openParam)
+            _G.RefinerTask2PoolId[data.openParam] = poolId
+        elseif data.openType == 2 then
+            if data.openParam and data.openParam ~= "" then
+                data.openParam = math.ceil(_G.GetUnixTimeStamp(data.openParam));
+            else
+                data.openParam = 0
+            end
+        elseif data.openType == 3 then
+            data.openParam = tonumber(data.openParam) * 3600
+        elseif data.openType == 4 then
+            if data.openParam and data.openParam ~= "" then
+                data.openParam = tonumber(data.openParam)
+            else
+                data.openParam = 0
+            end
+        else
+            data.openParam = 0
+        end
+
+        local seasonIds = {}
+        for _, seasonId in pairs(data.seasonIds) do
+            seasonIds[seasonId] = 1;
+        end
+        data.seasonIds = seasonIds
+
+        local specialCards = {}
+        for _, cardId in pairs(data.specialCards) do
+            specialCards[cardId] = cardId
+        end
+        data.specialCards = specialCards
+
+        data.cardsKey = {}
+        for _, cardId in pairs(data.cards) do
+            data.cardsKey[cardId] = cardId
+        end
+
+        if data.openClientVersion and data.openClientVersion ~= "" then
+            data.openClientVersion = _G.versionAtoi(data.openClientVersion);
+        else
+            data.openClientVersion = 0
+        end
+    end
+
+end
+
+function LoadShopTable()
+    -- task开启的shop
+    _G.TaskId2ShopIds = {};
+    _G.ShopType2ShopIds = {};
+    _G.TaskId2LimitTask = {};
+    for shopId, data in pairs(_G.ShopTable) do
+        if not data.openType or data.openType == 1 then
+            data.openParam = 0
+        elseif data.openType == 2 then
+            data.openTaskIds = {}
+            local taskIds = _G.SplitString(data.openParam, ";");
+            for _, taskId in pairs(taskIds) do
+                data.openTaskIds[tonumber(taskId)] = 1
+                _G.TaskId2ShopIds[tonumber(taskId)] = _G.TaskId2ShopIds[tonumber(taskId)] or {}
+                table.insert(_G.TaskId2ShopIds[tonumber(taskId)], shopId)
+            end
+        elseif data.openType == 3 then
+            data.openParam = math.ceil(_G.GetUnixTimeStamp(data.openParam));
+        else
+            data.openParam = 0
+        end
+
+        if not data.closeType or data.closeType == 1 then
+            data.closeParam = 0
+        elseif data.closeType == 2 or data.closeType == 5 then
+            data.closeParam = tonumber(data.closeParam)
+        elseif data.closeType == 3 then
+            data.closeParam = math.ceil(_G.GetUnixTimeStamp(data.closeParam));
+        else
+            data.closeParam = 0
+        end
+
+        _G.ShopType2ShopIds[data.shopType] = _G.ShopType2ShopIds[data.shopType] or {}
+        table.insert(_G.ShopType2ShopIds[data.shopType], shopId)
+
+        if data.shopType == 8 and data.limitTask > 0 then
+            _G.TaskId2LimitTask[data.limitTask] = _G.TaskId2LimitTask[data.limitTask] or {}
+            table.insert(_G.TaskId2LimitTask[data.limitTask], shopId)
+        end
+
+        if data.openClientVersion and data.openClientVersion ~= "" then
+            data.openClientVersion = _G.versionAtoi(data.openClientVersion);
+        else
+            data.openClientVersion = 0
+        end
+    end
+
+    -- 根据shopId的任务ID
+    _G.TaskShopIdGoodsIds = {};
+
+    --商品道具表
+    -- 根据shopId的缓存
+    _G.Shop2InGameGoodsTable = {};
+    -- 免费商品
+    _G.freeInGameGoods = {};
+    for id, data in pairs(_G.InGameGoodsTable) do
+        local items = {}
+        for _, item in pairs(data.items) do
+            table.insert(items, { resId = item[1], count = item[2] })
+        end
+        data.items = items
+
+        _G.Shop2InGameGoodsTable[data.shopId] = _G.Shop2InGameGoodsTable[data.shopId] or {}
+        _G.Shop2InGameGoodsTable[data.shopId][id] = data;
+
+        if data.openType == 1 then
+            local taskId = tonumber(data.openParam)
+            _G.TaskShopIdGoodsIds[taskId] = _G.TaskShopIdGoodsIds[taskId] or {};
+            _G.TaskShopIdGoodsIds[taskId][data.shopId] = _G.TaskShopIdGoodsIds[taskId][data.shopId] or {}
+            _G.TaskShopIdGoodsIds[taskId][data.shopId][id] =  id
+        end
+
+        if data.price == 0 then
+            _G.freeInGameGoods[data.shopId] = _G.freeInGameGoods[data.shopId] or {}
+            _G.freeInGameGoods[data.shopId][id] = data;
+        end
+
+        if data.openClientVersion and data.openClientVersion ~= "" then
+            data.openClientVersion = _G.versionAtoi(data.openClientVersion);
+        else
+            data.openClientVersion = 0
+        end
+    end
+
+    -- 首充表
+    -- 首充任务id2chargeId
+    _G.TaskId2ChargeId = {}
+    for id, data in pairs(_G.FirstChargeTable) do
+        local todayItems = {};
+        for _, todayItem in pairs(data.todayItems) do
+            local v = _G.SplitString(todayItem, "|");
+            if next(v) then
+                table.insert(todayItems, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.todayItems = todayItems;
+
+        local nextDayItems = {};
+        for _, nextDayItem in pairs(data.nextDayItems) do
+            local v = _G.SplitString(nextDayItem, "|");
+            if next(v) then
+                table.insert(nextDayItems, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.nextDayItems = nextDayItems;
+
+        _G.TaskId2ChargeId[data.nextDayTask] = id
+    end
+
+    -- 基金奖励表
+    local FundAwardGroupTable = {};
+    for id, data in pairs(_G.AwardGroupTable) do
+        local freeItems = {};
+        for _, freeItem in pairs(data.freeItems) do
+            local v = _G.SplitString(freeItem, "|");
+            if next(v) then
+                table.insert(freeItems, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.freeItems = freeItems;
+
+        local payItems = {};
+        for _, payItem in pairs(data.payItems) do
+            local v = _G.SplitString(payItem, "|");
+            if next(v) then
+                table.insert(payItems, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.payItems = payItems;
+
+        FundAwardGroupTable[data.groupId] = FundAwardGroupTable[data.groupId] or {}
+        table.insert(FundAwardGroupTable[data.groupId], data)
+        
+        if data.conditionType == 1 then
+            local taskConf = _G.TaskTable[data.conditionParam]
+            if taskConf then
+                data.conditionDesc = taskConf.name
+            end
+        end
+    end
+    for groudId, groudData in pairs(FundAwardGroupTable) do
+        table.sort(groudData, function(a, b)
+            return a.id < b.id
+        end)
+    end
+    _G.FundAwardGroupTable = FundAwardGroupTable
+    
+    -- 基金任务id2fundData
+    _G.TaskId2FundData = {}
+    -- 基金表
+    for id, data in pairs(_G.FundTable) do
+        data.awardConfig = _G.FundAwardGroupTable[data.itemGroup]
+        for awardId, awardConfig in pairs(data.awardConfig) do
+            _G.TaskId2FundData[awardConfig.conditionParam] = {fundId=id, awardId=awardConfig.id}
+        end
+    end
+
+    -- 卡数据
+    for id, data in pairs(_G.ShopCardsTable) do
+        local awards = {};
+        for _, award in pairs(data.awards) do
+            local v = _G.SplitString(award, "|");
+            if next(v) then
+                table.insert(awards, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.awards = awards;
+
+        local everyDayAwards = {};
+        for _, award in pairs(data.everyDayAwards) do
+            local v = _G.SplitString(award, "|");
+            if next(v) then
+                table.insert(everyDayAwards, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.everyDayAwards = everyDayAwards;
+
+        local serverRights = {};
+        for _, right in pairs(data.rights) do
+            serverRights[right] = 1;
+        end
+        data.serverRights = serverRights;
+    end
+
+    -- 商城id对应cards数据
+    _G.Shop2ShopCardsTable = {}
+    -- 卡片对应的shopId
+    _G.CardId2ShopIdTable = {}
+    -- 正在卖的首充数据
+    _G.FirstChargeGoods = {};
+    -- fundId 2 goodId
+    _G.FundId2GoodIdTable = {};
+    -- 根据shopId的缓存
+    _G.Shop2GoodsTable = {};
+    -- 根据shopId的限时礼包价格排序缓存
+    _G.Shop2TimeLimitIdList = {};
+    for id, data in pairs(_G.MonetaryGoodsTable) do
+        local shopConfig = _G.ShopTable[data.shopId]
+        if shopConfig.shopType == 8 then
+            -- 限时礼包
+            local items = {}
+            for _, item in pairs(data.items) do
+                table.insert(items, { resId = item[1], count = item[2] })
+            end
+            data.items = items
+
+            _G.Shop2TimeLimitIdList[data.shopId] = _G.Shop2TimeLimitIdList[data.shopId] or {}
+            local timeLimitIdList = _G.Shop2TimeLimitIdList[data.shopId]
+            local insert = false;
+            for idx, timeLimit in ipairs(timeLimitIdList) do
+                if data.price < timeLimit.price then
+                    insert = true;
+                    table.insert(timeLimitIdList, idx, {price=data.price, goodsId=id});
+                    break
+                end
+            end
+            if not insert then
+                table.insert(timeLimitIdList, {price=data.price, goodsId=id});
+            end
+
+        elseif shopConfig.shopType == 3 or shopConfig.shopType == 5 then
+            -- 需要绑定权益卡表
+            data.cardId = tonumber(data.right)
+            data.items = nil;
+            _G.Shop2ShopCardsTable[data.shopId] = _G.Shop2ShopCardsTable[data.shopId] or {}
+            _G.Shop2ShopCardsTable[data.shopId][id] = _G.ShopCardsTable[data.cardId]
+            _G.CardId2ShopIdTable[data.cardId] = data.shopId
+        elseif shopConfig.shopType == 4 then
+            -- 需要绑定基金表
+            data.fundId = tonumber(data.right)
+            data.items = nil;
+            _G.FundId2GoodIdTable[data.fundId] = id
+        elseif shopConfig.shopType == 7 then
+            -- 需要绑定首充表
+            data.firstChargeId = tonumber(data.right)
+            data.items = nil;
+            _G.FirstChargeGoods[id] = data
+        else
+            local items = {}
+            for _, item in pairs(data.items) do
+                table.insert(items, { resId = item[1], count = item[2] })
+            end
+            data.items = items
+        end
+
+        _G.Shop2GoodsTable[data.shopId] = _G.Shop2GoodsTable[data.shopId] or {}
+        _G.Shop2GoodsTable[data.shopId][id] = data;
+
+        if data.openType == 1 then
+            local taskId = tonumber(data.openParam)
+            _G.TaskShopIdGoodsIds[taskId] = _G.TaskShopIdGoodsIds[taskId] or {};
+            _G.TaskShopIdGoodsIds[taskId][data.shopId] = _G.TaskShopIdGoodsIds[taskId][data.shopId] or {}
+            _G.TaskShopIdGoodsIds[taskId][data.shopId][id] =  id
+        end
+
+        if data.openClientVersion and data.openClientVersion ~= "" then
+            data.openClientVersion = _G.versionAtoi(data.openClientVersion);
+        else
+            data.openClientVersion = 0
+        end
+    end
+
+    
+end
+
+---@class CardTableData 卡牌表数据
+---@field id number 卡牌id
+---@field name string 卡牌名称
+---@field type number 卡牌类型
+---@field pveNotSuggest number 是否建议在PVE中使用
+function LoadCardTable()
+end
+
+---@class SutraTableData 法宝表数据
+---@field id number 法宝id
+---@field fates table<number> 所属羁绊
+---@field defaultSkillID number 主动技能id
+---@field basePassive number 初始被动技能id
+---@field baseCondition number 初始被动技能条件
+---@field maxPassive number 满星被动技能id
+---@field maxCondition number 满星被动技能条件
+function LoadSutraTable()
+    local tmpSutraLevelTable = {};
+    for _, data in pairs(_G.SutraLevelTable) do
+        local levelType = data.levelType
+        local level = data.level
+        tmpSutraLevelTable[levelType] = tmpSutraLevelTable[levelType] or {}
+        tmpSutraLevelTable[levelType][level] = data
+    end
+    _G.SutraLevelTable = tmpSutraLevelTable
+
+    local tmpSutraLevelAffixTable = {};
+    for _, data in pairs(_G.SutraLevelAffixTable) do
+        tmpSutraLevelAffixTable[data.levelAffixType] = tmpSutraLevelAffixTable[data.levelAffixType] or {}
+        tmpSutraLevelAffixTable[data.levelAffixType][data.level] = data
+    end
+    _G.SutraLevelAffixTable = tmpSutraLevelAffixTable
+
+    local tmpSutraQualityTable = {}
+    for _, data in pairs(_G.SutraQualityTable) do
+        local sutraId = data.sutraId
+        local quality = data.quality
+        local params = {}
+        for _, param in pairs(data.sacrificeParam) do
+            local tmpSkills = {}
+            local skills = _G.SplitString(param, "|")
+            for _, skill in pairs(skills) do
+                table.insert(tmpSkills, tonumber(skill))
+            end
+            table.insert(params, tmpSkills)
+        end
+        data.sacrificeParam = params
+
+        tmpSutraQualityTable[sutraId] = tmpSutraQualityTable[sutraId] or {}
+        tmpSutraQualityTable[sutraId][quality] = data
+    end
+    _G.SutraQualityTable = tmpSutraQualityTable
+
+    local tmpSutraLevelDefTable = {};
+    for _, data in pairs(_G.SutraLevelDefTable) do
+        local level = data.level
+        tmpSutraLevelDefTable[level] = data
+    end
+    _G.SutraLevelDefTable = tmpSutraLevelDefTable
+
+    for _, data in pairs(_G.SutraQualityDefTable) do
+        local breakDownItems = {}
+        for _, info in pairs(data.breakDownItems) do
+            local v = _G.SplitString(info, "|");
+            table.insert(breakDownItems, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.breakDownItems = breakDownItems
+    end
+end
+
+function LoadSutraSystemTable()
+    local tmpSutraAffixLevelTable = {};
+    for _, data in pairs(_G.SutraAffixLevelTable) do
+        local affixId = data.affixId
+        local affixQuality = data.affixQuality
+
+        local sutraAffixConfig = _G.SutraAffixTypeTable[affixId]
+        data.affixType = sutraAffixConfig.affixType
+        data.linkAttribute = sutraAffixConfig.linkAttribute
+        data.skillId = sutraAffixConfig.skillId
+
+        tmpSutraAffixLevelTable[affixQuality] = tmpSutraAffixLevelTable[affixQuality] or {}
+        tmpSutraAffixLevelTable[affixQuality][affixId] = data
+    end
+    _G.SutraAffixLevelTable = tmpSutraAffixLevelTable
+
+    for _, data in pairs(_G.SutraFateTable) do
+        for idx, fateSkills in pairs(data.fateSkills) do
+            local v = _G.SplitString(fateSkills, "|")
+            local fateSkillIds = {}
+            for _, fateSkill in pairs(v) do
+                table.insert(fateSkillIds, tonumber(fateSkill))
+            end
+            data.fateSkills[idx] = fateSkillIds
+        end
+    end
+end
+
+---@class SpellTableData 法术牌表数据
+---@field id number 法术牌id
+---@field spellType number 法术牌类型
+---@field rarity number 法术牌稀有度
+---@field spellSkill number 法术牌技能
+---@field groupId number 法术牌组id
+---@field defaultUnlock number 默认解锁
+---@field defaultSelected number 默认选中
+function LoadSpellTable()
+    local tmpSpellLevelTable = {};
+    for _, data in pairs(_G.SpellLevelTable) do
+        local rarity = data.rarity
+        local level = data.level
+        tmpSpellLevelTable[rarity] = tmpSpellLevelTable[rarity] or {}
+        tmpSpellLevelTable[rarity][level] = data
+    end
+    _G.SpellLevelTable = tmpSpellLevelTable
+end
+
+function LoadTowerTable()
+end
+
+---@class BattleGameTypeTableData 玩法表数据
+---@field id number 玩法id
+---@field gameType number 玩法类型
+---@field name string 玩法名称
+---@field roundWaitTime number 回合等待时间
+---@field gameWaitTime number 对局开始等待时间（动效）
+---@field bossWaitTime number Boss预告时间
+---@field mana number 法力自然获取速率
+---@field keyUnlockRound table<number> 阵眼解锁回合
+---@field monsterGroups table<number> 怪物组
+---@field monsterLevel number 怪物等级
+---@field sumMoney table<number> 刷牌消耗灵力
+---@field defaultMoney number 初始灵力
+---@field reward number 奖励配置id
+---@field mapId number 地图id
+---@field battleEndId number 战斗结束规则id
+---@field preQueue table<number, table> 备选卡牌
+---@field gameExtraTime number pve轮次时间
+---@field battleData string 战斗快照数据
+---@field roundEndType number 回合结束类型 1. 击杀boss 2. 轮次时间结束
+function LoadBattleTable()
+    _G.BattleRule = _G.BattleRuleTable[1]
+    _G.MapConfig = _G.BattleMapConfigTable
+
+    for _, data in pairs(_G.BattleGameTypeTable) do
+        for teamId, queue in pairs(data.preQueue) do
+            local newQue = {}
+            for i = 1, #queue, 2 do
+                local card = { id = queue[i], element = queue[i + 1] }
+                table.insert(newQue, card)
+            end
+            data.preQueue[teamId] = newQue
+        end
+
+        for teamId, queue in pairs(data.preSpellQueue) do
+            local newQue = {}
+            for i = 1, #queue, 1 do
+                local card = { id = queue[i], level = 1 }
+                table.insert(newQue, card)
+            end
+            data.preSpellQueue[teamId] = newQue
+        end
+    end
+
+    local tmpMonsterGroupRoundTable = {}
+    for _, data in pairs(_G.BattleMonsterGroupTable) do
+        local groupId = data.groupId
+        local rounds = data.rounds
+        for _, round in pairs(rounds) do
+            tmpMonsterGroupRoundTable[round] = tmpMonsterGroupRoundTable[round] or {}
+            tmpMonsterGroupRoundTable[round][groupId] = true
+        end
+    end
+    _G.MonsterGroupRoundTable = tmpMonsterGroupRoundTable
+
+
+    -- 战斗增益/减益
+    for _, data in pairs(_G.BattleGainTable) do
+        local tmpGainValue = {};
+        for _, gainValue in pairs(data.gainValue) do
+            local v = _G.SplitString(gainValue, "|");
+            tmpGainValue[tonumber(v[1])] = tonumber(v[2])
+        end
+        data.gainValue = tmpGainValue
+    end
+end
+
+function LoadAntiAddictionTable()
+    _G.RechargeLimitTable = _G.RechargeLimitTable
+    _G.HolidayTable = _G.HolidayTable;
+    for _, data in pairs(_G.HolidayTable) do
+        data.startTimeStamp = _G.GetUnixTimeStamp(data.startTime)
+        data.endTimeStamp = _G.GetUnixTimeStamp(data.endTime)
+    end
+end
+
+function LoadUnitAttributeTable()
+end
+
+function LoadNotificationTable()
+    local tmpNotificationTable = {}
+    for idx, data in pairs(_G.NotificationTable) do
+        tmpNotificationTable[data.triggerType] = tmpNotificationTable[data.triggerType] or {}
+        tmpNotificationTable[data.triggerType][idx] = data
+    end
+    _G.NotificationTable = tmpNotificationTable
+end
+
+function LoadServerTable()
+    local serverTable = {}
+    for serverId, serverConfig in pairs(_G.ServerTable) do
+        serverConfig.serverStartTime = _G.GetUnixTimeStamp(serverConfig.serverStartTime);
+
+        if serverConfig.beginFlyTime == "" then
+            serverConfig.beginFlyTime = 0
+        else
+            serverConfig.beginFlyTime = _G.GetUnixTimeStamp(serverConfig.beginFlyTime);
+        end
+
+        if serverConfig.stopShowTime == "" then
+            serverConfig.stopShowTime = 0
+        else
+            serverConfig.stopShowTime = _G.GetUnixTimeStamp(serverConfig.stopShowTime);
+        end
+
+        serverConfig.ascensionTarget = tostring(serverConfig.ascensionTarget)
+
+        local flyTasks = {}
+        for _, taskId in pairs(serverConfig.ascensionParam) do
+            flyTasks[taskId] = 1
+        end
+        serverConfig.ascensionParam = flyTasks
+        serverConfig.id = tostring(serverConfig.id)
+        serverTable[tostring(serverId)] = serverConfig
+
+        if serverConfig.mergeDay > 0 then
+            serverConfig.mergeTime = serverConfig.serverStartTime + serverConfig.mergeDay * 86400
+        else
+            serverConfig.mergeTime = 0
+        end
+    end
+    _G.ServerTable = serverTable
+end
+
+function LoadGuildRuinsTable()
+    local guildGroupReikiTable = {}
+    for id, guildReikiConfig in pairs(_G.GuildReikiTable) do
+        guildGroupReikiTable[guildReikiConfig.groupId] = guildGroupReikiTable[guildReikiConfig.groupId] or {}
+        guildGroupReikiTable[guildReikiConfig.groupId][guildReikiConfig.reikiLevel] = guildReikiConfig
+
+        guildReikiConfig.reikiTime = guildReikiConfig.reikiTime * 3600
+
+        local tmpLevelTaskRewards = {};
+        local tmpTaskMailAwards = {};
+        for _, levelTaskReward in pairs(guildReikiConfig.levelTaskRewards) do
+            local v = _G.SplitString(levelTaskReward, "|");
+            table.insert(tmpLevelTaskRewards, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            tmpTaskMailAwards[tonumber(v[1])] = tonumber(v[2])
+        end
+        guildReikiConfig.levelTaskRewards = tmpLevelTaskRewards;
+        guildReikiConfig.taskMailAwards   = tmpTaskMailAwards;
+    end
+    _G.GuildReikiTable = guildGroupReikiTable
+
+    for guildRuinId, guildRuinConfig in pairs(_G.GuildRuinsTable) do
+        if guildRuinConfig.firstSignTime == "" then
+            guildRuinConfig.firstSignTime = 0
+        else
+            guildRuinConfig.firstSignTime = _G.GetUnixTimeStamp(guildRuinConfig.firstSignTime);
+        end
+        guildRuinConfig.signStopTime    = guildRuinConfig.signStopTime * 3600 
+        guildRuinConfig.signLockTime    = guildRuinConfig.signLockTime * 3600 
+        guildRuinConfig.nextSignTime    = guildRuinConfig.nextSignTime * 3600 
+        guildRuinConfig.openCycle       = guildRuinConfig.signStopTime + guildRuinConfig.signLockTime + guildRuinConfig.nextSignTime
+
+
+        guildRuinConfig.caveBattleFameRate       = guildRuinConfig.caveBattleFameRate / 10000 
+        guildRuinConfig.guildBattleDmgFameRate   = guildRuinConfig.guildBattleDmgFameRate / 10000 
+        guildRuinConfig.guildBattleMoneyFameRate = guildRuinConfig.guildBattleMoneyFameRate / 10000 
+
+        local guildGroupReikiConfig = _G.GuildReikiTable[guildRuinConfig.reikiGroup]
+        local ruinOpenDuring = 0
+        for id, guildReikiConfig in pairs(guildGroupReikiConfig) do
+            ruinOpenDuring = ruinOpenDuring + guildReikiConfig.reikiTime
+        end
+        guildRuinConfig.ruinOpenDuring = ruinOpenDuring
+
+        local tmpRuinAwards = {}
+        for idx, ruinAward in ipairs(guildRuinConfig.ruinAwards) do
+            local realRewards = {}
+            local rewardGroupConfig = (_G.RewardGroupTable or {})[ruinAward]
+            if not rewardGroupConfig then
+                LogErr("guildRuinId={} ruinAwards:ruinAward={} no in RewardGroupTable", guildRuinId, ruinAward)
+            else
+                for _, reward in pairs(rewardGroupConfig.rewards) do
+                    local v = _G.SplitString(reward, "|");
+                    if next(v) then
+                        realRewards[tonumber(v[1])] = tonumber(v[2])
+                    end
+                end
+            end
+            table.insert(tmpRuinAwards, realRewards)
+        end
+        guildRuinConfig.ruinAwards = tmpRuinAwards
+    end
+
+    local guildGroupSlotTable = {}
+    for id, guildBattleSlotConfig in pairs(_G.GuildBattleSlotTable) do
+        guildGroupSlotTable[guildBattleSlotConfig.slotGroup]       = guildGroupSlotTable[guildBattleSlotConfig.slotGroup] or {}
+        guildGroupSlotTable[guildBattleSlotConfig.slotGroup][guildBattleSlotConfig.slotTeam] = guildGroupSlotTable[guildBattleSlotConfig.slotGroup][guildBattleSlotConfig.slotTeam] or {configs={}}
+        guildGroupSlotTable[guildBattleSlotConfig.slotGroup][guildBattleSlotConfig.slotTeam].configs[id] = guildBattleSlotConfig
+        if guildBattleSlotConfig.slotType == 1 then
+            guildGroupSlotTable[guildBattleSlotConfig.slotGroup][guildBattleSlotConfig.slotTeam].leaderSlot = id
+        end
+    end
+    _G.GuildBattleSlotTable = guildGroupSlotTable
+
+    local guildGroupRuinCaveTable = {}
+    for id, guildRuinCaveConfig in pairs(_G.GuildRuinCaveTable) do
+        guildGroupRuinCaveTable[guildRuinCaveConfig.caveGroup] = guildGroupRuinCaveTable[guildRuinCaveConfig.caveGroup] or {bornIds = {}, configs = {}}
+        guildGroupRuinCaveTable[guildRuinCaveConfig.caveGroup].configs[id] = guildRuinCaveConfig
+
+        if guildRuinCaveConfig.caveType == 0 then
+            table.insert(guildGroupRuinCaveTable[guildRuinCaveConfig.caveGroup].bornIds, id)
+        end
+
+        local tmpCaveTimeAwards = {};
+        for _, caveTimeAward in pairs(guildRuinCaveConfig.caveTimeAwards) do
+            local v = _G.SplitString(caveTimeAward, "|");
+            table.insert(tmpCaveTimeAwards, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+        guildRuinCaveConfig.caveTimeAwards = tmpCaveTimeAwards;
+
+        local tmpCaveFirstHoldAwards = {};
+        for _, caveFirstHoldAward in pairs(guildRuinCaveConfig.caveFirstHoldAwards) do
+            local v = _G.SplitString(caveFirstHoldAward, "|");
+            tmpCaveFirstHoldAwards[tonumber(v[1])] = tonumber(v[2])
+        end
+        guildRuinCaveConfig.caveFirstHoldAwards = tmpCaveFirstHoldAwards;
+
+        guildRuinCaveConfig.holdTime    = guildRuinCaveConfig.holdTime * 60
+        guildRuinCaveConfig.protectTime = guildRuinCaveConfig.protectTime * 60
+        guildRuinCaveConfig.exploreTime = guildRuinCaveConfig.exploreTime * 60
+    end
+    _G.GuildRuinCaveTable = guildGroupRuinCaveTable
+
+    local guildRuinsSettleTable = {}
+    for id, guildRuinsSettleConfig in pairs(_G.GuildRuinsSettleTable) do
+        guildRuinsSettleTable[guildRuinsSettleConfig.groupId] = guildRuinsSettleTable[guildRuinsSettleConfig.groupId] or {}
+        guildRuinsSettleTable[guildRuinsSettleConfig.groupId][guildRuinsSettleConfig.guildRank] = guildRuinsSettleConfig
+    end
+    _G.GuildRuinsSettleTable = guildRuinsSettleTable
+end
+
+function LoadFiveAttributeTable()
+end
+
+function LoadMailTable()
+    _G.SystemMailDataTable = {};
+    _G.GlobalMailDataTable = {};
+    _G.ModuleMailDataTable = {};
+    _G.GlobalMailDataMaxId = 0;
+
+    local now              = _G.GetCurTime();
+
+    for mailId, mailCfg in pairs(_G.MailTable) do
+        mailCfg.startTime = _G.GetUnixTimeStamp(mailCfg.startTime);
+        mailCfg.endTime   = _G.GetUnixTimeStamp(mailCfg.endTime);
+
+
+        local tmpAttach = {};
+        for _, attach in pairs(mailCfg.attachments) do
+            local v = _G.SplitString(attach, "|");
+            tmpAttach[tonumber(v[1])] = tonumber(v[2]) or 1;
+        end
+        mailCfg.attachments = tmpAttach;
+
+        if mailCfg.type == 1 then
+            if now <= mailCfg.endTime then
+                _G.SystemMailDataTable[mailId] = mailCfg;
+            end
+        elseif mailCfg.type == 2 then
+            if now <= mailCfg.endTime then
+                _G.GlobalMailDataTable[mailId] = mailCfg;
+                _G.GlobalMailDataMaxId = math.max(_G.GlobalMailDataMaxId, mailId)
+            end
+        end
+    end
+end
+
+function LoadInitialDataTable()
+    for _, data in pairs(_G.InitialDataTable) do
+        local items = {}
+        for _, item in pairs(data.items) do
+            local v = _G.SplitString(item, "|")
+            table.insert(items, { resId = tonumber(v[1]), count = tonumber(v[2]) })
+        end
+        data.items = items
+    end
+
+end
+
+function LoadItemTable()
+    --掉落类型
+    _G.DROP_TYPE = {
+        NORMAL      = 1, -- 1.普通掉落
+        INDEPENDENT = 2, -- 2.独立掉落
+    }
+    local tmpDropClassTable = {}
+    for id, dropClassConfig in pairs(_G.DropClassTable) do
+        tmpDropClassTable[dropClassConfig.dropGroupId] = tmpDropClassTable[dropClassConfig.dropGroupId] or {
+            dropGroupType    = dropClassConfig.dropGroupType,
+            independentDrop  = {},
+            normalDrop       = { dropNormalConfig = {}, dropNormalWeights = {} },
+            normalWeightsSum = 0,
+            groupLayar       = dropClassConfig.layer,
+            dropType         = dropClassConfig.dropType,
+        };
+        local dropClassGroup = tmpDropClassTable[dropClassConfig.dropGroupId];
+        if dropClassConfig.layer ~= dropClassGroup.groupLayar then
+            LogErr("策划写错了表, id={} 的层级错误", id);
+            goto continue
+        end
+        if dropClassConfig.dropType == _G.DROP_TYPE.NORMAL then
+            dropClassGroup.normalDrop.dropNormalConfig[id]  = dropClassConfig;
+            dropClassGroup.normalDrop.dropNormalWeights[id] = dropClassConfig.weights;
+            dropClassGroup.normalWeightsSum                 = dropClassGroup.normalWeightsSum + dropClassConfig.weights;
+        elseif dropClassConfig.dropType == _G.DROP_TYPE.INDEPENDENT then
+            dropClassGroup.independentDrop[id] = dropClassConfig;
+        end
+        ::continue::
+    end
+    _G.DropClassTable = tmpDropClassTable
+
+    for _, data in pairs(_G.ItemTable) do
+        data.chooseInfo = {}
+        for _, itemInfo in pairs(data.itemLists) do
+            local v = _G.SplitString(itemInfo, "|");
+            data.chooseInfo[tonumber(v[1])] = tonumber(v[2]);
+        end
+    end
+end
+
+function LoadCommonValueTable()
+    _G.CommonValue = _G.CommonValueTable[1];
+    _G.CommonValue.guildFlyTime         = _G.CommonValue.guildFlyTime * 60
+    _G.CommonValue.addGuildTime         = _G.CommonValue.addGuildTime * 60
+    _G.CommonValue.guildBattlePreTime   = _G.CommonValue.guildBattlePreTime * 60
+    _G.CommonValue.guildBattleTime      = _G.CommonValue.guildBattleTime * 60
+    _G.CommonValue.guildBattleAddTime   = _G.CommonValue.guildBattleAddTime * 60
+    _G.CommonValue.guildSignCdTime      = _G.CommonValue.guildSignCdTime * 60
+    _G.CommonValue.giftComboTime        = _G.CommonValue.giftComboTime * 1000
+    local noLevelUpSutras = {}
+    for _, cardId in pairs(_G.CommonValue.noLevelUpSutras) do
+        noLevelUpSutras[cardId]  = 1;
+    end
+    _G.CommonValue.noLevelUpSutras = noLevelUpSutras;
+
+    local tmpGrowUpdAndMonsterTable = {};
+    for _, data in pairs(_G.GrowUpAndMonsterTable) do
+        tmpGrowUpdAndMonsterTable[data.sutraQuality] = tmpGrowUpdAndMonsterTable[data.sutraQuality] or {}
+        tmpGrowUpdAndMonsterTable[data.sutraQuality][data.sutraLevel] = data.monsterLevel
+    end
+    _G.GrowUpAndMonsterTable = tmpGrowUpdAndMonsterTable
+end
+
+function LoadHeadIconTable()
+    for _, data in pairs(_G.TitleTable) do
+        local attributeValues = {}
+        for _, attributeValue in pairs(data.attributeValue) do
+            local v = _G.SplitString(attributeValue, "|");
+            attributeValues[tonumber(v[1])] = tonumber(v[2])
+        end
+        data.attributeValue = attributeValues
+    end
+end
+
+function LoadDefaultNameTable()
+    _G.FirstNamePool = {}
+    _G.LastNamePool = {}
+    for _, data in pairs(_G.DefaultNameTable) do
+        table.insert(_G.FirstNamePool, data.firstName)
+        table.insert(_G.LastNamePool, data.lastName)
+    end
+end
+
+function LoadRobotServerConfigTable()
+    _G.robotServerConfig      = _G.RobotServerConfigTable[1]
+
+    _G.RobotLevelGroupTable = {}
+    for robotConfigId, robotConfig in pairs(_G.RobotConfigTable) do
+        _G.RobotLevelGroupTable[robotConfig.aiGoup] = _G.RobotLevelGroupTable[robotConfig.aiGoup] or {};
+        table.insert(_G.RobotLevelGroupTable[robotConfig.aiGoup], robotConfig);
+    end
+
+    _G.MaxAILevel = 0;
+    _G.MinAILevel = 999999999;
+    for _, robotLevelConfig in pairs(_G.RobotLevelTable) do
+        local cardLvInfoList = {};
+        for _, cardLvInfo in pairs(robotLevelConfig.cardLvInfo) do
+            local v = _G.SplitString(cardLvInfo, "|");
+            if next(v) then
+                table.insert(cardLvInfoList, { cardQuality = tonumber(v[1]), cardLevel = tonumber(v[2]) });
+            end
+        end
+        robotLevelConfig.cardLvInfo = cardLvInfoList;
+
+        _G.MaxAILevel = math.max(_G.MaxAILevel, robotLevelConfig.id);
+        _G.MinAILevel = math.min(_G.MinAILevel, robotLevelConfig.id);
+    end
+end
+
+function LoadMatchTable()
+    _G.MatchParam = _G.MatchParamTable[1];
+
+    _G.RobotMatch = _G.RobotMatchTable[1]
+
+    local matchScoreGroupTable = {}
+    for _, matchScoreConfig in pairs(_G.MatchScoreTable) do
+        matchScoreGroupTable[matchScoreConfig.group] = matchScoreGroupTable[matchScoreConfig.group] or {}
+        local groupMatchScoreGroupTable = matchScoreGroupTable[matchScoreConfig.group]
+        local insert = false;
+        for idx, data in ipairs(groupMatchScoreGroupTable) do
+            if matchScoreConfig.beginScore < data.beginScore then
+                insert = true;
+                table.insert(groupMatchScoreGroupTable, idx, matchScoreConfig);
+                break
+            end
+        end
+        if not insert then
+            table.insert(groupMatchScoreGroupTable, matchScoreConfig);
+        end
+    end
+    _G.MatchScoreTable = matchScoreGroupTable
+end
+
+function LoadRankTable()
+    for _, data in pairs(_G.RankConfigTable) do
+        local awardsClient = {};
+        for _, award in pairs(data.likeAwards) do
+            local v = _G.SplitString(award, "|");
+            if next(v) then
+                table.insert(awardsClient, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.awardsClient = awardsClient;
+    end
+
+
+    local rankNormalAwardsGroupTable = {};
+    for _, data in pairs(_G.RankNormalAwardsTable) do
+        rankNormalAwardsGroupTable[data.awardGroup] = rankNormalAwardsGroupTable[data.awardGroup] or {};
+
+        local awards = {};
+        local awardsClient = {};
+        for _, award in pairs(data.awards) do
+            local v = _G.SplitString(award, "|");
+            if next(v) then
+                awards[tonumber(v[1])] = tonumber(v[2]);
+                table.insert(awardsClient, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+            end
+        end
+        data.awards = awards;
+        data.awardsClient = awardsClient;
+        
+        if data.rankRange and #data.rankRange == 1 then
+            rankNormalAwardsGroupTable[data.awardGroup][data.rankRange[1]] = data;
+        elseif data.rankRange and #data.rankRange == 2 then
+            for rank = data.rankRange[1] , data.rankRange[2] do
+                rankNormalAwardsGroupTable[data.awardGroup][rank] = data;
+            end
+        end
+    end
+    _G.RankNormalAwardsTable = rankNormalAwardsGroupTable;
+end
+
+function LoadCoopRuleTable()
+    _G.CoopRule = _G.CoopRuleTable[1];
+    local rewards = {};
+    for _, reward in pairs(_G.CoopRule.teamReward) do
+        local v = _G.SplitString(reward, "|");
+        if next(v) then
+            rewards[tonumber(v[1])] = tonumber(v[2]);
+        end
+    end
+    _G.CoopRule.teamReward = rewards;
+end
+
+function LoadBlackWhiteTable()
+    local tmpIpWhiteTable = {};
+    for _, data in pairs(_G.IpWhiteTable) do
+        tmpIpWhiteTable[data.ip] = 1;
+    end
+    _G.IpWhiteTable = tmpIpWhiteTable;
+
+    local tmpIpBlackTable = {};
+    for _, data in pairs(_G.IpBlackTable) do
+        tmpIpBlackTable[data.ip] = 1;
+    end
+    _G.IpBlackTable = tmpIpBlackTable;
+
+    local tmpWhiteTable = {};
+    for _, data in pairs(_G.WhiteTable) do
+        tmpWhiteTable[data.openId] = 1;
+    end
+    _G.WhiteTable = tmpWhiteTable;
+
+    local tmpBlackTable = {};
+    for _, data in pairs(_G.BlackTable) do
+        tmpBlackTable[data.openId] = 1;
+    end
+    _G.BlackTable = tmpBlackTable;
+end
+
+-- 根据序号获取表格数据
+_G.GetTableDataParam = function(configParams, idx)
+    return configParams[idx] or configParams[#configParams]
+end
+
+-- 解析等级相关字段
+-- {数组}|{数组}....
+function parseLevelFiled(strings)
+    local params = {}
+    for _, str in pairs(strings) do
+        local array = {}
+        -- 删除string前后的{}，并根据;分割
+        local len = string_len(str)
+        if len > 1 then
+            local tmp = string_sub(str, 2, len - 1)
+            local tmpArray = _G.SplitString(tmp, ",")
+            for _, v in pairs(tmpArray) do
+                table.insert(array, tonumber(v))
+            end
+        end
+        table.insert(params, array)
+    end
+    return params
+end
+
+function LoadLotteryPoolTable()
+    _G.LotteryPoolTable = _G.diveServerConfigData.LotteryPoolTable;
+
+    for id, data in pairs(_G.LotteryPoolTable) do
+
+        if data.oneGroup <= 0 or data.tenGroup <= 0 or data.guaranteesGroup <= 0 then
+            LogErr("策划写错了表, id={} 的错误", id);
+            goto continue;
+        end
+
+        if not _G.DropClassTable[data.oneGroup] or not _G.DropClassTable[data.tenGroup] or not _G.DropClassTable[data.guaranteesGroup] then
+            LogErr("策划写错了表, id={} 的错误", id);
+            goto continue;
+        end
+
+        local upWeightsData = {};
+        for _, info in pairs(data.upWeights) do
+            local v = _G.SplitString(info, "|");
+            upWeightsData[tonumber(v[1])] = tonumber(v[2]);
+        end
+        data.upWeightsData = upWeightsData;
+
+        ::continue::
+    end
+
+end
+
+function LoadSpiritTable()
+    for _, data in pairs(_G.SpiritTable) do
+        local defaultAttrs = {}
+        for _, attrs in pairs(data.defaultAffix) do
+            local v = _G.SplitString(attrs, "|")
+            defaultAttrs[tonumber(v[1])] = tonumber(v[2])
+        end
+        data.defaultAffix = defaultAttrs
+    end
+
+    --元神星级
+    local tmpSpiritStarTable = {}
+    for _, data in pairs(_G.SpiritStarTable) do
+
+        local spiritAttrAdds = {};
+        for _, info in pairs(data.spiritAttrAdds) do
+            local v = _G.SplitString(info, "|");
+            spiritAttrAdds[tonumber(v[1])] = tonumber(v[2]);
+        end
+        data.spiritAttrAdds = spiritAttrAdds;
+
+        local spiritSelfAttrAdds = {};
+        for _, info in pairs(data.spiritSelfAttrAdds) do
+            local v = _G.SplitString(info, "|");
+            spiritSelfAttrAdds[tonumber(v[1])] = tonumber(v[2]);
+        end
+        data.spiritSelfAttrAdds = spiritSelfAttrAdds;
+
+        local spiritSkill = {};
+        for _, info in pairs(data.spiritSkill) do
+            local v = _G.SplitString(info, "|");
+            spiritSkill[tonumber(v[1])] = tonumber(v[2]);
+        end
+        data.spiritSkill = spiritSkill;
+
+        tmpSpiritStarTable[data.groupId] = tmpSpiritStarTable[data.groupId] or {};
+        tmpSpiritStarTable[data.groupId][data.spiritStar] = data;
+    end
+    _G.SpiritStarTable = tmpSpiritStarTable
+
+    --本源
+    _G.SpiritOrigin = {};
+    for _, data in pairs(_G.SpiritOriginTable) do
+        local needItems = {}
+        for _, info in pairs(data.needItems) do
+            local v = _G.SplitString(info, "|");
+            needItems[tonumber(v[1])] = tonumber(v[2]);
+        end
+        data.needItems = needItems;
+
+        local originAttrAdd = {}
+        for _, info in pairs(data.originAttrAdd) do
+            local v = _G.SplitString(info, "|");
+            originAttrAdd[tonumber(v[1])] = tonumber(v[2]);
+        end
+        data.originAttrAdd = originAttrAdd;
+
+        if _G.SpiritOrigin[data.originType] then
+            _G.SpiritOrigin[data.originType][data.originLevel] = data;
+        else
+            _G.SpiritOrigin[data.originType] = {};
+            _G.SpiritOrigin[data.originType][data.originLevel] = data;
+        end
+    end
+
+    local tmpSpiritLevelItemTable = {}
+    for _, data in pairs(_G.SpiritLevelItemTable) do
+        local needItems = {}
+        for _, value in pairs(data.item) do
+            local v = _G.SplitString(value, "|");
+            table.insert(needItems, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+        data.item = needItems;
+        tmpSpiritLevelItemTable[data.groupId] = tmpSpiritLevelItemTable[data.groupId] or {}
+        tmpSpiritLevelItemTable[data.groupId][data.level] = data
+    end
+    _G.SpiritLevelItemTable = tmpSpiritLevelItemTable
+
+    local tmpSpiritLevelTable = {}
+    for _, data in pairs(_G.SpiritLevelTable) do
+        local needItems = {}
+        for _, value in pairs(data.item) do
+            local v = _G.SplitString(value, "|");
+            table.insert(needItems, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+        data.item = needItems;
+
+        tmpSpiritLevelTable[data.groupId] = tmpSpiritLevelTable[data.groupId] or {}
+        tmpSpiritLevelTable[data.groupId][data.level] = data
+    end
+    _G.SpiritLevelTable = tmpSpiritLevelTable
+end
+
+function LoadSpiritBattleTable()
+    for _, data in pairs(_G.SpiritBattleTable) do
+        local successAward = {}
+        local failAward = {}
+        local firstAward = {}
+        for _, info in pairs(data.successAward) do
+            local v = _G.SplitString(info, "|");
+            table.insert(successAward, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+        for _, info in pairs(data.failAward) do
+            local v = _G.SplitString(info, "|");
+            table.insert(failAward, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+        for _, info in pairs(data.firstAward) do
+            local v = _G.SplitString(info, "|");
+            table.insert(firstAward, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+        data.successAward = successAward
+        data.failAward = failAward
+        data.firstAward = firstAward
+
+        local spiritStrongLists ={}
+        for _, spiritData in pairs(data.spiritStrongLists) do
+            local v = _G.SplitString(spiritData, "|");
+            spiritStrongLists[tonumber(v[1])] = spiritStrongLists[tonumber(v[1])] or {};
+            table.insert(spiritStrongLists[tonumber(v[1])], { attr = tonumber(v[2]), value = tonumber(v[3])})
+        end
+        data.spiritStrongLists = spiritStrongLists;
+    end
+
+    local tmpSpiritBattleSlotTable = {};
+    for _, data in pairs(_G.SpiritBattleSlotTable) do
+        local slotGroup = data.slotGroup;
+        local slotIndex = data.slotIndex;
+        tmpSpiritBattleSlotTable[slotGroup] = tmpSpiritBattleSlotTable[slotGroup] or {};
+        tmpSpiritBattleSlotTable[slotGroup][slotIndex] = data;
+    end
+    _G.SpiritBattleSlotTable = tmpSpiritBattleSlotTable;
+
+    local tmpSpiritRobotTable = {}
+    -- 问道机器人
+    for id, data in pairs(_G.SpiritRobotTable) do
+        data.spirits = {}
+        for idx, spiritRobotConfigId in ipairs(data.battleSpirits) do
+            if spiritRobotConfigId <= 0 then
+                goto load_spirit_robot_continue
+            end
+
+            local spiritRobotConfig = _G.SpiritPrefabTable[spiritRobotConfigId]
+            if not spiritRobotConfig then
+                LogErr("SpiritRobotTable id={} spiritRobotConfigId={} not in SpiritPrefabTable", id, spiritRobotConfigId)
+                goto load_spirit_robot_continue
+            end
+
+            local spiritData = {
+                spiritId    = spiritRobotConfig.spiritId,
+                level       = 0,
+                level2      = data.spiritLevels[idx],
+                level3      = data.spiritExpLevels[idx],
+                slotId      = idx,
+                affixPoints = {},
+                sutras      = {}
+            }
+            for _, sutraInfo in pairs(spiritRobotConfig.spiritSutras) do
+                local v = _G.SplitString(sutraInfo, "|");
+                table.insert(spiritData.sutras, {
+                    id      = tonumber(v[1]),
+                    quality = tonumber(v[2]),
+                    level   = tonumber(v[3]),
+                });
+            end
+
+            data.spirits[idx] = spiritData
+
+            ::load_spirit_robot_continue::
+        end
+        tmpSpiritRobotTable[data.robotGroup] = tmpSpiritRobotTable[data.robotGroup] or {}
+        tmpSpiritRobotTable[data.robotGroup][id] = data
+    end
+    _G.SpiritRobotTable = tmpSpiritRobotTable
+end
+
+function LoadGamePlayListTable()
+    for _, data in pairs(_G.GamePlayListTable) do
+        if data.openType == 1 then
+            data.taskIds = {}
+            local values = _G.SplitString(data.openParam, "|");
+            for _, v in pairs(values) do
+                table.insert(data.taskIds, tonumber(v))
+            end
+        end
+    end
+end
+
+function LoadSpiritPveTable()
+    for _, data in pairs(_G.SpiritPveLevelTable) do
+        local rewardItems = {}
+        local sweepAwards = {}
+
+        for _, info in pairs(data.rewardItems) do
+            local v = _G.SplitString(info, "|");
+            table.insert(rewardItems, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+        for _, info in pairs(data.sweepAwards) do
+            local v = _G.SplitString(info, "|");
+            table.insert(sweepAwards, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+
+        data.clientReward = rewardItems
+        data.sweepClientAward = sweepAwards
+    end
+
+    for _, data in pairs(_G.SpiritPveChapterRewardTable) do
+        local rewardItems = {}
+        for _, info in pairs(data.rewards) do
+            local v = _G.SplitString(info, "|");
+            table.insert(rewardItems, { resId = tonumber(v[1]), count = tonumber(v[2]) });
+        end
+
+        data.rewards = rewardItems
+    end
+end
+
+Init();

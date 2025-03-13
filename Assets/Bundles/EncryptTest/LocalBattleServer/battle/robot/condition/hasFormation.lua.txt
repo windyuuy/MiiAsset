@@ -1,0 +1,5 @@
+-- 是否已结阵
+
+function Execute(robot)
+    return robot.battleData.formationStatus;
+end

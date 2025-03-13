@@ -1,0 +1,29 @@
+-- IpWhiteTable
+_G.IpWhiteTable =
+{
+    [1] = {uid = 1, ip = "192.192.192.192", value = true,},
+}
+
+-- IpBlackTable
+_G.IpBlackTable =
+{
+    [1] = {uid = 1, ip = "192.192.192.192", value = true,},
+}
+
+-- WhiteTable
+_G.WhiteTable =
+{
+    [1] = {uid = 1, desc = "正盈？", openId = "2239141", value = true,},
+    [2] = {uid = 2, desc = "左杨慈？", openId = "2147740", value = true,},
+}
+
+-- BlackTable
+_G.BlackTable =
+{
+    [1] = {uid = 1, openId = "123", value = true,},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("BlackWhiteTable")
+end

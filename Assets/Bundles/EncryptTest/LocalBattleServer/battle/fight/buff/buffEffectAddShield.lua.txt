@@ -1,0 +1,22 @@
+local shieldComp = import("battle/components/shieldComponent.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local entry = buff.owner
+    local config = buff:GetConfig()
+    local effectParam = _G.GetTableDataParam(config.effectParam, buff.level)
+    local shieldType = effectParam[1]
+    local fixedValue = effectParam[2]
+    local percentage = effectParam[3]
+
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

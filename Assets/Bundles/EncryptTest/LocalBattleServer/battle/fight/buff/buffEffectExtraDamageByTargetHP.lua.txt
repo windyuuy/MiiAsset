@@ -1,0 +1,49 @@
+-- 34. buff效果新增：根据目标血量造成额外伤害
+local reason = import("common/reason.lua")
+local battleFightAttackLogic = import("battle/fight/battleFightAttackLogic.lua")
+
+-- buff生效
+---@param buff Buff
+---@param skillContext SkillContext
+function BuffEffect(buff, skillContext)
+    if not skillContext then
+        return
+    end
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+    if not buffConfig then
+        return;
+    end
+    local sign         = buffConfig.effectData[1]    -- 1：大于等于 2：小于等于
+    local hpPercent    = buffConfig.effectData[2]    -- 血量万分比
+    local extraPercent = buffConfig.effectData[3]    -- 额外伤害万分比
+
+    for _, damageInfo in pairs(skillContext.damageInfos) do
+        local attacked = damageInfo.attacked
+        local maxHP = attacked:GetAttribute(_G.AttributeType.FINAL_HEALTH)
+        local curHP = attacked.curHP
+        local isExtraDamage = false
+        if sign == 1 then
+            if curHP >= maxHP * hpPercent / 10000 then
+                isExtraDamage = true
+            end
+        else
+            if curHP <= maxHP * hpPercent / 10000 then
+                isExtraDamage = true
+            end
+        end
+        if isExtraDamage then
+            local extraDamage = damageInfo.damage * extraPercent / 10000
+            battleFightAttackLogic.SkillDamageHandlerByValue(damageInfo.attacker, attacked, extraDamage)
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

@@ -1,0 +1,156 @@
+dive.header_sys = [[
+    local dive = dive
+    local _G = _G
+
+    local collectgarbage = collectgarbage
+    local ipairs = ipairs
+    local pairs = pairs
+    local pcall = pcall
+    local xpcall = xpcall
+    local next = next
+    local tonumber = tonumber
+    local tostring = tostring
+    local type = type
+    local utf8 = utf8
+    local io = io
+    local os = os
+    local os_clock = os.clock
+    local os_date = os.date
+    local os_time = os.time
+    local math = math
+    local math_abs = math.abs
+    local math_ceil = math.ceil
+    local math_floor = math.floor
+    local math_fmod = math.fmod
+    local math_max = math.max
+    local math_min = math.min
+    local math_random = math.random
+    local math_tointeger = math.tointeger
+    local string = string
+    local string_byte = string.byte
+    local string_char = string.char
+    local string_find = string.find
+    local string_format = string.format
+    local string_gmatch = string.gmatch
+    local string_gsub = string.gsub
+    local string_len = string.len
+    local string_lower = string.lower
+    local string_match = string.match
+    local string_sub = string.sub
+    local string_upper = string.upper
+    local table = table
+    local table_concat = table.concat
+    local table_insert = table.insert
+    local table_move = table.move
+    local table_pack = table.pack
+    local table_remove = table.remove
+    local table_sort = table.sort
+    local table_unpack = table.unpack
+    local debug = debug
+    local debug_traceback = debug.traceback
+]]
+
+dive.files = {};
+-- dive.meta = {__index=function(t, k) return _G[k]; end};
+
+function _G.Print(format, ...)
+    dive.LocalPrint(format, {...});
+end
+
+function _G.PrintError(format, ...)
+    dive.LocalPrintError(format, {...});
+end
+
+function _G.LogDebug(format, ...)
+    dive.LocalLogDebug(format, {...});
+end
+
+function _G.LogInfo(format, ...)
+    dive.LocalLogInfo(format, {...});
+end
+
+function _G.LogWarn(format, ...)
+    dive.LocalLogWarn(format, {...});
+end
+
+function _G.LogErr(format, ...)
+    dive.LocalLogErr(format, {...});
+end
+
+-- 是否是单机模式
+_G.isStandalone = dive.isStandalone;
+-- 单机模式下的玩家id
+_G.playerUid = dive.playerUid;
+
+_G.GetTimeMS = dive.GetTimeMS
+_G.GetTimeNS = dive.GetTimeNS
+
+local get_filenode = function(filename)
+    local node = dive.files[filename];
+    if node then
+        return node;
+    end
+
+    local env = dive.CreateEnv();
+    --setmetatable(env, dive.meta);
+    node = {env=env, filename=filename, loaded=false};
+    dive.files[filename] = node;
+    return node;
+end
+
+local try_load = function(node)
+    local body = dive.LoadLuaSourceFile(node.filename);
+	if not body then
+		PrintError("open file: {} ... ... [failed]", node.filename);
+		return;
+	end
+
+    --remove BOM. loadfile() can skip BOM, but load() cannot
+    if string.byte(body,1)==239 and string.byte(body,2)==187 and string.byte(body,3)==191 then
+        print("load file: {} ... ... [with BOM]", node.filename);
+        body=string.char(string.byte(body,4,string.len(body)))
+    end
+
+    --keep original line numbers, for xpcall etc.
+    local header = string.gsub(dive.header_sys, "%c", " ")
+    -- local header = dive.header_sys
+
+    --remove comment. loadfile() can skip first line as comment if it starts with '#', but load() cannot
+    if '#' == string.sub(body, 1, 1) then
+        body = string.gsub(body, "#[^\n]*\n", header.."\n", 1)
+    else
+        body = header .. body;
+    end
+
+    node.loaded = true;
+
+    local trunk, msg = load(body, "@"..node.filename, "bt", node.env);
+    if not trunk then
+        return
+    else
+        trunk()
+    end
+
+    return node.env
+end
+
+dive.Reload = function(filename)
+	if not dive.files[filename] then
+		return;
+	end
+
+	local node = get_filenode(filename);
+
+	try_load(node);
+end
+
+function _G.import(filename)
+	local node = get_filenode(filename);
+
+	if node.loaded then
+	   return node.env;
+	end
+
+	node.env = try_load(node);
+    return node.env;
+end

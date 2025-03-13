@@ -1,0 +1,32 @@
+-- 是否有空格可以上阵新法宝
+
+function Execute(robot)
+    local battleData = robot.battleData
+
+    local lockedCount = 0;
+    local equipCount  = 0;
+
+    for _, slot in pairs(battleData.equipList) do
+        if slot.isLocked then
+            lockedCount = lockedCount + 1
+        elseif slot.card and slot.card.id and slot.card.id ~= 0 then
+            equipCount = equipCount + 1;
+        end
+    end
+
+    if equipCount >= robot.robotLevelTable.maxUpCount then
+        return false;
+    end
+
+    if equipCount == 5 then
+        return false;
+    elseif equipCount >= 5 - lockedCount then
+        return false;
+    elseif equipCount == 4 then
+        return battleData.formationId;
+    else
+        return true;
+    end
+
+    return false;
+end

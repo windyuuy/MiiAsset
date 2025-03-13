@@ -1,0 +1,264 @@
+_G.AttributeType = {
+    BASE_ATTACK = 310001,           -- 基础攻击力
+    EXTRA_ATTACK = 310002,          -- 额外攻击力
+    PER_ATTACK = 310003,            -- 百分比攻击力加成
+    LEVEL_PER_ATTACK = 310004,      -- 等级攻击力加成
+    FIXED_ATTACK = 310005,          -- 固定攻击力加成
+    FINAL_ATTACK = 310006,          -- 最终攻击力加成
+
+    BASE_ATTACK_SPEED = 310021,     -- 基础攻击速度
+    PER_ATTACK_SPEED = 310022,      -- 百分比攻击速度加成
+    FINAL_ATTACK_SPEED = 310023,    -- 最终攻击速度
+
+    BASE_MOVE_SPEED = 310030,       -- 基础移动速度
+    EXTRA_MOVE_SPEED = 310031,      -- 额外移动速度
+    PER_MOVE_SPEED = 310032,        -- 百分比移动速度加成
+    FIXED_MOVE_SPEED = 310033,      -- 固定移动速度加成
+    FINAL_MOVE_SPEED = 310034,      -- 最终移动速度
+
+    BASE_HEALTH = 310041,           -- 基础生命值
+    EXTRA_HEALTH = 310042,          -- 额外生命值
+    PER_HEALTH = 310043,            -- 百分比生命值加成
+    FIXED_HEALTH = 310044,          -- 固定生命值加成
+    FINAL_HEALTH = 310045,          -- 最终生命值
+
+    BASE_CRIT_RATE = 310061,        -- 基础暴击率
+    EXTRA_CRIT_RATE = 310062,       -- 额外暴击率
+    FINAL_CRIT_RATE = 310063,       -- 最终暴击率
+
+    BASE_CRIT_DAMAGE = 310071,      -- 基础暴击伤害
+    EXTRA_CRIT_DAMAGE = 310072,     -- 额外暴击伤害
+    FINAL_CRIT_DAMAGE = 310073,     -- 最终暴击伤害
+
+    FIXED_PHYSI_PENE = 310081,    -- 固定物理穿透
+
+    PER_PHYSI_PENE = 310091,      -- 百分比物理穿透加成
+
+    FIXED_MAGIC_PENE = 310101,    -- 固定法术穿透
+
+    PER_MAGIC_PENE = 310111,      -- 百分比法术穿透加成
+
+    PHYSI_RESISTANCE = 310121,     -- 物理抗性
+
+    MAGIC_RESISTANCE = 310131,     -- 法术抗性
+
+    FINAL_DAMAGE_BONUS = 310141,    -- 最终伤害加成
+
+    FINAL_INJURY_BONUS = 310151,    -- 最终承伤加成
+
+    FINAL_PRICE = 310161,           -- 最终出售价格
+
+    PER_CONTROL_TIME = 310171,      -- 控制时间百分比加成
+
+    FINAL_DAMAGE_REDUCE = 310181,   -- 最终伤害减免
+
+    TOWER_HP = 310191,              -- 道心加成
+}
+
+function Init()
+    _G.FinalAttrFunc = {
+        [_G.AttributeType.FINAL_ATTACK] = getAttack,
+        [_G.AttributeType.FINAL_ATTACK_SPEED] = getAttackSpeed,
+        [_G.AttributeType.FINAL_MOVE_SPEED] = getMoveSpeed,
+        [_G.AttributeType.FINAL_HEALTH] = getHealth,
+        [_G.AttributeType.FINAL_CRIT_RATE] = getCritRate,
+        [_G.AttributeType.FINAL_CRIT_DAMAGE] = getCritDamage,
+        [_G.AttributeType.FIXED_PHYSI_PENE]= getFixedPhysiPene,
+        [_G.AttributeType.PER_PHYSI_PENE] = getPerPhysiPene,
+        [_G.AttributeType.FIXED_MAGIC_PENE] = getFixedMagicPene,
+        [_G.AttributeType.PER_MAGIC_PENE] = getPerMagicPene,
+        [_G.AttributeType.PHYSI_RESISTANCE] = getPhysiResistance,
+        [_G.AttributeType.MAGIC_RESISTANCE] = getMagicResistance,
+        [_G.AttributeType.FINAL_DAMAGE_BONUS] = getDamageBonus,
+        [_G.AttributeType.FINAL_INJURY_BONUS] = getInjuryBonus,
+        [_G.AttributeType.FINAL_PRICE] = getPrice,
+        [_G.AttributeType.PER_CONTROL_TIME] = getPerControlTime,
+        [_G.AttributeType.FINAL_DAMAGE_REDUCE] = getFinalDamageReduce,
+        [_G.AttributeType.TOWER_HP] = getTowerHp,
+    }
+
+    _G.AttrShortName = {
+        [_G.AttributeType.BASE_ATTACK] = "baseAttack",
+        [_G.AttributeType.EXTRA_ATTACK] = "extraAttack",
+        [_G.AttributeType.PER_ATTACK] = "perAttack",
+        [_G.AttributeType.LEVEL_PER_ATTACK] = "levelPerAttack",
+        [_G.AttributeType.FIXED_ATTACK] = "fixedAttack",
+        [_G.AttributeType.FINAL_ATTACK] = "finalAttack",
+        [_G.AttributeType.BASE_ATTACK_SPEED] = "baseAttackSpeed",
+        [_G.AttributeType.PER_ATTACK_SPEED] = "perAttackSpeed",
+        [_G.AttributeType.FINAL_ATTACK_SPEED] = "finalAttackSpeed",
+        [_G.AttributeType.BASE_MOVE_SPEED] = "baseMoveSpeed",
+        [_G.AttributeType.EXTRA_MOVE_SPEED] = "extraMoveSpeed",
+        [_G.AttributeType.PER_MOVE_SPEED] = "perMoveSpeed",
+        [_G.AttributeType.FIXED_MOVE_SPEED] = "fixedMoveSpeed",
+        [_G.AttributeType.FINAL_MOVE_SPEED] = "finalMoveSpeed",
+        [_G.AttributeType.BASE_HEALTH] = "baseHealth",
+        [_G.AttributeType.EXTRA_HEALTH] = "extraHealth",
+        [_G.AttributeType.PER_HEALTH] = "perHealth",
+        [_G.AttributeType.FIXED_HEALTH] = "fixedHealth",
+        [_G.AttributeType.FINAL_HEALTH] = "finalHealth",
+        [_G.AttributeType.BASE_CRIT_RATE] = "baseCritRate",
+        [_G.AttributeType.EXTRA_CRIT_RATE] = "extraCritRate",
+        [_G.AttributeType.FINAL_CRIT_RATE] = "finalCritRate",
+        [_G.AttributeType.BASE_CRIT_DAMAGE] = "baseCritDamage",
+        [_G.AttributeType.EXTRA_CRIT_DAMAGE] = "extraCritDamage",
+        [_G.AttributeType.FINAL_CRIT_DAMAGE] = "finalCritDamage",
+        [_G.AttributeType.FIXED_PHYSI_PENE] = "fixedPhysiPene",
+        [_G.AttributeType.PER_PHYSI_PENE] = "perPhysiPene",
+        [_G.AttributeType.FIXED_MAGIC_PENE] = "fixedMagicPene",
+        [_G.AttributeType.PER_MAGIC_PENE] = "perMagicPene",
+        [_G.AttributeType.PHYSI_RESISTANCE] = "physiResistance",
+        [_G.AttributeType.MAGIC_RESISTANCE] = "magicResistance",
+        [_G.AttributeType.FINAL_DAMAGE_BONUS] = "finalDamageBonus",
+        [_G.AttributeType.FINAL_INJURY_BONUS] = "finalInjuryBonus",
+        [_G.AttributeType.FINAL_PRICE] = "finalPrice",
+        [_G.AttributeType.PER_CONTROL_TIME] = "perControlTime",
+        [_G.AttributeType.FINAL_DAMAGE_REDUCE] = "finalDamageReduce",
+        [_G.AttributeType.TOWER_HP] = "towerHp",
+    }
+
+end
+
+---@param attributeComponent AttributeComponent
+function GetAttribute(attributeComponent, attrId)
+    if attributeComponent.attributeChangeFlags[attrId] then
+        attributeComponent:UpdateAttribute(attrId)
+    end
+
+    local finalAttrFunc = _G.FinalAttrFunc[attrId]
+    if finalAttrFunc then
+        local ok, ret = xpcall(finalAttrFunc, debug.traceback, attributeComponent)
+        if not ok then
+            LogErr("GetAttribute failed, err:{} attributeId:{}", ret, attrId)
+            return 0
+        end
+
+        return ret
+    end
+
+    local attr = _G.AttrShortName[attrId]
+    if not attr then
+        LogErr("GetAttribute failed, cannot find attr short name, attrId:{}", attrId)
+        return 0
+    end
+
+    return attributeComponent.attributeBaseData[attr] + (attributeComponent.attributeDeltaData[attr] or 0)
+end
+
+-- 计算攻击力数值
+function getAttack(attributeComponent)
+    local baseAttack = GetAttribute(attributeComponent, _G.AttributeType.BASE_ATTACK)
+    local extraAttack = GetAttribute(attributeComponent, _G.AttributeType.EXTRA_ATTACK)
+    local perAttack = GetAttribute(attributeComponent, _G.AttributeType. PER_ATTACK)
+    local levelPerAttack = GetAttribute(attributeComponent, _G.AttributeType.LEVEL_PER_ATTACK)
+    local fixedAttack = GetAttribute(attributeComponent, _G.AttributeType.FIXED_ATTACK)
+
+    --LogDebug("baseAttack:{} extraAttack:{} perAttack:{} levelPerAttack:{} fixedAttack:{}", baseAttack, extraAttack, perAttack, levelPerAttack, fixedAttack)
+    return ((baseAttack * levelPerAttack / 100) + extraAttack) * (1 + perAttack / 100) + fixedAttack
+end
+
+-- 计算攻击速度数值
+function getAttackSpeed(attributeComponent)
+    local baseAttackSpeed = GetAttribute(attributeComponent, _G.AttributeType.BASE_ATTACK_SPEED)
+    local perAttackSpeed = GetAttribute(attributeComponent, _G.AttributeType.PER_ATTACK_SPEED)
+
+    return baseAttackSpeed / (1 + perAttackSpeed / 100)
+end
+
+-- 计算移动速度
+function getMoveSpeed(attributeComponent)
+    local baseMoveSpeed = GetAttribute(attributeComponent, _G.AttributeType.BASE_MOVE_SPEED)
+    local perMoveSpeed = GetAttribute(attributeComponent, _G.AttributeType.PER_MOVE_SPEED)
+
+    local ret = baseMoveSpeed * (1 + perMoveSpeed / 100)
+    ret = math.max(50, ret)
+    ret = math.min(300, ret)
+    return ret
+end
+
+-- 计算最大血量数值
+function getHealth(attributeComponent)
+    local baseHealth = GetAttribute(attributeComponent, _G.AttributeType.BASE_HEALTH)
+    local extraHealth = GetAttribute(attributeComponent, _G.AttributeType.EXTRA_HEALTH)
+    local perHealth = GetAttribute(attributeComponent, _G.AttributeType.PER_HEALTH)
+    local fixedHealth = GetAttribute(attributeComponent, _G.AttributeType.FIXED_HEALTH)
+
+    local res = (baseHealth + extraHealth) * (1 + perHealth / 100) + fixedHealth
+    return res
+end
+
+-- 计算暴击率数值
+function getCritRate(attributeComponent)
+    local baseCritRate = GetAttribute(attributeComponent, _G.AttributeType.BASE_CRIT_RATE)
+    local extraCritRate = GetAttribute(attributeComponent, _G.AttributeType.EXTRA_CRIT_RATE)
+
+    return baseCritRate + extraCritRate
+end
+
+-- 计算暴击伤害数值
+function getCritDamage(attributeComponent)
+    local baseCritDamage = GetAttribute(attributeComponent, _G.AttributeType.BASE_CRIT_DAMAGE)
+    local extraCritDamage = GetAttribute(attributeComponent, _G.AttributeType.EXTRA_CRIT_DAMAGE)
+
+    return (baseCritDamage + extraCritDamage) / 100
+end
+
+-- 计算固定物理穿透
+function getFixedPhysiPene(attributeComponent)
+    return attributeComponent.attributeBaseData.fixedPhysiPene + (attributeComponent.attributeDeltaData.fixedPhysiPene or 0)
+end
+
+-- 计算百分比物理穿透
+function getPerPhysiPene(attributeComponent)
+    return attributeComponent.attributeBaseData.perPhysiPene + (attributeComponent.attributeDeltaData.perPhysiPene or 0)
+end
+
+-- 计算固定法术穿透
+function getFixedMagicPene(attributeComponent)
+    return attributeComponent.attributeBaseData.fixedMagicPene + (attributeComponent.attributeDeltaData.fixedMagicPene or 0)
+end
+
+-- 计算百分比法术穿透
+function getPerMagicPene(attributeComponent)
+    return attributeComponent.attributeBaseData.perMagicPene + (attributeComponent.attributeDeltaData.perMagicPene or 0)
+end
+
+-- 计算物理抗性数值
+function getPhysiResistance(attributeComponent)
+    return attributeComponent.attributeBaseData.physiResistance + (attributeComponent.attributeDeltaData.physiResistance or 0)
+end
+
+-- 计算法术抗性数值
+function getMagicResistance(attributeComponent)
+    return attributeComponent.attributeBaseData.magicResistance + (attributeComponent.attributeDeltaData.magicResistance or 0)
+end
+
+-- 计算最终伤害加成数值
+function getDamageBonus(attributeComponent)
+    return (attributeComponent.attributeBaseData.finalDamageBonus + (attributeComponent.attributeDeltaData.finalDamageBonus or 0)) / 100
+end
+
+-- 计算最终承伤加成数值
+function getInjuryBonus(attributeComponent)
+    return (attributeComponent.attributeBaseData.finalInjuryBonus + (attributeComponent.attributeDeltaData.finalInjuryBonus or 0)) / 100
+end
+
+-- 计算出售价格
+function getPrice(attributeComponent)
+    return attributeComponent.attributeBaseData.finalPrice + (attributeComponent.attributeDeltaData.finalPrice or 0)
+end
+
+-- 计算控制时长
+function getPerControlTime(attributeComponent)
+    return (attributeComponent.attributeBaseData.perControlTime + (attributeComponent.attributeDeltaData.perControlTime or 0)) / 100
+end
+
+-- 计算最终伤害减免
+function getFinalDamageReduce(attributeComponent)
+    return (attributeComponent.attributeBaseData.finalDamageReduce + (attributeComponent.attributeDeltaData.finalDamageReduce or 0)) / 100
+end
+
+-- 计算基地血量
+function getTowerHp(attributeComponent)
+    return (attributeComponent.attributeBaseData.towerHp + (attributeComponent.attributeDeltaData.towerHp or 0))
+end

@@ -1,0 +1,6 @@
+-- 选择区是否有可选卡牌
+
+function Execute(robot)
+    local battleData = robot.battleData
+    return #battleData.optionalList > 0
+end

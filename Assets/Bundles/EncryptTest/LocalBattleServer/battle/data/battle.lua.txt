@@ -1,0 +1,1559 @@
+local entryClz = import("battle/data/entry/entry.lua")
+local monsterClz   = import("battle/data/entry/monster.lua")
+local sutraClz     = import("battle/data/entry/sutra.lua")
+local towerClz     = import("battle/data/entry/tower.lua")
+local flyerClz     = import("battle/data/entry/flyer.lua")
+local rangeEffectClz = import("battle/data/entry/rangeEffect.lua")
+local summonerClz  = import("battle/data/entry/summoner.lua")
+local formationSlotClz = import("battle/data/entry/formationSlot.lua")
+local pointClz     = import("battle/data/entry/point.lua")
+
+local attributeComponent = import("battle/components/attributeComponent.lua")
+local buffComponent      = import("battle/components/buffComponent.lua")
+local fateComponent      = import("battle/components/fateComponent.lua")
+local skillComponent     = import("battle/components/skillComponent.lua")
+local statusComponent    = import("battle/components/statusComponent.lua")
+
+local battleTeamData        = import("battle/data/battleTeam.lua")
+local battleMgr             = import("battle/battleMgr.lua")
+local resourceComp          = import("battle/components/resourceComponent.lua")
+local gameCardComp          = import("battle/components/gameCardComponent.lua")
+local robotUtil             = import("common/robotUtil.lua")
+local eventManager          = import("battle/event/eventManager.lua")
+local battleEnd             = import("battle/battleEnd.lua")
+local battleTimer           = import("battle/battleCommon/battleTimer.lua")
+
+local message               = import("common/message.lua")
+local errCode               = import("common/errCode.lua")
+local playerData            = import("battle/data/player.lua")
+local common                = import("common/common.lua")
+local battleIntent          = import("battle/battleIntent.lua");
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+local battleFightMoveLogic  = import("battle/fight/battleFightMoveLogic.lua")
+local reason                = import("common/reason.lua")
+local mapParser             = import("battle/utils/map.lua")
+local battleReward          = import("battle/battleCommon/battleReward.lua")
+local battleSettle          = import("battle/battleCommon/battleSettle.lua")
+local battleRoundEnd        = import("battle/battleCommon/battleRoundEnd.lua")
+
+---@class BattleStatistics 战局统计
+---@field hasForm table<number, boolean> 各队伍是否结阵
+---@field hasResonate table<number, boolean> 各队伍是否共鸣
+---@field formations table<number, table<number, boolean> > 各队伍的已结阵列表信息
+---@field killMonsterCount table<number, MonsterCount> 击杀怪物数量 <teamId, MonsterCount>
+---@field allHurt table<number, number> 法宝总伤害
+
+---@class CreateMonsterParam 创建怪物参数
+---@field teamId number 队伍id
+---@field routeGroupId number 路径组id
+---@field monsterId number 怪物id
+---@field isReborn number 是否为重生怪
+---@field isBoss number 是否为boss
+---@field roundNumber number 怪物被召唤时的回合数
+
+---@class Battle 战局类
+---@field battleId number           战局id
+---@field mode number               战局模式
+---@field battleType number         战局类型(BattleType)
+---@field battleConfig BattleGameTypeTableData 战局配置
+---@field status number             战局状态
+---@field startTime number          战局开始时间
+---@field playTime number           战局进行时间
+---@field nextEntryId number        下一个entryId
+---@field matchInfo MatchBattleTeam[] 匹配信息
+---@field changeStatusTime number   状态改变时间
+---@field lastTickMS number         上一次tick的时间
+---@field battleResult table        战局结果
+---@field monsterQueue table<number, CreateMonsterParam>[] 怪物队列 <teamId, <routeGroupId, CreateMonsterParam>>
+---@field stopReason number         结束原因
+---@field waitSync table<number, number> 等待同步的玩家
+---@field waitConnect table<number, number> 等待连接的玩家
+---@field waitReady table<number, number> 等待准备的玩家
+---
+---@field roundStatus number    回合状态
+---@field roundNumber number    回合数
+---@field roundStartTime number 回合开始时间
+---@field roundEndTime number   回合结束时间
+---@field isCheckRoundEnd boolean 是否检查回合结束
+---@field maxRound number       最大回合数
+---
+---@field monsterLevel number 当前对局怪物等级
+---
+---@field lastMonsterRoundId number 上一次召唤怪物的回合id
+---@field currentRoundMonsterGroupId number 当前回合怪物组id
+---@field currentRoundMonsterGroup number 当前回合怪物组
+---
+---@field players table<string, Player> 玩家列表
+---@field battleTeams table<number, BattleTeam> 战局列表
+---
+---@field eventManager EventManager 事件管理器
+---@field timer BattleTimer 定时器
+---
+---@field statistics BattleStatistics 战局统计信息
+---
+---@field isReleaseAwakeSkill boolean 是否释放战局开始技能
+---@field isRefreshMonsterGroup boolean 当前轮次是否已经随机怪物组
+
+---@field tickState number tick的阶段状态
+---
+---@field nextAddManaTime number 下次增加法力时间
+Battle = class()
+
+function CreateBattle(...)
+    return Battle.new(...)
+end
+
+function ProcessBattlePlay(battle, nowMS)
+    battle:processBattlePlay(nowMS)
+end
+
+function Battle:ctor(battleId, mode, config, matchConfig, matchInfo)
+    self.battleId = battleId
+    self.mode = mode
+    self.battleType = config.gameType
+    self.battleConfig = config
+    self.status = _G.BattleStatus.INIT
+    self.startTime = _G.GetCurTimeMS()
+    self.playTime = nil
+    self.nextEntryId = 0
+    self.matchInfo = matchInfo
+    self.changeStatusTime = 0
+    self.lastTickMS = 0
+    self.battleResult = {}
+    self.monsterQueue = {}
+
+    self.waitSync = {}
+    self.waitConnect = {}
+    self.waitReady = {}
+    for _, matchTeam in pairs(matchInfo) do
+        for _, matchPlayer in pairs(matchTeam.players) do
+            if not robotUtil.IsRobotUid(matchPlayer.id) then
+                self.waitSync[matchPlayer.id] = 1
+                self.waitConnect[matchPlayer.id] = 1
+                self.waitReady[matchPlayer.id] = 1
+            end 
+        end
+    end
+
+    self.roundStatus = _G.RoundStatus.ROUND_INIT
+    self.roundNumber = 1
+    self.roundStartTime = 0
+    self.roundEndTime = 0
+    self.isCheckRoundEnd = false
+    self.maxRound = nil
+
+    self.monsterLevel = 0
+
+    self.lastMonsterRoundId = 0
+    self.currentRoundMonsterGroupId = 0
+    self.currentRoundMonsterGroup = {}
+
+    self.players = {}
+    self.battleTeams = {}
+
+    self.eventManager = eventManager.CreateEventManager()
+    self.timer = battleTimer.CreateBattleTimer()
+
+    self.statistics = {
+        hasForm = {},
+        hasResonate = {},
+        formations = {},
+        killMonsterCount = {}, -- 击杀怪物数量 {teamId = MonsterCount}
+        allHurt          = {}, -- 法宝总伤害 {teamId = hurt}
+    }
+
+    self.isReleaseAwakeSkill    = false
+    self.isRefreshMonsterGroup  = false
+
+    self.lastTickMS             = 0
+
+    self.nextAddManaTime        = nil
+end
+
+function Battle:Init()
+    local mapConfig = self:GetMapConfig()
+    if not mapConfig then
+        LogErr("Battle:Init, cannot find map config, mapId:{}", self.battleConfig.mapId)
+        return false
+    end
+
+    for teamId, matchTeam in pairs(self.matchInfo) do
+        -- 创建队伍
+        local battleTeam = battleTeamData.CreateBattleTeam(self, teamId, mapConfig.teamMapConfig[teamId])
+        if not battleTeam:Init(matchTeam, self.battleConfig.towerId) then
+            LogErr("Battle:Init, battleTeam init failed, teamId:{}", teamId)
+            return false
+        end
+        self.battleTeams[battleTeam.teamId] = battleTeam
+
+        -- 创建玩家
+        for _, matchPlayer in pairs(matchTeam.players) do
+            local player = playerData.CreatePlayer(matchPlayer, self, battleTeam)
+            self.players[player.id] = player;
+        end
+    end
+
+    -- maxRound
+    local battleConfig = self.battleConfig
+    local endConfig    = battleEnd.GetBattleEndConfig(battleConfig.battleEndId)
+    if endConfig.finishRound > 0 then
+        self.maxRound = endConfig.finishRound
+    end
+
+    -- 统计数据默认值
+    for teamId, _ in pairs(self.battleTeams) do
+        self.statistics.killMonsterCount[teamId] = {totalCount=0, typeCount={}}
+        self.statistics.allHurt[teamId] = 0
+    end
+
+    return true
+end
+
+function Battle:OnError()
+    local useSpellList = {}
+    local lastRequestList = {}
+    local robotStatus
+    for uid, player in pairs(self.players) do
+        local component = player.gameCardComponent
+        useSpellList[uid] = component.useSpellsIds
+        if robotUtil.IsRobotUid(uid) then
+            lastRequestList[uid] = player.lastRequest
+            robotStatus = player.robotStatus
+        else
+            local ss = _G.GetAgentByUid(uid)
+            if ss then
+                lastRequestList[uid] = ss.lastRequest
+            end
+        end
+    end
+    LogErr("Battle:OnError status={} roundStatus={} tickState={} battleData={} useSpellList={} lastRequestList={} robotStatus={}", self.status, self.roundStatus, self.tickState, self:GetBattleData(), useSpellList, lastRequestLis, robotStatus)
+    LogErr("Battle:OnError timerLastCallback={}", self.timer.LastCallback)
+    if self.lastIntents then
+        for _, intent in pairs(self.lastIntents.allIntentList or {}) do
+            LogErr("Battle:OnError allIntentList intentType={}", intent.intentType)
+            local ok, res = xpcall(LogErr, debug.traceback, "intent={}", intent);
+            if not ok then
+                LogErr("这条有问题!")
+                for k, v in pairs(intent) do
+                    LogErr("k={} v={}", k, v)
+                end
+            end
+        end
+        for _, intent in pairs(self.lastIntents.playersIntentList or {}) do
+            LogErr("Battle:OnError playersIntentList intentType={}", intent.intentType)
+            local ok, res = xpcall(LogErr, debug.traceback, "intent={}", intent);
+            if not ok then
+                LogErr("这条有问题!")
+                for k, v in pairs(intent) do
+                    LogErr("k={} v={}", k, v)
+                end
+            end
+        end
+    end
+end
+
+function Battle:Reset()
+    for playerId, player in pairs(self.players) do
+        playerData.Reset(player)
+    end
+
+    for _, battleTeam in pairs(self.battleTeams) do
+        battleTeam:Reset(self)
+    end
+end
+
+function Battle:GetBattleData()
+    local battleData = {
+        battleId        = self.battleId,
+        mode            = self.mode,
+        startTime       = self.startTime,
+        roundNumber     = self.roundNumber,
+        roundStartTime  = self.roundStartTime,
+        roundEndTime    = self.roundEndTime,
+        frameId         = battleIntent.GetBattleIntent(self.battleId).frameId,
+        teams           = {},
+        matchTeams      = self.matchInfo,
+    }
+
+    for _, battleTeam in pairs(self.battleTeams) do
+        table.insert(battleData.teams, battleTeam:GetBattleTeamData(self))
+    end
+
+    LogDebug("Battle:GetBattleData, battleData:{}", battleData)
+
+    return battleData
+end
+
+function Battle:GetBattleSnapshotData()
+    local battleData = {
+        teams = {},
+    }
+
+    for _, battleTeam in pairs(self.battleTeams) do
+        table.insert(battleData.teams, battleTeam:GetBattleTeamSnapshotData(self))
+    end
+
+    return battleData
+end
+
+function Battle:InitFromBattleData(data)
+    for _, teamData in pairs(data.teams) do
+        local battleTeam = self.battleTeams[teamData.teamId]
+        if battleTeam then
+            battleTeam:InitFromBattleTeamData(teamData)
+        end
+    end
+end
+
+-- 单机准备
+function Battle:JoinBattle()
+    if not dive.isStandalone then
+        return
+    end
+
+    self.waitConnect = {}
+end
+
+function Battle:ReadyBattle()
+    if not dive.isStandalone then
+        return
+    end
+
+    self.waitReady = {}
+end
+
+function Battle:SyncPlayerInfo(uid, playerInfo, robotPlayerInfo)
+    local player = self.players[uid]
+    if not player then
+        LogErr("SyncPlayerInfo, cannot find player in battle, uid:{}", uid)
+        return
+    end
+
+    --LogDebug("SyncPlayerInfo, uid:{}, playerInfo:{}", uid, playerInfo)
+    playerData.SyncPlayerInfo(self, player, playerInfo)
+
+    -- 本人的卡组等级
+    local cardAvgLevel = playerInfo.cardTeam.avgLevel;
+
+    -- 机器人
+    if robotPlayerInfo then
+        for _, player in pairs(self.players) do
+            if robotUtil.IsRobotUid(player.id) then
+                playerData.SyncPlayerInfo(self, player, robotPlayerInfo)
+            end 
+        end
+
+        -- 比较谁的卡组等级低
+        if robotPlayerInfo.cardTeam then
+            cardAvgLevel = math.min(cardAvgLevel, robotPlayerInfo.cardTeam.avgLevel)
+        end
+    end
+
+    if self.battleConfig.monsterLevelType == _G.MonsterLevelType.CARD_AVG_LEVEL then
+        self.monsterLevel = self.monsterLevel == 0 and cardAvgLevel or math.min(self.monsterLevel, cardAvgLevel)
+    elseif self.battleConfig.monsterLevelType == _G.MonsterLevelType.BATTLE_GAME_TYPE_CONFIG then
+        self.monsterLevel = self.battleConfig.monsterLevel
+        if self.monsterLevel == 0 then
+            LogErr("Battle:SyncPlayerInfo monsterLevelType error! mode={} monsterLevelType={}", self.mode, self.battleConfig.monsterLevelType)
+            self.monsterLevel = MAX_MONSTER_LEVEL
+        end
+    elseif self.battleConfig.monsterLevelType == _G.MonsterLevelType.PVE_ADVENTURE_CONFIG then
+        -- 爬塔
+        local pveTowerConfig = _G.PveTowerTable[playerInfo.pveTowerId]
+        if not pveTowerConfig then
+            LogErr("Battle:SyncPlayerInfo pveTowerConfig error! mode={} monsterLevelType={} pveTowerId={}", self.mode, self.battleConfig.monsterLevelType, playerInfo.pveTowerId)
+            self.monsterLevel = MAX_MONSTER_LEVEL
+        elseif pveTowerConfig.levelType == _G.PveTowerConfigLevelType.USE_TOWER_LEVEL_DIRECT then
+            if playerInfo.pveTowerLevel then
+                self.monsterLevel = playerInfo.pveTowerLevel
+            else
+                LogErr("Battle:SyncPlayerInfo pveTowerLevel error! mode={} monsterLevelType={} pveTowerLevel={}", self.mode, self.battleConfig.monsterLevelType, playerInfo.pveTowerLevel)
+                self.monsterLevel = MAX_MONSTER_LEVEL
+            end
+        elseif pveTowerConfig.levelType == _G.PveTowerConfigLevelType.USE_TOWER_LEVEL_CONFIG then
+            local pveTowerLevelGroup = _G.PveTowerLevelTable[pveTowerConfig.levelGroup] or {}
+            local pveTowerLevelConfig = pveTowerLevelGroup[playerInfo.pveTowerLevel]
+            if pveTowerLevelConfig then
+                self.monsterLevel = pveTowerLevelConfig.monsterLevel
+            else
+                LogErr("Battle:SyncPlayerInfo pveTowerLevelConfig error! mode={} monsterLevelType={} pveTowerLevel={}", self.mode, self.battleConfig.monsterLevelType, playerInfo.pveTowerLevel)
+                self.monsterLevel = MAX_MONSTER_LEVEL
+            end
+        else
+            LogErr("Battle:SyncPlayerInfo levelType error! mode={} monsterLevelType={} pveTowerId={} levelType={}", self.mode, self.battleConfig.monsterLevelType, playerInfo.pveTowerId, pveTowerConfig.levelType)
+            self.monsterLevel = MAX_MONSTER_LEVEL
+        end
+    else
+        LogErr("Battle:SyncPlayerInfo error! mode={} monsterLevelType={}", self.mode, self.battleConfig.monsterLevelType)
+        self.monsterLevel = MAX_MONSTER_LEVEL
+    end
+
+    self.waitSync[player.id] = nil
+end
+
+function Battle:Update(frame, nowMS)
+    --if self.status ~= _G.BattleStatus.PLAY then
+    --    LogDebug("Battle:Update battle status:{} battleId:{}", self.status, self.battleId)
+    --end
+
+    local costTime1 = _G.GetCurTimeMS();
+    self.tickState = 200;
+    self.timer:BattleUpdate(frame)
+    self.tickState = 201;
+    local costTime2 = _G.GetCurTimeMS();
+    if costTime2 - costTime1 > 100 then
+        LogInfo("Battle:Update timer tick warn costTime={} battleId={}", costTime2 - costTime1, self.battleId)
+    end
+
+    -- 具体的tick还是100ms一次
+    if nowMS - self.lastTickMS < 90 then
+        return;
+    end
+    self.lastTickMS = nowMS;
+
+    if self.status == _G.BattleStatus.INIT then
+        self:processBattleInit(nowMS)
+    elseif self.status == _G.BattleStatus.WAIT then
+        self:processBattleWait(nowMS)
+    elseif self.status == _G.BattleStatus.PLAY then
+        local ok, err = xpcall(ProcessBattlePlay, debug.traceback, self, nowMS);
+        if not ok then
+            LogErr("Battle:Update, battleId:{} error:{}", self.battleId, err)
+            self:changeBattleStatus(_G.BattleStatus.SETTLE, nowMS)
+        end
+    elseif self.status == _G.BattleStatus.SETTLE then
+        self:processBattleSettle(nowMS)
+    elseif self.status == _G.BattleStatus.END then
+        return
+    end
+end
+
+---@return MapConfig
+function Battle:GetMapConfig()
+    local mapConfig = _G.BattleMapConfigTable[self.battleConfig.mapId]
+    if not mapConfig then
+        LogErr("Battle:GetMapConfig, cannot find map config, mapId:{}", self.battleConfig.mapId)
+        return nil
+    end
+
+    local content = mapConfig.config
+    return mapParser.ParseMapConfig(content)
+end
+
+function Battle:GetNextEntryId()
+    self.nextEntryId = self.nextEntryId + 1
+    return self.nextEntryId
+end
+
+function Battle:GetBattleTeam(teamId)
+    return self.battleTeams[teamId]
+end
+
+function Battle:RemoveEventListener(eventType, listenerId)
+    eventManager.RemoveEventListener(self.eventManager, eventType, listenerId)
+end
+
+---附加结阵效果
+function Battle:AttachFormationEffect(teamId, formationId, allMaxStar)
+    local formationSkill = allMaxStar and _G.CommonValue.formationSkillMaxStar or _G.CommonValue.formationSkill
+    local formationStatistics = allMaxStar and self.statistics.hasResonate or self.statistics.hasForm
+    if not formationStatistics[teamId] then
+        local team = self.battleTeams[teamId]
+        -- 第一次达成该类型结阵
+        battleFightSkillLogic.ProcessFormationPassiveSkill(self, team, formationSkill)
+    end
+
+    formationStatistics[teamId] = true
+
+    self.statistics.formations[teamId] = self.statistics.formations[teamId] or {}
+    self.statistics.formations[teamId][formationId] = true
+end
+
+----------------------------------- 实体管理 ------------------------------------
+---创建怪物
+---@param teamId number 队伍id
+---@param routeGroupId number 路径组id
+---@param monsterId number 怪物id
+---@param isReborn number 是否为重生怪
+---@param isBoss number 是否为boss
+---@param roundNumber number 怪物被召唤时的回合数
+function Battle:CreateMonster(teamId, routeGroupId, monsterId, isReborn, isBoss, roundNumber)
+    local entryId = self:GetNextEntryId()
+    local battleTeam = self:GetBattleTeam(teamId)
+
+    -- 随机获取一条路径
+    local monsterPathGroup = battleTeam.monsterPaths[routeGroupId]
+    local routeId = math.random(#monsterPathGroup)
+
+    local position = monsterPathGroup[routeId].points[1]
+
+    local monster = monsterClz.CreateMonster(entryId, self.battleId, battleTeam.teamId,
+        position, self.roundNumber, monsterId, self.monsterLevel, routeGroupId, routeId, isBoss, self.roundNumber)
+    if not monster:Init(isReborn) then
+        return nil
+    end
+
+    battleFightSkillLogic.ProcessMonsterPassiveSkill(self, monster)
+    -- 注册怪物
+    battleTeam.monsters[entryId] = monster
+    -- 广播怪物创建
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.MONSTER_CREATE, {
+        teamId = teamId,
+        monster = monster:GetMonsterData(),
+    })
+
+    -- 触发boss创建事件
+    local monsterConfig = _G.MonsterInfoTable[monsterId]
+    if monsterConfig.type == _G.MonsterType.BOSS then
+        local event = eventManager.CreateBossCreateEvent(monster)
+        eventManager.DispatchEvent(self.eventManager, event)
+    end
+
+    return monster
+end
+
+function Battle:CreateFlyer(teamId, flyerId, releaseEntry, targetEntry)
+    local flyerConfig = _G.FlyerTable[flyerId]
+    if not flyerConfig then
+        LogErr("Battle:CreateFlyer, cannot find flyer config, flyerId:{} teamId:{}", flyerId, teamId)
+        return nil
+    end
+
+    local entryId = self:GetNextEntryId()
+    local battleTeam = self.battleTeams[teamId]
+    local flyer = flyerClz.CreateFlyer(entryId, self.battleId, teamId, nil, 1, flyerId, releaseEntry, targetEntry)
+    flyer:Init(flyerConfig.type, flyerConfig.catapultNumber)
+
+    -- 通知创建飞行物
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.FLYER_CREATE, {
+        teamId = battleTeam.teamId,
+        flyer = flyer:GetFlyerData()
+    })
+    return flyer
+end
+
+function Battle:DestroyFlyer(teamId, entryId)
+    local battleTeam = self.battleTeams[teamId]
+    local flyer = battleTeam.flyers[entryId]
+    if not flyer then
+        LogDebug("Battle:DestroyFlyer, cannot find flyer, battleId:{} teamId:{} entryId:{}", self.battleId, teamId,
+            entryId)
+        return
+    end
+
+    flyer:Reset()
+    battleTeam.flyers[entryId] = nil
+end
+
+---更新飞行物弹射目标
+---@param flyer Flyer
+---@return boolean 返回是否找到新目标
+function Battle:ChangeFlyerTarget(flyer)
+    local battleTeam = self.battleTeams[flyer.teamId]
+
+    --根据怪物移动距离排序
+    local monsterList = {}
+    for _, monster in pairs(battleTeam.monsters) do
+        if monster:IsAlive() then
+            table.insert(monsterList, monster)
+        end
+    end
+    table.sort(monsterList, function(a, b)
+        return a.totalMoveDistance < b.totalMoveDistance
+    end)
+
+    local selectedMonster = nil
+    -- 目标已死亡，选择totalMoveDistance最小
+    for _, monster in pairs(monsterList) do
+        selectedMonster = monster
+    end
+
+    if not selectedMonster then
+        return false
+    end
+
+    table.insert(flyer, selectedMonster.entryId)
+    flyer.targetEntry = selectedMonster
+
+    -- 通知飞行物弹射目标变化
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.FLYER_CREATE, {
+        teamId = battleTeam.teamId,
+        flyer = flyer:GetFlyerData()
+    })
+
+    return true
+end
+
+---更新飞行物弹射目标
+---@param flyer Flyer
+---@return boolean 返回是否找到新目标
+function Battle:UpdateFlyerCatapultTarget(flyer)
+    if flyer.catapultNumber <= 0 then
+        return false
+    end
+
+    flyer.catapultNumber = flyer.catapultNumber - 1
+    local battleTeam = self.battleTeams[flyer.teamId]
+
+    --根据怪物移动距离排序
+    local monsterList = {}
+    for _, monster in pairs(battleTeam.monsters) do
+        if monster:IsAlive() then
+            table.insert(monsterList, monster)
+        end
+    end
+    table.sort(monsterList, function(a, b)
+        return a.totalMoveDistance > b.totalMoveDistance
+    end)
+
+    table.insert(flyer.targetList, flyer.targetEntry.entryId)
+    local selectedMonster = nil
+    if flyer:CheckTargetIsDead() then
+        -- 目标已死亡，选择totalMoveDistance最大且不在flyer.targetList中出现过的怪物
+        for _, monster in pairs(monsterList) do
+            if not flyer.targetList[monster.entryId] then
+                selectedMonster = monster
+                break
+            end
+        end
+    else
+        local curDistance = flyer.targetEntry.totalMoveDistance
+        -- 选择比curDistance小的第一个且不在flyer.targetList中出现过的怪物
+        for _, monster in pairs(monsterList) do
+            if monster.totalMoveDistance < curDistance and not flyer.targetList[monster.entryId] then
+                selectedMonster = monster
+                break
+            end
+        end
+    end
+
+    if not selectedMonster then
+        return false
+    end
+
+    table.insert(flyer, selectedMonster.entryId)
+    flyer.targetEntry = selectedMonster
+
+    -- 通知飞行物弹射目标变化
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.FLYER_CREATE, {
+        teamId = battleTeam.teamId,
+        flyer = flyer:GetFlyerData()
+    })
+
+    return true
+end
+
+---创建法宝
+---@param teamId number 队伍id
+---@param sutraCard GameCard 卡牌
+---@param playerId string 玩家id
+---@param position table 上阵阵眼坐标
+---@param star number 卡牌星级
+function Battle:CreateSutra(teamId, sutraCard, playerId, position)
+    local entryId = self:GetNextEntryId()
+    local battleTeam = self.battleTeams[teamId]
+
+    local player = self.players[playerId]
+    local fromPlayer = self.players[sutraCard.playerUid]
+    local cardBaseInfo = fromPlayer.gameCardComponent.cards[sutraCard.id] -- 卡牌的基础信息
+
+    -- 如果已经存在则更新召唤物数据
+    local playerSiteData = battleTeam.playerSiteDatas[player.playerIndex]
+    local sutra = playerSiteData.sutras[sutraCard.id]
+    if sutra then
+        sutra.position = position
+        sutra.level = sutraCard.star
+
+        -- 发送法宝位置变化
+        battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.SUTRA_MOVE, {
+            teamId = teamId,
+            sutra = sutra:GetSutraData()
+        })
+    else
+        sutra = sutraClz.CreateSutra(entryId, self.battleId, battleTeam.teamId, position, sutraCard.star, sutraCard.id,
+            player.id, sutraCard.element, sutraCard.level, sutraCard.quality)
+        sutra:Init(cardBaseInfo)
+        -- 重置主动技能时间
+        sutra:ResetActiveSkill()
+        playerSiteData.sutras[sutraCard.id] = sutra
+
+        -- 通知创建召唤物
+        battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.SUTRA_CREATE, {
+            teamId = battleTeam.teamId,
+            sutra = sutra:GetSutraData()
+        })
+    end
+
+    sutra:UpdateBaseAttribute(cardBaseInfo)
+
+    return sutra
+end
+
+function Battle:DestroySutra(teamId, playerIndex, sutraId)
+    local battleTeam = self.battleTeams[teamId]
+    local playerSiteData = battleTeam.playerSiteDatas[playerIndex]
+    local sutra = playerSiteData.sutras[sutraId]
+    local sutraIds = {}
+    for id, _ in pairs(playerSiteData.sutras) do
+        table.insert(sutraIds, id)
+    end
+    if not sutra then
+        LogDebug("Battle:DestroySutra, cannot find sutra, battleId:{} teamId:{} playerIndex:{} sutraId:{} sutraIds:{}", self.battleId,
+            teamId, playerIndex, sutraId, sutraIds)
+        return
+    end
+
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.SUTRA_DESTROY, {
+        teamId = teamId,
+        sutra = sutra:GetSutraData()
+    })
+
+    -- 删除召唤物被动
+    for _, passiveSkill in pairs(sutra.activePassiveList) do
+        battleFightSkillLogic.ProcessSutraCancelPassiveSkill(self, sutra, passiveSkill)
+    end
+
+    sutra:Reset()
+    playerSiteData.sutras[sutraId] = nil
+end
+
+function Battle:CreateRangeEffect(teamId, rangeEffectId, releaseEntry, level, position)
+    local entryId = self:GetNextEntryId()
+    local battleTeam = self.battleTeams[teamId]
+    local rangeEffectConfig = _G.AreaEffectTable[rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("Battle:CreateRangeEffect, cannot find range effect config, rangeEffectId:{} teamId:{}", rangeEffectId,
+            teamId)
+        return nil
+    end
+
+    local rangeEffect = rangeEffectClz.CreateRangeEffect(entryId, self.battleId, teamId, position, level, rangeEffectId,
+        releaseEntry, battleTeam)
+
+    rangeEffect:Init(position, battleTeam)
+    battleTeam.rangeEffects[entryId] = rangeEffect
+
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.RANGE_EFFECT_CREATE, {
+        teamId = battleTeam.teamId,
+        rangeEffect = rangeEffect:GetRangeEffectData()
+    })
+    --LogDebug("Battle:CreateRangeEffect, create range effect {} teamId:{}", rangeEffectId, teamId)
+    return rangeEffect
+end
+
+function Battle:UpdateRangeEffect(teamId, entryId, level)
+    local battleTeam = self.battleTeams[teamId]
+    local rangeEffect = battleTeam.rangeEffects[entryId]
+    if rangeEffect then
+        rangeEffect.level = level
+        rangeEffect:OnLevelUpdate()
+    end
+end
+
+function Battle:RemoveRangeEffect(teamId, rangeEffectId, releaseEntryId)
+    local battleTeam = self.battleTeams[teamId]
+    local toRemove = {}
+
+    for id, rangeEffect in pairs(battleTeam.rangeEffects) do
+        if rangeEffect.rangeEffectId ~= rangeEffectId then
+            goto continue
+        end
+
+        if rangeEffect.releaseEntry and rangeEffect.releaseEntry.entryId ~= releaseEntryId then
+            goto continue
+        end
+
+        battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.RANGE_EFFECT_DESTROY, {
+            teamId = battleTeam.teamId,
+            rangeEffect = rangeEffect:GetRangeEffectData()
+        })
+
+        table.insert(toRemove, id)  -- 记录要删除的键
+        rangeEffect:Reset()
+
+        ::continue::
+    end
+
+    -- 在遍历完成后删除键
+    for _, id in ipairs(toRemove) do
+        battleTeam.rangeEffects[id] = nil
+    end
+end
+
+function Battle:CreateSummoner(teamId, summonerId, fatherEntry, siteId)
+    local entryId = self:GetNextEntryId()
+    local battleTeam = self.battleTeams[teamId]
+    local summoner = summonerClz.CreateSummoner(entryId, self.battleId, teamId, nil,
+        fatherEntry.level, summonerId, fatherEntry)
+    summoner:Init(fatherEntry, siteId)
+    summoner:ResetActiveSkill()
+    summoner:ReleasePassiveSkill(self)
+
+    battleTeam.summoners[entryId] = summoner
+
+    -- 通知创建召唤物
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.SUMMONER_CREATE, {
+        teamId = battleTeam.teamId,
+        summoner = summoner:GetSummonerData()
+    })
+
+    return summoner
+end
+
+function Battle:DestroySummoner(teamId, entryId)
+    LogDebug("Battle:DestroySummoner entryId:{}", entryId)
+
+    local battleTeam = self.battleTeams[teamId]
+    local summoner = battleTeam.summoners[entryId]
+
+    -- 通知销毁召唤物
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.SUMMONER_DESTROY, {
+        teamId = battleTeam.teamId,
+        summoner = summoner:GetSummonerData()
+    })
+
+    -- TODO: 删除召唤物被动
+
+    summoner:Reset()
+    battleTeam.summoners[entryId] = nil
+end
+
+function Battle:CreateFormationSlot(battleTeam, formationSlotIndex, position)
+    local entryId = self:GetNextEntryId()
+    local formationSlot = formationSlotClz.CreateFormationSlot(entryId, self.battleId, battleTeam.teamId, position, 1, formationSlotIndex)
+    return formationSlot
+end
+
+function Battle:CreateRandomRoutePoint(battleTeam, pointId, position)
+    local entryId = self:GetNextEntryId()
+    local randomRoutePoint = pointClz.CreatePoint(entryId, self.battleId, battleTeam.teamId, position, 1, pointId)
+    return randomRoutePoint
+end
+
+function Battle:GetPlayer(uid)
+    return self.players[uid]
+end
+
+---@param teamId number 队伍id
+---@param routeGroupId number 路径组id
+---@param monsterId number 怪物id
+---@param isReborn number 是否为重生怪
+---@param isBoss number 是否为boss
+---@param isFront number 是否在队列前面
+function Battle:PushMonsterQueue(teamId, routeGroupId, monsterId, isReborn, isBoss, isFront)
+    isFront = isFront or false
+    self.monsterQueue[teamId] = self.monsterQueue[teamId] or {}
+    self.monsterQueue[teamId][routeGroupId] = self.monsterQueue[teamId][routeGroupId] or {
+        lastCreateTime = 0,
+        createQueue = {}
+    }
+    local createMonsterParam = {
+        teamId = teamId,
+        routeGroupId = routeGroupId,
+        monsterId = monsterId,
+        isReborn = isReborn,
+        isBoss = isBoss,
+        roundNumber = self.lastMonsterRoundId,
+    }
+    if isFront then
+        table.insert(self.monsterQueue[teamId][routeGroupId].createQueue, 1, createMonsterParam)
+    else
+        table.insert(self.monsterQueue[teamId][routeGroupId].createQueue, createMonsterParam)
+    end
+end
+
+----------------------------------- 流程管理 ------------------------------------
+function Battle:processBattleInit(nowMS)
+    -- 等待所有玩家战前数据同步和客户端连接
+    if not next(self.waitSync) and not next(self.waitConnect)  then
+        self:changeBattleStatus(_G.BattleStatus.WAIT, nowMS);
+
+        for _, player in pairs(self.players) do
+            self:NotifyPreBattleData(player.id);
+        end
+    end
+
+    local timeout = _G.CommonValue.maxBattleWaitTime
+
+    if nowMS - self.startTime > timeout then
+        LogErr("battle process stop for wait timeout, waitConnect={}, waitReady={}, waitSync={}", self.waitConnect, self.waitReady, self.waitSync);
+        self.status           = _G.BattleStatus.END;
+        self.changeStatusTime = nowMS;
+        if next(self.waitSync) then
+            -- 战前数据未同步
+            self.stopReason = reason.BATTLE_NOT_SYNC;
+        elseif next(self.waitConnect) then
+            -- 有客户端未连接
+            self.stopReason = reason.BATTLE_NOT_CONNECT;
+        else
+            -- 服务器错误
+            self.stopReason = reason.BATTLE_SERVER_CFG_ERROR;
+        end
+    end
+end
+
+function Battle:processBattleWait(nowMS)
+    -- 等待所有玩家战客户端准备
+    if not next(self.waitReady) then
+        self:changeBattleStatus(_G.BattleStatus.PLAY, nowMS)
+        -- 同步战斗开始数据
+        battleIntent.NotifyBattleStart(self, nowMS)
+
+        self.playTime = nowMS
+
+        return
+    end
+
+    local timeout = _G.CommonValue.maxBattleWaitTime
+
+    if nowMS - self.startTime > timeout then
+        LogErr("battle process stop for wait timeout, waitConnect={}, waitReady={}, waitSync={}", self.waitConnect, self.waitReady, self.waitSync);
+        self.status           = _G.BattleStatus.END;
+        self.changeStatusTime = nowMS;
+        if next(self.waitReady) then
+            -- 客户端未准备
+            self.stopReason = reason.BATTLE_NOT_SYNC;
+        else
+            -- 服务器错误
+            self.stopReason = reason.BATTLE_SERVER_CFG_ERROR;
+        end
+    end
+end
+
+function Battle:processBattlePlay(nowMS)
+    local config = self.battleConfig
+
+    -- 检查是否投降
+    self.tickState = 1;
+    local isGiveUp = self:checkGiveUp()
+    if isGiveUp then
+        LogInfo("Battle:Update battleId:{} over", self.battleId)
+        self:changeBattleStatus(_G.BattleStatus.SETTLE, nowMS)
+        return
+    end
+
+    -- 检查战局结束
+    self.tickState = 2;
+    local over = battleEnd.CheckBattleEnd(self)
+    if over then
+        LogInfo("Battle:Update battleId:{} over", self.battleId)
+        self:changeBattleStatus(_G.BattleStatus.SETTLE, nowMS)
+        return
+    end
+
+    self.tickState = 3;
+    if not self.isReleaseAwakeSkill then
+        self:ReleaseAwakeSkill()
+    end
+
+    -- 根据轮次状态处理
+    self.tickState = 4;
+    if self.roundStatus == _G.RoundStatus.ROUND_INIT then
+        -- 处理轮次的基础数据
+        self.roundStatus = _G.RoundStatus.ROUND_WAIT
+        self.roundStartTime = nowMS
+
+        -- 如果是第一轮进行初始化
+        self.tickState = 5;
+        if self.roundNumber == 1 then
+            self:processRoundInit();
+        end
+
+        -- 随机怪物组
+        self.tickState = 6;
+        self:processRoundMonsterGroup(nowMS)
+
+        -- 重置轮次技能
+        self.tickState = 7;
+        self:ResetRoundSkill()
+
+        -- 检查阵眼解锁
+        self.tickState = 8;
+        self:checkUnlockFormation()
+
+        -- 重置队伍状态
+        self.tickState = 9;
+        self:resetBattleTeam()
+
+        -- 通知轮次信息
+        self.tickState = 10;
+        battleIntent.NotifyRoundInfo(self)
+
+        self.tickState = 11;
+        local event = eventManager.CreateRoundStartEvent()
+        eventManager.DispatchEvent(self.eventManager, event)
+    elseif self.roundStatus == _G.RoundStatus.ROUND_WAIT then
+        self.roundStatus = _G.RoundStatus.ROUND_FIGHT
+    elseif self.roundStatus == _G.RoundStatus.ROUND_FIGHT then
+        -- 判断轮次是否结束
+        self.tickState = 12;
+        if battleRoundEnd.CheckRoundEnd(self) then
+            self.roundStatus = _G.RoundStatus.ROUND_END
+            return
+        end
+
+        self.tickState = 13;
+        self:ReleaseRoundSkill()
+
+        self.tickState = 14;
+        self:processRoundFight(config, nowMS)
+
+        self.tickState = 15;
+        for _, battleTeam in pairs(self.battleTeams) do
+            battleTeam:Update(self, nowMS)
+        end
+    elseif self.roundStatus == _G.RoundStatus.ROUND_END then
+        -- 回合结束
+        self.roundNumber = self.roundNumber + 1
+        self.currentRoundMonsterGroupId = 0
+        self.currentRoundMonsterGroup = {}
+        self.roundStatus = _G.RoundStatus.ROUND_INIT
+        self.isRefreshMonsterGroup = false
+    end
+end
+
+-- 第一轮开始进行初始化
+function Battle:processRoundInit()
+    for _, player in pairs(self.players) do
+        if robotUtil.IsRobotUid(player.id) then
+            -- TODO 增伤技能:本局开场时，AI释放技能,获得全局增伤加成。
+            -- local robotConfig = _G.RobotConfigTable[player.robotConfigId];
+            -- if not robotConfig then
+            --     return;
+            -- end
+            -- local extraSkill = robotConfig.extraSkill;
+        end
+    end
+end
+
+function Battle:processBattleSettle(nowMS)
+    -- 战局结算
+    local battleResult = self.battleResult or {}
+
+    self.tickState = 16;
+    local battleRecord = battleSettle.OnBattleSettle(self)
+
+    -- 对手的uid
+    local uid2rivalUid = {};
+    local rivalUid
+    -- 生成卡组详情
+    local logInfo = {}
+    self.tickState = 17;
+    for uid, player in pairs(self.players) do
+        local component = player.gameCardComponent
+
+        logInfo[uid] = logInfo[uid] or {
+            deckDetail   = {},
+            fateDetail   = {},
+            formationId  = component.formationId,
+            fabaoIds     = component.buyCardIds,
+            useSpellsIds = component.useSpellsIds,
+            spiritDetail = {},
+            originDetail = {},
+        }
+        for _, slotData in pairs(component.equipList) do
+            if slotData.card then
+                table.insert(logInfo[uid].deckDetail, {
+                    card_id         = slotData.card.id,
+                    card_star       = slotData.card.star,
+                    card_level      = slotData.card.level,
+                    card_quality    = slotData.card.quality,
+                })
+            end
+        end
+        local battleTeam = self.battleTeams[player.teamId]
+        for _, fate in pairs(battleTeam.fateComponent.fates) do
+            table.insert(logInfo[uid].fateDetail, {
+                fate_id         = fate.id,
+                fate_level      = fate.level,
+            })
+        end
+        if rivalUid then
+            uid2rivalUid[rivalUid] = uid
+            uid2rivalUid[uid] = rivalUid
+        else
+            rivalUid = uid;
+        end
+
+        logInfo[uid].spiritDetail = {
+            spirit_Id = player.spiritInfo.spiritId;
+            spirit_Lv = player.spiritInfo.spiritLv;
+        }
+
+        for originType, lv in pairs(player.spiritInfo.originInfo) do
+            table.insert(logInfo[uid].originDetail, {
+                origin_id         = originType,
+                origin_lv      = lv,
+            })
+        end
+
+    end
+
+    self.tickState = 18;
+    for _, player in pairs(self.players) do
+        if robotUtil.IsRobotUid(player.id) then
+            goto continue;
+        end
+
+        -- 战斗结算奖励，先将战斗信息发送到大厅，在大厅中进行结算
+        -- 结算规则如下：
+        -- 以 pvp 模式为例，1. 展示当前玩家上阵法宝情况 2. 天体杯数变化 3. 对局奖励发放
+        -- 对局奖励发放情况：1. 通用奖励：铜钱 + 经验 2. pve：装备 + 武器 3. 其他：走配置（以表 FBattleRewardTable为准）
+
+        local result = battleResult[player.teamId] or common.BATTLE_END_RESULT_LOST;
+
+        local awards = {}
+        if result == common.BATTLE_END_RESULT_WIN then
+            awards = battleReward.CalBattleReward(self, self.battleConfig.winReward)
+        elseif result == common.BATTLE_END_RESULT_LOST then
+            awards = battleReward.CalBattleReward(self, self.battleConfig.loseReward)
+        end
+
+        local settleInfo = {
+            battleResult = result, -- 胜负结果
+            awardMap     = awards,
+            totalTime    = nowMS - self.startTime,
+            killMonsterCount = self.statistics.killMonsterCount,
+            allHurt          = self.statistics.allHurt,
+        }
+
+        if dive.isStandalone then
+            -- 单机模式
+            local battleData = self:GetBattleSnapshotData()
+            settleInfo.battleData = _G.jsonEncode(battleData)
+        end
+
+        LogInfo("processBattleSettle insert settle intent, battle:{} result:{} player:{}", self.battleId, result,
+            player.id)
+        battleIntent.InsertUserIntent(self.battleId, player.id, _G.INTENT_TYPE.SETTLE, settleInfo)
+
+        ---@type BattleSettleInfo
+        local syncSettleInfo = {
+            mode         = self.mode,
+            battleId     = self.battleId,
+            battleType   = self.battleType,
+            battleResult = result, -- 胜负结果
+            awardMap     = awards,
+            roundNumber  = self.roundNumber,
+            matchInfo    = self.matchInfo,
+            statistics   = self.statistics,
+            battleRecord = battleRecord,
+            extraInfo    = player.extraInfo,
+            durationTime = nowMS - self.startTime,
+            logInfo      = logInfo,
+            uid2rivalUid = uid2rivalUid,
+        }
+        -- 将奖励发送给大厅存储，同时将结算信息交给玩家存储
+        message.SendP2PMessage("lobby", player.svr, "BattleResult", player.id, syncSettleInfo)
+        ::continue::
+    end
+
+    self:changeBattleStatus(_G.BattleStatus.END, nowMS)
+    self.stopReason = errCode.SUCCESS
+end
+
+function Battle:changeBattleStatus(status, nowMS)
+    self.status = status
+    self.changeStatusTime = nowMS
+    LogInfo("changeBattleStatus, battleId:{}, status:{}", self.battleId, status)
+end
+
+------------------------------------ 战斗管理 ------------------------------------
+-- 处理轮次战斗逻辑
+function Battle:processRoundFight(gameTypeConfig, nowMS)
+    self.tickState = 1401
+    for teamId, battleTeam in pairs(self.battleTeams) do
+        -- TODO: 轮次开始后，先等待怪物行动一段时间
+        if nowMS - self.roundStartTime - gameTypeConfig.bossWaitTime >= 0 then
+            -- 处理法宝相关逻辑
+            self.tickState = 1402
+            self:processSutra(battleTeam, nowMS);
+            -- 处理召唤物相关逻辑
+            self.tickState = 1403
+            self:processSummoner(battleTeam, nowMS);
+        end
+        self.tickState = 1404
+        self:processRangeEffect(battleTeam, nowMS);
+
+        self.tickState = 1405
+        self:processMonster(battleTeam, nowMS);
+    end
+
+    -- 处理怪物删除
+    self.tickState = 1406
+    self:processMonsterDelete(nowMS)
+
+    -- 取出队头怪物创建请求
+    self.tickState = 1407
+    self:processMonsterCreate(nowMS)
+
+    -- 怪物刷新请求入队
+    self.tickState = 1408
+    self:processMonsterRefresh(nowMS)
+
+    self.nextAddManaTime = self.nextAddManaTime or (self.playTime + 5000)
+    if self.nextAddManaTime and nowMS >= self.nextAddManaTime then
+        self.nextAddManaTime = self.nextAddManaTime + 5000
+        for _, player in pairs(self.players) do
+            resourceComp.ChangeMana(player.resourceComponent, player, self.battleConfig.mana)
+        end
+    end
+end
+
+-- 处理怪物刷新
+function Battle:processMonsterCreate(nowMS)
+    for _, groupData in pairs(self.monsterQueue) do
+        for _, data in pairs(groupData) do
+            local monsterQueue = data.createQueue
+            -- 怪物刷新间隔
+            local minSpawnTime = _G.CommonValue.minSpawnTime
+            if #monsterQueue > 0 and (nowMS - data.lastCreateTime) >= minSpawnTime then
+                local createMonsterParam = table.remove(monsterQueue, 1)
+
+                --LogInfo('nowMS is {}, prevPlayingTime is {}, 当前时间差为: {}, 当前队列中有 {} 只待生成的怪物, monsterQueue is {}', nowMS, self.prevMonsterPlayingTime, (nowMS - self.prevMonsterPlayingTime) , #monsterQueue ,monsterQueue)
+                -- 已经达到间隔
+                self:CreateMonster(
+                    createMonsterParam.teamId,
+                    createMonsterParam.routeGroupId,
+                    createMonsterParam.monsterId,
+                    createMonsterParam.isReborn,
+                    createMonsterParam.isBoss,
+                    createMonsterParam.roundNumber
+                )
+                data.lastCreateTime = nowMS
+            end
+        end
+    end
+end
+
+-- 随机轮次怪物组
+function Battle:processRoundMonsterGroup(nowMS)
+    local config = self.battleConfig
+    local roundId = self.roundNumber
+    local monsterGroups = _G.MonsterGroupRoundTable[roundId]
+    if not monsterGroups then
+        LogDebug("Battle:processRoundMonsterGroup, roundId:{} self.roundNumber:{}", roundId, self.roundNumber)
+    end
+    local intersection = {}
+    if monsterGroups then
+        for _, groupId in pairs(config.monsterGroups) do
+            if monsterGroups[groupId] then
+                table.insert(intersection, groupId)
+            end
+        end
+    end
+
+    if #intersection <= 0 then
+        -- 使用lastMonsterRoundId再查找一轮
+        roundId = self.lastMonsterRoundId
+        monsterGroups = _G.MonsterGroupRoundTable[roundId]
+        if not monsterGroups then
+            LogDebug("Battle:processRoundMonsterGroup, roundId:{} self.roundNumber:{}", roundId, self.roundNumber)
+            return
+        end
+        intersection = {}
+        for _, groupId in pairs(config.monsterGroups) do
+            if monsterGroups[groupId] then
+                table.insert(intersection, groupId)
+            end
+        end
+        if #intersection <= 0 then
+            LogDebug("Battle:processRoundMonsterGroup, roundId:{} self.roundNumber:{}", roundId, self.roundNumber)
+            return
+        end
+    end
+
+    self.currentRoundMonsterGroupId = intersection[math.random(#intersection)]
+
+    --LogDebug("当前随机的组id:{} monsterGroups:{}, config.monsterGroups:{}, intersection:{}", self.currentRoundMonsterGroupId, monsterGroups, config.monsterGroups, intersection)
+
+    -- 怪物刷新配置
+    for id, monsterGroupConfig in pairs(_G.BattleMonsterGroupTable) do
+        if monsterGroupConfig.groupId == self.currentRoundMonsterGroupId and table.contains(monsterGroupConfig.rounds, roundId) then
+            -- 计算轮次刷新boss时间
+            if monsterGroupConfig.isBoss == 1 then
+                self.roundEndTime = nowMS + monsterGroupConfig.roundEndTime
+            end
+
+            self.currentRoundMonsterGroup[id] = {
+                monsterGroupConfig = monsterGroupConfig,                  -- 配置
+                leftRefreshTimes = monsterGroupConfig.refreshNumber,      -- 剩余刷新次数
+                nextRefreshTime = nowMS + monsterGroupConfig.refreshTime, -- 下一次刷新时间
+            }
+        end
+    end
+
+    self.lastMonsterRoundId = roundId
+    self.isRefreshMonsterGroup = true
+end
+
+function Battle:checkRoundEnd()
+    if not self.isCheckRoundEnd then
+        return false
+    end
+
+    if self.maxRound and self.roundNumber >= self.maxRound then
+        self.isCheckRoundEnd = false
+        return false
+    end
+
+    -- 判断本轮boss波次是否刷新
+    for _, monsterRefresh in pairs(self.currentRoundMonsterGroup) do
+        if monsterRefresh.monsterGroupConfig.isBoss and monsterRefresh.leftRefreshTimes > 0 then
+            return false
+        end
+    end
+
+    -- 判断出怪队列中是否有boss怪
+    local isEnd = true
+    for _, monsterQueueGroup in pairs(self.monsterQueue) do
+        for _, data in pairs(monsterQueueGroup) do
+            isEnd = true
+            if #data.createQueue > 0 then
+                for _, createMonsterParam in pairs(data.createQueue) do
+                    if createMonsterParam.isBoss then
+                        isEnd = false
+                    end
+                end
+            end
+        end
+    end
+
+    if not isEnd then
+        return false
+    end
+
+    self.isCheckRoundEnd = false
+
+    return isEnd
+end
+
+---@return boolean 是否有玩家投降
+function Battle:checkGiveUp()
+    local lostId = -1
+    local giveUpTime = 0
+    for _, player in pairs(self.players) do
+        if player.isGiveUp then
+            if giveUpTime <= 0 or (giveUpTime > 0 and player.giveUpTime < giveUpTime) then
+                giveUpTime = player.giveUpTime
+                lostId = player.teamId
+            end
+        end
+    end
+
+    if lostId > -1 then
+        for teamId, _ in pairs(self.battleTeams) do
+            if teamId == lostId then
+                self.battleResult[teamId] = common.BATTLE_END_RESULT_LOST
+            else
+                self.battleResult[teamId] = common.BATTLE_END_RESULT_WIN
+            end
+        end
+        return true
+    else
+        return false
+    end
+end
+
+---@param battleTeam BattleTeam
+---@param nowMS number
+function Battle:processSutra(battleTeam, nowMS)
+    for _, playerSiteData in pairs(battleTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            sutra:Update(self, nowMS)
+        end
+    end
+end
+
+---@param battleTeam BattleTeam
+---@param nowMS number
+function Battle:processSummoner(battleTeam, nowMS)
+    for _, summoner in pairs(battleTeam.summoners) do
+        summoner:Update(self, nowMS)
+    end
+end
+
+---@param battleTeam BattleTeam
+---@param nowMS number
+function Battle:processMonster(battleTeam, nowMS)
+    for _, monster in pairs(battleTeam.monsters) do
+        -- 处理怪物移动
+        local monsterPath = battleTeam.monsterPaths[monster.routeGroupId][monster.routeId]
+        battleFightMoveLogic.ProcessMonsterMove(self, battleTeam, monster, monsterPath, nowMS)
+    end
+end
+
+function Battle:processMonsterDelete(nowMS)
+    for teamId, battleTeam in pairs(self.battleTeams) do
+        local toRemove = {}
+
+        for entryId, monster in pairs(battleTeam.monsters) do
+            if monster.totalMoveDistance == -1 or monster.curHP <= 0 then
+                -- 怪物到达或死亡
+                for _, player in pairs(self.players) do
+                    if player.teamId == monster.teamId then
+                        if monster.monsterRoundConfig.dropMana > 0 then
+                            resourceComp.ChangeMana(player.resourceComponent, player,
+                                monster.monsterRoundConfig.dropMana)
+                        end
+
+                        if monster.monsterRoundConfig.dropSpell > 0 then
+                            if player.playerIndex == monster.routeGroupId then
+                                gameCardComp.ChangeSpellRefreshCount(player.gameCardComponent,
+                                    self, player, monster.monsterRoundConfig.dropSpell)
+                            end
+                        end
+                    end
+                end
+
+                -- 如果怪物为当前波次的boss怪，则检查轮次更新
+                if monster.isBoss and monster.roundNumber == self.roundNumber then
+                    self.isCheckRoundEnd = true
+                end
+
+                -- 杀死怪物计数
+                self.statistics.killMonsterCount[teamId] = self.statistics.killMonsterCount[teamId] or {totalCount=0, typeCount={}}
+                local monsterCount = self.statistics.killMonsterCount[teamId]
+                monsterCount.totalCount = monsterCount.totalCount + 1
+                local monsterConfig = _G.MonsterInfoTable[monster.monsterId]
+                monsterCount.typeCount[monsterConfig.type] = (monsterCount.typeCount[monsterConfig.type] or 0) + 1
+
+                -- 怪物死亡事件
+                local eventMonsterDead = eventManager.CreateMonsterDeadEvent(monster)
+                eventManager.DispatchEvent(self.eventManager, eventMonsterDead)
+
+                -- 怪物数量变化事件
+                local eventMonsterCountChange = eventManager.CreateMonsterCountChangeEvent(battleTeam)
+                eventManager.DispatchEvent(self.eventManager, eventMonsterCountChange)
+
+                table.insert(toRemove, entryId)
+            end
+        end
+
+        for _, id in ipairs(toRemove) do
+            battleTeam.monsters[id]:Reset()
+            battleTeam.monsters[id] = nil
+        end
+    end
+end
+
+function Battle:processRangeEffect(battleTeam, nowMS)
+    for id, rangeEffect in pairs(battleTeam.rangeEffects) do
+        rangeEffect:Update(nowMS)
+        if rangeEffect.totalMoveDistance == -1 or (rangeEffect.duration > 0 and rangeEffect.duration <= nowMS) then
+            -- 范围效果到达移动目标 或 持续时间结束
+            rangeEffect:Reset()
+            battleTeam.rangeEffects[id] = nil
+        end
+    end
+end
+
+-- 处理怪物创建
+-- @param battle 战局
+-- @param nowMs 当前时间
+function Battle:processMonsterRefresh(nowMs)
+    -- 生成怪物
+    for _, monsterRefresh in pairs(self.currentRoundMonsterGroup) do
+        while (nowMs >= monsterRefresh.nextRefreshTime and monsterRefresh.leftRefreshTimes > 0) do
+            for teamId, team in pairs(self.battleTeams) do
+                local isBoss = monsterRefresh.monsterGroupConfig.isBoss == 1
+                local isFront = isBoss
+
+                -- 在不同的怪物路径组生成怪物
+                for idx, _ in pairs(team.monsterPaths) do
+                    -- boss 插队到队头
+                    self:PushMonsterQueue(teamId, idx, monsterRefresh.monsterGroupConfig.monsterId,
+                        false, isBoss, isFront)
+                end
+
+                -- 怪物数量变化事件
+                local eventMonsterCountChange = eventManager.CreateMonsterCountChangeEvent(team)
+                eventManager.DispatchEvent(self.eventManager, eventMonsterCountChange)
+            end
+
+            -- 更新刷新时间
+            monsterRefresh.nextRefreshTime = monsterRefresh.nextRefreshTime
+                + monsterRefresh.monsterGroupConfig.refreshInterval
+            -- 更新刷新次数
+            monsterRefresh.leftRefreshTimes = monsterRefresh.leftRefreshTimes - 1
+        end
+    end
+end
+
+function Battle:checkUnlockFormation()
+    for idx, round in pairs(self.battleConfig.keyUnlockRound) do
+        --LogDebug("checkUnlockFormation, slot id:{} 当前回合:{} 解锁回合:{}", idx, self.roundNumber, round)
+        if self.roundNumber == round then
+            for _, player in pairs(self.players) do
+                gameCardComp.UnlockFormation(player.gameCardComponent, player, idx)
+            end
+        end
+    end
+end
+
+function Battle:resetBattleTeam()
+    for _, battleTeam in pairs(self.battleTeams) do
+        battleTeam:ResetRoundStatus()
+    end
+end
+
+function Battle:ReleaseAwakeSkill()
+    for _, battleTeam in pairs(self.battleTeams) do
+        --初始技能
+        local towerConfig = _G.TowerTable[battleTeam.tower.towerId]
+        if towerConfig then
+            for _, skillId in pairs(towerConfig.awakeSkills) do
+                battleFightSkillLogic.ProcessEntrySkill(self, battleTeam.tower, skillId)
+            end
+        else
+            LogErr("Battle:ReleaseAwakeSkill, cannot find tower config, towerId:{}", battleTeam.tower.towerId)
+        end
+    end
+
+    --元神初始技能
+    for _, player in pairs(self.players) do
+        local battleTeam = self.battleTeams[player.teamId]
+        if battleTeam then
+            for _, skillId in pairs(player.spiritInfo.spiritSkill) do
+                battleFightSkillLogic.ProcessEntrySkill(self, battleTeam.tower, skillId)
+            end
+        end
+    end
+
+    self.isReleaseAwakeSkill = true
+end
+
+function Battle:ReleaseRoundSkill()
+    for _, battleTeam in pairs(self.battleTeams) do
+        battleTeam.tower:CheckRoundSkill(self, self.roundStartTime)
+    end
+end
+
+function Battle:ResetRoundSkill()
+    for _, battleTeam in pairs(self.battleTeams) do
+        battleTeam.tower:ResetRoundSkill(self)
+    end
+end
+
+function Battle:NotifyPreBattleData(uid)
+    local ss = _G.GetAgentByUid(uid)
+    if not ss then
+        return
+    end
+
+    --分发战前数据
+    local data = {
+        playerInfo = {}
+    }
+
+    for _, player in pairs(self.players) do
+        data.playerInfo[player.id] = {
+            sutraIds = {}
+        }
+        for key in pairs(player.gameCardComponent.cards) do
+            table.insert(data.playerInfo[player.id].sutraIds, key)
+        end
+    end
+
+    ss.Call("BattleLogic_NotifyPreBattleData", data);
+end

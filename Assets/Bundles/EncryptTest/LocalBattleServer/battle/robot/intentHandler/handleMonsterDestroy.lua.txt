@@ -1,0 +1,18 @@
+function Execute(robot, intent)
+    local battleData = robot.battleData;
+    local monsterConfig = _G.MonsterInfoTable[intent.monsterDestroy.monster.monsterId]
+
+    if battleData.teamId == intent.monsterDestroy.teamId then
+        battleData.selfMonsterCount  = battleData.selfMonsterCount - 1;
+
+        if monsterConfig and monsterConfig.type == _G.MonsterType.BOSS then
+            battleData.selfBossCount = battleData.selfBossCount - 1;
+        end
+    else
+        battleData.otherMonsterCount  = battleData.otherMonsterCount - 1;
+
+        if monsterConfig and monsterConfig.type == _G.MonsterType.BOSS then
+            battleData.otherBossCount = battleData.otherBossCount - 1;
+        end
+    end
+end

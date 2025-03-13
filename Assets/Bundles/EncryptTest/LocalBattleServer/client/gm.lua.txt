@@ -1,0 +1,35 @@
+
+local tools       = import("common/tools.lua");
+
+
+function c2s.CommonLogic_GMExecRequest(ss, param)
+    local cmdInfo = tools.SplitString(param.cmd, " ");
+    local msgName = table.remove(cmdInfo, 1);
+
+    LogWarn("gm command({}): {} {} {}", ss.uid, msgName, cmdInfo, table.unpack(cmdInfo));
+
+    local proc = _G.s2s[msgName];
+    if not proc then
+        LogErr("undefined s2s msg: {}", msgName);
+        return true;
+    end
+
+    local ok, err = xpcall(proc, debug.traceback, nil, ss.uid, _G.CLIENT_BATTLE_ID, table.unpack(cmdInfo));
+    if not ok then
+        LogErr("failed to call msg s2s.{}", msgName);
+        LogErr("{}", err);
+    end
+end
+
+function Echo(fmt, ...)
+    local ok, text = pcall(string.format, fmt, ...);
+    if not ok then
+        text = tostring(fmt).."... ...";
+    end
+    if ss then
+        LogInfo("Echo: {}", text)
+        ss.Call("CommonLogic_GMExecResponse", {text = text});
+    else
+        LogInfo("Echo: {}", text)
+    end
+end

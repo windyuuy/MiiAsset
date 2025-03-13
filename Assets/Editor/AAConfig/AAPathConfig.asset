@@ -20,7 +20,7 @@ MonoBehaviour:
     scanRoot: Assets/Bundles/AA
     tags: 
     isOffline: 1
-    isEncrypt: 0
+    isEncrypt: 1
   - title: BB
     path: Assets/Bundles/BB/
     groupName: bb

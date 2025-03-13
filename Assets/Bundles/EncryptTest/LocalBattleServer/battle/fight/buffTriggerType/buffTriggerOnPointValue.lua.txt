@@ -1,0 +1,25 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    local callback = function(listener, properties, event)
+        if event.pointId ~= properties.pointId then
+            return false
+        end
+
+        if event.value < properties.targetValue then
+            return false
+        end
+
+        buffComponent.buffEffect(properties.buffComponent, properties.buff)
+        return true
+    end
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local triggerTypeData = buffConfig.triggerTypeDatas[triggerTypeIndex]
+    local pointId = triggerTypeData[1]
+    local targetValue = triggerTypeData[2]
+    local properties = { attackerId = buff.owner.entryId, buff = buff, buffComponent = component, pointId = pointId, targetValue = targetValue }
+    local listenerId = eventManager.AddEventListener(battle.eventManager, _G.EventType.POINT_VALUE_CHANGE, callback, properties, false)
+    buff.listenerEventType = _G.EventType.POINT_VALUE_CHANGE
+    table.insert(buff.listenerIds, listenerId)
+end

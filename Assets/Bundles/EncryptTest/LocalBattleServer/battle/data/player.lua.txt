@@ -1,0 +1,211 @@
+local gameCardComp = import("battle/components/gameCardComponent.lua")
+local resourceComp = import("battle/components/resourceComponent.lua")
+
+---@class Player 玩家
+---@field id number 玩家id
+---@field svr string 玩家所在服务器
+---@field status number 玩家状态
+---@field battleId number 玩家当前战局id
+---@field teamId number 玩家当前队伍id
+---@field nextSpellTime number 下一次使用符箓的时间
+---@field isGiveUp boolean 是否投降
+---@field giveUpTime number 投降发起时间
+---@field resourceComponent ResourceComponent 资源组件
+---@field gameCardComponent GameCardComponent 卡牌组件
+---@field robotConfigId number 机器人配置id
+---@field playerIndex number 玩家在队伍中的位置
+---@field extraInfo LobbyPlayerSyncExtraInfo 额外信息
+---
+---@field playerInitData table 玩家初始化数据
+_G.PlayerStatus = {
+    INIT = 0,
+    CONNECTED = 1,
+    READY = 2,
+}
+
+---@param matchPlayer MatchPlayer
+function CreatePlayer(matchPlayer, battle, battleTeam)
+    local player = {}
+
+    player.id  = matchPlayer.id
+    player.svr = matchPlayer.svr
+    player.status = _G.PlayerStatus.INIT
+    player.battleId = battle.battleId
+    player.teamId = battleTeam.teamId
+    player.nextSpellTime = 0
+    player.isGiveUp = false
+    player.giveUpTime = 0
+    player.playerIndex = matchPlayer.playerIndex
+    player.extraInfo = {}
+    player.spiritInfo = {}
+
+    player.resourceComponent = resourceComp.CreateResourceComponent(battle.mode)
+
+    player.Call = function(msg, data)
+        -- 只有机器人走这里
+        local proc = s2r[msg];
+        if not proc then
+            return;
+        end
+
+        local ok, err = xpcall(proc, debug.traceback, player, data);
+        if not ok then
+            LogErr("failed to call msg s2r.{} err:{}", msg, err);
+        end
+    end
+
+    player.playerInitData = nil
+
+    return player
+end
+
+function Reset(player)
+
+end
+
+function GetPlayerData(player)
+    return {
+        teamId = player.teamId,
+        playerId = player.id,
+        playerIdx = player.playerIndex,
+
+        resourceData = resourceComp.GetResourceData(player.resourceComponent),
+        gameCardData = gameCardComp.GetGameCardData(player.gameCardComponent),
+
+        playerName = player.playerName,
+        head       = player.head,
+        headboxid  = player.headboxid,
+        score      = player.score,
+
+        robotLevel    = player.aiLevel,
+        robotConfigId = player.robotConfigId,
+
+        winningStreak = player.winningStreak,
+        spiritId      = player.spiritInfo.spiritId,
+    }
+end
+
+function GetPlayerSnapshotData(player)
+    return {
+        playerIdx = player.playerIndex,
+        resourceData = resourceComp.GetResourceData(player.resourceComponent),
+        gameCardData = gameCardComp.GetGameCardSnapshotData(player.gameCardComponent),
+    }
+end
+
+function InitFromPlayerData(player, data)
+    resourceComp.InitFromResourceData(player, data.resourceData)
+    gameCardComp.InitFromGameCardData(player, data.gameCardData)
+end
+
+---@param battle Battle
+---@param player Player
+---@param playerInfo LobbyPlayerSyncInfo
+function SyncPlayerInfo(battle, player, playerInfo)
+    local cards = playerInfo.cardTeam.cards
+
+    player.extraInfo = playerInfo.extraInfo
+    player.spiritInfo = playerInfo.spiritInfo
+
+    ---@type BattleTeam
+    local battleTeam = battle.battleTeams[player.teamId]
+    local playerSiteData = battleTeam.playerSiteDatas[player.playerIndex]
+    if not playerSiteData then
+        LogDebug("SyncPlayerInfo: playerSiteData is nil: {}", player.playerIndex)
+        return
+    end
+
+    local battleGameTypeConfig = _G.BattleGameTypeTable[battle.mode]
+    local gainList = battleGameTypeConfig.gainList or {}
+
+    local calTowerHp = function(c)
+        return c.attributes.baseTowerHp * (1 + (c.attributes.perTowerHp or 0) / 10000) + (c.attributes.fixedTowerHp or 0)
+    end
+
+    -- 基地血量加成
+    local towerHp = _G.CommonValue.defaultHp or 0
+
+    for _, card in pairs(cards) do
+        local cardConfig = _G.SutraTable[card.id]
+        -- 只有法宝有attributes，符箓没有attributes
+        if card.attributes then
+            towerHp = towerHp + calTowerHp(card)
+
+            -- 获取困难模式，需要更新的属性
+            for _, gainId in pairs(gainList) do
+                local battleGainConfig = _G.BattleGainTable[gainId] or {}
+
+                -- 判断是否需要更新增益/减益
+                local needUpdate = false
+
+                if battleGainConfig.gainType == _G.BattleGainType.DECREASE then
+                    -- 反选
+                    local hasFate = false
+                    for _, gainFat in pairs(battleGainConfig.gainFates) do
+                        if table.contains(cardConfig.fates, gainFat) then
+                            hasFate = true
+                        end
+                    end
+                    if not hasFate then
+                        needUpdate = true
+                    end
+
+                elseif battleGainConfig.gainType == _G.BattleGainType.INCREASE then
+                    -- 正选, 包含任意一个
+                    for _, gainFat in pairs(battleGainConfig.gainFates) do
+                        if table.contains(cardConfig.fates, gainFat) then
+                            needUpdate = true
+                        end
+                    end
+                end
+
+                if needUpdate then
+                    -- 反选，并且没有需要过滤的羁绊
+                    UpdateCardAttributes(card, battleGainConfig.gainValue)
+                end
+            end
+        end
+    end
+
+    -- gameCardComponent
+    player.gameCardComponent = gameCardComp.CreateGameCardComponent(cards, playerInfo.cardTeam.formations, playerInfo.cardTeam.spellCards)
+    gameCardComp.Init(player.gameCardComponent, battle, player, playerSiteData.formationPos, playerSiteData.formationSlots);
+
+    LogDebug("SyncPlayerInfo: teamId:{} towerHp:{}  battleTeam.tower.maxHP:{} battleTeam.tower.towerId:{}", player.teamId, towerHp, battleTeam.tower.maxHP, battleTeam.tower.towerId)
+    battleTeam.tower.maxHP = battleTeam.tower.maxHP + towerHp
+    battleTeam.tower.curHP = battleTeam.tower.curHP + towerHp
+
+    -- robot使用
+    player.uid               = player.id
+    player.robotConfigId     = playerInfo.robotConfigId;
+    player.aiLevel           = playerInfo.aiLevel;
+    player.robotConfig       = _G.RobotConfigTable[playerInfo.robotConfigId];
+    player.robotLevelTable   = _G.RobotLevelTable[playerInfo.aiLevel];
+
+    if playerInfo.avatar then
+        player.playerName = playerInfo.avatar.playerName
+        player.head       = playerInfo.avatar.head
+        player.headboxid  = playerInfo.avatar.headboxid
+        player.score      = playerInfo.avatar.score
+        player.winningStreak = playerInfo.avatar.winningStreak
+    else
+        player.playerName = ""
+        player.head       = 1
+        player.headboxid  = 1
+        player.score      = 0
+        player.winningStreak = 0
+    end
+
+    -- 初始化数据
+    if player.playerInitData then
+        InitFromPlayerData(player, player.playerInitData)
+    end
+end
+
+-- 更新每一个关卡的增益/减益效果
+function UpdateCardAttributes(card, gainValue)
+    for attrKey, attrValue in pairs(gainValue) do
+        local attr = _G.AttrShortName[attrKey]
+        card.attributes[attr] = (card.attributes[attr] or 0) + attrValue
+    end
+end

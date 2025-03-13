@@ -1,0 +1,14 @@
+-- FiveAttributeTable
+_G.FiveAttributeTable =
+{
+    [991001] = {id = 991001, english = "gold", name = "金", description = "五行之金属性", icon = "a_deck_icon_jin",},
+    [991002] = {id = 991002, english = "wood", name = "木", description = "五行之木属性", icon = "a_deck_icon_mu",},
+    [991003] = {id = 991003, english = "water", name = "水", description = "五行之水属性", icon = "a_deck_icon_shui",},
+    [991004] = {id = 991004, english = "fire", name = "火", description = "五行之火属性", icon = "a_deck_icon_huo",},
+    [991005] = {id = 991005, english = "earth", name = "土", description = "五行之土属性", icon = "a_deck_icon_tu",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("FiveAttributeTable")
+end

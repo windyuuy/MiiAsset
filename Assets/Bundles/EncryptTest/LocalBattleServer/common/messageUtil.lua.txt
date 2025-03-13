@@ -1,0 +1,6 @@
+function _G.CreateResponse(request)
+    return {
+        TRACE_ID = request.TRACE_ID,
+        packetId = request.packetId
+    }
+end

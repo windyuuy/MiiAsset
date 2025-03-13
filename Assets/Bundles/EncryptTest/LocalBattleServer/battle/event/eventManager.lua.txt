@@ -1,0 +1,372 @@
+local eventListener = import("battle/event/eventListener.lua")
+
+---@class EventManager 事件管理器
+---@field listener table<number, EventListener> 监听器
+---@field nextListenerId number 下一个监听器id
+
+function Init()
+    _G.EventType = {
+        NONE = 0,
+        BUFF_END = 1,               -- buff结束
+        ENTRY_BEFORE_BE_HIT = 2,    -- 实体受击前
+        ENTRY_AFTER_BE_HIT = 3,     -- 实体受击后
+        ENTRY_BEFORE_ATTACK = 4,    -- 实体攻击前
+        ENTRY_AFTER_ATTACK = 5,     -- 实体攻击后
+        MONSTER_DEAD = 6,           -- 怪物死亡时
+        KILL_MONSTER = 7,           -- 实体杀死目标后
+        TRIGGER_REACTION = 8,       -- 触发元素反应
+
+        USE_SPELL = 9,     -- 使用符箓
+        BEFORE_USE_SKILL = 10,      -- 使用技能前
+        AFTER_USE_SKILL = 11,       -- 使用技能后
+        TOWER_HP_CHANGE = 12,       -- 基地血量变化
+        MONSTER_COUNT_CHANGE = 13,  -- 怪物数量变化
+        REFRESH_GAME_CARD = 14,     -- 刷新卡牌
+        SUTRA_STAR_CHANGE = 15,     -- 法宝星级变化
+        MANA_CHANGE = 16,           -- 法力变化
+        ROUND_START = 17,           -- 回合开始
+        ROUND_END   = 18,           -- 回合结束
+        BOSS_CREATE = 19,           -- 刷新boss
+        POINT_VALUE_CHANGE = 20,    -- 点数变化
+        CRITICAL_STRIKE = 21,       -- 暴击时
+        ADD_BUFF = 22,              -- 添加buff
+        BEFORE_ADD_BUFF = 23,       -- 添加buff前
+        ENTRY_ATTACK_HIT = 24,      -- 实体攻击命中(造成伤害后)
+        SUTRA_ON = 25,              -- 法宝上阵
+        MONSTER_BE_EXECUTE = 26,    -- 怪物被斩杀
+        TOWER_HP_CHANGE_TO = 27,    -- 基地血量变化到指定比例
+    }
+end
+
+function CreateEventManager()
+    local eventManager = {
+        listener = {},
+        nextListenerId = 0,
+    }
+    return eventManager
+end
+
+-- 注册一个事件监听器
+-- eventType: 事件类型
+-- callback: 回调函数
+-- com.zhiyou.projectf.properties:　监听器额外参数
+-- once: 是否只触发一次
+function AddEventListener(eventManager, eventType, callback, properties, once)
+    --LogDebug("AddEventListener, eventType:{}", eventType)
+    if not eventManager.listener[eventType] then
+        eventManager.listener[eventType] = {}
+    end
+
+    local listenerId = getNextListenerId(eventManager)
+    local listener = eventListener.CreateListener(eventType, listenerId, callback, properties, once)
+    eventManager.listener[eventType][listenerId] = listener
+    listener.listenerId = listenerId
+    return listenerId
+end
+
+-- 移除一个事件监听器
+function RemoveEventListener(eventManager, eventType, listenerId)
+    if not eventManager.listener[eventType] then
+        return
+    end
+
+    eventManager.listener[eventType][listenerId] = nil
+end
+
+-- 触发事件
+function DispatchEvent(eventManager, event)
+    local eventType = event.eventType
+    local listeners = eventManager.listener[eventType]
+    if not listeners then
+        return
+    end
+
+    local removeListenerIds = {}
+    --LogDebug("DispatchEvent eventType:{}", eventType)
+
+    for i, listener in pairs(listeners) do
+        if not listener then
+            LogDebug("DispatchEvent listener is nil, eventType:{}", eventType)
+            goto continue
+        end
+        local isTrigger = listener:callback(listener.properties, event)
+        --if isTrigger then
+        --    LogDebug("DispatchEvent event is trigger, eventType:{}", eventType)
+        --end
+        if isTrigger and listener.once then
+            table.insert(removeListenerIds, i)
+        end
+
+        ::continue::
+    end
+
+    for _, id in pairs(removeListenerIds) do
+        eventManager.listener[eventType][id] = nil
+    end
+end
+
+----------------------------------- 事件 -----------------------------------
+-- buff结束事件
+function CreateBuffEndEvent(entryId)
+    local event = {
+        eventType = _G.EventType.BUFF_END,
+        entryId = entryId,
+    }
+    return event
+end
+
+-- 添加buff事件
+function CreateAddBuffEvent(targetEntry, originEntry, buffId)
+    local event = {
+        eventType = _G.EventType.ADD_BUFF,
+        targetEntry = targetEntry,
+        originEntry = originEntry,
+        buffId = buffId,
+    }
+    return event
+end
+
+function CreateBeforeAddBuffEvent(targetEntry, originEntry, buffId)
+    local event = {
+        eventType = _G.EventType.BEFORE_ADD_BUFF,
+        targetEntry = targetEntry,
+        originEntry = originEntry,
+        buffId = buffId,
+    }
+    return event
+end
+
+-- 怪物死亡事件
+function CreateMonsterDeadEvent(monster)
+    local event = {
+        eventType = _G.EventType.MONSTER_DEAD,
+        dead = monster,
+    }
+    return event
+end
+
+-- 受击前事件
+function CreateEntryBeforeBeHitEvent(attacker, attacked)
+    local event = {
+        eventType = _G.EventType.ENTRY_BEFORE_BE_HIT,
+        attacker = attacker,
+        attacked = attacked,
+    }
+    return event
+end
+
+-- 受击后事件
+function CreateEntryAfterBeHitEvent(attacker, attacked, damage)
+    local event = {
+        eventType = _G.EventType.ENTRY_AFTER_BE_HIT,
+        attacker = attacker,
+        attacked = attacked,
+        damage = damage,
+    }
+    return event
+end
+
+---- 攻击前事件
+--function CreateEntryBeforeAttackEvent(attacker, context)
+--    local event = {
+--        eventType = _G.EventType.ENTRY_BEFORE_ATTACK,
+--        attacker = attacker,
+--        skillContext = context,
+--    }
+--    return event
+--end
+--
+---- 攻击后事件
+function CreateEntryAfterAttackEvent(attacker, context)
+    local event = {
+        eventType = _G.EventType.ENTRY_AFTER_ATTACK,
+        attacker = attacker,
+        skillContext = context,
+    }
+    return event
+end
+
+function CreateKillMonsterEvent(monster, attacker)
+    local event = {
+        eventType = _G.EventType.KILL_MONSTER,
+        monster = monster,
+        attacker = attacker,
+    }
+    return event
+end
+
+-- 触发反应后事件
+function CreateTriggerReactionEvent(attacker, attacked)
+    local event = {
+        eventType = _G.EventType.TRIGGER_REACTION,
+        attacker = attacker,
+        attacked = attacked,
+    }
+    return event
+end
+
+function CreateUseSpellEvent(player, teamId, spellId)
+    local event = {
+        eventType = _G.EventType.USE_SPELL,
+        player = player,
+        teamId = teamId,
+        spellId = spellId,
+    }
+    return event
+end
+
+function CreateCriticalStrike(attacker, attacked)
+    local event = {
+        eventType = _G.EventType.CRITICAL_STRIKE,
+        attacker = attacker,
+        attacked = attacked,
+    }
+    return event
+end
+
+-- 攻击前事件
+function CreateBeforeUseSkillEvent(attacker, context)
+    local event = {
+        eventType = _G.EventType.BEFORE_USE_SKILL,
+        attacker = attacker,
+        skillContext = context,
+    }
+    return event
+end
+
+-- 攻击后事件
+function CreateAfterUseSkillEvent(attacker, context)
+    local event = {
+        eventType = _G.EventType.AFTER_USE_SKILL,
+        attacker = attacker,
+        skillContext = context,
+    }
+    return event
+end
+
+function CreateTowerHpChangeEvent(tower, changeType)
+    local event = {
+        eventType = _G.EventType.TOWER_HP_CHANGE,
+        tower = tower,
+        changeType = changeType,
+    }
+    return event
+end
+
+function CreateMonsterCountChangeEvent(battleTeam)
+    local event = {
+        eventType = _G.EventType.MONSTER_COUNT_CHANGE,
+        battleTeam = battleTeam,
+    }
+    return event
+end
+
+function CreateRefreshGameCardEvent(player)
+    local event = {
+        eventType = _G.EventType.REFRESH_GAME_CARD,
+        player = player,
+    }
+    return event
+end
+
+function CreateSutraStarChangeEvent(battleTeam)
+    local event = {
+        eventType = _G.EventType.SUTRA_STAR_CHANGE,
+        battleTeam = battleTeam,
+    }
+    return event
+end
+
+function CreateManaChangeEvent(player)
+    local event = {
+        eventType = _G.EventType.MANA_CHANGE,
+        player = player,
+    }
+    return event
+end
+
+function CreateRoundStartEvent()
+    local event = {
+        eventType = _G.EventType.ROUND_START,
+    }
+    return event
+end
+
+function CreateBossCreateEvent(boss)
+    local event = {
+        eventType = _G.EventType.BOSS_CREATE,
+        boss = boss
+    }
+    return event
+end
+
+function CreateSutraSellEvent(sutraEntryId)
+    local event = {
+        eventType = _G.EventType.SUTRA_SELL,
+        entryId = sutraEntryId,
+    }
+    return event
+end
+
+function CreatePointValueEvent(pointId, value)
+    local event = {
+        eventType = _G.EventType.POINT_VALUE_CHANGE,
+        pointId = pointId,
+        value = value,
+    }
+    return event
+end
+
+function CreateEntryAttackHitEvent(attacker, attacked, damageInfo)
+    local event = {
+        eventType = _G.EventType.ENTRY_ATTACK_HIT,
+        attacker = attacker,
+        attacked = attacked,
+        damageInfo = damageInfo,
+    }
+    return event
+end
+
+---@param equipList table<number, SlotData>
+function CreateSutraOnEvent(teamId, equipList)
+    local sutraIds = {}
+    for _, slotData in pairs(equipList) do
+        if slotData and slotData.card then
+            table.insert(sutraIds, slotData.card.id)
+        end
+    end
+
+    local event = {
+        teamId = teamId,
+        eventType = _G.EventType.SUTRA_ON,
+        sutraIds = sutraIds,
+    }
+    return event
+end
+
+function CreateMonsterBeExecuteEvent(teamId, monsterId)
+    local event = {
+        eventType = _G.EventType.MONSTER_BE_EXECUTE,
+        teamId = teamId,
+        monsterId = monsterId,
+    }
+    return event
+end
+
+function CreateTowerHpChangeToEvent(tower, oldHP, newHP)
+    local event = {
+        eventType = _G.EventType.TOWER_HP_CHANGE_TO,
+        tower = tower,
+        oldHP = oldHP,
+        newHP = newHP,
+    }
+    return event
+end
+
+----------------------------------- 私有 -----------------------------------
+function getNextListenerId(eventManager)
+    eventManager.nextListenerId = eventManager.nextListenerId + 1
+    return eventManager.nextListenerId
+end
+
+Init()

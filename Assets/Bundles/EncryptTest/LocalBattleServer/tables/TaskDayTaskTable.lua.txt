@@ -1,0 +1,36 @@
+-- TaskDayTaskTable
+_G.TaskDayTaskTable =
+{
+    [1] = {id = 1, notes = "炼器50次", taskId = 4101,},
+    [2] = {id = 2, notes = "斗法1次", taskId = 4102,},
+    [3] = {id = 3, notes = "世界频道发言", taskId = 4103,},
+    [4] = {id = 4, notes = "任意充值1次", taskId = 4104,},
+    [5] = {id = 5, notes = "今日登录", taskId = 4105,},
+    [6] = {id = 6, notes = "合作1次", taskId = 4106,},
+    [7] = {id = 7, notes = "挑战一次感应塔", taskId = 4107,},
+    [8] = {id = 8, notes = "参加法宝历练1次", taskId = 4108,},
+}
+
+-- DayTaskDayIntergralTable
+_G.DayTaskDayIntergralTable =
+{
+    [1] = {id = 1, desc = "仙玉", integral = 10, integralReward = {1001, 20},},
+    [2] = {id = 2, desc = "仙玉", integral = 30, integralReward = {1001, 20},},
+    [3] = {id = 3, desc = "仙玉", integral = 50, integralReward = {1001, 20},},
+    [4] = {id = 4, desc = "限定火种", integral = 70, integralReward = {100003, 50},},
+}
+
+-- DayTaskWeekIntergralTable
+_G.DayTaskWeekIntergralTable =
+{
+    [1] = {id = 1, desc = "仙玉", integral = 80, integralReward = {1001, 50},},
+    [2] = {id = 2, desc = "仙玉", integral = 160, integralReward = {1001, 50},},
+    [3] = {id = 3, desc = "仙玉", integral = 240, integralReward = {1001, 50},},
+    [4] = {id = 4, desc = "仙玉", integral = 320, integralReward = {1001, 50},},
+    [5] = {id = 5, desc = "万能碎片", integral = 400, integralReward = {300010, 100},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("TaskDayTaskTable")
+end

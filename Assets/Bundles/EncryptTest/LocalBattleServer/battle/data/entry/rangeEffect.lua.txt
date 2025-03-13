@@ -1,0 +1,525 @@
+local grid = import("battle/utils/grid.lua")
+local battleMgr = import("battle/battleMgr.lua")
+local battleIntent = import("battle/battleIntent.lua")
+local buffComp = import("battle/components/buffComponent.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+local battleFightMoveLogic = import("battle/fight/battleFightMoveLogic.lua")
+
+---@class RangeEffect: Entry 范围效果
+---@field rangeEffectId number 范围效果id
+---@field releaseEntry Entry 释放实体
+---@field duration number 持续时间
+---@field rangeType number 范围类型
+---@field radius number 范围半径
+---@field monsters table<number, Monster> 范围内怪物
+---@field affectMonsters table<number, boolean> 已经作用的怪物<entryId, boolean>
+---@field entries table<number, Entry> 范围内实体
+---@field affectEntries table<number, boolean> 已经作用的实体<entryId, boolean>
+---@field skillComponent SkillComponent 技能组件
+---@field nextReleaseTime number 下一次释放技能时间
+---@field curRouteGroupId number 当前路径组id
+
+---@class MoveRangeEffect: RangeEffect 移动范围效果
+---@field movePath table<Position> 移动路径
+---@field lastMoveTime number 上一次移动时间
+---@field totalMoveDistance number 总移动距离
+
+_G.RangeEffectType = {
+    RANGE_EFFECT_ADD_BUFF           = 1,    -- 添加buff
+    RANGE_EFFECT_USE_SKILL_ON_ENTER = 2,    -- 进入范围使用技能
+    RANGE_EFFECT_USE_SKILL_PERIOD   = 3,    -- 周期使用技能
+}
+
+_G.RangeEffectRangeType = {
+    NONE = 0,
+    CIRCLE = 1, -- 圆形范围
+    ALL_CAMP = 2, -- 阵营全体
+}
+
+_G.RangeEffectMoveType = {
+    NOT_MOVE = 0, -- 不移动
+    MOVE_TO_START = 1, -- 移动到起始位置
+}
+
+_G.AreaCenterType = {
+    AREA_CENTER_TYPE_FATHER = 1, -- 父实体
+    AREA_CENTER_TYPE_ZERO   = 2, -- 固定中心(0, 0)
+    AREA_CENTER_TYPE_BY_MOVE_TYPE = 3, -- 根据移动类型
+}
+
+_G.RangeEffect = class(Entry)
+
+function CreateRangeEffect(...)
+    return RangeEffect.new(...)
+end
+
+function RangeEffect:ctor(entryId, battleId, teamId, position, level, rangeEffectId, releaseEntry)
+    --LogDebug("RangeEffect:ctor rangeEffectId:{}", rangeEffectId)
+    local config = _G.AreaEffectTable[rangeEffectId]
+    if not config then
+        LogErr("CreateRangeEffect not found range effect:{}", rangeEffectId)
+        return
+    end
+
+    self.rangeEffectId = rangeEffectId
+    self.releaseEntry = releaseEntry
+    if config.continueTime > 0 then
+        self.duration = _G.GetCurTimeMS() + config.continueTime
+    else
+        self.duration = 0
+    end
+
+    self.rangeType = config.type
+    self.position = nil
+    self.radius = nil
+
+    self.monsters = {}
+    self.affectMonsters = {}
+
+    self.entries = {}
+    self.affectEntries = {}
+
+    self.totalMoveDistance = 0
+    self.lastMoveTime = _G.GetCurTimeMS()
+    self.movePath = nil
+
+    self.skillComponent = SkillComponent.new()
+
+    self.nextReleaseTime = _G.GetCurTimeMS()
+    self.curRouteGroupId = 1
+end
+
+---@param battleTeam BattleTeam
+function RangeEffect:Init(position, battleTeam)
+    local config = _G.AreaEffectTable[self.rangeEffectId]
+    if not config then
+        LogErr("CreateRangeEffect not found range effect:{}", self.rangeEffectId)
+        return
+    end
+
+    self.radius = self:getRadius(config)
+    self.movePath = self:getMovePath(config, battleTeam)
+    self.position = self:getPosition(config, position, battleTeam)
+    self.curRouteGroupId = math.random(#battleTeam.monsterPaths)
+end
+
+function RangeEffect:Reset()
+    -- 移除所有范围内怪物的buff
+    for _, monster in pairs(self.monsters) do
+        self:removeRangeBuff(monster)
+    end
+
+    for _, entry in pairs(self.entries) do
+        self:removeRangeBuff(entry)
+    end
+end
+
+function RangeEffect:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+
+        level = self.level,
+        speed = self:GetMoveSpeed(),
+    }
+end
+
+function RangeEffect:GetRangeEffectData()
+    return {
+        rangeEffectId = self.rangeEffectId,
+        entry = self:GetEntryData(),
+        -- pathIndex = self.curRouteGroupId,  -- 老客户端只能是0
+        totalMoveDistance = self.totalMoveDistance,
+    }
+end
+
+function RangeEffect:Update(nowMS)
+    -- 处理范围效果移动
+    self:rangeEffectMove(nowMS)
+
+    -- 获取新的范围内的对象
+    local newEntries = self:GetEntryInTheRange()
+
+    -- 根据效果类型处理效果
+    self:ProcessRangeEffect(newEntries)
+
+    self.entries = newEntries
+
+    -- 持续时间结束
+    self:rangeEffectEnd(nowMS)
+end
+
+function RangeEffect:GetEntryInTheRange()
+    local entries       = {}
+    local battle        = battleMgr.GetBattle(self.battleId)
+    local battleTeam    = battle.battleTeams[self.teamId]
+    local rangeEffectConfig = _G.AreaEffectTable[self.rangeEffectId]
+
+    if rangeEffectConfig.targetEntryType == _G.EntryType.MONSTER then
+        entries = getMonsterTargets(self.rangeEffectId, battleTeam, rangeEffectConfig.monsterPriority, rangeEffectConfig.priorityParams)
+    elseif rangeEffectConfig.targetEntryType == _G.EntryType.SUTRA then
+        entries = getSutraTargets(self.rangeEffectId, battleTeam, rangeEffectConfig.sutraPriority, rangeEffectConfig.priorityParams)
+    elseif rangeEffectConfig.targetEntryType == _G.EntryType.TOWER then
+        entries = { [battleTeam.tower.entryId] = battleTeam.tower }
+    elseif rangeEffectConfig.targetEntryType == _G.EntryType.FLYER then
+        entries = battleTeam.flyers
+    elseif rangeEffectConfig.targetEntryType == _G.EntryType.RANGE_EFFECT then
+        entries = battleTeam.rangeEffects
+    elseif rangeEffectConfig.targetEntryType == _G.EntryType.SUMMONER then
+        entries = getSummonerTargets(self.rangeEffectId, battleTeam, rangeEffectConfig.summonerPriority, rangeEffectConfig.priorityParams)
+    else
+        LogErr("UpdateEntryInTheRange not found rangeEffect:{} targetEntryType:{}", self.rangeEffectId, rangeEffectConfig.targetEntryType)
+        return {}
+    end
+
+    local newEntries = {}
+
+    -- 根据范围类型筛选范围内的对象
+    if self.rangeType == _G.RangeEffectRangeType.CIRCLE then
+        for _, entry in pairs(entries) do
+            if grid.IsPointInCircle(self.position, self.radius, entry.position) then
+                newEntries[entry.entryId] = entry
+            end
+        end
+    elseif self.rangeType == _G.RangeEffectRangeType.ALL_CAMP then
+        for _, entry in pairs(entries) do
+            newEntries[entry.entryId] = entry
+        end
+    end
+
+    return newEntries
+end
+
+function RangeEffect:ProcessRangeEffect(newEntries)
+    local rangeEffectConfig = _G.AreaEffectTable[self.rangeEffectId]
+    if rangeEffectConfig.effectType == _G.RangeEffectType.RANGE_EFFECT_ADD_BUFF then
+        self:ProcessRangeEffectAddBuff(newEntries)
+    elseif rangeEffectConfig.effectType == _G.RangeEffectType.RANGE_EFFECT_USE_SKILL_ON_ENTER then
+        self:ProcessRangeEffectUseSkillOnEnter(newEntries)
+    elseif rangeEffectConfig.effectType == _G.RangeEffectType.RANGE_EFFECT_USE_SKILL_PERIOD then
+        self:ProcessRangeEffectUseSkillPeriod(newEntries)
+    end
+end
+
+function RangeEffect:ProcessRangeEffectAddBuff(newEntries)
+    for _, entry in pairs(newEntries) do
+        if not self.entries[entry.entryId] then
+            -- 进入范围
+            self:releaseRangeBuff(entry)
+            self.affectEntries[entry.entryId] = true
+        end
+    end
+
+    for entryId, entry in pairs(self.entries) do
+        if not newEntries[entryId] then
+            -- 走出范围
+            self:removeRangeBuff(entry)
+        end
+    end
+end
+
+function RangeEffect:ProcessRangeEffectUseSkillOnEnter(newEntries)
+    for _, entry in pairs(newEntries) do
+        if not self.affectEntries[entry.entryId] then
+            -- 进入范围
+            self:releaseFirstEnterSkill(entry)
+            self.affectEntries[entry.entryId] = true
+        end
+    end
+end
+
+function RangeEffect:ProcessRangeEffectUseSkillPeriod(newEntries)
+    local nowMS = _G.GetCurTimeMS()
+
+    if self.nextReleaseTime > nowMS then
+        return
+    end
+
+    local rangeEffectConfig = _G.AreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("ReleasePeriodSkill not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    local battle     = battleMgr.GetBattle(self.battleId)
+    local effectData = rangeEffectConfig.effectData
+    local skillCD    = effectData[1]
+
+    if next(newEntries) then
+        for i = 2, #effectData do
+            local skillId = effectData[i]
+            battleFightSkillLogic.ProcessRangeEffectSkillToEntries(battle, self, skillId, newEntries)
+        end
+    end
+
+    self.nextReleaseTime = self.nextReleaseTime + skillCD
+end
+
+-- 范围效果等级变化
+function RangeEffect:OnLevelUpdate()
+    -- 对范围内的对象重新释放buff
+    for _, entry in pairs(self.entries) do
+        self:removeRangeBuff(entry)
+        self:releaseRangeBuff(entry)
+    end
+end
+
+function RangeEffect:GetMoveSpeed()
+    local rangeEffectConfig = _G.AreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("RangeEffect:GetMoveSpeed not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    return rangeEffectConfig.moveSpeed
+end
+
+-- 处理范围效果移动
+function RangeEffect:rangeEffectMove(nowMS)
+    local rangeEffectConfig = _G.AreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("rangeEffectMove not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+    local moveType = rangeEffectConfig.moveType
+    if moveType == _G.RangeEffectMoveType.NOT_MOVE then
+        return
+    elseif moveType == _G.RangeEffectMoveType.MOVE_TO_START then
+        local battle = battleMgr.GetBattle(self.battleId)
+        local battleTeam = battle.battleTeams[self.teamId]
+        local path = self.movePath
+        battleFightMoveLogic.ProcessRangeEffectMove(battle, battleTeam, self, path, nowMS)
+    end
+end
+
+-- 使用首次进入范围的技能
+function RangeEffect:releaseFirstEnterSkill(entry)
+    local rangeEffectConfig = _G.AreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("releaseFirstEnterSkill not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    for _, skillId in pairs(rangeEffectConfig.effectData) do
+        --LogDebug("releaseFirstEnterSkill rangeEffectConfig.firstEnterSkills:{}, monster:{}, monsterTeamId:{}, skillId:{}", rangeEffectConfig.firstEnterSkills, monster.entryId, monster.teamId, skillId)
+        local battle = battleMgr.GetBattle(self.battleId)
+        battleFightSkillLogic.ProcessRangeEffectSkill(battle, self, skillId, entry)
+    end
+end
+
+-- 范围内怪物添加buff
+function RangeEffect:releaseRangeBuff(entry)
+    local rangeEffectConfig = _G.AreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("releaseRangeBuff not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    local battle = battleMgr.GetBattle(self.battleId)
+    for _, buffId in pairs(rangeEffectConfig.effectData) do
+        buffComp.AddBuff(battle, buffId, entry, self.releaseEntry, 1, nil)
+    end
+end
+
+-- 移除走出范围怪物的buff
+function RangeEffect:removeRangeBuff(entry)
+    local rangeEffectConfig = _G.AreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("removeRangeBuff not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    local battle = battleMgr.GetBattle(self.battleId)
+    for _, buffId in pairs(rangeEffectConfig.effectData) do
+        buffComp.RemoveBuff(battle, buffId, entry)
+    end
+end
+
+function RangeEffect:rangeEffectEnd(nowMS)
+    if self.duration > 0 and self.duration <= nowMS then
+        battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.RANGE_EFFECT_DESTROY, {
+            teamId = self.teamId,
+            rangeEffect = self:GetRangeEffectData(),
+        });
+    end
+end
+
+---@param battleTeam BattleTeam
+function RangeEffect:getPosition(config, position, battleTeam)
+    if config.areaCenterType == _G.AreaCenterType.AREA_CENTER_TYPE_FATHER then
+        return position
+    elseif config.areaCenterType == _G.AreaCenterType.AREA_CENTER_TYPE_ZERO then
+        return { x = 0, y = 0 }
+    elseif config.areaCenterType == _G.AreaCenterType.AREA_CENTER_TYPE_BY_MOVE_TYPE then
+        if config.moveType == _G.RangeEffectMoveType.NOT_MOVE then
+            return position
+        elseif config.moveType == _G.RangeEffectMoveType.MOVE_TO_START then
+            return self.movePath.points[1]
+        end
+    end
+end
+
+function RangeEffect:getRadius(config)
+    if config.type == _G.RangeEffectRangeType.CIRCLE then
+        return config.param
+    end
+    return 0
+end
+
+function RangeEffect:getMovePath(config, battleTeam)
+    if config.moveType == _G.RangeEffectMoveType.NOT_MOVE then
+        return nil
+    elseif config.moveType == _G.RangeEffectMoveType.MOVE_TO_START then
+        return self:getReversePath(battleTeam.monsterPaths[self.curRouteGroupId][1])
+    end
+end
+
+function RangeEffect:getReversePath(path)
+    local newPath = {
+        points = {},
+        lengths = {},
+        length = path.length
+    }
+    for i = #path.points, 1, -1 do
+        table.insert(newPath.points, {
+            x = path.points[i].x,
+            y = path.points[i].y
+        })
+        table.insert(newPath.lengths, path.lengths[i])
+    end
+    return newPath
+end
+
+------------------------ 目标选择 ------------------------
+
+function getMonsterTargets(rangeEffectId, battleTeam, priority, params)
+    if priority == 1 then
+        -- 所有妖怪
+        return battleTeam.monsters
+    elseif priority == 2 then
+        -- 指定id的妖怪
+        local monsters = {}
+        for _, monster in pairs(battleTeam.monsters) do
+            if table.contains(params, monster.monsterId) then
+                monsters[monster.entryId] = monster
+            end
+        end
+        return monsters
+    elseif priority == 3 then
+        -- 拥有指定buff的妖怪
+        local monsters = {}
+        for _, monster in pairs(battleTeam.monsters) do
+            for _, buffId in pairs(params) do
+                if monster:HasBuff(buffId) then
+                    monsters[monster.entryId] = monster
+                    break
+                end
+            end
+        end
+        return monsters
+    elseif priority == 4 then
+        -- 拥有指定标签buff的妖怪
+        local monsters = {}
+        for _, monster in pairs(battleTeam.monsters) do
+            for _, buffTag in pairs(params) do
+                for _, buff in pairs(monster.buffComponent.buffs) do
+                    local buffConfig = _G.BuffTable[buff.buffId]
+                    table.contains(buffConfig.buffTags, buffTag)
+                    monsters[monster.entryId] = monster
+                    break
+                end
+            end
+        end
+        return monsters
+    else
+        LogErr("getMonsterTargets, rangeEffectId:{} invalid priority:{}", rangeEffectId, priority)
+        return {}
+    end
+end
+
+function getSutraTargets(rangeEffectId, battleTeam, priority, params)
+    -- 合并所有法宝
+    local sutras = {}
+    for _, playerSiteData in pairs(battleTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            sutras[sutra.entryId] = sutra
+        end
+    end
+
+    if priority == 1 then
+        -- 所有法宝
+        return sutras
+    elseif priority == 2 then
+        -- 指定id的法宝
+        local targetSutras = {}
+        for _, sutra in pairs(sutras) do
+            if table.contains(params, sutra.sutraId) then
+                targetSutras[sutra.entryId] = sutra
+            end
+        end
+        return targetSutras
+    elseif priority == 3 then
+        -- 拥有指定buff的法宝
+        local targetSutras = {}
+        for _, sutra in pairs(sutras) do
+            for _, buffId in pairs(params) do
+                if sutra:HasBuff(buffId) then
+                    targetSutras[sutra.entryId] = sutra
+                    break
+                end
+            end
+        end
+        return targetSutras
+    elseif priority == 4 then
+        -- 拥有指定标签buff的法宝
+        local targetSutras = {}
+        for _, sutra in pairs(sutras) do
+            for _, buffTag in pairs(params) do
+                for _, buff in pairs(sutra.buffComponent.buffs) do
+                    local buffConfig = _G.BuffTable[buff.buffId]
+                    table.contains(buffConfig.buffTags, buffTag)
+                    targetSutras[sutra.entryId] = sutra
+                    break
+                end
+            end
+        end
+        return targetSutras
+    elseif priority == 5 then
+        -- 拥有指定羁绊的法宝
+        local targetSutras = {}
+        for _, sutra in pairs(sutras) do
+            for _, fateId in pairs(params) do
+                local fateConfig = _G.SutraFateTable[fateId]
+                if table.contains(fateConfig.sutras, sutra.sutraId) then
+                    targetSutras[sutra.entryId] = sutra
+                    break
+                end
+            end
+        end
+        return targetSutras
+    else
+        LogErr("getSutraTargets, rangeEffectId:{} invalid priority:{}", rangeEffectId, priority)
+        return {}
+    end
+end
+
+function getSummonerTargets(rangeEffectId, battleTeam, priority, params)
+    if priority == 1 then
+        -- 所有召唤物
+        return battleTeam.summoners
+    elseif priority == 2 then
+        -- 指定id的召唤物
+        local summoners = {}
+        for _, summoner in pairs(battleTeam.summoners) do
+            if table.contains(params, summoner.summonerId) then
+                summoners[summoner.entryId] = summoner
+            end
+        end
+        return summoners
+    else
+        LogErr("getSummonerTargets, rangeEffectId:{} invalid priority:{}", rangeEffectId, priority)
+        return {}
+    end
+end
+

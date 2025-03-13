@@ -1,0 +1,10 @@
+-- 能否解锁阵眼
+
+function Execute(robot, params)
+    local battleData = robot.battleData
+    local lastUnlockTime = battleData.lastUnlockTime or 0
+    local interval = params.unlockInterval
+
+    local curTime = _G.GetCurTime()
+    return curTime >= lastUnlockTime + interval
+end

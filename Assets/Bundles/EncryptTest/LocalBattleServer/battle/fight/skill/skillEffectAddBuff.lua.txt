@@ -1,0 +1,14 @@
+local buffComp = import("battle/components/buffComponent.lua")
+local skillTarget = import("battle/fight/skill/skillTarget.lua")
+
+---@param context SkillContext
+function Execute(context, targetEntry)
+    local skillConfig = context.skillConfig
+
+    local targets = skillTarget.CalRangeTargets(context, targetEntry)
+    for _, target in pairs(targets) do
+        for _, buff in pairs(skillConfig.addBuffs) do
+            buffComp.AddBuff(context.battle, buff.id, target, context.releaseEntry, buff.layer, context.skillId)
+        end
+    end
+end

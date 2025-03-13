@@ -1,0 +1,161 @@
+local buffComp = import("battle/components/buffComponent.lua")
+
+_G.BuffType = {
+    BUFF        = 1,    -- 增益buff
+    DEBUFF      = 2,    -- 减益buff
+    CONTROL     = 3,    -- 控制buff
+    FORCE_MOVE  = 4,    -- 强制位移
+}
+
+---@class Buff buff类
+---@field public buffId number buffId
+---@field public startTime number 开始时间
+---@field public duration number 持续时间（过期时间）
+---@field public layer number 层数
+---@field public config table buff配置
+---@field public owner Entry buff的作用实体
+---@field public origin Entry buff的来源实体
+---@field public skillId number buff所属技能id
+---@field public hasEffect boolean 是否已经触发
+---
+---@field public removeTimerId number 移除buff的定时器id
+---@field public timerId number 周期性buff的定时器id
+---@field public listenerEventType number 事件监听器事件类型
+---@field public listenerId number[] 事件监听器id列表
+_G.Buff = class()
+
+---@return Buff
+function CreateBuff(...)
+    return Buff.new(...)
+end
+
+function Buff:ctor(buffId, target, origin, skillId)
+    local nowMS = _G.GetCurTimeMS()
+
+    self.buffId = buffId
+    self.startTime = nowMS
+    self.duration = 0
+    self.layer = 1
+    self.owner = target
+    self.origin = origin
+    self.skillId = skillId
+    self.hasEffect = false
+
+    self.removeTimerId = nil
+    self.timerId = nil
+    self.listenerEventType = _G.EventType.NONE
+    self.listenerIds = {}
+end
+
+function Buff:Init(battle)
+    local nowMS = _G.GetCurTimeMS()
+
+    -- 持续时间
+    local continueTime = self:getContinueTime()
+    if continueTime > 0 then
+        self.duration = nowMS + continueTime
+        local timerId = battle.timer:AddTimer(nil, continueTime / 1000, buffComp.RemoveBuff, battle, self.buffId, self.owner)
+        self.removeTimerId = timerId
+    else
+        self.duration = 0
+    end
+end
+
+function Buff:Reset(battle)
+    if self.timerId then
+        battle.timer:DelTimer(self.timerId)
+    end
+
+    if self.removeTimerId then
+        battle.timer:DelTimer(self.removeTimerId)
+    end
+
+    if next(self.listenerIds) then
+        for _, listenerId in pairs(self.listenerIds) do
+            battle:RemoveEventListener(self.listenerEventType, listenerId)
+        end
+    end
+end
+
+-- 增加层数
+---@param battle Battle
+---@param target Entry
+---@param origin Entry
+---@param layer number
+---@param isReset boolean 是否重置层数
+function Buff:UpdateLayer(battle, target, origin, layer, isReset)
+    local config = _G.BuffTable[self.buffId]
+
+    -- 判断层数叠加
+    if not isReset then
+        self.layer = self.layer + layer;
+        if config.maxLayers > 0 and self.layer > config.maxLayers then
+            self.layer = config.maxLayers;
+        end
+    else
+        self.layer = layer;
+    end
+
+    -- 更新持续时间
+    local continueTime = self:getContinueTime()
+    if config.timeType == _G.BuffDurationType.NONE then
+        -- 持续时间不重置
+    elseif config.timeType == _G.BuffDurationType.RESET then
+        -- 持续时间重置
+        self.duration = _G.GetCurTimeMS() + continueTime;
+    elseif config.timeType == _G.BuffDurationType.ADD then
+        -- 持续时间叠加
+        self.duration = self.duration + continueTime;
+    end
+
+    self.owner = target  -- buff的作用实体
+    self.origin = origin    -- buff的来源实体
+
+    self:UpdateContinueTime(battle)
+
+    -- buff升级效果
+    self:buffUpgrade()
+end
+
+function Buff:UpdateContinueTime(battle)
+    if self.removeTimerId == nil then
+        return
+    end
+
+    battle.timer:DelTimer(self.removeTimerId)
+    -- 计算剩余持续时间
+    local continueTime = self.duration - _G.GetCurTimeMS()
+    self.removeTimerId = battle.timer:AddTimer(nil, continueTime / 1000, buffComp.RemoveBuff, battle, self.buffId, self.owner)
+end
+
+function Buff:buffUpgrade()
+    if not self.hasEffect then
+        return
+    end
+    local buffConfig = _G.BuffTable[self.buffId]
+    local buffEffectClz = _G.BuffEffectTypeFunc[buffConfig.effectType]
+    if not buffEffectClz then
+        return
+    end
+
+    buffEffectClz.OnBuffUpgrade(self)
+end
+
+function Buff:getContinueTime()
+    local config = _G.BuffTable[self.buffId]
+
+    local continueTime = config.continueTime
+
+    if table.contains(config.buffTags, _G.BuffType.CONTROL) then
+        -- 获取释放者的控制时间百分比加成
+        if self.origin then
+            local perControlTime = self.origin:GetAttribute(_G.AttributeType.PER_CONTROL_TIME)
+            if perControlTime ~= 0 then
+                continueTime = continueTime * (1 + perControlTime / 10000)
+            end
+        end
+    end
+
+    return continueTime
+end
+

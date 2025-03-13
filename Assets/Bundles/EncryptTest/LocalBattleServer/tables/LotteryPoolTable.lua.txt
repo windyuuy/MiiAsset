@@ -1,0 +1,13 @@
+-- LotteryPoolTable
+_G.LotteryPoolTable =
+{
+    [1001] = {id = 1001, poolName = "法术卡池", poolType = 1, openType = 0, openParam = 0, closeTime = 0, poolPic = "c_cardpool_spell_01", poolOrder = 0, poolShowCard = {}, halfItemId = 1001, halfItemCount = 100, useItemId = 100004, dayMaxCount = 9999, upWeights = 0, firstDropGroupID = 10601, useItemOneCount = 1, oneGroup = 106, useItemMultCount = 5, multGroup = 106, poolGroupId = 106, guaranteesCount = 100, guaranteesGroup = 106, guaranteesDesc = "", poolProbability = "抽取有概率获取下列表的所有法术",},
+    [1002] = {id = 1002, poolName = "法阵卡池", poolType = 2, openType = 0, openParam = 0, closeTime = 0, poolPic = "c_cardpool_formation_01", poolOrder = 0, poolShowCard = {}, halfItemId = 1001, halfItemCount = 1000, useItemId = 100005, dayMaxCount = 9999, upWeights = 0, firstDropGroupID = 10701, useItemOneCount = 1, oneGroup = 107, useItemMultCount = 5, multGroup = 107, poolGroupId = 107, guaranteesCount = 100, guaranteesGroup = 107, guaranteesDesc = "", poolProbability = "召唤有概率获取下列表的所有法阵",},
+    [1601] = {id = 1601, poolName = "元神卡池", poolType = 3, openType = 0, openParam = 0, closeTime = 0, poolPic = "c_cardpool_spirit_01", poolOrder = 1, poolShowCard = {6402, 6407, 6406}, halfItemId = 1001, halfItemCount = 100, useItemId = 100006, dayMaxCount = 9999, upWeights = 0, firstDropGroupID = 116, useItemOneCount = 1, oneGroup = 110, useItemMultCount = 5, multGroup = 110, poolGroupId = 1601, guaranteesCount = 25, guaranteesGroup = 112, guaranteesDesc = "再抽{0}次，必出[color=#995597]上品[/color]/[color=#d8994d]极品[/color]元神", poolProbability = "材料：80%，元神：中品[color=#3e6ca9]15%[/color]、上品[color=#995597]3.2%[/color]、极品[color=#d8994d]0.8%[/color]",},
+    [1602] = {id = 1602, poolName = "元神限定卡池", poolType = 3, openType = 4, openParam = 5, closeTime = 48, poolPic = "c_cardpool_spirit_02", poolOrder = 2, poolShowCard = {6402, 6405, 6408}, halfItemId = 0, halfItemCount = 0, useItemId = 100006, dayMaxCount = 9999, upWeights = 0, firstDropGroupID = 111, useItemOneCount = 1, oneGroup = 111, useItemMultCount = 5, multGroup = 111, poolGroupId = 1602, guaranteesCount = 25, guaranteesGroup = 11105, guaranteesDesc = "再抽{0}次，必出[color=#995597]上品[/color]/[color=#d8994d]极品[/color]元神", poolProbability = "【[color=#d8994d]唐小三[/color]】、【[color=#d8994d]小兔[/color]】概率提升（其余与常驻卡池相同）",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("LotteryPoolTable")
+end

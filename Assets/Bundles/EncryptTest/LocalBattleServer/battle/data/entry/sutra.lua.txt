@@ -1,0 +1,183 @@
+local battleMgr = import("battle/battleMgr.lua")
+local statusMgr = import("battle/fight/status/statusMgr.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+
+---@class Sutra : Entry 法宝实体
+---@field sutraId number 召唤物id
+---@field playerId string 所属玩家id
+---@field quality number 卡牌品质
+---@field skillComponent SkillComponent 技能组件
+---@field buffComponent BuffComponent buff组件
+---@field attributeComponent AttributeComponent 属性组件
+---@field statusComponent StatusComponent 状态组件
+---@field skillTimerId number 技能定时器id
+---@field activePassiveList table<number> 已经激活的被动列表
+---@field critBuffCount number 暴击buff数量
+---@field nextActiveSkillTime number 下一次释放主动技能时间
+---@field element number 元素属性
+---@field cardLevel number 卡牌等级
+_G.Sutra = class(Entry)
+
+function CreateSutra(...)
+    return Sutra.new(...)
+end
+
+function Sutra:ctor(entryId, battleId, teamId, position, level, sutraId, playerId, element, cardLevel, quality)
+    self.sutraId = sutraId
+    self.playerId = playerId
+    self.skillComponent = SkillComponent.new()
+    self.buffComponent = BuffComponent.new()
+    self.statusComponent = StatusComponent.new()
+    self.attributeComponent = nil
+    self.skillTimerId = nil
+    self.activePassiveList = {}
+    self.critBuffCount = 0
+    self.nextActiveSkillTime = 0
+
+    self.element = element
+    self.cardLevel = cardLevel
+    self.quality = quality
+end
+
+function Sutra:Init(cardBaseInfo)
+    self.attributeComponent = AttributeComponent.new(self)
+    self.attributeComponent:Init(cardBaseInfo.attributes)
+
+    self.quality = cardBaseInfo.quality
+    self.statusComponent:Init(_G.EntryType.SUTRA)
+end
+
+function Sutra:Reset()
+    local battle = battleMgr.GetBattle(self.battleId)
+    if self.skillTimerId then
+        battle.timer:DelTimer(self.skillTimerId)
+    end
+    self.buffComponent:Reset(battle)
+end
+
+function Sutra:Update(battle, nowMS)
+    if self.nextActiveSkillTime <= nowMS then
+        if statusMgr.CheckStatus(self, _G.EntryStatus.ENTRY_STATUS_ATTACK) then
+            battleFightSkillLogic.ProcessSutraAttack(battle, self, nowMS)
+            self:ResetActiveSkill()
+        end
+    end
+end
+
+function Sutra:GetEntryType()
+    return _G.EntryType.SUTRA
+end
+
+function Sutra:GetSutraData()
+    local data = {
+        sutraId = self.sutraId,
+        entry = self:GetEntryData(),
+        playerId = self.playerId,
+    }
+
+    return data
+end
+
+function Sutra:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+
+        level = self.level,
+    }
+end
+
+function Sutra:CanUseSkill(skillId)
+    return self.skillComponent:CanUseSkill(skillId, _G.GetCurTimeMS())
+end
+
+---重置主动技能
+function Sutra:ResetActiveSkill()
+    local coolingDown = self:GetAttribute(_G.AttributeType.FINAL_ATTACK_SPEED)
+    self.nextActiveSkillTime = _G.GetCurTimeMS() + coolingDown
+end
+
+function Sutra:ProcessPassiveSkill(equipList)
+    local battle = battleMgr.GetBattle(self.battleId)
+    local passiveList = {}
+    local sutraConfig = _G.SutraQualityTable[self.sutraId][self.quality]
+    if not sutraConfig then
+        LogErr("Sutra:ProcessPassiveSkill, cannot find sutra config in table, sutraId:{}, quality:{}", self.sutraId, self.quality)
+        return
+    end
+    -- 初始被动
+    --LogDebug("Sutra:ProcessPassiveSkill active base passive, sutra id:{} skill id:{}", self.sutraId, sutraConfig.basePassive)
+    passiveList[1] = sutraConfig.basePassive
+
+    -- 满星被动
+    if self.level >= _G.MAX_SUTRA_STAR then
+            --LogDebug("Sutra:ProcessPassiveSkill active max passive, sutra id:{} skill id:{}", self.sutraId, sutraConfig.maxPassive)
+        passiveList[2] = sutraConfig.maxPassive
+    end
+
+    for i = 1, 2 do
+        if self.activePassiveList[i] ~= passiveList[i] then
+            if passiveList[i] then
+                -- 激活被动
+                battleFightSkillLogic.ProcessSutraPassiveSkill(battle, self, passiveList[i])
+            else
+                -- 取消被动
+                battleFightSkillLogic.ProcessSutraCancelPassiveSkill(battle, self, self.activePassiveList[i])
+            end
+        end
+    end
+
+    self.activePassiveList = passiveList
+end
+
+---在提升星级时更新基础属性
+---@param cardBaseInfo table 卡牌基础信息（包括局外带入属性）
+function Sutra:UpdateBaseAttribute(cardBaseInfo)
+    local star = self.level
+    local configCopy = _G.DeepClone(cardBaseInfo.attributes)
+
+    -- 根据法宝升星表更新属性
+    for _, data in pairs(_G.SutraStarTable) do
+        local attr = _G.AttrShortName[data.attributeId]
+        if not attr then
+            LogErr("Sutra:UpdateBaseAttribute, attrId:{} is valid in SutraStar", data.attributeId)
+            goto continue
+        end
+
+        -- 目前此处只有等级攻击力加成，该数值使用乘法运算（局外加成 * 星级加成），结果会在计算攻击力的方法中重新参与计算
+        configCopy[attr] = (configCopy[attr] or 0) * data.starValues[star]
+        ::continue::
+    end
+
+    -- 重新赋值基础属性
+    self.attributeComponent:InitBaseAttr(configCopy)
+end
+
+function Sutra:Print()
+    LogInfo("sutra entryId:{} battleId:{} teamId:{} position:{} level:{} curHP:{} sutraId:{} playerId:{}", self.entryId, self.battleId, self.teamId, self.position, self.level, self.curHP, self.sutraId, self.playerId)
+end
+
+-- 根据配置和局外数据计算最终基础数值
+function Sutra:CalBaseAttribute(attrConfig, baseInfo)
+    local config = _G.DeepClone(attrConfig)
+    return config
+end
+
+function Sutra:GetActiveSkill()
+    local sutraConfig = _G.SutraQualityTable[self.sutraId][self.quality]
+    if not sutraConfig then
+        LogErr("Sutra:GetActiveSkill, cannot find sutra config in table, sutraId:{}, quality:{}", self.sutraId, self.quality)
+        return 0
+    end
+
+    if self.level >= _G.MAX_SUTRA_STAR then
+        return sutraConfig.maxSkill
+    else
+        return sutraConfig.baseSkill
+    end
+end
+
+function Sutra:HasBuff(buffId)
+    return self.buffComponent.buffs[buffId] ~= nil
+end

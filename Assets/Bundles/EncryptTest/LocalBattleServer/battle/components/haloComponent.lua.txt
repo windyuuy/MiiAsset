@@ -1,0 +1,113 @@
+local battleIntent = import("battle/battleIntent.lua")
+local haloData = import("battle/data/halo.lua")
+local haloEffectSkillConditionCount = import("battle/fight/halo/haloEffectSkillConditionCount.lua")
+local haloEffectSymbolCD = import("battle/fight/halo/haloEffectSymbolCD.lua")
+
+---@class HaloComponent 光环组件
+---@field battleTeam BattleTeam 所属队伍
+---@field haloList table<number, Halo> 光环
+---
+---@field skillConditionCount number 技能条件数量
+---@field skillConditionCountHalo table<number, Halo> 影响技能条件数量的光环
+---
+---@field symbolCD number 符箓cd
+---@field symbolCDHalo table<number, Halo> 影响符箓cd的光环
+HaloComponent = class()
+
+function CreateHaloComponent(...)
+    return HaloComponent.new(...)
+end
+
+function HaloComponent:ctor(battleTeam)
+    self.haloList = {}
+
+    self.battleTeam = battleTeam
+    self.skillConditionCount = 0
+    self.skillConditionCountHalo = {}
+
+    self.symbolCD = 0
+    self.symbolCDHalo = {}
+end
+
+function HaloComponent:AddHalo(haloId, skillId)
+    local halo = self.haloList[haloId]
+    if halo then
+        halo.layer = halo.layer + 1
+        return
+    end
+
+    halo = haloData.CreateHalo(haloId, skillId)
+    self.haloList[haloId] = halo
+    self:dispatchEffect(halo)
+    self:sendAddHalo(halo)
+end
+
+function HaloComponent:RemoveHalo(haloId)
+    local halo = self.haloList[haloId]
+    if not halo then
+        return
+    end
+
+    halo.layer = halo.layer - 1
+    if halo.layer <= 0 then
+        self:dispatchUnEffect(halo)
+        self.haloList[haloId] = nil
+        self:sendRemoveHalo(halo)
+    end
+end
+
+function HaloComponent:GetSkillConditionCount()
+    return self.skillConditionCount
+end
+
+function HaloComponent:GetSpellCD()
+    return self.symbolCD
+end
+
+function HaloComponent:getHaloEffectClz(halo)
+    local config = halo:GetConfig()
+    local clz = nil
+    if config.type == _G.HaloEffectType.SKILL_CONDITION_COUNT then
+        clz = haloEffectSkillConditionCount
+    elseif config.type == _G.HaloEffectType.SYMBOL_CD then
+        clz = haloEffectSymbolCD
+    else
+        LogErr("HaloComponent:getHaloEffectClz, halo effect type is invalid, type:{}", config.type)
+        return nil
+    end
+
+    return clz
+end
+
+function HaloComponent:dispatchEffect(halo)
+    local clz = self:getHaloEffectClz(halo)
+
+    clz.HaloEffect(halo, self)
+end
+
+function HaloComponent:dispatchUnEffect(halo)
+    local clz = self:getHaloEffectClz(halo)
+
+    clz.HaloUnEffect(halo, self)
+end
+
+---@param halo Halo
+function HaloComponent:sendAddHalo(halo)
+    local msg = {
+        teamId = self.battleTeam.teamId,
+        isGlobal = true,
+        buffId = halo.haloId,
+        skillId = halo.skillId,
+    }
+    battleIntent.InsertBattleIntent(self.battleTeam.battle.battleId, _G.INTENT_TYPE.ADD_BUFF, msg)
+end
+
+function HaloComponent:sendRemoveHalo(halo)
+    local msg = {
+        teamId = self.battleTeam.teamId,
+        isGlobal = true,
+        buffId = halo.haloId,
+        skillId = halo.skillId,
+    }
+    battleIntent.InsertBattleIntent(self.battleTeam.battle.battleId, _G.INTENT_TYPE.REMOVE_BUFF, msg)
+end

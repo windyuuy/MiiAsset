@@ -1,0 +1,215 @@
+-- 实体模块
+
+local battleIntent = import("battle/battleIntent.lua")
+local battleMgr = import("battle/battleMgr.lua")
+local eventManager = import("battle/event/eventManager.lua")
+local reason = import("common/reason.lua")
+local resourceComp = import("battle/components/resourceComponent.lua")
+local gameCardComp = import("battle/components/gameCardComponent.lua")
+
+_G.EntryType = {
+    NONE            = 0, -- 未知
+    TOWER           = 2, -- 基地
+    MONSTER         = 3, -- 怪物
+    FLYER           = 4, -- 飞行物
+    SUTRA           = 5, -- 法宝
+    RANGE_EFFECT    = 6, -- 范围效果
+    SUMMONER        = 7, -- 召唤物
+    FORMATION_SLOT  = 8, -- 阵眼
+    POINT           = 9, -- 路点
+}
+
+_G.ChangeHpType = {
+    ADDHP           = 0,    -- 加血
+    DELHP           = 1,    -- 扣血
+    ADDHP_OR_DELHP  = 2,    -- 加血或者扣血  
+}
+
+---@param monster Monster
+function MonsterDead(monster)
+    local battle = battleMgr.GetBattle(monster.battleId)
+    if not battle then return end
+
+    local battleTeam = battle.battleTeams[monster.teamId]
+    for _, team in pairs(battle.battleTeams) do
+        if team.teamId ~= monster.teamId then
+            -- 在对方场地生成怪物
+            if monster.monsterConfig.transmigration == 1 and monster.isReborn == false then
+                -- 延迟2s生成怪物
+                battle.timer:AddTimer(nil, 2, createMonsterOnEnemy, battle.battleId, team.teamId, monster.monsterId)
+            end
+        end
+    end
+
+    -- 广播怪物死亡
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.MONSTER_DESTROY, {
+        teamId = monster.teamId,
+        monster = monster:GetMonsterData(),
+        reason = reason.MONSTER_DEAD_DESTROY,
+    })
+end
+
+function createMonsterOnEnemy(battleId, teamId, monsterId)
+    local battle = battleMgr.GetBattle(battleId)
+    if not battle then
+        LogDebug("createMonsterOnEnemy: battle is nil: {}", battleId)
+        return
+    end
+    local battleTeam = battle.battleTeams[teamId]
+
+    for routeGroupId, _ in pairs(battleTeam.monsterPaths) do
+        battle:PushMonsterQueue(teamId, routeGroupId, monsterId, true, false)
+    end
+
+    -- 怪物数量变化事件
+    local eventMonsterCountChange = eventManager.CreateMonsterCountChangeEvent(battleTeam)
+    eventManager.DispatchEvent(battle.eventManager, eventMonsterCountChange)
+end
+
+---@class Entry 实体基类
+---@field entryId number 实体id
+---@field battleId number 战局id
+---@field teamId number 队伍id
+---@field position Position 坐标
+---@field level number 等级
+---@field curHP number 当前血量
+---
+---@field invincibleCount number 无敌buff数量
+---@field critBuffCount number 眩晕时必定暴击buff数量
+---@field ignoreControlCount number 免疫控制buff数量
+_G.Entry = class()
+
+function CreateEntry(...)
+    return Entry.new(...)
+end
+
+function Entry:ctor(entryId, battleId, teamId, position, level)
+    self.entryId = entryId
+    self.battleId = battleId
+    self.teamId = teamId
+    self.position = position
+
+    self.level = level
+    self.curHP = 1
+
+    -- 特殊buff数量
+    self.invincibleCount = 0
+    self.critBuffCount = 0
+    self.ignoreControlCount = 0
+end
+
+function Entry:Reset()
+
+end
+
+function Entry:GetEntryType()
+    return _G.EntryType.NONE
+end
+
+function Entry:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+        level = self.level,
+    }
+end
+
+function Entry:GetAttribute(attrId)
+    if self.attributeComponent then
+        return self.attributeComponent:GetAttribute(attrId)
+    end
+
+    return 0
+end
+
+function Entry:ChangeHp(changeHp, updateReason)
+    local oldHP = self.curHP
+
+    local changeType = _G.ChangeHpType.ADDHP_OR_DELHP
+    if changeHp == 0 then
+        return
+    elseif changeHp > 0 then
+        changeHp = math.floor(changeHp)
+
+        changeType = _G.ChangeHpType.ADDHP
+        self:AddHP(changeHp)
+    else
+        changeHp = math.floor(-changeHp)
+
+        changeType = _G.ChangeHpType.DELHP
+        self:DelHP(changeHp)
+    end
+
+    -- 通知血量变化
+    local msg = {
+        teamId = self.teamId,
+        entry = self:GetEntryData(),
+        attributeType = _G.ATTRIBUTE_TYPE.HP,
+        oldValue = oldHP,
+        newValue = math.ceil(self.curHP),
+        reason = updateReason,
+    }
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.ENTRY_ATTRIBUTE_CHANGE, msg)
+
+    if self:GetEntryType() == _G.EntryType.MONSTER then
+        -- 怪物死亡
+        if self.curHP <= 0 then
+            MonsterDead(self)
+        end
+    elseif self:GetEntryType() == _G.EntryType.TOWER then
+        local battle = battleMgr.GetBattle(self.battleId)
+        local eventTowerHpChange = eventManager.CreateTowerHpChangeEvent(self, changeType)
+        eventManager.DispatchEvent(battle.eventManager, eventTowerHpChange)
+
+        local eventTowerHpChangeTo = eventManager.CreateTowerHpChangeToEvent(self, oldHP, self.curHP)
+        eventManager.DispatchEvent(battle.eventManager, eventTowerHpChangeTo)
+    end
+end
+
+function Entry:AddHP(addHP)
+    if addHP <= 0 then
+        return
+    end
+
+    self.curHP = self.curHP + addHP
+    local maxHP = self:GetAttribute(_G.AttributeType.FINAL_HEALTH)
+    self.curHP = math.min(self.curHP, maxHP)
+end
+
+function Entry:DelHP(delHP)
+    if delHP <= 0 then
+        return
+    end
+    if self:GetEntryType() == _G.EntryType.TOWER then
+        local battle = battleMgr.GetBattle(self.battleId)
+        if battle.gmTowerInvincible then
+            return
+        end
+    end
+
+    local minHP = 0
+
+    if self:GetEntryType() == _G.EntryType.MONSTER then
+        local battle = battleMgr.GetBattle(self.battleId)
+        battle.statistics.allHurt[self.teamId] = (battle.statistics.allHurt[self.teamId] or 0) + delHP
+
+        -- 怪物锁血机制
+
+        local maxHP = self:GetAttribute(_G.AttributeType.FINAL_HEALTH)
+        for _, percent in pairs(self.bloodLockingBuff or {}) do
+            minHP = math.max(minHP, maxHP * percent / 10000)
+        end
+    end
+
+    minHP = math.floor(minHP)
+    self.curHP = self.curHP - delHP
+    self.curHP = math.max(self.curHP, minHP)
+end
+
+function Entry:IsInvincible()
+    return self.invincibleCount > 0
+end
+
+---------------------------------------------------
+

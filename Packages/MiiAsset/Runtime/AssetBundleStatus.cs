@@ -448,7 +448,7 @@ namespace MiiAsset.Runtime
 				{
 					try
 					{
-						var decrypt = AESEncrypter.Decrypt(textAsset.text);
+						var decrypt = AESEncrypter.Decrypt(textAsset.text,address);
 						// 创建新的 TextAsset
 						var decryptedTextAsset = new TextAsset(decrypt);
 						// 替换原始的 TextAsset
@@ -530,7 +530,7 @@ namespace MiiAsset.Runtime
 				{
 					try
 					{
-						var decrypt = AESEncrypter.Decrypt(textAsset.text);
+						var decrypt = AESEncrypter.Decrypt(textAsset.text,address);
 						// 创建新的 TextAsset
 						var decryptedTextAsset = new TextAsset(decrypt);
 						// 替换原始的 TextAsset

@@ -1,0 +1,136 @@
+--[[
+    farr(快速数组),主要用于解决数组无法快速删除数据的问题
+    不保序
+]]
+_G.farr = _G.farr or {};
+
+local farrAttrArr = 1
+local farrAttrMap = 2
+local farrAttrSize = 3
+
+function farr:New()
+    local tab = {
+        __index = farr,
+        {}, --array
+        {}, --map
+        0,  --size
+    }
+
+    return setmetatable(tab, tab)
+end
+
+function farr:Add(val)
+    local hash = self[farrAttrMap]
+    if hash[val] then
+        return
+    end
+
+    local arr = self[farrAttrArr]
+    local size = self[farrAttrSize]
+    size = size + 1
+    arr[size] = val
+    hash[val] = size
+    self[farrAttrSize] = size
+end
+
+--如果参数value存在那么就return false
+function farr:Cover( idx, value )
+    local hash = self[farrAttrMap]
+    local arr = self[farrAttrArr]
+
+    local old_value = arr[idx]
+    if old_value then
+        if hash[value] then
+            return false
+        else
+            hash[old_value] = nil
+            hash[value] = idx
+            arr[idx] = value
+        end
+    else
+        self:Add(value)
+    end
+
+    return true
+end
+
+function farr:Remove(val)
+    local hash = self[farrAttrMap]
+    local idx = hash[val]
+    if not idx then
+        return
+    end
+
+    local size = self[farrAttrSize]
+    if 1 == size then
+        self:Clear()
+        return
+    end
+
+    local arr = self[farrAttrArr]
+    if idx == size then        
+        arr[size] = nil
+        hash[val] = nil
+        self[farrAttrSize] = size - 1
+        return
+    end
+
+    arr[idx] = arr[size]
+    hash[arr[idx]] = idx
+    arr[size] = nil
+    hash[val] = nil
+    self[farrAttrSize] = size - 1
+end
+
+function farr:Get(idx)
+    return self[farrAttrArr][idx]
+end
+
+function farr:Clear()
+    self[farrAttrArr] = {}
+    self[farrAttrMap] = {}
+    self[farrAttrSize] = 0
+end
+
+function farr:Size()
+    return self[farrAttrSize]
+end
+
+function farr:GetArr()
+    return self[farrAttrArr]
+end
+
+function farr:Dump()
+    local hash = self[farrAttrMap]
+    for k,v in pairs(hash) do
+        LogDebug("farr:dump hash: k[{}] v[{}]", k, v)
+    end
+
+    local arr = self[farrAttrArr]
+    for k,v in pairs(arr) do
+        LogDebug("farr:dump arr: k[{}}] v[{}]", k, v)
+    end
+    LogDebug("farr:dump size:{}", self[farrAttrSize])
+end
+
+--[[
+local test = farr:new()
+for i=1, 100 do
+    test:add(i*7+3)
+end
+
+test:dump()
+test:remove(10)
+test:dump()
+
+local cnt = test[farrAttrSize]
+for i=1,cnt do
+    print(i, test:get(i))
+end
+
+test:add(1)
+test:add(2)
+test:add(3)
+test:dump()
+
+--]]

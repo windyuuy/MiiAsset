@@ -1,0 +1,10 @@
+-- VersionTable
+_G.VersionTable =
+{
+    [1] = {id = 1, version = "10010",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("Version")
+end

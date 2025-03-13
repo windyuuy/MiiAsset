@@ -1,0 +1,47 @@
+-- 40. 额外弹射次数
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local owner      = buff.owner
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    if owner:GetEntryType() ~= _G.EntryType.SUTRA then
+        return
+    end
+
+    local catapultGroup = owner.catapultGroup or {}
+    local catapultGroupData = {
+        buffId = buff.buffId,
+        damageRateList = {}
+    }
+
+    for i = 1, #buffConfig.effectData do
+        local damageRate = buffConfig.effectData[i]
+        table.insert(catapultGroupData.damageRateList, damageRate)
+    end
+
+    table.insert(catapultGroup, catapultGroupData)
+    owner.catapultGroup = catapultGroup
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local owner = buff.owner
+    if owner:GetEntryType() ~= _G.EntryType.SUTRA then
+        return
+    end
+
+    local catapultGroup = owner.catapultGroup or {}
+    for idx, catapultGroupData in ipairs(catapultGroup) do
+        if catapultGroupData.buffId == buff.buffId then
+            table.remove(catapultGroup, idx)
+            break
+        end
+    end
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

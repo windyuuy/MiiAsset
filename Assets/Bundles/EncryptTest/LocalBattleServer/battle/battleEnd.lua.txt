@@ -1,0 +1,195 @@
+-- 战斗结束逻辑
+local common = import("common/common.lua")
+
+-- 战斗是否结束
+---@param battle Battle
+function CheckBattleEnd(battle)
+    local battleConfig = battle.battleConfig
+    local endConfig    = GetBattleEndConfig(battleConfig.battleEndId)
+    local res          = false;
+
+    res = CheckBattleTie(battle);
+    if res then return res; end
+
+    if endConfig.hpZero then
+        res = CheckBattleHPEnd(battle);
+        if res then return res; end
+    end
+    if endConfig.finishRound > 0 then
+        if endConfig.lastBossReach then
+            res = CheckBattleLastBossReach(battle, endConfig.finishRound);
+            if res then return res; end
+        else
+            res = CheckBattleRound(battle, endConfig.finishRound);
+            if res then return res; end
+        end
+    end
+    if endConfig.maxMonsterCount > 0 then
+        res = CheckBattleMaxMonsterCount(battle, endConfig.maxMonsterCount);
+        if res then return res; end
+    end
+    if endConfig.maxBattleTime > 0 then
+        res = CheckBattleMaxBattleTime(battle, endConfig.maxBattleTime);
+        if res then return res; end
+    end
+
+    return false;
+end
+
+--- 判断是否平局
+---@param battle Battle
+function CheckBattleTie(battle)
+    local isEnd = false
+
+    -- 战局时长超过6小时则结束
+    if _G.GetCurTimeMS() - battle.startTime > 6 * 3600 * 1000 then
+        isEnd = true
+    end
+
+    if isEnd then
+        for teamId, _ in pairs(battle.battleTeams) do
+            battle.battleResult[teamId] = common.BATTLE_END_RESULT_WIN
+        end
+    end
+
+    return isEnd
+end
+
+-- 判断玩家是否有人生命值为0  为0则结束战斗
+function CheckBattleHPEnd(battle)
+    local isEnd = false
+    local lostId = -1;
+    for teamId, battleTeam in pairs(battle.battleTeams) do
+        if battleTeam.tower.curHP <= 0 then
+            isEnd = true
+            lostId = teamId
+            break
+        end
+    end
+
+    if isEnd then
+        for teamId, _ in pairs(battle.battleTeams) do
+            if teamId == lostId then
+                battle.battleResult[teamId] = common.BATTLE_END_RESULT_LOST
+            else
+                battle.battleResult[teamId] = common.BATTLE_END_RESULT_WIN
+            end
+        end
+    end
+
+    return isEnd
+end
+
+-- 判断已完成多少轮
+---@param battle Battle
+function CheckBattleRound(battle, finishRound)
+    if battle.roundNumber < finishRound then
+        return false
+    end
+
+    if not battle.isRefreshMonsterGroup then
+        return false
+    end
+
+    -- 判断本轮是否有还未刷新的怪物
+    for _, monsterRefresh in pairs(battle.currentRoundMonsterGroup) do
+        if monsterRefresh.leftRefreshTimes > 0 then
+            return false
+        end
+    end
+
+    -- 判断出怪队列中是否有怪
+    for _, monsterQueueGroup in pairs(battle.monsterQueue) do
+        for _, data in pairs(monsterQueueGroup) do
+            if #data.createQueue > 0 then
+                return false
+            end
+        end
+    end
+
+    -- 场上是否存在怪物
+    for _, battleTeam in pairs(battle.battleTeams) do
+        if table.tablen(battleTeam.monsters) > 0 then
+            return false
+        end
+    end
+
+    battle.battleResult = battle.battleResult or {};
+
+    for teamId, _ in pairs(battle.battleTeams) do
+        battle.battleResult[teamId] = common.BATTLE_END_RESULT_WIN
+    end
+
+    return true;
+end
+
+-- 判断是否有boss到达终点
+function CheckBattleLastBossReach(battle, finishRound)
+    if battle.roundNumber < finishRound then
+        return false
+    end
+
+    local isEnd = false
+    local lostId = -1;
+    for teamId, battleTeam in pairs(battle.battleTeams) do
+        if battleTeam.isBossReach then
+            isEnd = true
+            lostId = teamId
+            break
+        end
+    end
+
+    if isEnd then
+        for teamId, _ in pairs(battle.battleTeams) do
+            if teamId == lostId then
+                battle.battleResult[teamId] = common.BATTLE_END_RESULT_LOST
+            else
+                battle.battleResult[teamId] = common.BATTLE_END_RESULT_WIN
+            end
+        end
+    end
+
+    return isEnd
+end
+
+function CheckBattleMaxMonsterCount(battle, maxMonsterCount)
+    local isEnd = false
+    for teamId, battleTeam in pairs(battle.battleTeams) do
+        if maxMonsterCount <= table.tablen(battleTeam.monsters) then
+            battle.battleResult[teamId] = common.BATTLE_END_RESULT_LOST
+            isEnd = true
+        end
+    end
+
+    if isEnd then
+        for teamId, _ in pairs(battle.battleTeams) do
+            if not battle.battleResult[teamId] then
+                battle.battleResult[teamId] = common.BATTLE_END_RESULT_WIN
+            end
+        end
+    end
+
+    return isEnd
+end
+
+function CheckBattleMaxBattleTime(battle, maxBattleTime)
+    if maxBattleTime <= _G.GetCurTimeMS() - battle.startTime then
+        for teamId, _ in pairs(battle.battleTeams) do
+            battle.battleResult[teamId] = common.BATTLE_END_RESULT_LOST
+        end
+        return true
+    end
+
+    return false
+end
+
+-- 获取结束规则
+function GetBattleEndConfig(battleEndId)
+    local endConfig = _G.BattleEndTable[battleEndId];
+
+    if not endConfig then
+        LogErr("battle end config not found battleEndId:{}", battleEndId);
+    end
+
+    return endConfig or _G.BattleEndTable[1];
+end

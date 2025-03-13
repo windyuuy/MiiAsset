@@ -1,0 +1,19 @@
+-- 是否可以使用 干扰类 法术牌
+
+function Execute(robot)
+    local battleData = robot.battleData;
+
+    if not next(battleData.spellCards) then
+        return;
+    end
+
+    if battleData.otherBossCount <= 0 and battleData.otherMonsterCount < 3 then
+        return;
+    end
+
+    -- 找到idx
+    for idx, spellCard in pairs(battleData.spellCards) do
+        return idx;
+    end
+
+end

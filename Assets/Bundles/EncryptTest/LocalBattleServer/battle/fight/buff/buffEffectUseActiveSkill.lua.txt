@@ -1,0 +1,37 @@
+-- 21. 释放技能buff
+
+local battleMgr = import("battle/battleMgr.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+
+-- buff生效
+function BuffEffect(buff)
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    if not battle then return end
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local count      = buffConfig.effectData[1]
+    local interval   = buffConfig.effectData[2]
+    local skillId    = buff.owner:GetActiveSkill()
+    buff.useSkillDelayTimerIds = {}
+    for idx = 1, count do
+        if interval <= 0 then
+            battleFightSkillLogic.ProcessEntrySkill(battle, buff.owner, skillId)
+        else
+            table.insert(buff.useSkillDelayTimerIds, battle.timer:AddTimer(nil, idx * interval, battleFightSkillLogic.ProcessEntrySkill, battle, buff.owner, skillId))
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    if buff.useSkillDelayTimerIds and next(buff.useSkillDelayTimerIds) then
+        for _, timerId in pairs(buff.useSkillDelayTimerIds) do
+            battle.timer:DelTimer(timerId)
+        end
+    end
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

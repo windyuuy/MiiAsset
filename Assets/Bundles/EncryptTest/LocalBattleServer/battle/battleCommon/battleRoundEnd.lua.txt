@@ -1,0 +1,75 @@
+-- 战局轮次结束逻辑
+
+_G.BattleRoundEndType = {
+    -- boss回合结束
+    ROUND_BOSS_END = 1,
+    -- 时间结束
+    ROUND_TIME_END = 2,
+}
+
+---@param battle Battle
+function CheckRoundEnd(battle)
+    -- 如果是最大轮次则不结束轮次
+    if battle.maxRound and battle.roundNumber >= battle.maxRound then
+        battle.isCheckRoundEnd = false
+        return false
+    end
+
+    local battleConfig = battle.battleConfig
+    if battleConfig.roundEndType == _G.BattleRoundEndType.ROUND_BOSS_END then
+        return CheckRoundBossEnd(battle)
+    elseif battleConfig.roundEndType == _G.BattleRoundEndType.ROUND_TIME_END then
+        return CheckRoundTimeEnd(battle)
+    else
+        LogErr("CheckRoundEnd error roundEndType:{}", battleConfig.roundEndType)
+    end
+
+    return false
+end
+
+function CheckRoundBossEnd(battle)
+    if not battle.isCheckRoundEnd then
+        return false
+    end
+
+    -- 判断本轮boss波次是否刷新
+    for _, monsterRefresh in pairs(battle.currentRoundMonsterGroup) do
+        if monsterRefresh.monsterGroupConfig.isBoss and monsterRefresh.leftRefreshTimes > 0 then
+            return false
+        end
+    end
+
+    -- 判断出怪队列中是否有boss怪
+    local isEnd = true
+    for _, monsterQueueGroup in pairs(battle.monsterQueue) do
+        for _, data in pairs(monsterQueueGroup) do
+            isEnd = true
+            if #data.createQueue > 0 then
+                for _, createMonsterParam in pairs(data.createQueue) do
+                    if createMonsterParam.isBoss then
+                        isEnd = false
+                    end
+                end
+            end
+        end
+    end
+
+    if not isEnd then
+        return false
+    end
+
+    battle.isCheckRoundEnd = false
+
+    return isEnd
+end
+
+---@param battle Battle
+function CheckRoundTimeEnd(battle)
+    local res = _G.GetCurTimeMS() > battle.roundEndTime
+
+    --if res then
+    --    LogDebug("monster:{}", battle.currentRoundMonsterGroup)
+    --end
+
+    return res
+end

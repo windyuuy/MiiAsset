@@ -1,0 +1,124 @@
+local isUnlockTime              = import("battle/robot/condition/isUnlockTime.lua")
+local isEnoughManaToUnlock      = import("battle/robot/condition/isEnoughManaToUnlock.lua")
+local isRefreshTime             = import("battle/robot/condition/isRefreshTime.lua")
+local isEnoughManaToRefresh     = import("battle/robot/condition/isEnoughManaToRefresh.lua")
+local isSelectCardTime          = import("battle/robot/condition/isSelectCardTime.lua")
+local isNeedRefreshSutra        = import("battle/robot/condition/isNeedRefreshSutra.lua")
+local isUseSpellCardTime        = import("battle/robot/condition/isUseSpellCardTime.lua")
+local isCanBuyNewSutra          = import("battle/robot/condition/isCanBuyNewSutra.lua")
+
+local hasOptionalCard           = import("battle/robot/condition/hasOptionalCard.lua")
+local hasCanUpgradeCard         = import("battle/robot/condition/hasCanUpgradeCard.lua")
+local hasCanEquipCard           = import("battle/robot/condition/hasCanEquipCard.lua")
+local hasCanFormationCard       = import("battle/robot/condition/hasCanFormationCard.lua")
+local hasFormation              = import("battle/robot/condition/hasFormation.lua")
+local hasCanSellCard            = import("battle/robot/condition/hasCanSellCard.lua")
+local hasCanSellPrepareCard     = import("battle/robot/condition/hasCanSellPrepareCard.lua")
+local hasCanRefreshSpellCard    = import("battle/robot/condition/hasCanRefreshSpellCard.lua")
+local hasCanUseSpellCard        = import("battle/robot/condition/hasCanUseSpellCard.lua")
+
+local unlockFormation           = import("battle/robot/action/unlockFormation.lua")
+local refreshCard               = import("battle/robot/action/refreshCard.lua")
+local prepareSutra              = import("battle/robot/action/prepareSutra.lua")
+local equipSutra                = import("battle/robot/action/equipSutra.lua")
+local sellSutra                 = import("battle/robot/action/sellSutra.lua")
+local sellPrepareSutra          = import("battle/robot/action/sellPrepareSutra.lua")
+local refreshSpellCard          = import("battle/robot/action/refreshSpellCard.lua")
+local useSpellCard              = import("battle/robot/action/useSpellCard.lua")
+
+function tick(robot)
+    robot.robotStatus = 1
+    -- 是否有需要卖掉的法宝
+    local sellIdx = hasCanSellCard.Execute(robot);
+    if sellIdx and sellIdx > 0 and sellIdx < 5 then
+        robot.robotStatus = 2
+        -- 卖出法宝
+        sellSutra.Run(robot, sellIdx)
+    end
+
+    robot.robotStatus = 3
+    -- 是否有需要卖掉的法宝
+    local sellIdx = hasCanSellPrepareCard.Execute(robot);
+    if sellIdx and sellIdx > 0 and sellIdx < 5 then
+        robot.robotStatus = 4
+        -- 卖出法宝
+        sellPrepareSutra.Run(robot, sellIdx)
+    end
+
+    robot.robotStatus = 5
+    -- 是否有需要上阵的法宝
+    if isSelectCardTime.Execute(robot, { selectInterval = 2 }) and hasCanEquipCard.Execute(robot) then
+        robot.robotStatus = 6
+        -- 上阵法宝
+        equipSutra.Run(robot)
+    end
+
+    robot.robotStatus = 7
+    -- 可使用法术：当拥有召唤法术次数时，消耗次数，直接获得配置的随机法术牌。
+    if hasCanRefreshSpellCard.Execute(robot) then
+        robot.robotStatus = 8
+        -- 获取法术牌
+        refreshSpellCard.Execute(robot);
+    end
+
+    robot.robotStatus = 9
+    if isUseSpellCardTime.Execute(robot) then
+        robot.robotStatus = 10
+        local cardIdx = hasCanUseSpellCard.Execute(robot);
+        if cardIdx then
+            robot.robotStatus = 11
+            -- 使用法术牌
+            useSpellCard.Execute(robot, cardIdx);
+        end
+    end
+
+    robot.robotStatus = 12
+    -- 刷新卡牌
+    -- LogDebug("robotController {} {} {}", isRefreshTime.Execute(robot), isNeedRefreshSutra.Execute(robot), isEnoughManaToRefresh.Execute(robot))
+    if not isRefreshTime.Execute(robot) or not isNeedRefreshSutra.Execute(robot) or not isEnoughManaToRefresh.Execute(robot) then
+        return;
+    end
+
+    robot.robotStatus = 13
+    refreshCard.Run(robot)
+    robot.robotStatus = 14
+
+    -- 选择法宝
+    local robotLevelTable = robot.robotLevelTable
+    local params3 = { selectInterval = math.random(robotLevelTable.minDelay/1000, robotLevelTable.maxDelay/1000) }
+    if isSelectCardTime.Execute(robot, params3) then
+        robot.robotStatus = 15
+        if not hasOptionalCard.Execute(robot) then
+            return;
+        end
+        robot.robotStatus = 16
+        -- 是否已结阵
+        if not hasFormation.Execute(robot) then
+            robot.robotStatus = 17
+            -- 此时是否可以结阵
+            if hasCanFormationCard.Execute(robot) then
+                robot.robotStatus = 18
+                -- 卖出第五个法宝
+                sellSutra.Run(robot, 5)
+            end
+
+            robot.robotStatus = 19
+            -- 如果此时能购买法宝
+            if isCanBuyNewSutra.Execute(robot) then
+                robot.robotStatus = 20
+                -- 购买结阵的法宝
+                equipSutra.Run(robot)
+                return
+            end
+        end
+
+        robot.robotStatus = 21
+        -- 升级法宝
+        local chosenIdx = hasCanUpgradeCard.Execute(robot)
+        if chosenIdx and chosenIdx > 0 then
+            robot.robotStatus = 22
+            prepareSutra.Run(robot, chosenIdx)
+            return
+        end
+    end
+end

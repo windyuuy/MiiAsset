@@ -1,0 +1,133 @@
+function SplitString(str, token)
+    local t = {};
+    while #str > 0 do
+        local pos = str:find(token);
+        if not pos then
+            t[#t + 1] = str;
+            break;
+        end
+
+        if pos > 1 then
+            t[#t + 1] = str:sub(1, pos - 1);
+        end
+        str = str:sub(pos + 1, #str);
+    end
+    return t;
+end
+
+--函数装饰器: 保护性的调用指定函数,如果出错则写日志
+--主要用于一些回调函数,它们本身不写错误日志
+--通过这个装饰器,方便查错
+function LogDecorator(proc)
+    return function(...)
+        local ok, err = xpcall(proc, debug.traceback, ...);
+        if not ok then
+            LogErr("{}", err);
+        end
+    end
+end
+
+--s为string time, 格式为:2017-12-01 00:00:00
+function StringTimeToUnixTime(s)
+    if not s or string.len(s) == 0 then
+        return 0;
+    end
+
+    local p = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)";
+    local year, month, day, hour, min, sec = s:match(p);
+    if year and month and day and hour and min and sec then
+        return os.time({year=year, month=month, day=day, hour=hour, min=min, sec=sec});
+    end
+    return 0;
+end
+
+--s为string time, 格式为:2017-12-01 00:00:00  tz = 800
+function StringTimeToUnixTimeWithTZ(s, tz)
+    if not s or string.len(s) == 0 then
+        return 0;
+    end
+
+    local p = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)";
+    local year, month, day, hour, min, sec = s:match(p);
+    local time_sec = 0
+    if year and month and day and hour and min and sec then
+        time_sec = os.time({year=year, month=month, day=day, hour=hour, min=min, sec=sec});
+        return time_sec - (tz or 0)*36
+    end
+
+    return 0
+end
+
+--s为string time, 格式为:2017-12-01 00:00:00  tz = 800  获取一个时间字符串的一天开始时间
+function DayStartToUnixTimeWithTZ(s, tz)
+    if not s or string.len(s) == 0 then
+        return 0;
+    end
+
+    local p = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)";
+    local year, month, day, hour, min, sec = s:match(p);
+    local time_sec = 0
+    if year and month and day and hour and min and sec then
+        time_sec = os.time({year=year, month=month, day=day, hour=0, min=0, sec=0});
+        return time_sec - (tz or 0)*36
+    end
+
+    return 0
+end
+
+-- begin runinfo 统计执行次数和耗时等信息----------------
+-- eg. local infoType = string.format("Update %s", obj.name);
+--   | runinfoBegin(infoType); --可嵌套，type要唯一
+--   | Update(); --目标代码块
+--   | runinfoEnd(infoType);
+
+local runinfo = {}
+local runTimeNS = {};
+function _G.runinfo_begin(type)
+    runTimeNS[type] = dive.GetTimeNS();
+end
+
+function _G.runinfo_end(type)
+    if not runTimeNS[type] then
+        return;
+    end
+    local useTimeNS = dive.GetTimeNS() - runTimeNS[type];
+    local info = runinfo[type];
+    if not info then
+        info = {};
+        runinfo[type] = info;
+    end
+    info.times = 1 + (info.times or 0);
+    info.totalNS = useTimeNS + (info.totalNS or 0);
+    if useTimeNS > (info.MaxNS or 0) then
+        info.MaxNS = useTimeNS
+    end
+end
+
+function _G.RuninfoRecord(type)
+    local info = runinfo[type];
+    if not info then
+        info = {};
+        runinfo[type] = info;
+    end
+    info.times = 1 + (info.times or 0);
+end
+
+function _G.PrintAndClearRuninfo()
+    local out = "";
+    for type, info in pairs(runinfo) do
+        if info.totalNS then
+            info.averageNS = math.ceil(info.totalNS / info.times);
+            info.totalNS = nil;
+        end
+
+        out = string.format("%s\n  %s\t", out, type);
+        for k, v in pairs(info) do
+            out = string.format("%s - %s:%s", out, k,tostring(v));
+        end
+    end
+    LogInfo("runinfo {}", out);
+
+    runinfo = {};
+end
+-- end runinfo----------------------

@@ -1,0 +1,36 @@
+-- 49. buff效果类型：锁血
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    local owner = buff.owner
+    if buff.owner.curHP <= 0 then
+        return
+    end
+
+    local percent = buffConfig.effectData[1]  -- 万分比
+
+    if percent <= 0 then
+        return;
+    end
+
+    if owner:GetEntryType() ~= _G.EntryType.MONSTER then
+        return;
+    end
+
+    owner.bloodLockingBuff = owner.bloodLockingBuff or {}
+    owner.bloodLockingBuff[buff.buffId] = percent
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local owner = buff.owner
+    owner.bloodLockingBuff = owner.bloodLockingBuff or {}
+    owner.bloodLockingBuff[buff.buffId] = nil
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

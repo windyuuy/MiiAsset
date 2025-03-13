@@ -1,0 +1,30 @@
+-- 41. 增加全体羁绊计数
+
+local battleMgr = import("battle/battleMgr.lua")
+local fateComponent = import("battle/components/fateComponent.lua")
+
+-- buff生效
+function BuffEffect(buff)
+    local battle     = battleMgr.GetBattle(buff.owner.battleId)
+    local battleTeam = battle.battleTeams[buff.owner.teamId]
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local extraCount = buffConfig.effectData[1]
+    buff.extraCount  = extraCount
+
+    battleTeam.fateComponent:AddAllFateCounts(buff)
+    battleTeam:UpdateFates()
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local battle     = battleMgr.GetBattle(buff.owner.battleId)
+    local battleTeam = battle.battleTeams[buff.owner.teamId]
+
+    battleTeam.fateComponent:RemoveAllFateCounts(buff)
+    battleTeam:UpdateFates()
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

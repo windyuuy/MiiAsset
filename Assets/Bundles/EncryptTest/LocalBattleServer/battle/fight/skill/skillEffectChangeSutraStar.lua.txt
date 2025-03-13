@@ -1,0 +1,25 @@
+local gameCardComp = import("battle/components/gameCardComponent.lua")
+
+function SkillEffect(context, effectId)
+    LogDebug("skillEffectChangeSutraStar:SkillEffect effectId={} context.targetEntries count:{}", effectId, #context.targetEntries)
+
+    local battle = context.battle
+    local effectConfig = _G.FEffectTable[effectId]
+    local changeValueParam = _G.GetTableDataParam(effectConfig.damageValue, context.skillLevel)
+    local changeValue = changeValueParam[1]
+    ---@param entry Summoner
+    for _, entry in pairs(context.targetEntries) do
+        if entry:GetEntryType() ~= _G.EntryType.SUMMONER then
+            LogErr("skillEffectChangeSutraStar:SkillEffect, targetEntry is not summoner, skillId:{}", context.skillId)
+            goto continue
+        end
+
+        -- 获取所属player
+        local player = battle:GetPlayer(entry.playerId)
+
+        gameCardComp.ChangeGameCardStar(player.gameCardComponent, player, entry.summonerId, changeValue)
+        ::continue::
+    end
+    LogDebug("skillEffectChangeSutraStar:SkillEffect effectId={} context.targetEntries count:{}", effectId, #context.targetEntries)
+end
+

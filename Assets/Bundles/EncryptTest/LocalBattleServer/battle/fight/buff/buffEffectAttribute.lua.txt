@@ -1,0 +1,292 @@
+-- 1. buff修改属性的效果
+local battleMgr = import("battle/battleMgr.lua")
+local attributeComp = import("battle/components/attributeComponent.lua")
+
+_G.AttributeBuffCalType = {
+    NORMAL = 0,                 -- 根据参数直接计算
+    SELF_TOWER_LOST_HP = 1,     -- 基于己方基地损失血量
+    SELF_MONSTER_COUNT = 2,     -- 基于己方妖怪数量
+    SELF_SUTRA_STAR = 3,        -- 基于己方法宝星级
+    SELF_MANA_COUNT = 4,        -- 基于自己当前灵力
+    SELF_FATE_COUNT = 5,        -- 基于己方羁绊数量
+    SELF_FATE_SUTRA_COUNT = 6,  -- 基于己方指定羁绊法宝数量
+    SELF_MONSTER_TYPE = 7,      -- 基于己方场上是否存在指定妖怪类型
+    SELF_REACTION_TYPE = 8,     -- 基于当前法宝是否为指定反应类型
+    SELF_TOWER_LOST_HP_PER = 9, -- 基于己方基地损失血量百分比
+}
+
+-- buff生效
+function BuffEffect(buff)
+    --LogDebug("buffEffectAttribute:BuffEffect")
+    local ownerEntry = buff.owner
+    ownerEntry.attributeComponent:AddAttributeBuff(buff)
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local ownerEntry = buff.owner
+    ownerEntry.attributeComponent:RemoveAttributeBuff(buff)
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+    local ownerEntry = buff.owner
+    ownerEntry.attributeComponent:AddAttributeBuff(buff)
+end
+
+function GetBuffValue(buff)
+    local config = _G.BuffTable[buff.buffId]
+    local attributeCalType = config.effectData[1]
+    if attributeCalType == _G.AttributeBuffCalType.NORMAL then
+        return AttributeCalTypeOfNormal(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_TOWER_LOST_HP then
+        return AttributeCalTypeOfSelfTowerLostHp(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_MONSTER_COUNT then
+        return AttributeCalTypeOfSelfMonsterCount(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_SUTRA_STAR then
+        return AttributeCalTypeOfSelfSutraStar(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_MANA_COUNT then
+        return AttributeCalTypeOfSelfManaCount(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_FATE_COUNT then
+        return AttributeCalTypeOfSelfFateCount(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_FATE_SUTRA_COUNT then
+        return AttributeCalTypeOfSelfFateSutraCount(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_MONSTER_TYPE then
+        return AttributeCalTypeOfSelfMonsterType(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_REACTION_TYPE then
+        return AttributeCalTypeOfSelfReactionType(config, buff) * buff.layer
+    elseif attributeCalType == _G.AttributeBuffCalType.SELF_TOWER_LOST_HP_PER then
+        return AttributeCalTypeOfSelfTowerLostHpPer(config, buff) * buff.layer
+    else
+        LogErr("GetBuffValue, attributeCalType:{} is invalid, buffId:{}", attributeCalType, config.id)
+        return 0
+    end
+end
+
+---------------------------------- 属性计算方式类型 ----------------------------------
+------@param buff Buff
+function AttributeCalTypeOfNormal(config, buff)
+    local effectData = config.effectData
+    return effectData[3]
+end
+
+---@param buff Buff
+function AttributeCalTypeOfSelfTowerLostHp(config, buff)
+    local effectData = config.effectData
+
+    local battleTeam = battleMgr.GetBattleTeam(buff.owner.battleId, buff.owner.teamId)
+    if not battleTeam then
+        LogErr("AttributeCalTypeOfSelfTowerLostHp, battleTeam is nil, battleId:{} teamId:{}",
+                buff.owner.battleId, buff.owner.teamId)
+        return 0
+    end
+
+    local tower = battleTeam.tower
+    local value = effectData[3]
+    local perLostHp = effectData[4]
+    return math.floor((tower.maxHP - tower.curHP) / perLostHp) * value
+end
+
+---@param buff Buff
+function AttributeCalTypeOfSelfMonsterCount(config, buff)
+    local effectData = config.effectData
+
+    local battleTeam = battleMgr.GetBattleTeam(buff.owner.battleId, buff.owner.teamId)
+    if not battleTeam then
+        LogErr("AttributeCalTypeOfSelfMonsterCount, battleTeam is nil, battleId:{} teamId:{}",
+                buff.owner.battleId, buff.owner.teamId)
+        return 0
+    end
+
+    local value = effectData[3]
+    local perMonsterCount = effectData[4]
+    return math.floor(table.tablen(battleTeam.monsters) / perMonsterCount) * value
+end
+
+---@param buff Buff
+function AttributeCalTypeOfSelfSutraStar(config, buff)
+    local effectData = config.effectData
+
+    local battleTeam = battleMgr.GetBattleTeam(buff.owner.battleId, buff.owner.teamId)
+    if not battleTeam then
+        LogErr("AttributeCalTypeOfSelfSutraStar, battleTeam is nil, battleId:{} teamId:{}",
+                buff.owner.battleId, buff.owner.teamId)
+        return 0
+    end
+
+    local value = effectData[3]
+    local perStarCount = effectData[4]
+
+    local totalStarCount = 0
+    for _, playerSiteData in pairs(battleTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            totalStarCount = totalStarCount + sutra.level
+        end
+    end
+
+    return math.floor(totalStarCount / perStarCount) * value
+end
+
+---@param buff Buff
+function AttributeCalTypeOfSelfManaCount(config, buff)
+    local effectData = config.effectData
+
+    local entry = buff.owner
+    if entry:GetEntryType() ~= _G.EntryType.SUTRA then
+        LogErr("AttributeCalTypeOfSelfManaCount, owner is not sutra, buffId:{}", buff.buffId)
+        return 0
+    end
+
+    local player = battleMgr.GetPlayer(entry.battleId, entry.playerId)
+    local manaCount = player.resourceComponent.mana
+
+    local value = effectData[3]
+    local perManaCount = effectData[4]
+
+    return math.floor(manaCount / perManaCount) * value
+end
+
+function AttributeCalTypeOfSelfFateCount(config, buff)
+    local effectData = config.effectData
+
+    local entry = buff.owner
+    if entry:GetEntryType() ~= _G.EntryType.SUTRA and entry:GetEntryType() ~= _G.EntryType.MONSTER then
+        LogErr("AttributeCalTypeOfSelfFateCount, owner is not sutra, buffId:{}", buff.buffId)
+        return 0
+    end
+
+    ---@type BattleTeam
+    local battleTeam = battleMgr.GetBattleTeam(entry.battleId, entry.teamId)
+    local fateComponent = battleTeam.fateComponent
+
+    local fateCount = 0
+    for _, fate in pairs(fateComponent.fates) do
+        if fate.level > 0 then
+            fateCount = fateCount + 1
+        end
+    end
+
+    local value = effectData[3]
+    local perFateCount = effectData[4]
+
+    return math.floor(fateCount / perFateCount) * value
+end
+
+function AttributeCalTypeOfSelfFateSutraCount(config, buff)
+    local effectData = config.effectData
+
+    local entry = buff.owner
+    if entry:GetEntryType() ~= _G.EntryType.SUTRA then
+        LogErr("AttributeCalTypeOfSelfFateSutraCount, owner is not sutra, buffId:{}", buff.buffId)
+        return 0
+    end
+
+    local value          = effectData[3]
+    local targetFateId   = effectData[4]
+    local fateSutraCount = 0
+
+    ---@type BattleTeam
+    local battleTeam = battleMgr.GetBattleTeam(entry.battleId, entry.teamId)
+    for _, playerSiteData in pairs(battleTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            local fateConfig = _G.SutraFateTable[targetFateId]
+            if table.contains(fateConfig.sutras, sutra.sutraId) then
+                fateSutraCount = fateSutraCount + 1
+            end
+        end
+    end
+
+    return fateSutraCount * value
+end
+
+function AttributeCalTypeOfSelfMonsterType(config, buff)
+    local effectData = config.effectData
+
+    local entry = buff.owner
+    if entry:GetEntryType() ~= _G.EntryType.SUTRA then
+        LogErr("AttributeCalTypeOfSelfMonsterType, owner is not sutra, buffId:{}", buff.buffId)
+        return 0
+    end
+
+    local value = effectData[3]
+    local monsterType = effectData[4]
+
+    ---@type BattleTeam
+    local battleTeam = battleMgr.GetBattleTeam(entry.battleId, entry.teamId)
+    for _, monster in pairs(battleTeam.monsters) do
+        local monsterConfig = _G.MonsterInfoTable[monster.monsterId]
+        if not monsterConfig then
+            LogErr("AttributeCalTypeOfSelfMonsterType, monsterConfig is nil, monsterId:{}", monster.monsterId)
+            return 0
+        end
+
+        if monsterConfig.type == monsterType then
+            return value
+        end
+    end
+
+    return 0
+end
+
+function AttributeCalTypeOfSelfReactionType(config, buff)
+    local effectData = config.effectData
+
+    ---@type Sutra
+    local entry = buff.owner
+    if entry:GetEntryType() ~= _G.EntryType.SUTRA then
+        LogErr("AttributeCalTypeOfSelfReactionType, owner is not sutra, buffId:{}", buff.buffId)
+        return 0
+    end
+
+    local value = effectData[3]
+    local targetReactionType = effectData[4]
+
+    ---@type Player
+    local player = battleMgr.GetPlayer(entry.battleId, entry.playerId)
+
+    local slotId = 0
+    for idx, slotData in pairs(player.gameCardComponent.equipList) do
+        if slotData.card and slotData.card.id == entry.sutraId then
+            slotId = idx
+            break
+        end
+    end
+
+    -- 固定反应
+    if entry.fixedReactionType then
+        if entry.fixedReactionType == targetReactionType then
+            return value
+        else
+            return 0
+        end
+    end
+
+    local reactionType = 0
+    local reactionConfig = _G.ReactionMap[_G.CommonValue.formationKeyElem[slotId]][entry.element]
+    if reactionConfig then
+        reactionType = reactionConfig.id
+    end
+    if reactionType == targetReactionType then
+        return value
+    end
+
+    return 0
+end
+
+
+---@param buff Buff
+function AttributeCalTypeOfSelfTowerLostHpPer(config, buff)
+    local effectData = config.effectData
+
+    local battleTeam = battleMgr.GetBattleTeam(buff.owner.battleId, buff.owner.teamId)
+    if not battleTeam then
+        LogErr("AttributeCalTypeOfSelfTowerLostHpPer, battleTeam is nil, battleId:{} teamId:{}",
+            buff.owner.battleId, buff.owner.teamId)
+        return 0
+    end
+
+    local tower = battleTeam.tower
+    local value = effectData[3]
+    local perLostHp = effectData[4]
+    return math.floor(((tower.maxHP - tower.curHP) / tower.maxHP) * 10000 / perLostHp) * value
+end

@@ -1,0 +1,25 @@
+-- 是否已达到最大上阵数量，2/3星法宝数量
+
+function Execute(robot)
+
+    local equipCount     = 0;
+    local twoStarCount   = 0;
+    local threeStarCount = 0;
+
+    for _, slot in pairs(battleData.equipList) do
+        if slot.card and slot.card.id and slot.card.id ~= 0 then
+            equipCount = equipCount + 1;
+            if slot.card.star == 2 then
+                twoStarCount = twoStarCount + 1;
+            elseif slot.card.star == 3 then
+                threeStarCount = threeStarCount + 1;
+            end
+        end
+    end
+
+    if equipCount >= robot.robotLevelTable.maxUpCount and twoStarCount >= robot.robotLevelTable.twoStarCount and threeStarCount >= robot.robotLevelTable.threeStarCount then
+        return true;
+    end
+
+    return false;
+end

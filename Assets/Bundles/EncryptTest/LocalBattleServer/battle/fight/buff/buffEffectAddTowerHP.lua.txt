@@ -1,0 +1,33 @@
+-- 7. buff恢复基地血量的效果
+local battleMgr = import("battle/battleMgr.lua")
+local reason = import("common/reason.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local ownerEntry = buff.owner
+    local config = _G.BuffTable[buff.buffId]
+
+    local battleTeam = battleMgr.GetBattleTeam(ownerEntry.battleId, ownerEntry.teamId)
+    if not battleTeam then
+        LogErr("buffEffectAddTowerHP:BuffEffect, can not find battleTeam, battleId:{} teamId:{}", ownerEntry.battleId, ownerEntry.teamId)
+        return
+    end
+
+    ---@type Tower
+    local tower      = battleTeam.tower
+    local fixedValue = config.effectData[1]
+    local percent    = config.effectData[2]
+    local changeValue = fixedValue + tower.maxHP * percent / 10000
+    tower:ChangeHp(changeValue, reason.BUFF_EFFECT_UPDATE_HP)
+    LogDebug("buffEffectAddTowerHP:BuffEffect, changeValue:{}", changeValue)
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

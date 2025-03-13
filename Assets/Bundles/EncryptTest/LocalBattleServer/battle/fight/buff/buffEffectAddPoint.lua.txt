@@ -1,0 +1,46 @@
+-- 15. 增加积分
+local battleMgr = import("battle/battleMgr.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    ---@type Battle
+    local battle         = battleMgr.GetBattle(buff.owner.battleId)
+    local pointId        = buffConfig.effectData[1]
+    local dependUnitType = buffConfig.effectData[2]
+    local dependAttr     = buffConfig.effectData[3]
+    local dependPercent  = buffConfig.effectData[4]
+    local fixed          = buffConfig.effectData[5]
+
+    local dependEntry
+    local addValue = fixed or 0
+    if dependUnitType == 1 then
+        -- 依赖攻击者
+        dependEntry = buff.origin
+    elseif dependUnitType == 2 then
+        -- 依赖被攻击者
+        dependEntry = buff.owner
+    else
+        LogErr("buffEffectAddPoint:BuffEffect, depend unit type is invalid in effect data table, dependUnit:{}", dependUnitType)
+        return
+    end
+    --LogDebug("buffEffectAddPoint:BuffEffect, pointId:{} dependUnitType:{} dependAttr:{} dependPercent:{} fixed:{}", pointId, dependUnitType, dependAttr, dependPercent, fixed)
+    addValue = addValue + dependEntry:GetAttribute(dependAttr) * dependPercent / 10000
+
+    for _, team in pairs(battle.battleTeams) do
+        if team.teamId == buff.owner.teamId then
+            team:AddPoint(battle, pointId, addValue)
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

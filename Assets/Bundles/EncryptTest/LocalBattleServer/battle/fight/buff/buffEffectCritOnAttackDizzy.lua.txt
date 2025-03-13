@@ -1,0 +1,26 @@
+-- 14. 法宝攻击眩晕怪物必定暴击
+
+---@param buff Buff
+function BuffEffect(buff)
+    local entry = buff.owner
+    if entry:GetEntryType() == _G.EntryType.SUTRA then
+        entry.critBuffCount = entry.critBuffCount + 1
+    else
+        LogDebug("buffEffectCritOnAttackDizzy:BuffEffect, buff owner is not sutra, buffId:{} entry type:{}", buff.buffId, entry.GetEntryType())
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local entry = buff.owner
+    if entry:GetEntryType() == _G.EntryType.SUTRA then
+        entry.critBuffCount = entry.critBuffCount - 1 >= 0 and entry.critBuffCount - 1 or 0
+    else
+        LogDebug("buffEffectCritOnAttackDizzy:UnBuffEffect, buff owner is not sutra, buffId:{} entry type:{}", buff.buffId, entry.GetEntryType())
+    end
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end
+

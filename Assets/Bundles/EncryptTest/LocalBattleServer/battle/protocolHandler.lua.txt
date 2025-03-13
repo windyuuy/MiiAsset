@@ -1,0 +1,382 @@
+local battleMgr = import("battle/battleMgr.lua")
+local errCode   = import("common/errCode.lua")
+local gm        = import("battle/gm.lua")
+
+-- 战斗投降
+function c2s.BattleLogic_GiveupBattleRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss);
+    if not activeBattleId then
+        ss.Call("BattleLogic_GiveupBattleResponse", {errCode=errCode.BATTLE_ERROR_NO_BATTLE_ID});
+        return;
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_GiveupBattleResponse", {errCode=errCode.BATTLE_ERROR_NO_BATTLE_ID})
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_GiveupBattleResponse", {errCode=errCode.BATTLE_ERROR_NO_FIGHT_STATUS})
+        return
+    end
+
+    LogDebug("c2s.BattleLogic_GiveupBattleRequest player:{} give up", ss.uid)
+
+    -- 放弃战斗
+    local resp = battleMgr.GiveUpBattle(ss.uid, activeBattleId);
+    ss.Call("BattleLogic_GiveupBattleResponse", resp);
+end
+
+function c2s.BattleLogic_JoinBattleRequest(ss, param)
+    local token = param.token;
+    if not token then
+        ss.Call("BattleLogic_JoinBattleResponse", {errCode=errCode.BATTLE_ERROR_NO_BATTLE_ID});
+        return;
+    end
+
+    -- token反向关联uid
+    ss.uid = battleMgr.GetPlayerTokenUid(token);
+    _G.SetUidSession(ss.uid, ss);
+
+    -- 获取该token的battle_id
+    local battleId = battleMgr.GetUidTokenBattleId(ss.uid, token);
+    if not battleId then
+        ss.Call("BattleLogic_JoinBattleResponse", {errCode=errCode.BATTLE_ERROR_NO_BATTLE_ID});
+        return;
+    end
+
+    ss.battleId = battleId;
+
+    local res = battleMgr.JoinBattle(ss, battleId);
+    ss.Call("BattleLogic_JoinBattleResponse", {errCode=res, battleId=battleId});
+end
+
+-- 客户端已连接战斗服，并且准备好开始战斗
+function c2s.BattleLogic_BattleReadyRequest(ss, param)
+    --LogInfo("BattleLogic_BattleReadyRequest ss:{} param: {}", ss, param);
+    local battle = battleMgr.GetBattle(param.battleId)
+    if not battle then
+        ss.Call("BattleLogic_BattleReadyResponse", {errCode=errCode.BATTLE_ERROR_NO_BATTLE_ID, battleId=param.battleId});
+        return;
+    end
+
+    -- 先根据状态判断是开始还是重连
+    if battle.status < _G.BattleStatus.PLAY then
+        ss.battleId = param.battleId;
+        local res = battleMgr.ReadyBattle(ss, param.battleId);
+        ss.Call("BattleLogic_BattleReadyResponse", {errCode=res, battleId=param.battleId});
+    else
+        -- TODO: 重连数据
+    end
+end
+
+function c2s.BattleLogic_UseSutraRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss);
+    if not activeBattleId then
+        ss.Call("BattleLogic_UseSutraResponse", {errCode=errCode.BATTLE_ERROR_NO_BATTLE_ID})
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_UseSutraResponse", {errCode=errCode.BATTLE_ERROR_NO_BATTLE_ID})
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_UseSutraResponse", {errCode=errCode.BATTLE_ERROR_NO_FIGHT_STATUS})
+        return
+    end
+
+    local resp = battleMgr.UseSymbol(ss, activeBattleId, param);
+    ss.Call("BattleLogic_UseSutraResponse", resp);
+end
+
+-- 解锁阵眼请求
+--function c2s.BattleLogic_UnlockFormationRequest(ss, param)
+--    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+--    if not activeBattleId then
+--        ss.Call("BattleLogic_UnlockFormationResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+--        return
+--    end
+--
+--    local battle = battleMgr.GetBattle(activeBattleId)
+--    if not battle then
+--        ss.Call("BattleLogic_UnlockFormationResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+--        return
+--    end
+--
+--    if battle.status ~= _G.BattleStatus.PLAY then
+--        ss.Call("BattleLogic_UnlockFormationResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+--        return
+--    end
+--
+--    local resp = battleMgr.UnlockFormation(ss, activeBattleId, param)
+--    ss.Call("BattleLogic_UnlockFormationResponse", resp)
+--end
+
+-- 刷新卡牌请求
+function c2s.BattleLogic_RefreshGameCardsRequest(ss, param)
+    LogDebug("1BattleLogic_RefreshGameCardsRequest, param:{}", _G.jsonEncode(param))
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_RefreshGameCardsResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_RefreshGameCardsResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_RefreshGameCardsResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.RefreshGameCard(ss, activeBattleId, param)
+    ss.Call("BattleLogic_RefreshGameCardsResponse", resp)
+end
+
+function c2s.BattleLogic_ChosenGameCardRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_ChosenGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_ChosenGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_ChosenGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.ChosenGameCard(ss, activeBattleId, param)
+    ss.Call("BattleLogic_ChosenGameCardResponse", resp)
+end
+
+function c2s.BattleLogic_SellGameCardRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_SellGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_SellGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_SellGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.SellGameCard(ss, activeBattleId, param)
+    ss.Call("BattleLogic_SellGameCardResponse", resp)
+end
+
+function c2s.BattleLogic_SwapGameCardRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_SwapGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_SwapGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_SwapGameCardResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.SwapGameCard(ss, activeBattleId, param)
+    ss.Call("BattleLogic_SwapGameCardResponse", resp)
+end
+
+function c2s.BattleLogic_SutraAttributeRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_SutraAttributeResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_SutraAttributeResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_SutraAttributeResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.GetSutraAttribute(ss, activeBattleId, param)
+    ss.Call("BattleLogic_SutraAttributeResponse", resp)
+end
+
+function c2s.BattleLogic_MonsterAttributeRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_MonsterAttributeResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_MonsterAttributeResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_MonsterAttributeResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.GetMonsterAttribute(ss, activeBattleId, param)
+    ss.Call("BattleLogic_MonsterAttributeResponse", resp)
+end
+
+function c2s.BattleLogic_ShowEmojiRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_ShowEmojiResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_ShowEmojiResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_ShowEmojiResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.ShowEmoji(ss, battle, param.emojiId, param.text)
+    ss.Call("BattleLogic_ShowEmojiResponse", resp)
+end
+
+function c2s.BattleLogic_SpellRefreshRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_SpellRefreshResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_SpellRefreshResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_SpellRefreshResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.SpellRefresh(ss, activeBattleId)
+    ss.Call("BattleLogic_SpellRefreshResponse", resp)
+end
+
+function c2s.BattleLogic_SpellSelectRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_SpellSelectResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_SpellSelectResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_SpellSelectResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.SpellSelect(ss, activeBattleId, param)
+    ss.Call("BattleLogic_SpellSelectResponse", resp)
+end
+
+function c2s.BattleLogic_SpellUseRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_SpellUseResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_SpellUseResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_SpellUseResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.SpellUse(ss, activeBattleId, param)
+    ss.Call("BattleLogic_SpellUseResponse", resp)
+end
+
+function c2s.BattleLogic_GMCommandRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_GMCommandResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_GMCommandResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_GMCommandResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    gm.GmExec(ss, battle, param.command, param.args)
+    ss.Call("BattleLogic_GMCommandResponse", { errCode = errCode.SUCCESS })
+end
+
+function c2s.BattleLogic_GiveCardRequest(ss, param)
+    local activeBattleId = battleMgr.GetUidActiveBattleId(ss)
+    if not activeBattleId then
+        ss.Call("BattleLogic_GiveCardResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    local battle = battleMgr.GetBattle(activeBattleId)
+    if not battle then
+        ss.Call("BattleLogic_GiveCardResponse", { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID })
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.PLAY then
+        ss.Call("BattleLogic_GiveCardResponse", { errCode = errCode.BATTLE_ERROR_NO_FIGHT_STATUS })
+        return
+    end
+
+    local resp = battleMgr.GiveCard(ss, activeBattleId, param)
+    ss.Call("BattleLogic_GiveCardResponse", resp)
+end

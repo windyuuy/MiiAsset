@@ -1,0 +1,779 @@
+-- 战局管理
+
+import("common/attribute.lua")
+
+local message           = import("common/message.lua")
+local errCode           = import("common/errCode.lua")
+local battleData        = import("battle/data/battle.lua")
+local common            = import("common/common.lua")
+local robotUtil         = import("common/robotUtil.lua")
+local gameCardComp      = import("battle/components/gameCardComponent.lua")
+local battleIntent      = import("battle/battleIntent.lua");
+local statusMgr         = import("battle/fight/status/statusMgr.lua");
+local buffMgr           = import("battle/fight/buff/buffMgr.lua");
+local eventMgr          = import("battle/event/eventManager.lua");
+local skillCondition    = import("battle/fight/skillCondition/skillCondition.lua")
+
+---@type table<number, Battle>
+battles = battles or {}
+battleToken = battleToken or 0
+battleCount = battleCount or 0;
+
+playerTokenUid = playerTokenUid or {}
+playerUidToken = playerUidToken or {};
+uidToBattleId = uidToBattleId or {};
+uidToPlayerInfoCache = uidToPlayerInfoCache or {};
+
+-- 战局状态
+_G.BattleStatus = {
+    INIT    = 0,        -- 初始化
+    WAIT    = 1,        -- 等待阶段 等待所有玩家战前数据同步和客户端连接
+    READY   = 2,        -- 准备阶段
+    PLAY    = 3,        -- 战斗阶段
+    SETTLE  = 4,        -- 结算阶段
+    END     = 5,        -- 结束阶段
+}
+
+-- 轮次状态
+_G.RoundStatus = {
+    ROUND_INIT = 0,     -- 轮次初始化 处理轮次独立数据
+    ROUND_WAIT = 1,     -- 轮次等待
+    ROUND_FIGHT = 2,    -- 轮次战斗
+    ROUND_END = 3,      -- 轮次结束
+}
+
+_G.ATTRIBUTE_TYPE = {
+    HP          = 0,
+    ATK         = 1,
+    DEF         = 2,
+    MP          = 3,
+    MOVE_SPEED  = 4,
+}
+
+-- 初始化各模块
+function Init()
+    --statusMgr.Init();
+    --eventMgr.Init();
+    --buffMgr.Init();
+    --skillCondition.Init();
+end
+
+-- reload各模块
+function OnReload()
+    battleCount = 0;
+    for _, _ in pairs(battles) do
+        battleCount = battleCount + 1;
+    end
+end
+
+function OnError()
+    for _, battle in pairs(battles) do
+        battle:OnError()
+    end
+end
+
+function OnStop()
+    for _, battle in pairs(battles) do
+        for teamId, _ in pairs(battle.battleTeams) do
+            if teamId == lostId then
+                battle.battleResult[teamId] = common.BATTLE_END_RESULT_TIE
+            else
+                battle.battleResult[teamId] = common.BATTLE_END_RESULT_TIE
+            end
+        end
+        battle:processBattleSettle(_G.GetCurTimeMS())
+        StopBattle(battle.battleId)
+    end
+end
+
+-- tick
+function Update(frame)
+    local nowMS = _G.GetCurTimeMS()
+    for _, battle in pairs(battles) do
+        --if battle.status ~= _G.BattleStatus.PLAY then
+        --    LogDebug("battle status:{} battleId:{}", battle.status, battle.battleId)
+        --end
+        -- if nowMS - battle.lastTickMS < 20 then
+        --     goto continue;
+        -- end
+        -- battle.lastTickMS = nowMS;
+        battle:Update(frame, nowMS)
+        --battleData.Update(battle, nowMS)
+        if battle.status ~= _G.BattleStatus.END then
+            battleIntent.SendIntents(nowMS, battle.battleId, battle)
+        end
+
+        if battle.status == _G.BattleStatus.END then
+            StopBattle(battle.battleId)
+        end
+        ::continue::
+    end
+
+    -- 每分钟输出一下战斗数量
+    if frame % 600  == 0 then
+        LogInfo("battleCount {}", battleCount);
+
+        -- 每十分钟输出一下战斗的时间
+        if frame % 6000  == 0 then
+            for _, battle in pairs(battles) do
+                LogInfo("battleId={} battleTime={}", battle.battleId, (nowMS - battle.startTime)/1000)
+            end
+        end
+    end
+
+    return true;
+end
+
+-- 是否还有战斗
+function CheckHasBattle()
+    return next(battles)
+end
+
+function AddBattle(mode, battleId, gameTypeConfig, matchInfo, battleDataStr)
+    local matchConfig = _G.MatchModelTable[mode]
+    ---@type Battle
+    local battle = battleData.CreateBattle(battleId, mode, gameTypeConfig, matchConfig, matchInfo)
+
+    if battle:Init() then
+        battles[battleId] = battle
+    else
+        LogErr("AddBattle, battle init failed, battleId:{}", battleId)
+    end
+
+    local battleGameTypeConfig = battle.battleConfig
+    if battleDataStr then
+        -- 单机
+        local data = _G.jsonDecode(battleDataStr)
+        battle:InitFromBattleData(data)
+    elseif battleGameTypeConfig.battleData and battleGameTypeConfig.battleData ~= "" then
+        local data = _G.jsonDecode(battleGameTypeConfig.battleData)
+        battle:InitFromBattleData(data)
+    end
+end
+
+function GetPlayerTokenUid(token)
+    return playerTokenUid[token] or 0;
+end
+
+function StopBattle(battleId)
+    local battle = GetBattle(battleId)
+    local nowMS = _G.GetCurTimeMS()
+    battleIntent.NotifyBattleStop(nowMS, battleId, battle)
+
+    if not battle then
+        LogDebug("StopBattle, battle not exist, battleId:{}", battleId)
+        return
+    end
+
+    if battle.status ~= _G.BattleStatus.END then
+        LogDebug("StopBattle, battle status is not destroy, battleId:{}", battleId)
+        return
+    end
+
+    battleCount = battleCount - 1;
+
+    for _, player in pairs(battle.players) do
+
+        if robotUtil.IsRobotUid(player.id) then
+            goto continue
+        end
+
+        local playerBattles = uidToBattleId[player.id];
+
+        if not playerBattles then
+            LogErr("StopBattle, not player battles, player id:{}", player.id)
+            goto continue
+        end
+        -- 清理战斗临时关联数据
+        local playerBattle  = playerBattles[battleId];
+
+        playerTokenUid[playerBattle.token] = nil;
+        for idx, token in ipairs(playerUidToken[player.id]) do
+            if token == playerBattle.token then
+                table.remove(playerUidToken[player.id], idx);
+            end
+        end
+
+        if #playerUidToken[player.id] == 0 then
+            playerUidToken[player.id] = nil;
+        end
+
+        playerBattles[battleId] = nil;
+
+        -- 清理agent
+        _G.RemoveAgnetByUid(player.id)
+
+        -- 校验是否还有其他战斗信息 如果所有战斗都结束则清理资源
+        if not next(playerBattles) then
+            uidToBattleId[player.id] = nil;
+            -- 通知战斗结束
+            if not dive.isStandalone then
+                _G.CallAllBattleAgentMessage("NoticeStopBattle", player.id, battleId, playerBattle.token)
+            end
+        end
+        ::continue::
+    end
+
+    LogInfo("StopBattle, battleId:{}", battleId)
+    -- 处理战局资源回收
+    battle:Reset()
+    battles[battleId] = nil
+
+    if not dive.isStandalone then
+        _G.CallAllMatchMessage("UpdateBattleCount", battleCount)
+    end
+end
+
+function JoinBattle(ss, battleId)
+    local uid = ss.uid
+    LogDebug("JoinBattle, uid:{}, battleId:{}", uid, battleId)
+
+    local battle = battles[battleId]
+    if not battle then
+        LogDebug("JoinBattle, battle not exist, battleId:{}", battleId)
+        return errCode.BATTLE_ERROR_NO_BATTLE_ID;
+    end
+
+    -- 战局状态检查
+    --if battle.status ~= _G.BattleStatus.READY then
+    --    LogInfo("JoinBattle, battle status is not ready, battleId:{} status:{}", battleId, battle.status)
+    --    return errCode.BATTLE_ERROR_BATTLE_NOT_READY;
+    --end
+
+    -- 更新玩家状态
+    local player = battle.players[uid]
+    if player and player.status == _G.PlayerStatus.INIT then
+        player.status = _G.PlayerStatus.CONNECTED
+        battle.waitConnect[player.id] = nil
+    else
+        LogInfo("JoinBattle, player status is not connected, battleId:{}, uid:{} status:{}", battleId, uid, player.status)
+    end
+
+    _G.LogPlayer(ss, "JoinBattle", {
+        battleId = battleId
+    });
+
+    return errCode.SUCCESS
+end
+
+-- 玩家准备好战斗
+function ReadyBattle(ss, battleId)
+    -- 这个接口后面可能有些数据需要同步给其他客户端
+
+    local uid = ss.uid;
+    LogDebug("ReadyBattle battleId={}, uid={}", battleId, uid);
+
+    local battle = battles[battleId]
+    if not battle then
+        LogDebug("ReadyBattle, battle not exist, battleId:{}", battleId)
+        return errCode.BATTLE_ERROR_NO_BATTLE_ID;
+    end
+
+    -- 战局状态检查
+    if battle.status ~= _G.BattleStatus.INIT and battle.status ~= _G.BattleStatus.WAIT then
+        LogInfo("ReadyBattle, battle status is not ready, battleId:{} status:{}", battleId, battle.status)
+        return errCode.BATTLE_ERROR_BATTLE_NOT_READY;
+    end
+
+    -- 更新玩家状态
+    local player = battle.players[uid]
+    if player and player.status == _G.PlayerStatus.CONNECTED then
+        player.status = _G.PlayerStatus.READY
+        battle.waitReady[player.id] = nil
+    else
+        LogDebug("ReadyBattle, player status is not connected, battleId:{}, uid:{} status:{}", battleId, uid, player.status)
+    end
+
+    _G.LogPlayer(ss, "ReadyBattle", {
+        battleId = battleId
+    });
+
+    return errCode.SUCCESS;
+end
+
+function GetBattle(battleId)
+    return battles[battleId]
+end
+
+---@return BattleTeam
+function GetBattleTeam(battleId, teamId)
+    local battle = battles[battleId]
+    if not battle then
+        LogErr("GetBattleTeam, cannot find battle, battle id:{}", battleId)
+        return nil
+    end
+
+    local battleTeam = battle.battleTeams[teamId]
+    if not battleTeam then
+        LogErr("GetBattleTeam, cannot find battle, battleId:{} teamId:{}", battleId, teamId)
+        return nil
+    end
+
+    return battleTeam
+end
+
+function GetNextEntryId(battle)
+    battle.nextEntryId = battle.nextEntryId + 1
+    return battle.nextEntryId
+end
+
+----------------------------------------- 玩家管理 ----------------------------------------
+function GetPlayer(battleId, uid)
+    local battle = GetBattle(battleId)
+    if not battle then
+        return nil
+    end
+
+    return battle.players[uid]
+end
+
+-- 准备开启战斗
+---@param matchInfo table<number, MatchBattleTeam>
+function s2s.PrepareBattle(svr, mode, version, matchInfo)
+    local res = errCode.SUCCESS;
+    local battle;
+    if dive.stopFlag then
+        res = errCode.BATTLE_ERROR_SERVER_STOP;
+    else
+        res, battle = RealPrepareBattle(svr, mode, version, matchInfo, nil);
+    end
+
+    LogDebug("s2s.PrepareBattle, matchInfo:{}", matchInfo)
+
+    for _, team in pairs(matchInfo) do
+        for uid, player in pairs(team.players) do
+            if res == errCode.SUCCESS then
+                local playerInfo = uidToPlayerInfoCache[uid];
+                if playerInfo then
+                    -- 这里表示该消息是先收到的
+                    uidToPlayerInfoCache[uid] = nil;
+                    battle:SyncPlayerInfo(uid, playerInfo[1], playerInfo[2]);
+                end
+            else
+                -- 通知客户端 战斗服拉起失败
+                message.SendP2PMessage("lobby", player.svr, "PrepareBattleFail", player.id, mode, version, res);
+            end
+        end
+    end
+end
+
+function RealPrepareBattle(svr, mode, version, matchInfo, battleDataStr)
+    LogDebug("PrepareBattle mode={} version={}", mode, version);
+
+    local gameTypeConfig = _G.BattleGameTypeTable[mode];
+    if not gameTypeConfig then
+        LogErr("gameTypeConfig not exist!!!");
+        return errCode.BATTLE_ERROR_MODE_NOT_EXIST;
+    end
+
+    -- 战斗的id
+    battleToken = battleToken + 1;
+    local battleId = dive.isStandalone and _G.CLIENT_BATTLE_ID or _G.diveSDMgr.get_local_instance_id() .. tostring(battleToken);
+
+    battleCount = battleCount + 1;
+
+    -- 创建一场战斗
+    AddBattle(mode, battleId, gameTypeConfig, matchInfo, battleDataStr);
+
+    -- 记录 team/uid 和 battle的关系
+    for _, team in pairs(matchInfo) do
+        for _, player in pairs(team.players) do
+            if robotUtil.IsRobotUid(player.id) then
+                goto continue
+            end
+            -- 生成token
+            local token = common.Uuid();
+
+            -- 记录token与用户id的双向关系
+            playerTokenUid[token]     = player.id;
+
+            playerUidToken[player.id] = playerUidToken[player.id] or {};
+            table.insert(playerUidToken[player.id], token);
+
+            -- 记录用户的战斗信息
+            uidToBattleId[player.id] = uidToBattleId[player.id] or {};
+            uidToBattleId[player.id][battleId] = {
+                token = token,
+                active = true,
+                time = _G.GetCurTime();
+            }
+
+            -- 设置其他战斗为非活跃状态
+            for id, data in pairs(uidToBattleId[player.id]) do
+                if id ~= battleId then
+                    data.active = false;
+                end
+            end
+
+            if dive.isStandalone then
+                break;
+            end
+
+            local battleServerInfo = {
+                battleServerInstanceId = _G.diveSDMgr.get_local_instance_id(),
+                battleServerPublicIp   = dive.GetProperty("dive.service.fabao.battle.netty.url", _G.diveSDMgr.get_instance_metadata("INSTANCE_PUBLIC_IP")),
+                battleServerPublicPort = tonumber(dive.GetProperty("dive.service.fabao.battle.netty.port", 9001)),
+                token = token, -- 用于验证连接的uid
+            };
+
+            -- 先通知battleAgent准备处理连接
+            _G.CallAllBattleAgentMessage("NoticePrepareBattle", player.id, battleId, token)
+            -- LogInfo("RealPrepareBattle battleServerInfo={}", battleServerInfo)
+            message.SendP2PMessage("lobby", player.svr, "NoticeUpdateBattleInfo", player.id, mode, battleId, battleServerInfo);
+
+            ::continue::
+        end
+    end
+
+    if not dive.isStandalone then
+        _G.CallAllMatchMessage("UpdateBattleCount", battleCount)
+    end
+
+    return errCode.SUCCESS, battles[battleId];
+end
+
+function s2s.SyncPlayerInfo(svr, uid, playerInfo, robotPlayerInfo)
+    -- LogDebug("SyncPlayerInfo uid={}", uid)
+    local playerBattles = uidToBattleId[uid];
+    if not playerBattles then
+        LogInfo("SyncPlayerInfo not playerBattles uid={}", uid);
+        uidToPlayerInfoCache[uid] = {playerInfo, robotPlayerInfo};
+        return;
+    end
+
+    for realBattleId, data in pairs(playerBattles) do
+        local battle = battles[realBattleId]
+        if not battle then
+            return;
+        end
+        battle:SyncPlayerInfo(uid, playerInfo, robotPlayerInfo);
+    end
+end
+
+function s2s.GetAllBattleAgentInfos(svr)
+    local battleAgentInfos = {}
+    for uid, battleInfos in pairs(uidToBattleId) do
+        for battleId, battleInfo in pairs(battleInfos) do
+            if battleInfo.active then
+                battleAgentInfos[uid] = {
+                    battleId    = battleId,
+                    token       = battleInfo.token,
+                }
+            end
+        end
+    end
+    if next(battleAgentInfos) then
+        message.SendP2PMessage("battleAgent", svr, "NoticeAllBattleAgentInfos", battleAgentInfos);
+    end
+end
+
+----------------------------------------与客户端的交互---------------------------------------
+function c2c.CPrepareBattle(mode, battleTeams, battleDataStr)
+    RealPrepareBattle(nil, mode, "client", battleTeams, battleDataStr)
+end
+
+function c2c.CJoinBattle(uid, battleId)
+    local battle = battles[battleId]
+    if battle then
+        battle:JoinBattle()
+    end
+end
+
+function c2c.CReadyBattle(battleId)
+    local battle = battles[battleId]
+    if battle then
+        battle:ReadyBattle()
+    end
+end
+
+function c2c.CJoinAndReadyBattle(uid, battleId)
+    local battle = battles[battleId]
+    if battle then
+        battle:JoinAndReadyBattle()
+    end
+end
+
+function c2c.CSyncPlayerInfo(battleId, uid, playerInfo, robotPlayerInfo)
+    local battle = battles[battleId]
+    if battle then
+        battle:SyncPlayerInfo(uid, playerInfo, robotPlayerInfo);
+    end
+end
+
+----------------------------------------与客户端的交互---------------------------------------
+
+function GiveUpBattle(uid, battleId)
+    local resp = {}
+    local battle = GetBattle(battleId)
+    if not battle then
+        resp.errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID
+        return resp
+    end
+
+    local player = battle.players[uid];
+    if not player then
+        resp.errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR
+        return resp
+    end
+
+    player.isGiveUp = true
+    player.giveUpTime = _G.GetCurTimeMS()
+
+    resp.errCode = errCode.SUCCESS
+    return resp
+end
+
+-- 使用符箓
+function UseSpell(ss, battleId, param)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local battle = GetBattle(battleId);
+    return gameCardComp.UseSpell(battle, player, param.region, param.slot);
+end
+
+function RefreshGameCard(ss, battleId, param)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local battle = battles[battleId]
+
+    -- 检查cd
+    player.btnCd = player.btnCd or 0
+    local currMS = _G.GetCurTimeMS()
+    if currMS - player.btnCd < (_G.CommonValue.btnCd or 500) then
+        return { errCode = errCode.BATTLE_ERROR_BTN_CD }
+    end
+
+    player.btnCd = currMS
+
+    local resp = gameCardComp.RefreshGameCard(player.gameCardComponent, battle, player)
+    return resp
+end
+
+function ChosenGameCard(ss, battleId, param)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local resp = gameCardComp.ChosenGameCard(player.gameCardComponent, player, param.chosenIdx, param.targetRegion,
+        param.targetSlot, param.robotSelectCardId, param.robotFormationId)
+    return resp
+end
+
+function SellGameCard(ss, battleId, param)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local resp = gameCardComp.SellGameCard(player.gameCardComponent, player, param.region, param.slot)
+    return resp
+end
+
+function ShowEmoji(ss, battle, emojiId, text)
+    local resp = {}
+
+    if not dive.isStandalone then
+        local _, hasDirty = _G.dwMgr.check_string(text)
+        if hasDirty then
+            resp.errCode = errCode.CHAT_ERROR_DIRTY_WORDS
+            return resp
+        end
+    end
+
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.EMOJI, {
+        playerId = ss.uid,
+        emojiId = emojiId,
+        text = text,
+    })
+    resp.errCode = errCode.SUCCESS
+    return resp
+end
+
+function SwapGameCard(ss, battleId, param)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local resp = gameCardComp.SwapGameCard(player.gameCardComponent, player, param.fromRegion, param.fromSlot, param.toRegion, param.toSlot)
+    return resp
+end
+
+function GetSutraAttribute(ss, battleId, param)
+    local battleTeam = GetBattleTeam(battleId, param.teamId)
+    if not battleTeam then
+        return { errCode = errCode.BATTLE_ERROR_PARAM_ERROR }
+    end
+
+    local playerSiteData = battleTeam.playerSiteDatas[param.playerIndex]
+    if not playerSiteData then
+        return { errCode = errCode.BATTLE_ERROR_PARAM_ERROR }
+    end
+
+    local sutra = playerSiteData.sutras[param.sutraId]
+    if not sutra then
+        return { errCode = errCode.BATTLE_ERROR_PARAM_ERROR }
+    end
+
+    local resp = {
+        errCode = errCode.SUCCESS,
+        attrs = {},
+    }
+
+    for _, attrId in pairs(param.attrIds) do
+        local attrValue = sutra:GetAttribute(attrId)
+        resp.attrs[attrId] = attrValue
+    end
+
+    return resp
+end
+
+function GetMonsterAttribute(ss, battleId, param)
+    local battleTeam = GetBattleTeam(battleId, param.teamId)
+    if not battleTeam then
+        return { errCode = errCode.BATTLE_ERROR_PARAM_ERROR }
+    end
+
+    local monster = battleTeam.monsters[param.entryId]
+    if not monster then
+        return { errCode = errCode.BATTLE_ERROR_PARAM_ERROR }
+    end
+
+    local resp = {
+        errCode = errCode.SUCCESS,
+        attrs = {},
+    }
+
+    for _, attrId in pairs(param.attrIds) do
+        local attrValue = monster:GetAttribute(attrId)
+        resp.attrs[attrId] = attrValue
+    end
+
+    return resp
+end
+
+function SpellRefresh(ss, battleId)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local resp = gameCardComp.SpellRefresh(player)
+    return resp
+end
+
+function SpellSelect(ss, battleId, param)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local resp = gameCardComp.SpellSelect(player, param.idx)
+    return resp
+end
+
+function SpellUse(ss, battleId, param)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local resp = gameCardComp.SpellUse(player, param.idx, param.fromChooseOne)
+    return resp
+end
+
+function GiveCard(ss, battleId, param)
+    local player = GetPlayer(battleId, ss.uid);
+    if not player then
+        return { errCode = errCode.BATTLE_ERROR_PLAYERID_ERROR }
+    end
+
+    local resp = gameCardComp.GiveCard(player, param.slotId, param.toPlayerUid)
+    return resp
+end
+
+function GetBattleKillCount(ss, battleId, param)
+    local battle = GetBattle(battleId)
+    if not battle then
+        return { errCode = errCode.BATTLE_ERROR_NO_BATTLE_ID }
+    end
+
+    local killMonsterCount = battle.statistics.killMonsterCount[param.teamId] or {totalCount=0, typeCount={}}
+    local resp = {
+        errCode = errCode.SUCCESS,
+        killMonsterCount = killMonsterCount.totalCount,
+    }
+
+    return resp
+end
+
+function s2s.CheckIsBattle(svr, uid, battleId)
+    -- LogDebug("CheckIsBattle uid={}", uid);
+    local playerBattles = uidToBattleId[uid];
+
+    if playerBattles and playerBattles[battleId] then
+        local battle = GetBattle(battleId)
+
+        if not battle then
+            message.SendP2PMessage("lobby", svr, "NoticeClearBattleStatus", uid);
+            return;
+        end
+
+        -- 更新lobby svr的数据
+        for _, player in pairs(battle.players) do
+            if player.id == uid then
+                player.svr = svr;
+            end
+        end
+
+        local status = battle.status;
+        if battle and status < _G.BattleStatus.SETTLE then
+            local info = {
+                battleServerInstanceId = _G.diveSDMgr.get_local_instance_id(),
+                battleServerPublicIp   = dive.GetProperty("dive.service.fabao.battle.netty.url", _G.diveSDMgr.get_instance_metadata("INSTANCE_PUBLIC_IP")),
+                battleServerPublicPort = tonumber(dive.GetProperty("dive.service.fabao.battle.netty.port", 9001)),
+                token = playerBattles[battleId].token, -- 用于验证连接的uid
+            };
+            message.SendP2PMessage("lobby", svr, "NoticeReconnectBattle", uid, battle.mode, info);
+            return;
+        end
+    end
+    message.SendP2PMessage("lobby", svr, "NoticeClearBattleStatus", uid);
+end
+
+-------------------------------------内部函数------------------------------------
+function GetUidTokenBattleId(uid, token)
+    local playerBattles = uidToBattleId[uid];
+
+    if not playerBattles then
+        LogDebug("GetUidTokenBattleId playerBattles is nil");
+        return nil;
+    end
+
+    for battleId, data in pairs(playerBattles) do
+        if data.token == token then
+            return battleId;
+        end
+    end
+
+    LogDebug("GetUidTokenBattleId not matching battleId");
+
+    return nil;
+end
+
+function GetUidActiveBattleId(ss)
+    if dive.isStandalone then
+        return _G.CLIENT_BATTLE_ID
+    end
+
+    return ss.battleId;
+end
+
+Init();

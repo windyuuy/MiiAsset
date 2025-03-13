@@ -1,0 +1,24 @@
+-- 随机解锁阵眼
+
+function Run(robot)
+    local battleData = robot.battleData
+    local minIndex = 5
+    for idx, slotData in pairs(battleData.equipList) do
+        --LogDebug("slotData.isLocked:{} minIndex:{} idx:{}", slotData.isLocked, minIndex, idx)
+        if slotData.isLocked and minIndex > idx then
+            minIndex = idx
+        end
+    end
+
+    if minIndex >= 5 then
+        battleData.lastUnlockTime = _G.GetCurTime()
+        return true
+    end
+
+    local slot = minIndex
+
+    robot.lastRequest = "BattleLogic_UnlockFormationRequest"
+    --LogDebug("robot:{} unlock formation", robot.id)
+    c2s.BattleLogic_UnlockFormationRequest(robot, { slot = slot })
+    return true
+end

@@ -1,0 +1,228 @@
+_G.SkillCondition = {
+    SKILL_CONDITION_CARD_COUNT = 0,                -- 上阵卡牌数
+    SKILL_CONDITION_CARD_ELEMENT_COUNT = 1,        -- 上阵卡牌五行种类数
+    SKILL_CONDITION_GOLD_CARD_COUNT = 2,           -- 上阵金属性卡牌数
+    SKILL_CONDITION_WOOD_CARD_COUNT = 3,           -- 上阵木属性卡牌数
+    SKILL_CONDITION_WATER_CARD_COUNT = 4,          -- 上阵水属性卡牌数
+    SKILL_CONDITION_FIRE_CARD_COUNT = 5,           -- 上阵火属性卡牌数
+    SKILL_CONDITION_EARTH_CARD_COUNT = 6,          -- 上阵土属性卡牌数
+}
+
+function Init()
+    _G.SkillConditionFunc = {
+        [_G.SkillCondition.SKILL_CONDITION_CARD_COUNT] = ConditionOfCardCount,
+        [_G.SkillCondition.SKILL_CONDITION_CARD_ELEMENT_COUNT] = ConditionOfElementCount,
+        [_G.SkillCondition.SKILL_CONDITION_GOLD_CARD_COUNT] = ConditionOfGoldCardCount,
+        [_G.SkillCondition.SKILL_CONDITION_WOOD_CARD_COUNT] = ConditionOfWoodCardCount,
+        [_G.SkillCondition.SKILL_CONDITION_WATER_CARD_COUNT] = ConditionOfWaterCardCount,
+        [_G.SkillCondition.SKILL_CONDITION_FIRE_CARD_COUNT] = ConditionOfFireCardCount,
+        [_G.SkillCondition.SKILL_CONDITION_EARTH_CARD_COUNT] = ConditionOfEarthCardCount,
+    }
+end
+
+function CheckCondition(battleTeam, equipList, conditionId)
+    local conditionConfig = _G.FSkillConditionTable[conditionId]
+    if not conditionConfig then
+        return false
+    end
+
+    if not CheckPositionCondition(equipList, conditionConfig.posCondition) then
+        return false
+    end
+
+    local types = conditionConfig.types
+    local params = conditionConfig.conditionParams
+    local isMinFormation = conditionConfig.isMinFormation
+    local isFiveElement = conditionConfig.isFiveElement
+
+    for idx, type in pairs(types) do
+        local func = _G.SkillConditionFunc[type]
+        local res = func(battleTeam, equipList, params[idx], isMinFormation[idx], isFiveElement[idx])
+        if not res then
+            return false
+        end
+    end
+
+    return true
+end
+
+-- 判断是否满足上阵卡牌数条件
+function ConditionOfCardCount(battleTeam, equipList, param, isMinFormation, isFiveElement)
+    local count = 0
+    for _, slotData in pairs(equipList) do
+        if slotData.card then
+            count = count + 1
+        end
+    end
+
+    local needCount = param
+    if isFiveElement then
+        needCount = needCount + battleTeam:GetSkillConditionCount()
+    end
+
+    if isMinFormation then
+        return count >= math.min(needCount, table.tablen(equipList))
+    else
+        return count >= needCount
+    end
+end
+
+-- 判断是否满足上阵卡牌五行数量条件
+function ConditionOfElementCount(battleTeam, equipList, param, isMinFormation, isFiveElement)
+    local elems = {}
+    for _, slotData in pairs(equipList) do
+        local card = slotData.card
+        if card then
+            elems[card.element] = true
+        end
+    end
+
+    local needCount = param
+    if isFiveElement then
+        needCount = needCount + battleTeam:GetSkillConditionCount()
+    end
+    if isMinFormation then
+        return table.tablen(elems) >= math.min(needCount, table.tablen(equipList))
+    else
+        return table.tablen(elems) >= needCount
+    end
+end
+
+-- 判断是否满足上阵金属性卡牌数量条件
+function ConditionOfGoldCardCount(battleTeam, equipList, param, isMinFormation, isFiveElement)
+    local count = 0
+    for _, slotData in pairs(equipList) do
+        local card = slotData.card
+        if card then
+            if card.element == _G.ElementType.GOLD then
+                count = count + 1
+            end
+        end
+    end
+
+    local needCount = param
+    if isFiveElement then
+        needCount = needCount + battleTeam:GetSkillConditionCount()
+    end
+    if isMinFormation then
+        return count >= math.min(needCount, table.tablen(equipList))
+    else
+        return count >= needCount
+    end
+end
+
+-- 判断是否满足上阵木属性卡牌数量条件
+function ConditionOfWoodCardCount(battleTeam, equipList, param, isMinFormation, isFiveElement)
+    local count = 0
+    for _, slotData in pairs(equipList) do
+        local card = slotData.card
+        if card then
+            if card.element == _G.ElementType.WOOD then
+                count = count + 1
+            end
+        end
+    end
+
+    local needCount = param
+    if isFiveElement then
+        needCount = needCount + battleTeam:GetSkillConditionCount()
+    end
+    if isMinFormation then
+        return count >= math.min(needCount, table.tablen(equipList))
+    else
+        return count >= needCount
+    end
+end
+
+-- 判断是否满足上阵水属性卡牌数量条件
+function ConditionOfWaterCardCount(battleTeam, equipList, param, isMinFormation, isFiveElement)
+    local count = 0
+    for _, slotData in pairs(equipList) do
+        local card = slotData.card
+        if card then
+            if card.element == _G.ElementType.WATER then
+                count = count + 1
+            end
+        end
+    end
+
+    local needCount = param
+    if isFiveElement then
+        needCount = needCount + battleTeam:GetSkillConditionCount()
+    end
+    if isMinFormation then
+        return count >= math.min(needCount, table.tablen(equipList))
+    else
+        return count >= needCount
+    end
+end
+
+-- 判断是否满足上阵火属性卡牌数量条件
+function ConditionOfFireCardCount(battleTeam, equipList, param, isMinFormation, isFiveElement)
+    local count = 0
+    for _, slotData in pairs(equipList) do
+        local card = slotData.card
+        if card then
+            if card.element == _G.ElementType.FIRE then
+                count = count + 1
+            end
+        end
+    end
+
+    local needCount = param
+    if isFiveElement then
+        needCount = needCount + battleTeam:GetSkillConditionCount()
+    end
+    if isMinFormation then
+        return count >= math.min(needCount, table.tablen(equipList))
+    else
+        return count >= needCount
+    end
+end
+
+-- 判断是否满足上阵土属性卡牌数量条件
+function ConditionOfEarthCardCount(battleTeam, equipList, param, isMinFormation, isFiveElement)
+    local count = 0
+    for _, slotData in pairs(equipList) do
+        local card = slotData.card
+        if card then
+            if card.element == _G.ElementType.EARTH then
+                count = count + 1
+            end
+        end
+    end
+
+    local needCount = param
+    if isFiveElement then
+        needCount = needCount + battleTeam:GetSkillConditionCount()
+    end
+    if isMinFormation then
+        return count >= math.min(needCount, table.tablen(equipList))
+    else
+        return count >= needCount
+    end
+end
+
+-- 检查坐标
+function CheckPositionCondition(equipList, posCondition)
+    for idx, condition in pairs(posCondition) do
+        if condition == 0 then
+            goto continue
+        end
+
+        local slotData = equipList[idx]
+        if not slotData or not slotData.card then
+            return false
+        end
+
+        if slotData.card.element ~= posCondition[idx] then
+            return false
+        end
+
+        ::continue::
+    end
+
+    return true
+end
+
+Init()

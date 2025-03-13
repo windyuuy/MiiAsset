@@ -1,0 +1,200 @@
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+local battleIntent = import("battle/battleIntent.lua")
+local battleMgr = import("battle/battleMgr.lua")
+
+---@class Fate 缘分
+---@field id number 缘分id
+---@field level number 缘分等级
+---@field count number 缘分法宝数量
+
+---@class FateComponent 缘分组件
+---@field fates table<number, Fate> 已激活的缘分
+---@field fateBuffs table<number, Buff> 缘分buff
+---
+---@field allFateBuffs table<number, Buff> 增加所有缘分计数的buff
+FateComponent = class()
+
+function CreateFateComponent(...)
+    return FateComponent.new(...)
+end
+
+function FateComponent:ctor()
+    self.fates = {}
+    self.fateBuffs = {}
+    self.allFateBuffs = {}
+end
+
+function FateComponent:ActiveFate(battle, teamId, sutraMap)
+    local battleTeam      = battle.battleTeams[teamId]
+    local extraFateCounts = self:CalExtraFateCounts(battle.battleId, teamId, true)
+
+    for id, config in pairs(_G.SutraFateTable) do
+        local extraCount   = (extraFateCounts.singleFateCount[id] or 0) + extraFateCounts.allFateCount
+        local level, count = self:CalFateLevel(config, sutraMap, extraCount)
+        local oldFateData  = self.fates[id]
+
+        if count > 0 then
+            fateData = {
+                id          = id,           -- 缘分id
+                level       = level,        -- 缘分等级
+                count       = count,        -- 缘分法宝数量
+            }
+        end
+
+        if level <= 0 and count <= 0 then
+            fateData = nil
+        end
+
+        self.fates[id] = fateData
+
+        if not oldFateData then
+            local fateSkills = {}
+            if level > 0 then
+                -- 新增缘分
+                fateSkills = config.fateSkills[level] or config.fateSkills[#config.fateSkills]
+                for _, fateSkillId in pairs(fateSkills) do
+                    battleFightSkillLogic.ProcessFateSkill(battle, battleTeam, fateSkillId)
+                end
+            end
+        else
+            local fateSkills = {}
+
+            if oldFateData.level ~= level then
+                if oldFateData.level > 0 then
+                    -- 删除缘分
+                    fateSkills = config.fateSkills[oldFateData.level] or config.fateSkills[#config.fateSkills]
+                    for _, fateSkillId in pairs(fateSkills) do
+                        battleFightSkillLogic.ProcessCancelFateSkill(battle, battleTeam, fateSkillId)
+                    end
+                end
+
+                if level > 0 then
+                    -- 新增缘分
+                    fateSkills = config.fateSkills[level] or config.fateSkills[#config.fateSkills]
+                    for _, fateSkillId in pairs(fateSkills) do
+                        battleFightSkillLogic.ProcessFateSkill(battle, battleTeam, fateSkillId)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function FateComponent:RemoveFateBuff(buff)
+    self.fateBuffs = self.fateBuffs or {}
+    self.fateBuffs[buff.buffId] = nil
+
+    local battleTeam = battleMgr.GetBattleTeam(buff.owner.battleId, buff.owner.teamId)
+    if not battleTeam then
+        return
+    end
+
+    if buff.extraFateCounts and next(buff.extraFateCounts) then
+        battleTeam:UpdateFates()
+    end
+end
+
+function FateComponent:RandomUpgradeFate(battleId, teamId, buff)
+    self.fateBuffs = self.fateBuffs or {}
+    self.fateBuffs[buff.buffId] = nil
+
+    local oldFateId = nil
+    if buff.extraFateCounts and next(buff.extraFateCounts) then
+        for fateId, count in pairs(buff.extraFateCounts) do
+            oldFateId = fateId
+            break
+        end
+    end
+
+    -- 计算缘分额外加成
+    local extraCounts = self:CalExtraFateCounts(battleId, teamId, false)
+
+    local canRandomFate = {}
+    for fateId, fate in pairs(self.fates) do
+        local sutraFateConfig = _G.SutraFateTable[fateId]
+        if sutraFateConfig then
+            local fateCount = fate.count + (extraCounts[fateId] or 0)
+            if fateCount < sutraFateConfig.levelSutraNum[#sutraFateConfig.levelSutraNum] then
+                table.insert(canRandomFate, fateId)
+            end
+        else
+            LogErr("FateComponent:CalFateBuff fateId:{} not found", fateId)
+        end
+    end
+
+    if not next(canRandomFate) then
+        return false
+    end
+
+    -- reset extraFateCounts
+    buff.extraFateCounts = {}
+
+    local randomFateId = _G.RandomOne(canRandomFate)
+    buff.extraFateCounts[randomFateId] = 1
+
+    self.fateBuffs[buff.buffId] = buff
+
+    return randomFateId ~= oldFateId
+end
+
+function FateComponent:AddAllFateCounts(buff)
+    self.allFateBuffs = self.allFateBuffs or {}
+    self.allFateBuffs[buff.buffId] = buff
+end
+
+function FateComponent:RemoveAllFateCounts(buff)
+    self.allFateBuffs = self.allFateBuffs or {}
+    self.allFateBuffs[buff.buffId] = nil
+end
+
+function FateComponent:CalFateLevel(config, sutraMap, extraCount)
+    local count = 0
+    for _, sutraId in pairs(config.sutras) do
+        if sutraMap[sutraId] then
+            count = count + 1
+        end
+    end
+
+    if count <= 0 then
+        return 0, count
+    end
+
+    count = count + extraCount
+
+    local maxLevel = 0
+    for level, needCount in pairs(config.levelSutraNum) do
+        if count < needCount then
+            break
+        end
+
+        maxLevel = level
+    end
+
+    return maxLevel, count
+end
+
+function FateComponent:CalExtraFateCounts(battleId, teamId, isNotify)
+    local extraCounts = {
+        teamId          = teamId,
+        allFateCount    = 0,
+        singleFateCount = {},
+    }
+    for _, fateBuff in pairs(self.fateBuffs) do
+        local extraFateCounts = fateBuff.extraFateCounts or {}
+        for fateId, count in pairs(extraFateCounts) do
+            extraCounts.singleFateCount[fateId] = (extraCounts[fateId] or 0) + count
+        end
+    end
+
+    for _, fateBuff in pairs(self.allFateBuffs) do
+        local extraCount = fateBuff.extraCount or 0
+        extraCounts.allFateCount = extraCounts.allFateCount + extraCount
+    end
+
+    -- 同步额外缘分计数
+    if isNotify then
+        battleIntent.InsertBattleIntent(battleId, _G.INTENT_TYPE.EXTRA_FATE_COUNT, extraCounts)
+    end
+
+    return extraCounts
+end

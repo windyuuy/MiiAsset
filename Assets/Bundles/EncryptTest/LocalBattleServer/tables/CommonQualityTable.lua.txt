@@ -1,0 +1,14 @@
+-- CommonQualityTable
+_G.CommonQualityTable =
+{
+    [1] = {id = 1, name = "凡品",},
+    [2] = {id = 2, name = "下品",},
+    [3] = {id = 3, name = "中品",},
+    [4] = {id = 4, name = "上品",},
+    [5] = {id = 5, name = "极品",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("CommonQualityTable")
+end

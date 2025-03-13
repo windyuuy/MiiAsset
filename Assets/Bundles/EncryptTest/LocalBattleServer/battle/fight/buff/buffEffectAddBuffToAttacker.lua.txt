@@ -1,0 +1,34 @@
+-- 39. 给攻击目标添加buff
+
+local buffComp = import("battle/components/buffComponent.lua")
+local battleMgr = import("battle/battleMgr.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff, damageInfo)
+    -- 需要配合普攻技能触发
+    if not damageInfo then
+        return
+    end
+
+    local battle     = battleMgr.GetBattle(buff.owner.battleId)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local attacker   = damageInfo.attacker
+    local attacked   = damageInfo.attacked
+
+    for i = 1, #buffConfig.effectData, 2 do
+        local buffId = buffConfig.effectData[i]
+        local layer  = buffConfig.effectData[i + 1]
+        buffComp.AddBuff(battle, buffId, attacked, attacker, layer, buff.skillId)
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

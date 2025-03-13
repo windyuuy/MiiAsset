@@ -1,0 +1,44 @@
+-- 19. 偷钱
+local battleMgr = import("battle/battleMgr.lua")
+local resourceComp = import("battle/components/resourceComponent.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    -- 目前只支持1v1对战！！！！！！
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    ---@type Battle
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    local delRate = buffConfig.effectData[1]
+    local delFixedValue = buffConfig.effectData[2]
+    local addRate = buffConfig.effectData[3]
+
+    local total = 0
+    for _, player in pairs(battle.players) do
+        if player.teamId == buff.owner.teamId then
+            local delCount = player.resourceComponent.mana * delRate / 10000 + delFixedValue
+            local delta = resourceComp.ChangeMana(player.resourceComponent, player, -delCount)
+            total = total - delta
+        end
+    end
+
+    local addCount = total * addRate / 10000
+
+    for _, player in pairs(battle.players) do
+        if player.teamId ~= buff.owner.teamId then
+            resourceComp.ChangeMana(player.resourceComponent, player, addCount)
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

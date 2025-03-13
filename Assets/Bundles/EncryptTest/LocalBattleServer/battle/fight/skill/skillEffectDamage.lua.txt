@@ -1,0 +1,16 @@
+local eventManager = import("battle/event/eventManager.lua")
+local skillTarget = import("battle/fight/skill/skillTarget.lua")
+local battleFightAttackLogic = import("battle/fight/battleFightAttackLogic.lua")
+
+---@param context SkillContext
+function Execute(context, targetEntry, damageRate)
+    local skillConfig = context.skillConfig
+    if not skillConfig.isDamage then
+        return
+    end
+
+    local targets = skillTarget.CalRangeTargets(context, targetEntry)
+    for _, target in pairs(targets) do
+        battleFightAttackLogic.SkillDamageHandler(context.releaseEntry, target, context, damageRate)
+    end
+end

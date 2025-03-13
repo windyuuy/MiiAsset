@@ -1,0 +1,40 @@
+--- 所有延迟的系统tick时间
+
+--- 除battle相关服以外的tick时间
+--- 1 s   = 10 frame
+--- 1 min = 600 frame
+
+--- 按帧数tick 用TICK_FRAME
+--- 按秒数tick 用TICK_TIME
+
+---------------------- lobby ----------------------
+--- 推送rank缓存tick 10s
+TICK_FRAME_FLUSH_RANK_DATA_LIST = 100
+
+
+---------------------- rank ----------------------
+--- 更新排行榜tick 1min
+TICK_FRAME_LOAD_RANK = 600
+
+--- 交换用户数据缓存tick 30min
+TICK_FRAME_SWITCH_USER_DATA_CACHE = 18000
+
+
+---------------------- guild ----------------------
+--- 推送宗门排行榜tick 1min
+TICK_FRAME_SYNC_GUILD_RANK = 600
+
+
+---------------------- chat ----------------------
+--- 推送消息给所有的lobby 2s
+TICK_FRAME_SEND_ALL_LOBBY_MSG = 20
+
+---------------------- global ----------------------
+--- 全局服务器tick
+TICK_FRAME_GLOBAL_SERVER = 600
+
+--- 问道玩法tick
+TICK_FRAME_GLOBAL_WENDAO = 600
+
+--- 问道玩法排行榜周结算
+TICK_FRAME_GLOBAL_RANK_SETTLE_TICK = 600

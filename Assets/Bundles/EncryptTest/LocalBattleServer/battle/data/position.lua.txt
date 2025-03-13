@@ -1,0 +1,8 @@
+---@class Position 坐标
+---@field x number x坐标
+---@field y number y坐标
+local Position = class()
+
+function CreatePosition(...)
+    return Position.new(...)
+end

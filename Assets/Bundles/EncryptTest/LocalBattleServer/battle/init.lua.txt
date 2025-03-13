@@ -1,0 +1,48 @@
+import("common/tree.lua");
+import("common/logPlayer.lua");
+import("tables/loadTable.lua");
+
+local tableUtils = import("common/tableUtils.lua")
+
+local diveSD;
+local diveDW;
+
+if not dive.initFlag then
+    math.randomseed(dive.GetTimeNS());
+
+    _G.c2s = {};
+    _G.s2s = {};
+    _G.c2c = {};
+    _G.s2r = {};
+
+    if not dive.isStandalone then
+        diveSD = require("dive_servicediscovery");
+        diveDW = require("dirtywords_mgr");
+
+        -- 初始化服务发现
+        _G.diveSDMgr = diveSD;
+        local ok, res = xpcall(_G.diveSDMgr.initialize, debug.traceback, "battle");
+        if not ok then
+            os.exit(1);
+        end
+
+        ---- 初始化脏字库
+        _G.dwMgr = diveDW.create();
+        _G.dwMgr.init_dirtywords();
+    end
+
+    dive.startTime = _G.GetCurTimeMS();
+    dive.frame = 0;
+    dive.tickErrorCount = 0;
+    dive.initFlag = true;
+
+    -- timer的最大分片
+    _G.TIMER_PIECE = 10;
+
+    -- 设置初始变量
+    _G.CLIENT_BATTLE_ID = "-1";
+
+    if not _G.TABLE_INITED then
+        tableUtils.Load()
+    end
+end

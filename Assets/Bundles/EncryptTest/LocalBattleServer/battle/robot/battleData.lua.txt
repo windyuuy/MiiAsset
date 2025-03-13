@@ -1,0 +1,78 @@
+local MAX_SUTRA_COUNT = 5
+
+function CreateRobotBattleData()
+    local data = {}
+
+    data.lastRefreshTime = _G.GetCurTime()
+    data.lastUnlockTime = _G.GetCurTime()
+    data.lastSelectCardTime = _G.GetCurTime() + 10
+    data.mana = 0
+    data.opRegionData = {
+        optionalList = {},
+        prepareList = {},
+        equipList = {},
+    }
+    data.curUnlockCount = 1
+    data.maxUnlockCount = MAX_SUTRA_COUNT
+    data.unlockCosts = _G.BattleRule.unlockCosts
+
+    data.refreshCount = 0
+    data.refreshCosts = {}
+
+    data.roundNumber = 1;
+
+    data.selfBossCount     = 0;
+    data.selfMonsterCount  = 0;
+    data.otherBossCount    = 0;
+    data.otherMonsterCount = 0;
+
+    return data
+end
+
+function InitRobotBattleData(robot, teams)
+    local battleData = robot.battleData
+
+
+    for _, team in pairs(teams) do
+        for _, player in pairs(team.players) do
+            if player.playerId == robot.id then
+                battleData.mana = player.resourceData.mana
+
+                battleData.optionalList = player.gameCardData.optionalList
+                battleData.prepareList = player.gameCardData.prepareList
+                battleData.equipList = player.gameCardData.equipList
+
+                local battleConfig = _G.BattleGameTypeTable[1]
+                if battleConfig then
+                    battleData.refreshCosts = battleConfig.sumMoney
+                end
+
+                local formationIdCount = #robot.robotConfig.formationId;
+                -- 开场时，随机一个配置的法阵，作为本局AI预期使用的法阵。如果没有配置，则本局AI没有预期想要使用的法阵。
+                if formationIdCount > 0 then
+                    battleData.formationId = robot.robotConfig.formationId[math.random(1, formationIdCount)];
+                else
+                    battleData.formationId = nil;
+                end
+                -- 重置结阵信息
+                battleData.formationStatus = false;
+
+                -- 法术牌次数归零
+                battleData.spellRefreshCount = 0;
+                battleData.spellCards        = {};
+
+                -- 重置怪物数据
+                battleData.selfBossCount     = 0;
+                battleData.selfMonsterCount  = 0;
+                battleData.otherBossCount    = 0;
+                battleData.otherMonsterCount = 0;
+
+                -- 队伍id
+                battleData.teamId       = player.teamId;
+
+                return
+            end
+        end
+    end
+
+end

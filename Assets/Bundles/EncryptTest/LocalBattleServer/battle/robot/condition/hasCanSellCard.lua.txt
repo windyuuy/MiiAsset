@@ -1,0 +1,17 @@
+-- 是否有需要卖出的法宝
+
+function Execute(robot)
+    local battleData = robot.battleData;
+
+    if not battleData then
+        return
+    end
+
+    for i=1, 4 do
+        local slot = battleData.equipList[i];
+        if slot.card and slot.card.id and slot.card.id ~= 0 and slot.card.id ~= robot.robotConfig.compositePriority[i] then
+            return i;
+        end 
+    end
+    return;
+end

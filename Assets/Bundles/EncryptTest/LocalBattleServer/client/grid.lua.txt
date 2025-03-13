@@ -1,0 +1,55 @@
+--local Path = {
+--    points = {},  -- 路径点列表
+--    lengths = {},  -- 路径上每段的长度
+--}
+
+-- 根据位移计算所处坐标位置
+-- @param path 路径
+-- @param displacement 位移
+-- @return 坐标位置
+function CalculatePosition(path, displacement)
+    local pos = getPoint(path, displacement)  -- 获取位于进度位置上的点坐标
+    return pos
+end
+
+-- 获取路径长度
+function GetLength(path)
+    if not path.length then
+        path.length = 0
+        for i = 1, #path.lengths do
+            path.length = path.length + path.lengths[i]
+        end
+    end
+    return path.length
+end
+
+-- 判断点是否在圆内
+function IsPointInCircle(circleCenter, circleRadius, point)
+    local distance = GetDistance(point, circleCenter)
+    return distance <= circleRadius
+end
+
+-- 获取指定进度位置的点坐标
+function getPoint(path, progress)
+    local currentDistance = 0
+    for i = 1, #path.lengths do
+        if currentDistance + path.lengths[i] > progress then
+            local ratio = (progress - currentDistance) / path.lengths[i]
+            local p1 = path.points[i]
+            local p2 = path.points[i + 1]
+            return {
+                x = p1.x + (p2.x - p1.x) * ratio,
+                y = p1.y + (p2.y - p1.y) * ratio,
+            }
+        else
+            currentDistance = currentDistance + path.lengths[i]
+        end
+    end
+
+    return path.points[#path.points]
+end
+
+-- 获取路径长度
+function GetDistance(p1, p2)
+    return math.sqrt((p1.x - p2.x) ^ 2 + (p1.y - p2.y) ^ 2)
+end

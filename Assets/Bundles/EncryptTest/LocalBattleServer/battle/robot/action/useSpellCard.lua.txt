@@ -1,0 +1,8 @@
+-- 使用法术牌
+
+function Execute(robot, cardIdx)
+    if cardIdx and cardIdx > 0 then
+        robot.lastRequest = "BattleLogic_SpellUseRequest"
+        c2s.BattleLogic_SpellUseRequest(robot, {idx = cardIdx, fromChooseOne=1});
+    end
+end

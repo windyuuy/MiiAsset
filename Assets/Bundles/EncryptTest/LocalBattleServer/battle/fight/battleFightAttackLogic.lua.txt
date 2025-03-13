@@ -1,0 +1,360 @@
+-- 计算战斗逻辑
+
+local eventManager = import("battle/event/eventManager.lua")
+local battleIntent = import("battle/battleIntent.lua")
+local reason = import("common/reason.lua")
+local dmgInfo = import("battle/fight/damageInfo.lua")
+local battleMgr = import("battle/battleMgr.lua")
+
+-- 计算伤害
+function CalDamageInfo(skillId, buffId, damageInfo, dependUnit, dependAttr, dependPercent, fixedValue, extraDependPercent, dependParams)
+    local damageValue = 0
+
+    local attacker = damageInfo.attacker
+    local attacked = damageInfo.attacked
+
+    -- 结算是否暴击
+    if attacker then
+        local critRate = attacker:GetAttribute(_G.AttributeType.FINAL_CRIT_RATE)
+        local random = math.random(10000)
+        if random <= critRate then
+            damageInfo.isCritical = true
+        end
+    else
+        damageInfo.isCritical = false
+    end
+
+    -- 特殊处理 法宝攻击眩晕怪物时必定暴击的buff
+    if attacker then
+        if attacker:GetEntryType() == _G.EntryType.SUTRA
+            and (attacked:GetEntryType() == _G.EntryType.MONSTER and attacked.statusComponent.status == _G.EntryStatus.ENTRY_STATUS_DIZZY) then
+            damageInfo.isCritical = attacker.critBuffCount > 0
+        end
+    end
+
+    -- 伤害统计
+    damageInfo.dependUnitType    = dependUnit
+    damageInfo.dependAttrId      = dependAttr
+    damageInfo.dependAttrPercent = dependPercent + (extraDependPercent or 0)
+    damageInfo.fixedValue        = fixedValue
+    damageInfo.dependParams      = dependParams
+
+    -- 计算基础伤害
+    local baseDamage = CalBaseAttrValue(skillId, buffId, damageInfo)
+
+    -- 最终伤害加成
+    local damageRatio = 0
+    if attacker then
+        damageRatio = attacker:GetAttribute(_G.AttributeType.FINAL_DAMAGE_BONUS)
+    end
+
+    -- 最终承伤加成
+    local injuryRatio = attacked:GetAttribute(_G.AttributeType.FINAL_INJURY_BONUS)
+
+    -- 最终伤害减免
+    local damageReduce = attacked:GetAttribute(_G.AttributeType.FINAL_DAMAGE_REDUCE)
+
+    -- 暴击伤害
+    local critDamageRatio = 10000
+    if damageInfo.isCritical then
+        critDamageRatio = attacker:GetAttribute(_G.AttributeType.FINAL_CRIT_DAMAGE)
+    end
+
+    -- 伤害统计
+    damageInfo.finalDamageRatio  = damageRatio
+    damageInfo.finalInjuryRatio  = injuryRatio
+    damageInfo.finalDamageReduce = damageReduce
+    damageInfo.critDamageRatio   = critDamageRatio
+
+    -- 抗性计算
+    local resistReduce = CalResistReduce(damageInfo)
+
+    damageValue = baseDamage * ((1 + damageRatio / 10000) * (1 + injuryRatio / 10000) / math.max((1 + damageReduce / 10000), 0.1)) * critDamageRatio / 10000 * resistReduce
+
+    damageInfo.damage = damageValue * damageInfo.damageRate / 10000
+
+    --LogDebug("CalDamageInfo, attackerId:{} attackedId:{} baseDamage:{} damageValue:{} resistReduce:{}",
+    --    attacker.entryId, attacked.entryId, baseDamage, damageValue, resistReduce)
+end
+
+---伤害处理逻辑
+---@param attacker Entry
+---@param attacked Entry
+---@param context SkillContext
+function SkillDamageHandler(attacker, attacked, context, damageRate)
+    if attacked.curHP <= 0 then return end
+
+    local battle      = context.battle
+    local skillConfig = context.skillConfig
+    local damageInfo  = dmgInfo.CreateDamageInfo(context.releaseEntry, attacked, skillConfig.damageType)
+    damageInfo.damageRate = damageRate
+
+    -- 受击前事件
+    local eventBefore = eventManager.CreateEntryBeforeBeHitEvent(attacker, attacked)
+    eventManager.DispatchEvent(battle.eventManager, eventBefore)
+
+    -- 计算伤害
+    local extraDependPercent = attacker:GetAttribute(_G.AttributeType.EXTRA_DEPEND_PERCENT)
+    CalDamageInfo(context.skillId, nil, damageInfo, skillConfig.dependUnit, skillConfig.dependAttr,
+        skillConfig.dependPercent, skillConfig.fixedValue, extraDependPercent, skillConfig.dependParams)
+
+    if attacked.ignoreLastDamage then
+        damageInfo.damage = 0
+        attacked.ignoreLastDamage = false
+    end
+
+    if damageInfo.isCritical then
+        -- 暴击时触发事件
+        -- attacker ：buff.origin,   attacked ： buff.owner
+        local event = eventManager.CreateCriticalStrike(attacker, attacked)
+        eventManager.DispatchEvent(battle.eventManager, event)
+    end
+
+    attacked:ChangeHp(-damageInfo.damage, reason.SKILL_EFFECT_UPDATE_HP)
+
+    if attacked.curHP <= 0 then
+        -- 杀死目标事件
+        local event = eventManager.CreateKillMonsterEvent(attacked, attacker)
+        eventManager.DispatchEvent(battle.eventManager, event)
+    end
+
+    -- 受击后事件
+    local eventAfter = eventManager.CreateEntryAfterBeHitEvent(attacker, attacked, damageInfo.damage)
+    eventManager.DispatchEvent(battle.eventManager, eventAfter)
+
+    -- 命中后事件
+    local eventHit = eventManager.CreateEntryAttackHitEvent(attacker, attacked, damageInfo)
+    eventManager.DispatchEvent(battle.eventManager, eventHit)
+
+    -- 发送伤害信息数据帧包
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.DAMAGE_INFO, dmgInfo.GetDamageInfoData(damageInfo))
+
+    -- 存储伤害统计
+    context.damageInfos[attacked.entryId] = damageInfo
+
+    return damageInfo.damage
+end
+
+function BuffDamageHandler(attacker, attacked, buff)
+    if attacked.curHP <= 0 then return end
+
+    if attacked.ignoreLastDamage then
+        attacked.ignoreLastDamage = false
+        return 0
+    end
+
+    local battle        = battleMgr.GetBattle(buff.owner.battleId)
+    local buffConfig    = _G.BuffTable[buff.buffId]
+    local effectData    = buffConfig.effectData
+    local damageType    = effectData[1]
+    local dependUnit    = effectData[2]
+    local dependAttr    = effectData[3]
+    local dependPercent = effectData[4]
+    local fixedValue    = effectData[5]
+
+    local damageInfo = dmgInfo.CreateDamageInfo(attacker, attacked, damageType)
+
+    CalDamageInfo(nil, buff.buffId, damageInfo, dependUnit, dependAttr, dependPercent, fixedValue, 0, nil)
+
+    -- 伤害统计
+    damageInfo.buffLayer = buff.layer
+
+    -- 计算层数
+    damageInfo.damage = damageInfo.damage * buff.layer
+    attacked:ChangeHp(-damageInfo.damage, reason.BUFF_EFFECT_UPDATE_HP)
+
+    if attacked.curHP <= 0 then
+        -- 杀死目标事件
+        local event = eventManager.CreateKillMonsterEvent(attacked, attacker)
+        eventManager.DispatchEvent(battle.eventManager, event)
+    end
+
+    -- 发送伤害信息数据帧包
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.DAMAGE_INFO, dmgInfo.GetDamageInfoData(damageInfo))
+
+    return damageInfo.damage
+end
+
+
+-- 根据灵力计算伤害具体方法
+function BuffDamageHandlerByMana(attacker, attacked, buff, mana)
+    if attacked.curHP <= 0 then return end
+
+    local battle        = battleMgr.GetBattle(buff.owner.battleId)
+    local buffConfig    = _G.BuffTable[buff.buffId]
+    local damagePercentage = buffConfig.effectData[2]
+    local damageType = buffConfig.effectData[3]
+
+    local damageInfo = dmgInfo.CreateDamageInfo(attacker, attacked, damageType)
+    damageInfo.damage = mana * damagePercentage / 10000
+
+    attacked:ChangeHp(-damageInfo.damage, reason.BUFF_EFFECT_UPDATE_HP)
+
+    -- 发送伤害信息数据帧包
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.DAMAGE_INFO, dmgInfo.GetDamageInfoData(damageInfo))
+    return damageInfo.damage
+end
+
+---@param battle Battle
+---@param battleTeam BattleTeam
+---@param monster Monster
+function MonsterDamageHandler(battle, battleTeam, monster)
+    -- 受击前事件
+    local eventBefore = eventManager.CreateEntryBeforeBeHitEvent(monster, battleTeam.tower)
+    eventManager.DispatchEvent(battle.eventManager, eventBefore)
+
+    local damage = monster:GetAttribute(_G.AttributeType.FINAL_ATTACK)
+
+    --LogDebug("MonsterDamageHandler, monsterId:{} damage:{} battleTeam.tower.ignoreLastDamage:{}", monster.entryId, damage, battleTeam.tower.ignoreLastDamage)
+    if battleTeam.tower.ignoreLastDamage then
+        damage = 0
+        battleTeam.tower.ignoreLastDamage = false
+    elseif battleTeam.tower:IsInvincible() then
+        damage = 0
+    end
+
+    battleTeam.tower:ChangeHp(-damage, reason.MONSTER_REACH_UPDATE_HP);
+
+    -- 受击后事件
+    local eventAfter = eventManager.CreateEntryAfterBeHitEvent(monster, battleTeam.tower, damage)
+    eventManager.DispatchEvent(battle.eventManager, eventAfter)
+    return damage
+end
+
+---具体数值伤害处理
+function SkillDamageHandlerByValue(attacker, attacked, value)
+    if attacked.curHP <= 0 then return end
+
+    local battle = battleMgr.GetBattle(attacked.battleId)
+
+    local damageInfo = dmgInfo.CreateDamageInfo(attacker, attacked, _G.DamageType.DAMAGE_TYPE_PHYSICS)
+    damageInfo.damage = value
+
+    attacked:ChangeHp(-damageInfo.damage, reason.BUFF_EFFECT_UPDATE_HP)
+
+    -- 发送伤害信息数据帧包
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.DAMAGE_INFO, dmgInfo.GetDamageInfoData(damageInfo))
+    return damageInfo.damage
+end
+
+function CalBaseAttrValue(skillId, buffId, damageInfo)
+    local attacker      = damageInfo.attacker
+    local attacked      = damageInfo.attacked
+    local dependUnit    = damageInfo.dependUnitType
+    local dependAttr    = damageInfo.dependAttrId
+    local dependPercent = damageInfo.dependAttrPercent
+    local fixedValue    = damageInfo.fixedValue
+    local dependParams  = damageInfo.dependParams
+
+    local baseAttrValue = fixedValue or 0
+    local attrValue = 0
+    if dependUnit == 1 then
+        -- 依赖攻击者
+        attrValue = attacker:GetAttribute(dependAttr)
+    elseif dependUnit == 2 then
+        -- 依赖被攻击者
+        attrValue = attacked:GetAttribute(dependAttr)
+    elseif dependUnit == 3 then
+        -- 攻击者场上所有法宝属性和
+        local battleTeam = battleMgr.GetBattleTeam(attacker.battleId, attacker.teamId)
+        for _, playerSiteData in pairs(battleTeam.playerSiteDatas) do
+            for _, sutra in pairs(playerSiteData.sutras) do
+                attrValue = attrValue + sutra:GetAttribute(dependAttr)
+            end
+        end
+    elseif dependUnit == 4 then
+        local battleTeam = battleMgr.GetBattleTeam(attacker.battleId, attacker.teamId)
+        local fateId = dependParams[1]
+        if not fateId then
+            LogErr("CalBaseAttrValue, dependUnitType is 4, fateId is nil, dependParams:{} skillId:{} buffId:{}", dependParams, skillId, buffId)
+            return 0
+        end
+
+        local sutraFateConfig = _G.SutraFateTable[fateId]
+        if not sutraFateConfig then
+            LogErr("CalBaseAttrValue, dependUnitType is 4, fateId is invalid, fateId:{} skillId:{} buffId:{}", fateId, skillId, buffId)
+            return 0
+        end
+
+        for _, playerSiteData in pairs(battleTeam.playerSiteDatas) do
+            for _, sutra in pairs(playerSiteData.sutras) do
+                if table.contains(sutraFateConfig.sutras, sutra.sutraId) then
+                    attrValue = attrValue + sutra:GetAttribute(dependAttr)
+                end
+            end
+        end
+    else
+        LogErr("CalBaseAttrValue, depend unit type is invalid in effect data table, dependUnit:{} skillId:{} buffId:{}", dependUnit, skillId, buffId)
+        return 0
+    end
+
+    baseAttrValue = baseAttrValue + attrValue * dependPercent / 10000
+
+    -- 伤害统计
+    damageInfo.dependAttrValue = attrValue
+
+    --LogDebug("CalBaseAttrValue, attackerId:{} attackedId:{} dependUnit:{} dependAttr:{} dependPercent:{} fixedValue:{} attrValue:{} baseAttrValue:{}",
+    --    attacker.entryId, attacked.entryId, dependUnit, dependAttr, dependPercent, fixedValue, attrValue, baseAttrValue)
+
+    return baseAttrValue
+end
+
+function CalResistReduce(damageInfo)
+    local attacker, attacked = damageInfo.attacker, damageInfo.attacked
+    if not attacker or not attacked then
+        LogErr("CalResistReduce, attacker or attacked is nil")
+        return 1
+    end
+
+    if damageInfo.damageType == _G.DamageType.DAMAGE_TYPE_REAL then
+        -- 伤害统计
+        damageInfo.finalResist = 0
+
+        return 1
+    elseif damageInfo.damageType == _G.DamageType.DAMAGE_TYPE_PHYSICS then
+        local resist = attacked:GetAttribute(_G.AttributeType.FINAL_PHYSI_RESISTANCE)
+        local perPenetrate = attacker:GetAttribute(_G.AttributeType.PER_PHYSI_PENE)
+        local fixedPenetrate = attacker:GetAttribute(_G.AttributeType.FIXED_PHYSI_PENE)
+        local resistParam = _G.CommonValue.resistParam
+        local finalResist = math.max(resist * (1 - perPenetrate / 10000) - fixedPenetrate, 0)
+
+        -- 伤害统计
+        damageInfo.resist = resist
+        damageInfo.perPenetrate = perPenetrate
+        damageInfo.fixedPenetrate = fixedPenetrate
+        damageInfo.finalResist = finalResist
+
+        return 1 - finalResist / (finalResist + resistParam)
+    elseif damageInfo.damageType == _G.DamageType.DAMAGE_TYPE_MAGIC then
+        local resist = attacked:GetAttribute(_G.AttributeType.FINAL_MAGIC_RESISTANCE)
+        local perPenetrate = attacker:GetAttribute(_G.AttributeType.PER_MAGIC_PENE)
+        local fixedPenetrate = attacker:GetAttribute(_G.AttributeType.FIXED_MAGIC_PENE)
+        local resistParam = _G.CommonValue.resistParam
+        local finalResist = math.max(resist * (1 - perPenetrate / 10000) - fixedPenetrate, 0)
+
+        -- 伤害统计
+        damageInfo.resist = resist
+        damageInfo.perPenetrate = perPenetrate
+        damageInfo.fixedPenetrate = fixedPenetrate
+        damageInfo.finalResist = finalResist
+
+        return 1 - finalResist / (finalResist + resistParam)
+    else
+        LogErr("CalResistReduce, damageType is invalid, damageType:{}", damageInfo.damageType)
+        return 1
+    end
+end
+
+function getDamageType(damageInfo, elemType)
+    if elemType == _G.ElementType.GOLD then
+        damageInfo.damageType = _G.DamageType.DAMAGE_TYPE_GOLD
+    elseif elemType == _G.ElementType.WOOD then
+        damageInfo.damageType = _G.DamageType.DAMAGE_TYPE_WOOD
+    elseif elemType == _G.ElementType.WATER then
+        damageInfo.damageType = _G.DamageType.DAMAGE_TYPE_WATER
+    elseif elemType == _G.ElementType.FIRE then
+        damageInfo.damageType = _G.DamageType.DAMAGE_TYPE_FIRE
+    elseif elemType == _G.ElementType.EARTH then
+        damageInfo.damageType = _G.DamageType.DAMAGE_TYPE_EARTH
+    end
+end

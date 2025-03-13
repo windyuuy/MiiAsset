@@ -1,0 +1,65 @@
+import("common/time.lua");
+import("common/common.lua");
+local errCode           = import("common/errCode.lua");
+local battleData        = import("battle/robot/battleData.lua")
+local intentHandler     = import("battle/robot/intentHandler/intentHandler.lua")
+local robotController   = import("battle/robot/robotController.lua")
+
+_G.robotBattles = _G.robotBattles or {}
+
+
+function s2r.BattleLogic_NotifyBattleStart(robot, param)
+    -- LogDebug("BattleLogic_NotifyBattleStart robot={} param={}", robot, param)
+    robot.battleData = battleData.CreateRobotBattleData()
+    battleData.InitRobotBattleData(robot, param.teams)
+end
+
+function s2r.BattleLogic_NotifyBattleUpdate(robot, param)
+    -- LogDebug("BattleLogic_NotifyBattleUpdate, param:{}", param)
+
+    intentHandler.Handler(robot, param)
+
+    robotController.tick(robot)
+end
+
+function s2r.BattleLogic_NotifyBattleStop(robot, param)
+    LogDebug("BattleLogic_NotifyBattleStop battleId={}", param.battleId)
+end
+
+function s2r.BattleLogic_UnlockFormationResponse(robot, param)
+    if param.errCode == errCode.SUCCESS then
+        robot.battleData.lastUnlockTime = _G.GetCurTime()
+        robot.battleData.curUnlockCount = robot.battleData.curUnlockCount + 1
+    end
+end
+
+function s2r.BattleLogic_ChosenGameCardResponse(robot, param)
+    if param.errCode == errCode.SUCCESS then
+        robot.battleData.optionalList = {}
+    end
+end
+
+function s2r.BattleLogic_SpellRefreshResponse(robot, param)
+    -- LogInfo("BattleLogic_SpellRefreshResponse param={}", param);
+
+    if param.errCode ~= errCode.SUCCESS then
+        return;
+    end
+
+    if #param.cards <= 0 then
+        return;
+    end
+
+    robot.battleData.spellRefreshCount = robot.battleData.spellRefreshCount - 1;
+
+    local cardIdx = math.random(1, #param.cards);
+    local cardId  = param.cards[cardIdx].id
+    local spellConfig = _G.SpellTable[cardId]
+    if not spellConfig then
+        return;
+    elseif spellConfig.spellCategory == _G.SPEEL_CATEGORY.INTERFERENCE then
+        c2s.BattleLogic_SpellSelectRequest(robot, {idx = math.random(1, #param.cards)});
+    else
+        c2s.BattleLogic_SpellUseRequest(robot, {idx = cardIdx, fromChooseOne=0});
+    end
+end

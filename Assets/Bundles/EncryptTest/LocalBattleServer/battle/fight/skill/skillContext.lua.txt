@@ -1,0 +1,32 @@
+-- 技能上下文
+
+---@class SkillContext 技能上下文
+---@field skillId number 技能id
+---@field battle Battle 战局
+---@field releaseEntry Entry 施法者
+---@field targetEntries table 目标列表
+---@field targetTeam BattleTeam 施法目标阵营
+---@field isTriggerUseSkillEvent boolean 此次技能是否触发使用技能事件
+---@field skillConfig SkillTableData 技能配置
+---@field skillCoolingDown number 技能cd
+---@field damageInfos table 存储伤害统计
+
+---@return SkillContext
+function CreateSkillContext(battle, releaseEntry, skillId)
+    local context = {}
+    context.skillId = skillId
+    context.battle = battle
+    context.releaseEntry = releaseEntry
+    context.targetEntries = {}
+    context.targetTeam = nil
+    context.isTriggerUseSkillEvent = true
+    context.skillConfig = _G.SkillTable[skillId]
+    if not context.skillConfig then
+        LogErr("CreateSkillContext, skill config not found, skillId:{}", skillId)
+        return nil
+    end
+
+    context.skillCoolingDown = context.skillConfig.skillCoolingDown
+    context.damageInfos = {}
+    return context
+end

@@ -1,0 +1,63 @@
+-- 38. 复制法宝到备战区
+
+local battleMgr = import("battle/battleMgr.lua")
+local resourceComp = import("battle/components/resourceComponent.lua")
+local gameCardComp = import("battle/components/gameCardComponent.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local battle     = battleMgr.GetBattle(buff.owner.battleId)
+    ---@type Sutra
+    local owner      = buff.owner
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    if owner:GetEntryType() ~= _G.EntryType.SUTRA then
+        return;
+    end
+
+    local player = battle.players[owner.playerId]
+    if not player then
+        LogDebug("buffEffectCopySutra:BuffEffect, can not find player:{}", owner.playerId)
+        return;
+    end
+
+    local freeSlot = 0
+    for idx, slotData in pairs(player.gameCardComponent.prepareList) do
+        if not slotData.card then
+            freeSlot = idx
+            break
+        end
+    end
+
+    if freeSlot <= 0 then
+        -- 没有空位，给予对应灵力
+        local addValue = buffConfig.effectData[1]
+        resourceComp.ChangeMana(player.resourceComponent, player, addValue)
+        return
+    end
+
+    local isFromCardPool = false
+    if player.gameCardComponent.cardPoolCount[owner.sutraId] then
+        if player.gameCardComponent.cardPoolCount[owner.sutraId] > 0 then
+            player.gameCardComponent.cardPoolCount[owner.sutraId] = player.gameCardComponent.cardPoolCount[owner.sutraId] - 1
+            isFromCardPool = true
+        end
+    end
+
+    local newCard = gameCardComp.InitGameCard(player, owner.sutraId, isFromCardPool)
+
+    if newCard then
+        gameCardComp.AddCardToList(player, _G.OpRegionType.PREPARE, freeSlot, newCard)
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

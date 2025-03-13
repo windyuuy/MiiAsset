@@ -1,0 +1,130 @@
+---@class Flyer : Entry 飞行物
+---@field flyerId number 飞行物id
+---@field releaseEntry Entry 释放单位
+---@field targetEntry Entry 目标单位
+---@field skillComponent SkillComponent 技能组件
+---@field buffComponent BuffComponent buff组件
+---@field skillTimerId number 释放技能定时器id
+---@field catapultNumber number 弹射次数
+---@field catapultDamages number[] 弹射伤害
+---@field targetList table<number, number> 目标列表
+_G.Flyer = class(Entry)
+
+_G.FlyerType = {
+    FLYER_TYPE_NORMAL   = 0, -- 普通飞行物
+    FLYER_TYPE_CATAPULT = 1, -- 弹射
+}
+
+function CreateFlyer(...)
+    return Flyer.new(...)
+end
+
+function Flyer:ctor(entryId, battleId, teamId, position, level, flyerId, releaseEntry, targetEntry)
+    self.flyerId = flyerId
+    self.position = releaseEntry.position
+    self.releaseEntry = releaseEntry
+    self.targetEntry = targetEntry
+
+    self.skillComponent = SkillComponent.new()
+    self.buffComponent = BuffComponent.new()
+
+    self.skillTimerId = nil
+    self.catapultNumber = 0
+    self.catapultDamages = {}
+    self.targetList = {}
+end
+
+function Flyer:Init(type, catapultNumber)
+    self.type           = type
+    self.catapultNumber = catapultNumber
+
+    for i = 1, self.catapultNumber + 1 do
+        table.insert(self.catapultDamages, 10000)   -- 默认伤害100%
+    end
+
+    local extraCatapultNumber = 0
+    if self.releaseEntry and self.releaseEntry:GetEntryType() == _G.EntryType.SUTRA then
+        local catapultGroup = self.releaseEntry.catapultGroup or {}
+        for _, catapultGroupData in ipairs(catapultGroup) do
+            for _, catapultDamageRate in ipairs(catapultGroupData.damageRateList) do
+                table.insert(self.catapultDamages, catapultDamageRate)
+                extraCatapultNumber = extraCatapultNumber + 1
+            end
+        end
+    end
+
+    self.catapultNumber = self.catapultNumber + extraCatapultNumber
+end
+
+function Flyer:Reset()
+    if self.skillTimerId then
+        battle.timer:DelTimer(self.skillTimerId)
+    end
+end
+
+function Flyer:CheckTargetIsDead()
+    if not self.targetEntry or self.targetEntry:GetEntryType() ~= _G.EntryType.MONSTER then
+        return false
+    end
+
+    return not self.targetEntry:IsAlive()
+end
+
+function Flyer:GetEntryType()
+    return _G.EntryType.FLYER
+end
+
+function Flyer:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+
+        position = self.position,
+
+        level = self.level,
+        speed = self:GetAttribute(_G.AttributeType.FINAL_MOVE_SPEED),
+    }
+end
+
+function Flyer:GetFlyerData()
+    return {
+        flyerId = self.flyerId,
+        entry = self:GetEntryData(),
+        releaseEntry = self.releaseEntry:GetEntryData(),
+        targetEntry = self.targetEntry:GetEntryData(),
+        lastTargetEntryId = self.targetList[#self.targetList] or 0,
+    }
+end
+
+function Flyer:GetAttribute(attrId)
+    if attrId == _G.AttributeType.FINAL_MOVE_SPEED then
+        local config = _G.FlyerTable[self.flyerId]
+        if not config then
+            LogErr("Flyer:GetAttribute can not found flyer config, flyer id {}", self.flyerId)
+            return 0
+        end
+
+        return config.moveSpeed
+    end
+
+    -- 飞行物没有属性
+    return 0
+end
+
+function Flyer:GetType()
+    local config = _G.FlyerTable[self.flyerId]
+    if not config then
+        LogErr("Flyer:GetType can not found flyer config, flyer id {}", self.flyerId)
+        return _G.FlyerType.FLYER_TYPE_NORMAL
+    end
+
+    return config.type
+end
+
+function Flyer:PopDamageRate()
+    if #self.catapultDamages == 0 then
+        return 10000
+    end
+
+    return table.remove(self.catapultDamages, 1)
+end

@@ -1,0 +1,185 @@
+-- p2p消息
+local tools   = import("common/tools.lua");
+local pbUtils = import("common/pbUtils.lua");
+
+-- 发送点对点消息
+function SendP2PMessage(serviceId, instanceId, msg, ...)
+    if not instanceId then
+        LogErr("failed send p2p message instance id not exists msg:{}", msg);
+        return false;
+    end
+
+    if dive.isStandalone then
+        return true;
+    end
+
+    local data = {msg=msg, svrid=_G.diveSDMgr.get_local_instance_id(), params={ ... }};
+
+    local res = dive.RemoteInvoke(serviceId, instanceId, data);
+
+    if res == "ok" then
+        return true;
+    elseif res == "instanceId not exists" then
+        return false;
+    else
+        LogErr("failed send p2p message async call failed msg:{} res:{}", msg, res);
+        return false;
+    end
+end
+
+-- 处理接受的消息
+function HandleP2PMessage(id, timestamp, sourceServiceId, sourceInstanceId, data)
+    -- 准备分发消息
+    local proc = s2s[data.msg];
+    if not proc then
+        LogErr("undefined s2s msg: {}", data.msg);
+        return true;
+    end
+
+    local ok, err = xpcall(proc, debug.traceback, data.svrid, table.unpack(data.params));
+    if not ok then
+        LogErr("failed to call msg s2s.{} err:{}", data.msg, err);
+    end
+end
+
+-- 处理cs推送的消息
+function HandleProtoMsgFrmCs(msg, data)
+    LogDebug("{}", data)
+    local proc = c2s[msg];
+    if not proc then
+        LogErr("undefined c2s msg: {}", msg);
+        return true;
+    end
+    local ss = {}
+    ss.uid = dive.playerUid
+    ss.Call = function(msg, data)
+        SendProtoMsgToCs(msg, data);
+    end
+
+    local tData = _G.jsonDecode(data)
+    local ok, err = xpcall(proc, debug.traceback, ss, tData);
+    if not ok then
+        LogErr("failed to call msg c2s.{}", msg);
+        LogErr("{}", err);
+    end
+end
+
+-- 发送消息到cs
+function SendProtoMsgToCs(msg, data)
+    data = pbUtils.FormatData(msg, data)
+    local strData = _G.jsonEncode(data)
+    dive.SendProtoMsgToCs(msg, strData)
+end
+
+-- 发送消息到机器人
+function SendMsgToLocalRobot(msg, data, ss)
+    if not msg then
+        LogErr("nil msg from session {}", token);
+        return;
+    end
+    local proc = _G.s2lb[msg];
+    if not proc then
+        --LogErr("undefined msg {} from session {}", msg, token);
+        return;
+    end
+    local ok, err = xpcall(proc, debug.traceback, ss, data);
+    if not ok then LogErr("{}", err); end
+end
+
+-- 处理机器人消息
+function HandleMsgFromLocalRobot(msg, data)
+    if not msg then
+        LogErr("nil msg from session {}", token);
+        return;
+    end
+
+    local proc = _G.c2s[msg];
+    if not proc then
+        LogErr("undefined msg {} from session {}", msg, token);
+        return;
+    end
+
+    local ss = _G.GetSessionByUid(_G.LOCAL_ROBOT_UID)
+    local ok, err = xpcall(proc, debug.traceback, ss, data);
+    if not ok then
+        LogErr("failed to call msg c2s.{}", msg);
+        LogErr("{}", err);
+    end
+end
+
+-- 离线消息类型
+_G.OFF_MSG_TYPE = {
+    MIN_OFF_MSG_TYPE        = 0;  -- 离线消息类型最小值
+    BATTLE_RESULT_ID        = 1;  -- 战斗结算消息
+    BATTLE_STOP             = 3;  -- 战斗结束
+    REDEEM_RECEIVE          = 4;  -- 领取兑换码奖励
+    SHOP_BUY                = 5;  -- 购买物品（直购）
+    CREATE_GUILD            = 6;  -- 创建宗门
+    DISMISS_GUILD           = 7;  -- 解散宗门
+    JOIN_GUILD              = 8;  -- 同意加入宗门
+    REJECT_JOIN_GUILD       = 9;  -- 拒接加入宗门
+    LEAVE_GUILD             = 10; -- 离开宗门
+    KICK_GUILD              = 11; -- 被踢出宗门
+    DISPATCH_MAIL           = 12; -- 发送邮件
+    BAN_USER                = 13; -- 封禁
+    DELETE_ITEMS            = 14; -- 删除物品
+    ORDER_PAID              = 15; -- 订单支付
+    CHANGE_NAME             = 16; -- 修改名字
+    FLY_COUNT               = 17; -- 飞升排名
+    FRIENT_INVITE           = 18; -- 好友邀请
+    FRIENT_ADD              = 19; -- 添加好友
+    FRIENT_CHAT             = 20; -- 好友私聊
+    GUILD_PERSONNEL         = 21; -- 宗门人事任免
+    GUILD_FLY_START         = 22; -- 宗门飞升开始
+    GUILD_RUIN_JOIN         = 23; -- 宗门加入了界墟争夺战
+    GUILD_RUIN_CANCEL       = 24; -- 取消加入了界墟争夺战
+    GUILD_RUIN_START        = 25; -- 界墟争夺战开始
+    GUILD_CAVE_REWARD       = 26; -- 领取界墟中洞天奖励
+    GUILD_CAVE_FIRST        = 27; -- 发送界墟中洞天首杀奖励
+    GUILD_RUIN_SETTLE       = 28; -- 界墟争夺战结算奖励
+    GUILD_TASK_REWARD       = 29; -- 界墟争夺战世界任务奖励
+    GUILD_RENAME            = 30; -- 修改宗门名失败
+    GUILD_BATTLE_START      = 31; -- 宗门战开始
+    GUILD_BATTLE_SETTLE     = 32; -- 宗门战结束
+    GUILD_BATTLE_ITEM       = 33; -- 宗门战使用道具失败
+    GUILD_UPGRADE_CAVE      = 34; -- 宗门洞天升级
+    CLEAR_RANK              = 35; -- 清理排行榜
+    WENDAO_LIST             = 36; -- 问道的挑战列表
+    WENDAO_BATTLE_SETTLE    = 37; -- 问道战斗结算
+    WENDAO_ATTACKED         = 38; -- 问道被打了
+    SPIRIT_BATTLE_SETTLE    = 39; -- 元神战斗结算
+    GUILD_REMOVALED         = 40; -- 宗主被弹劾
+    GUILD_REMOVAL_SUCCESS   = 41; -- 弹劾宗主成功
+    TENCENT_CIRCLE_GIFT     = 42; -- 游戏圈奖励
+    GUILD_MONSTER_UPDATE    = 43; -- 校验齐心奖励领取
+
+
+    -- ！！！这个每次添加时要修改！！！
+    MAX_OFF_MSG_TYPE        = 44; -- 离线消息类型最大值, 加的时候需要把这个最大值改一下！
+}
+
+-- 增加一条离线消息
+function InsertOffMsg(uid, offMsgType, ...)
+    CheckDbLogicMgrCallBack()
+    local ok, message = xpcall(dive.JsonEncode, debug.traceback, {offMsgType=offMsgType, params={ ... }});
+    if not ok then
+        LogErr("InsertOffMsg failed to encode data msg={}", message);
+        return ok;
+    end
+    ok = _G.dbLogicMgr.InsertOffMsgAsync(uid, message);
+    if ok ~= "ok" then
+        LogErr("InsertOffMsg failed msg={}", ok);
+    end
+    return ok;
+end
+
+function CheckDbLogicMgrCallBack()
+    -- 插入离线消息的回调
+    if _G.dbLogicMgr and not _G.dbLogicMgr.InsertOffMsgCallback then
+        _G.dbLogicMgr.InsertOffMsgCallback = tools.LogDecorator(function(result, uid, message)
+            if not result then
+                LogErr("InsertOffMsgCallback uid={} message={}, result:{}", uid, message, result);
+            end
+        end);
+    end
+end

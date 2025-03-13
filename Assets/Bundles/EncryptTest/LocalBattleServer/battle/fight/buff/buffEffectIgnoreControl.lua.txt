@@ -1,0 +1,17 @@
+-- 28. 免疫控制效果
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

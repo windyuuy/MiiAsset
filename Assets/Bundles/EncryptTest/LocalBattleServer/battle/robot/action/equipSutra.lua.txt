@@ -1,0 +1,104 @@
+-- 上阵法宝
+
+function Run(robot)
+    local battleData = robot.battleData
+
+    -- 上阵的坑位
+    local targetSlot = 0;
+
+    -- 选择的idx
+    local chosenIdx = -1;
+
+    -- 最大坑位
+    local maxCount = 0
+
+    for _, slot in pairs(battleData.equipList) do
+        if not slot.isLocked then
+            maxCount = maxCount + 1;
+        end
+    end
+
+    -- 所有已装备法宝的id列表
+    local equipIds = {};
+
+    -- 检查前四个坑位
+    for i=1, math.min(4, maxCount) do
+        local slot = battleData.equipList[i];
+
+        if not slot.isLocked then
+            if slot.card and slot.card.id and slot.card.id ~= 0 then
+                equipIds[slot.card.id] = true
+            else
+                targetSlot = i;
+                break
+            end
+        end
+    end
+    
+    -- 再判断第五个坑位
+    if targetSlot == 0 then
+        -- 如果不需要结阵，第五个坑位暂时空置
+        if not battleData.formationId then
+            return;
+        end
+
+        -- 从D牌中判断是否有可以结阵的
+        local formationConfig = _G.FormationTable[battleData.formationId]
+        if not formationConfig then
+            return;
+        end
+    
+        local targetElement = formationConfig.formula[1][5];
+    
+        local canEquipIdx;
+        for idx, card in pairs(battleData.optionalList) do
+            if equipIds[card.id] then
+                goto continue;
+            end
+
+            canEquipIdx = idx;
+
+            if targetElement == card.element then
+                targetSlot = 5;
+                chosenIdx  = idx;
+            end
+            ::continue::
+        end
+
+        -- 直接上阵随机属性的第5个法宝
+        if chosenIdx == -1 then
+            if #battleData.optionalList <= 0 then
+                return;
+            end
+    
+            local slot = battleData.equipList[5];
+            if not slot.isLocked and (not slot.card or not slot.card.id or slot.card.id == 0) then
+                targetSlot = 5;
+                chosenIdx  = math.random(1, #battleData.optionalList);
+            end
+        end
+    end
+
+    if targetSlot <= 0 then
+        return
+    end
+
+    battleData.lastSelectCardTime = _G.GetCurTime()
+
+    local targetRegion = 2      -- 装备区id
+    local msg = {
+        chosenIdx    = chosenIdx,
+        targetRegion = targetRegion,
+        targetSlot   = targetSlot,
+    }
+
+    -- 设置上需要的法宝
+    if targetSlot < 5 and chosenIdx == -1 then
+        msg.robotSelectCardId = robot.robotConfig.compositePriority[targetSlot];
+        msg.robotFormationId  = battleData.formationId;
+    end
+
+    robot.lastRequest = "BattleLogic_ChosenGameCardRequest"
+    -- LogInfo("BattleLogic_ChosenGameCardRequest msg:{}", msg)
+    c2s.BattleLogic_ChosenGameCardRequest(robot, msg)
+end

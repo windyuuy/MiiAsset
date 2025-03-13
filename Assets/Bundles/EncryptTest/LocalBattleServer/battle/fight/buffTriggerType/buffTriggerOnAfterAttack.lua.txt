@@ -1,0 +1,32 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    local callback = function(listener, properties, event)
+        local attackerId = event.attacker.entryId
+        if attackerId ~= properties.attackerId then
+            return false
+        end
+
+        -- 触发器计数逻辑
+        listener.count = (listener.count or 0) + 1
+        if listener.count < properties.targetCount then
+            return false
+        else
+            -- 触发后还原计数器
+            listener.count = 0
+        end
+
+        local skillContext = event.skillContext
+        buffComponent.buffEffect(properties.buffComponent, properties.buff, skillContext)
+        return true
+    end
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local triggerTypeData = buffConfig.triggerTypeDatas[triggerTypeIndex]
+    local targetCount = triggerTypeData[1]
+    local properties = { attackerId = buff.owner.entryId, buff = buff, buffComponent = component, targetCount = targetCount }
+    local listenerId = eventManager.AddEventListener(battle.eventManager, _G.EventType.ENTRY_AFTER_ATTACK, callback, properties, false)
+    buff.listenerEventType = _G.EventType.ENTRY_AFTER_ATTACK
+    table.insert(buff.listenerIds, listenerId)
+end

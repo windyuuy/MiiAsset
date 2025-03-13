@@ -1,0 +1,15 @@
+-- 能否判断使用法术牌卡牌
+
+function Execute(robot, param)
+    local battleData = robot.battleData
+    local lastCalSpellCardTime = battleData.lastCalSpellCardTime or 0
+    local interval = robot.robotLevelTable.refreshInterval
+
+    local curTime = _G.GetCurTime()
+
+    if curTime >= lastCalSpellCardTime + interval / 1000 then
+        robot.battleData.lastCalSpellCardTime = curTime
+        return true;
+    end
+    return false
+end

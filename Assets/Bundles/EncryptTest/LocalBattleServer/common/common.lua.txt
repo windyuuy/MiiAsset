@@ -1,0 +1,1292 @@
+import("common/time.lua");
+local message  = import("common/message.lua")
+--上限
+_G.INTEGER_UPPER_LIMIT = math_floor(2^31 - 1)
+
+-- 当前时区
+_G.SERVER_TZ = 8;
+
+-- 客户端类型
+CLIENT_TYPE_ANDROID = 101;
+CLIENT_TYPE_IOS     = 102;
+CLIENT_TYPE_WEB     = 103;
+
+-- 战斗结果
+BATTLE_END_RESULT_WIN  = 1; -- 胜
+BATTLE_END_RESULT_LOST = 2; -- 负
+BATTLE_END_RESULT_TIE  = 3; -- 平
+
+-- 最大的怪物等级
+MAX_MONSTER_LEVEL = 27972
+
+-- 军团战的最大加时数
+GUILD_BATTLE_MAX_ADD_TIME = 10
+
+-- 战斗服当前战斗数据
+_G.BattleId2BattleCount = _G.BattleId2BattleCount or {}
+
+
+MORTAL_OLD_SERVER_ID = "999997";      -- 凡界养老服
+SPIRIT_OLD_SERVER_ID = "999998";      -- 灵界养老服
+IMMORTAL_SERVER_ID   = "999999";      -- 仙界
+
+-- 排行榜类型
+_G.RANK_TYPE = {
+    Rank_None            = 0,
+    Rank_Battle          = 1;  -- 对战
+    Rank_Refiner         = 2;  -- 炼器
+    Rank_Coop            = 3;  -- 合作
+    Rank_GuildBattle     = 4;  -- 宗门挑战
+    Rank_WinningStreak   = 5;  -- 连胜
+    Rank_MonsterTower1   = 6;  -- 锁妖塔排行榜
+    Rank_MonsterTower2   = 7;  -- 八仙过海锁妖塔
+    Rank_MonsterTower3   = 8;  -- 天道司命锁妖塔
+    Rank_MonsterTower4   = 9;  -- 龙族锁妖塔
+    Rank_MonsterTower5   = 10; -- 万禄灵宝锁妖塔
+    Rank_MonsterTower6   = 11; -- 诛仙锁妖塔
+    Rank_MonsterTower7   = 12; -- 夜幽锁妖塔
+    Rank_MonsterTower8   = 13; -- 灵魂莲华锁妖塔
+    Rank_MonsterTower9   = 14; -- 大灭诸天锁妖塔
+    Rank_MonsterTower10  = 15; -- 天将锁妖塔
+    Rank_MonsterTower11  = 16; -- 噬魂修罗锁妖塔
+    Rank_MonsterTower12  = 17; -- 生生不息锁妖塔
+    Rank_MonsterTower13  = 18; -- 太上感应锁妖塔
+    Rank_GlobalTower     = 19; -- 全服锁妖塔冲层
+    Rank_CardBattle      = 20; -- 法宝战斗力
+    Rank_GuildBattleCombat  = 21; -- 军团战斗力
+    Rank_WorldCompetition   = 22; -- 万界大会
+    Rank_WenDaoSpirit       = 23; -- 灵界问道
+    Rank_WenDaoImmortal     = 24; -- 仙界问道
+    Rank_SpiritBoss1        = 25; -- 人面魔蛛
+    Rank_GuildBossSelf      = 26; -- 宗门个人boss
+    Rank_GuildBossAll       = 27; -- 宗门boss(宗门巨兽)
+    Rank_SpiritPveRush      = 28; -- 元神PVE冲榜
+    Rank_SpiritBattleCombatRush = 29; -- 元神战斗力冲榜
+    Rank_SutraLevelRush      = 30; -- 法宝等级冲榜
+    Rank_SutraPveRush        = 31; -- 法宝PVE冲榜
+    Rank_SpiritWorldBossRush = 32; -- 元神世界boss冲榜
+}
+
+-- 排行榜的服务器类型
+_G.RankServerType = {
+    ALL_SERVER              = 0,
+    ALL_MORTAL_SERVER       = 1,
+    ALL_SPIRIT_SERVER       = 2,
+    ALL_IMMORTAL_SERVER     = 3,
+    ALL_SPIRIT_AND_IMMORTAL_SERVER = 4,
+    SINGLE_USER_SERVER      = 99,
+}
+
+-- 宗门挑战关卡id
+_G.GuildBattleLevelId = {
+    GUILD_BATTLE_ID_EASY = 9201,
+    GUILD_BATTLE_ID_HARD = 9202,
+}
+
+-- 聊天通道类型
+_G.ChannelType = {
+    CHANNEL_WORLD           = 1,
+    CHANNEL_SECT            = 2,
+    CHANNEL_FRIEND          = 3,    -- 好友
+    CHANNEL_RUIN            = 4,    -- 界墟
+    CHANNEL_GUILD_BATTLE    = 5,    -- 宗门战
+}
+
+-- 用户数据类型
+_G.UserInfoType = {
+    USER_INFO_TYPE_ABB    = 1;
+    USER_INFO_TYPE_RANK   = 2;
+    USER_INFO_TYPE_SERVER = 3;  -- 当前用户所有的角色
+}
+
+-- 宗门数据类型
+_G.GuildInfoType = {
+    GUILD_INFO_TYPE_ALL  = 1;   -- 宗门所有数据
+    GUILD_INFO_TYPE_RANK = 2;   -- 宗门排行榜数据
+}
+
+-- 法术牌的效果类型
+_G.SPEEL_CATEGORY = {
+    GAIN         = 1;   -- 增益
+    INTERFERENCE = 2;   -- 干扰
+}
+
+-- PVE类型
+_G.DungeonLevelType = {
+    TYPE_NORMAL = 0,
+    TYPE_HARD   = 1,
+}
+
+-- 战斗类型
+_G.BattleType = {
+    BATTLE_TYPE_PVP             = 1,    -- pvp
+    BATTLE_TYPE_PVE_MAIN        = 2,    -- 主线pve
+    BATTLE_TYPE_PVE_ROBOT       = 3,    -- 机器人PVE
+    BATTLE_TYPE_GUIDE_PVP       = 4,    -- 新手引导PVP
+    BATTLE_TYPE_COOP            = 5,    -- 合作模式
+    BATTLE_TYPE_GUIDE_PVE       = 6,    -- 新手引导PVE
+    BATTLE_TYPE_GUILD_PVE       = 7,    -- 宗门PVE
+    BATTLE_TYPE_ADVENTURE_TOWER = 8,    -- 锁妖塔PVE
+    BATTLE_TYPE_FAST_PVP        = 9,    -- 快速PVP
+    BATTLE_TYPE_GUILD_CAVE      = 11,   -- 宗门洞天
+    BATTLE_TYPE_GUILD_RUIN      = 12,   -- 界墟洞天
+    BATTLE_TYPE_WORLD_COMPETITION = 13, -- 万界大会
+    BATTLE_TYPE_GUILD_MONSTER     = 14, -- 宗门巨兽
+}
+
+-- 战斗模式
+_G.BattleGameTypeMode = {
+    BATTLE_GAME_TYPE_MODE_PVP_MORTAL        = 1000,  -- 凡界pvp
+    BATTLE_GAME_TYPE_MODE_PVP_SPIRIT        = 1001,  -- 灵界pvp
+    BATTLE_GAME_TYPE_MODE_PVP_IMMORTAL      = 1002,  -- 仙界pvp
+    BATTLE_GAME_TYPE_MODE_FAST_PVP_SPIRIT   = 1101,  -- 灵界快速pvp
+    BATTLE_GAME_TYPE_MODE_FAST_PVP_IMMORTAL = 1102,  -- 仙界快速pvp
+    BATTLE_GAME_TYPE_MODE_COOP              = 3001,  -- 合作模式
+    BATTLE_GAME_TYPE_WORLD_COMPETITION      = 9001,  -- 万界大会
+    BATTLE_GAME_TYPE_FRIEND_PVP             = 9999;  -- 好友切磋
+}
+
+-- 开关表的key
+_G.SwitchType = {
+    SWITCH_TYPE_IOS_PAY       = 1,    -- IOS是否开启支付
+    SWITCH_TYPE_ANNOUNCEMENT  = 2,    -- 公告显示的版本号
+    SWITCH_TYPE_FLY_FAIRYLADN = 3,    -- 飞升仙界
+    SWITCH_TYPE_SPIRIT_NORMAL = 4,    -- 元神显示小河灵
+}
+
+-- 服务器开关配置的key
+_G.ServerConfigEnum = {
+    SWITCH_GM               = 1;    -- 是否打开GM
+}
+
+-- 在线状态
+_G.ONLINE_TYPE = {
+    OFFLINE = 0;
+    ONLINE  = 1;
+}
+
+-- 服务器分类的类型
+_G.ServerType = {
+    SERVER_TYPE_NONE       = 0;
+    SERVER_TYPE_MORTAL     = 1;     -- 凡界
+    SERVER_TYPE_SPIRIT     = 2;     -- 灵界
+    SERVER_TYPE_IMMORTAL   = 3;     -- 仙界
+}
+
+-- global的全局数据
+_G.GlobalDataType = {
+    GLOBAL_DATA_TYPE_ALL          = 0;    -- 所有数据
+    GLOBAL_DATA_TYPE_ANNOUNCEMENT = 1;    -- 公告
+    GLOBAL_DATA_TYPE_TOWER_COUNT  = 2;    -- 冲层活动的数量
+    GLOBAL_DATA_TYPE_FLY_COUNT    = 3;    -- 飞升排名
+    GLOBAL_DATA_TYPE_GUILD_RUIN   = 4;    -- 界墟分配逻辑
+    GLOBAL_DATA_TYPE_ACTIVITY_WORLD_COMPETITION = 5; -- 万界大会活动
+    GLOBAL_DATA_TYPE_RANK_WORLD_COMPETITION     = 6; -- 万界大会排行榜
+    GLOBAL_DATA_TYPE_GUILD_SERVER               = 7; -- 宗门服数据
+    GLOBAL_DATA_TYPE_ALL_SERVER                 = 8; -- 全部服务器数据
+    GLOBAL_DATA_TYPE_WENDAO                     = 9; -- 问道的桶数据
+    GLOBAL_DATA_TYPE_WENDAO_RANK                = 10; -- 问道的排行榜刷新数据
+    GLOBAL_DATA_TYPE_SERVER_ACTIVITY_DATA              = 11; -- 活动数据
+}
+
+-- 怪物等级
+_G.MonsterLevelType = {
+    CARD_AVG_LEVEL          = 1;    -- 卡的平均等级
+    BATTLE_GAME_TYPE_CONFIG = 2;    -- BattleGameTypeTable 中配置
+    PVE_ADVENTURE_CONFIG    = 3;    -- PveAdventureTable 中配置
+}
+
+-- PVE塔等级类型
+_G.PveTowerConfigLevelType = {
+    USE_TOWER_LEVEL_DIRECT = 1;
+    USE_TOWER_LEVEL_CONFIG = 2;
+}
+
+-- 宗门角色
+_G.GuildRole = {
+    NONE   = 0,
+    LEADER = 1,     -- 宗主
+    DEPUTY = 2,     -- 副宗主
+    ELDERS = 3,     -- 长老
+    MEMBER = 4,     -- 喽啰
+}
+
+-- 界墟的洞天类型
+_G.GuildCaveType = {
+    GUILD_CAVE_BORN      = 0,
+    GUILD_CAVE_SMILL     = 1,
+    GUILD_CAVE_MIDDLE    = 2,
+    GUILD_CAVE_BIG       = 3,
+    GUILD_CAVE_SUPERBIG  = 4,
+}
+
+-- 问道战斗结果
+_G.WenDaoResult = {
+    WIN  = 0,
+    LOST = 1,
+    TIE  = 2,
+}
+
+-- 商店状态（开启或关闭）
+_G.ShopStatus = {
+    ACTIVE     = 0,
+    DEPRECATED = 1,
+}
+
+-- 战斗增益建议的类型
+_G.BattleGainType = {
+    DECREASE = 0;
+    INCREASE = 1;
+}
+
+-- 元神战斗模式
+_G.SpiritBattleType ={
+    BATTLE_GAME_TYPE_WENDAO      = 1,  -- 问道挑战
+    BATTLE_GAME_TYPE_BOSS        = 2,  -- 世界boss
+    BATTLE_GAME_TYPE_PVE         = 3,  -- pve关卡
+}
+
+--星期几 1~7
+function _G.GetWeekDay(time1)
+	return GetWeekDayByTZ(time1, 0);
+end
+
+function _G.GetWeekDayByTZ(time, tz)
+    return math_floor((time - GetWeekStartByTZ(time, tz))/86400) + 1
+end
+
+-- iGAME begin
+function _G.IsSameWeekSys(time1, time2)
+    return GetWeekStartSys(time1) == GetWeekStartSys(time2)
+end
+
+function _G.GetWeekStartSys(time)
+    return GetDayStartSys(time) - (GetWeekDay(time) - 1 ) * 86400
+end
+
+function _G.IsSameDaySys(time1, time2)
+    return GetDayStartSys(time1) == GetDayStartSys(time2)
+end
+
+function _G.GetDayStartSys(time)
+    local tm = os.date("*t",time)
+    return os_time{year=tm.year,month=tm.month,day=tm.day,hour=0}
+end
+
+--tz is time zone eg:800 东八区  or -800 西八区
+function _G.IsSameDayByTZ(time1, time2, tz)
+    return GetDayStartByTZ(time1, tz) == GetDayStartByTZ(time2, tz)
+end
+
+function _G.IsSameWeekByTZ(time1, time2, tz)
+    return GetWeekStartByTZ(time1,tz) == GetWeekStartByTZ(time2, tz)
+end
+
+---@param offsetDay number 偏移天数(比如跨周五就是5)
+function _G.IsSameWeekByTZAndOffset(time1, time2, tz, offsetDay)
+    local offset = (7 - offsetDay) * 86400
+    return GetWeekStartByTZ(time1 + offset, tz) == GetWeekStartByTZ(time2 + offset, tz)
+end
+
+function _G.GetDayStartByTZ(time, tz)
+    return math_floor((time + tz * 3600) / 86400) * 86400 - tz * 3600
+end
+
+function _G.GetWeekStartByTZ(time, tz)
+    local tz_tmp = 259200 + tz * 3600
+    return math_floor((time + tz_tmp) / 604800) * 604800 - tz_tmp
+end
+-- iGAME end
+
+--取小时 0-23
+function _G.GetHour(time1)
+    local hour = tonumber(os.date("%H", time1));
+    return hour;
+end
+
+function _G.IsSameHour(time1, time2)
+    return os_date("%H", time1) == os_date("%H", time2) and math.abs(time1 - time2) < 3600
+end
+
+function _G.IsSameDay(time1, time2)
+    return IsSameDayByTZ(time1, time2, 0)
+    --return IsSameDaySys(time1, time2)
+    --return (math_floor((time1 - 57600) / 86400) == math_floor((time2 - 57600) / 86400))
+end
+
+function _G.IsSameWeek(time1, time2)
+    return IsSameWeekByTZ(time1, time2, 0)
+    --return IsSameWeekSys(time1, time2)
+    --return (math_floor((time1 - 316022400) / 604800) == math_floor((time2 - 316022400) / 604800))
+end
+
+function _G.IsSameDayOffset(time1, time2, hour)
+    local offset = hour * 3600;
+    return _G.IsSameDayByTZ(time1 - offset, time2 - offset, 0);
+    --return (math_floor((time1 - 57600 - offset) / 86400) == math_floor((time2 - 57600 - offset) / 86400))
+end
+
+function _G.IsSameWeekOffset(time1, time2, hour)
+    local offset = hour * 3600;
+    return _G.IsSameWeek(time1 - offset, time2 - offset);
+    --return (math_floor((time1 - 57600 - offset) / 86400) == math_floor((time2 - 57600 - offset) / 86400))
+end
+
+function _G.GetDayStart(time)
+    return GetDayStartByTZ(time, 0)
+    --return GetDayStartSys(time)
+    --return math_floor((time + 28800) / 86400) * 86400 - 28800
+end
+
+function _G.GetDayOffset(time)
+    return time - GetDayStart(time)
+end
+
+--获取当天时间     start datetime (eg:15:25:36)
+function _G.GetTodayStart( timestring)
+    local time_offset = 0;
+    if  timestring~=nil and string_len(timestring) > 0 then
+        local patern = "(%d+):(%d+):(%d+)";
+        local hour, min, sec = string_match(timestring, patern);
+        if  hour then
+            time_offset = time_offset + tonumber( hour)*3600;
+        end
+        if  min then
+            time_offset = time_offset + tonumber( min)*60;
+        end
+        if  sec then
+            time_offset = time_offset + tonumber( sec);
+        end
+    end
+    return GetDayStart(GetCurTime()) + time_offset;
+end
+
+--获取当天时间         end datetime (eg:15:25:36)
+function _G.GetTodayEnd( timestring)
+    local time_offset = 86400;
+    if  timestring~=nil and string_len(timestring) > 0 then
+        time_offset = 0;
+        local patern = "(%d+):(%d+):(%d+)";
+        local hour, min, sec = string_match(timestring, patern);
+        if  hour then
+            time_offset = time_offset + tonumber( hour)*3600;
+        end
+        if  min then
+            time_offset = time_offset + tonumber( min)*60;
+        end
+        if  sec then
+            time_offset = time_offset + tonumber( sec);
+        end
+    end
+    return GetDayStart(GetCurTime()) + time_offset;
+end
+
+function _G.GetSecOfDays(daysnum)
+    return daysnum*86400
+end
+
+function _G.GetSecOfHours(hoursnum)
+    return hoursnum*3600
+end
+
+function _G.GetWeekStart(time)
+    return GetWeekStartByTZ(time, 0)
+end
+
+--time1是否是 以time2为基准的上一周
+function _G.IsLastWeek(time1, time2)
+    local week_start = GetWeekStart(time2)
+    local diff = week_start - time1
+    if time1 > week_start or diff < 604800 then
+        return true
+    end
+    return false
+end
+
+function _G.IsSameMonthByTZ(time1, time2, tz)
+    local offset = tz * 3600
+    return IsSameMonth(time1 + offset, time2 + offset)
+end
+
+function _G.IsSameMonth(time1, time2)
+    local timeinfo1 = os.date("*t", time1);
+    local timeinfo2 = os.date("*t", time2);
+    return timeinfo1.year == timeinfo2.year and timeinfo1.month == timeinfo2.month;
+end
+
+function _G.IsInDayRange(time, start_hour, end_hour)
+    local daystart = GetDayStart(time);
+    local range_begin = daystart + start_hour * 3600;
+    local range_end   = daystart + end_hour * 3600;
+    return time >= range_begin and time <= range_end;
+end
+
+function _G.SplitString(str, d) --str是需要查分的对象 d是分界符
+    local lst = { }
+    local len = string_len(str)--长度
+    local index = 1
+    while index <= len do
+        local i = string_find(str, d, index) -- find 'next' 0
+        if i == nil then
+            table_insert(lst, string_sub(str, index, len))
+            break
+        end
+        table_insert(lst, string_sub(str, index, i-1))
+        if i == len then
+            table_insert(lst, "")
+            break
+        end
+        index = i + 1
+    end
+    return lst
+end
+
+
+-- 按同样权重随机1个元素
+function _G.RandomOne(nodes)
+    local weights = 0;
+    local group = {};
+
+    for _, node in pairs(nodes) do
+        if node then
+            group[#group + 1] = node;
+            weights = weights + 1;
+        end
+    end
+    if weights <= 0 then
+        return;
+    end
+    local weight = math_random(weights);
+    return group[weight];
+end
+
+-- 随机n个元素
+function _G.RandomN(nodes, n)
+    local group = {};
+    for _, node in pairs(nodes) do
+        if node then
+            group[#group + 1] = node;
+        end
+    end
+
+    if  n <= 0 or #group <=0 then return {}; end;
+    if  n >= #group then return group end;
+
+    local result = {};
+    for i=1, n do
+        local weight = math_random(#group);
+        table.insert(result, group[weight]);
+        table.remove(group, weight);
+    end
+    return result;
+end
+
+-- 按权重随机1个元素
+function _G.RandomSize(sizes, sizeWeights)
+    local weights = 0;
+    local group = {};
+
+    for id, weight in pairs(sizeWeights) do
+        group[#group + 1] = {weight=weight, size=sizes[id]};
+        weights = weights + weight;
+    end
+
+    if weights <= 0 then
+        return
+    end
+
+    local weight = math_random(weights);
+
+    for k, one in ipairs(group) do
+        if weight <= one.weight then
+            return one.size, k;
+        else
+            weight = weight - one.weight;
+        end
+    end
+    return nil;
+end
+
+-- 按权重随机n个元素
+function _G.RandomSizeN(sizes, sizeWeights, n)
+    if  n <= 0 or #sizes <=0 then return end;
+    if  n >= #sizes then return sizes end;
+
+    local sizesLocal={};
+    for k, v in pairs(sizes) do
+        sizesLocal[#sizesLocal + 1] = v;
+    end
+
+    local weightsLocal ={};
+    for k, v in pairs(sizeWeights) do
+        weightsLocal[#weightsLocal + 1] = v;
+    end
+
+    local result = {};
+    for i=1, n do
+        local  v,k = RandomSize(sizesLocal, weightsLocal);
+        result[#result+1] = v;
+        table_remove(sizesLocal, k);
+        table_remove(weightsLocal, k);
+    end
+
+    sizesLocal = nil;
+    weightsLocal = nil;
+
+    return result;
+end
+
+-- 按权重随机n个元素且返回元素的下标数组
+function _G.RandomSizeNIndex(sizes, sizeWeights, n)
+    local sizesCount = math_min(#sizes, #sizeWeights);
+    if n <= 0 or sizesCount <= 0 then
+        return {}, {};
+    end
+
+    local result = {};
+    local resultIdx = {};
+    if n >= sizesCount then
+        for i = 1, sizesCount do
+            result[i] = sizes[i]
+            resultIdx[i] = i
+        end
+        return result, resultIdx
+    end
+
+    local sizesLocal = {};
+    local totalWeight = 0;
+    for i = 1, sizesCount do
+        sizesLocal[i] = true;
+        totalWeight = totalWeight + sizeWeights[i];
+    end
+
+    for k = 1, n do
+        local weight = math_random(totalWeight);
+
+        for i = 1, sizesCount do
+            if sizesLocal[i] then
+                if weight <= sizeWeights[i] then
+                    result[#result + 1] = sizes[i];
+                    resultIdx[#resultIdx + 1] = i;
+                    sizesLocal[i] = false;
+                    totalWeight = totalWeight - sizeWeights[i];
+                    break;
+                else
+                    weight = weight - sizeWeights[i];
+                end
+            end
+        end
+    end
+
+    return result, resultIdx;
+end
+
+-- 洗牌，等概率
+function _G.Shuffle(array)
+    if type(array) ~= "table" then
+        return array;
+    end
+    local size = #array;
+    local rand;
+    for i = size, 1, -1 do
+        rand = math_random(size);
+        array[i], array[rand] = array[rand], array[i];
+    end
+    return array;
+end
+
+-- 洗牌，带权重，数组node自带属性weight
+function _G.ShuffleWeight(arrayWithWeight)
+    if type(arrayWithWeight) ~= "table" then
+        return arrayWithWeight;
+    end
+
+    local sumWeight = 0;
+    for i, node in ipairs(arrayWithWeight) do
+        if not node.weight then
+            return arrayWithWeight;
+        end
+        sumWeight = sumWeight + node.weight;
+    end
+
+    local randWeight;
+    local node;
+    local size = #arrayWithWeight;
+
+    for i = 1, size do
+        randWeight = math_random(sumWeight);
+        for j = i + 1, size do
+            node = arrayWithWeight[j];
+            if randWeight <= node.weight then
+                arrayWithWeight[i], arrayWithWeight[j] = node, arrayWithWeight[i];
+                break;
+            else
+                randWeight = randWeight - node.weight;
+            end
+        end
+        sumWeight = sumWeight - arrayWithWeight[i].weight;
+    end
+
+    return arrayWithWeight;
+end
+
+-- 洗牌，带权重，数组和权重数组分开
+function _G.Shuffleweight2(array, arrayWeight)
+    if type(array) ~= "table" or type(arrayWeight) ~= "table" or #array > #arrayWeight then
+        return array;
+    end
+
+    local sumWeight = 0;
+    for i, node in ipairs(array) do
+        sumWeight = sumWeight + arrayWeight[i];
+    end
+
+    local randWeight;
+    local nodeWeight;
+    local size = #array;
+
+    for i = 1, size do
+        randWeight = math_random(sumWeight);
+        for j = i + 1, size do
+            nodeWeight = arrayWeight[j];
+            if randWeight <= nodeWeight then
+                array[i], array[j] = array[j], array[i];
+                arrayWeight[i], arrayWeight[j] = nodeWeight, arrayWeight[i];
+                break;
+            else
+                randWeight = randWeight - nodeWeight;
+            end
+        end
+        sumWeight = sumWeight - arrayWeight[i];
+    end
+
+    return array, arrayWeight;
+end
+
+-- 深拷贝，保留引用和元表
+function _G.DeepClone( obj )
+    local inTable = {};
+    local function func(obj)
+        if type(obj) ~= "table" then  --判断表中是否有表
+            return obj;
+        elseif inTable[obj] then  --已复制，返回引用，使原表相同的引用复制后仍相同
+            return inTable[obj];
+        end
+        local newTable = {};  --定义一个新表
+        inTable[obj] = newTable;
+        for k,v in pairs(obj) do  --复制旧表的key和Value
+            newTable[func(k)] = func(v);
+        end
+        return setmetatable(newTable, getmetatable(obj))  --保留元表
+    end
+    return func(obj) --递归复制表中的表
+end
+-- 别名
+_G.DeepCopy = _G.DeepClone;
+
+function table.tablen(tab)
+    local len = 0
+    for k,v in pairs(tab) do
+        len = len + 1
+    end
+    return len
+end
+
+function table.empty(tab)
+    return next(tab) == nil
+end
+
+function table.table_to_str(t,c)
+    if not t then
+        return
+    end
+    if not c then
+        c = ","
+    end
+
+    local ret_str = nil
+    for idx, key in pairs(t) do
+        if not ret_str then
+            ret_str = tostring(key)
+        else
+            ret_str = string_format("%s%s%s", ret_str, c, key)
+        end
+    end
+
+    return ret_str
+end
+
+function table.contains(table, value)
+    for _, v in pairs(table) do
+        if v == value then
+            return true
+        end
+    end
+
+    return false
+end
+
+function table.removeElem(table, value)
+    for k, v in pairs(table) do
+        if v == value then
+            table_remove(k)
+            return
+        end
+    end
+end
+
+function _G.UrlEncode(str)
+    if (str) then
+        str = string_gsub (str, "\n", "\r\n")
+        str = string_gsub (str, "([^%w ])",
+            function (c) return string_format ("%%%02X", string_byte(c)) end)
+        str = string_gsub (str, " ", "+")
+   end
+   return str
+end
+
+function _G.UrlDecode(str)
+    if(str) then
+        str = string_gsub(str, '%%(%x%x)',
+            function (hex) return string_char(tonumber(hex,16)) end )
+    end
+    return str
+end
+
+-- 获取赛季信息
+function _G.GetSeasonConf(serverType, curr)
+    if not curr then
+        curr = _G.GetCurTime();
+    end
+
+    local serverTypeSeason = _G.SeasonFutureTable[serverType] or {}
+    for _, rankSeasonConf in ipairs(serverTypeSeason) do
+        LogDebug("GetSeasonConf curr={} startTime={} stopTime={}", curr, rankSeasonConf.startTime, rankSeasonConf.stopTime);
+        if curr >= rankSeasonConf.startTime and (curr < rankSeasonConf.stopTime or rankSeasonConf.stopTime == 0) then
+            return rankSeasonConf;
+        end
+    end
+end
+
+-- 根据队伍平均分数获得段位配置
+function _G.GetRank(serverType, teamAvgScore)
+    local rankSeasonConf   = _G.GetSeasonConf(serverType);
+    local pvpRankInfoGroup = _G.PvpRankInfoTable[rankSeasonConf.seasonRankId] or {};
+    for _, data in pairs(pvpRankInfoGroup) do
+        if teamAvgScore >= data.minRange and teamAvgScore <= data.maxRange then
+            return data
+        end
+    end
+
+    return nil
+end
+
+-- 分数计算
+function _G.ScoreAndRankCal(serverType, battleScore, battleResult, winningStreak, calScore)
+    local nowRankSeasonConf = _G.GetSeasonConf(serverType);
+
+    if not calScore then
+        return 0, 0;
+    end
+
+    local rankConf = _G.GetRank(serverType, battleScore);
+    if not rankConf then
+        return 0, 0;
+    end
+
+    local rankRule = _G.PvpRankRuleTable[nowRankSeasonConf.seasonRankRuleId];
+
+    local updateScore = 0;
+    if battleResult == BATTLE_END_RESULT_WIN then
+        -- 胜利的情况
+        winningStreak  = winningStreak + 1;
+        local winScore = rankConf.winScore;
+        updateScore    = winScore + math.min(rankRule.winingMaxScore, rankRule.winingScore * (winningStreak - 1));
+    elseif battleResult == BATTLE_END_RESULT_LOST then
+        -- 失败的情况
+        winningStreak   = 0;
+        local lostScore = rankConf.lostScore
+        updateScore     = -lostScore;
+    else
+        -- 异常情况, 数据不做修改
+    end
+    return updateScore, winningStreak;
+end
+
+-- 身份证号计算年龄
+function _G.AgeCal(idCard)
+    if idCard and #idCard >= 14 then
+        local birthdayStr = string.sub(idCard, 7, 14)
+        local year = tonumber(string.sub(birthdayStr, 1, 4))
+        local month = tonumber(string.sub(birthdayStr, 5, 6))
+        local day = tonumber(string.sub(birthdayStr, 7, 8))
+
+        local today = os.date("*t")
+        local age = today.year - year
+
+        if today.month < month or (today.month == month and today.day < day) then
+            age = age - 1
+        end
+
+        return age
+    else
+        LogDebug("id card is invalid, idCard:{}", idCard)
+        return -1
+    end
+end
+
+local versionSub = {}
+local versionBit = {3, 3, 4, 6}
+local versionNum = #versionBit
+-- @param versionStr 版本字符串可以是包含数字的
+-- @param ceil 值为缺省时自动填入可能的最大值 例如 versionStr='0.10', ceil=true => 000 00a fff fffffff
+function _G.versionAtoi(versionStr, ceil)
+    local index = 0
+    local versioInt = 0
+    for i=1, versionNum do
+        if not ceil then
+            versionSub[i] = 0
+        else
+            versionSub[i] = (1 << versionBit[i]) - 1
+        end
+    end
+    for v in string_gmatch(versionStr, "(%d+)") do
+        index = index + 1
+        versionSub[index] = math_tointeger(v)
+    end
+    for i=1, versionNum do
+        versioInt = versioInt * (10 ^ versionBit[i])
+        versioInt = versioInt + versionSub[i]
+    end
+    return versioInt
+end
+
+---计算字符串长度 中文算1个字符
+function _G.GetStringLen(str)
+    local len = 0
+    for _ in string_gmatch(str, "[%z\1-\127\194-\244][\128-\191]*") do
+        len = len + 1
+    end
+    return len
+end
+
+----------------公用生成唯一id的方法----------------
+function GenUniqueId( info )
+    info.nextItemSeq = info.nextItemSeq + 1;
+    if info.nextItemSeq >= 0x001fffff then
+        info.nextItemSeq = 0;
+        info.timeStamp = os_time();
+    end
+
+  --  return ((info.timeStamp & 0xffffffff) << 32) | ((info.instance_id & 0x000007ff) << 21)  | (info.nextItemSeq & 0x001fffff);
+		return nil;
+end
+
+--将客户端版本号转换成int,方便判断大小.
+function GetIntClientVer(ver)
+    if type(ver) ~= "string" then
+        return 0
+    end
+
+    local res = 0
+    local para = {10000000,10000,1}
+
+    local idx = 1
+    for v in string_gmatch(ver, "%d+") do
+        if not para[idx] then
+            break
+        end
+
+        res = res + v * para[idx]
+        idx = idx + 1
+    end
+
+    return res
+end
+
+----------------打印变参----------------
+--是否打印协议参数
+local printProtoOutputPara = false
+--打印table参数最大层数,设置为0则关闭打印table
+local PrintProtoMaxPrintParaRecursive = 2
+--打印协议的过滤列表
+local PrintProtoFiltrationList = {
+    ["HeartBeatRequest"] = true,
+    ["HeartBeatResponse"] = true,
+    ["..."] = true,
+}
+
+function PrintTab(tab, idx)
+    if type(tab) ~= "table" then
+        return "nil"
+    end
+
+    if idx >= PrintProtoMaxPrintParaRecursive then
+        return "..."
+    end
+
+    local ty
+    local str = ""
+    for k,v in pairs(tab) do
+        ty = type(v)
+        if ty == "nil" then
+            str = string_format("%s [%s]=nil ", str, k)
+        elseif ty == "boolean" then
+            str = string_format("%s [%s]=%s ", str, k, (v and "true" or "false"))
+        elseif ty == "number" then
+            str = string_format("%s [%s]=%s ", str, k, v)
+        elseif ty == "string" then
+            str = string_format("%s [%s]=%s ", str, k, v)
+        elseif ty == "table" then
+            str = string_format("%s [%s]={%s} ", str, k, PrintTab(v, idx+1))
+        else
+            str = string_format("%s [%s]=%s ", str, ty, ty)
+        end
+    end
+    return str
+end
+
+function PrintVarargs(...)
+    local ty
+    local str = ""
+    for k,v in ipairs({...}) do
+        ty = type(v)
+        if ty == "nil" then
+            str = string_format("%s (nil) ", str)
+        elseif ty == "boolean" then
+            str = string_format("%s (bol)=%s ", str, (v and "true" or "false"))
+        elseif ty == "number" then
+            str = string_format("%s (num)=%d ", str, v)
+        elseif ty == "string" then
+            str = string_format("%s (str)=%s ", str, v)
+        elseif ty == "table" then
+            str = string_format("%s (tab)={%s} ", str, PrintTab(v, 1))
+        else
+            str = string_format("%s (%s) ", str, ty)
+        end
+    end
+
+    return str
+end
+
+function PrintProtocolDetail(uid, ty, msg, ...)
+    if PrintProtoFiltrationList[msg] then
+        return
+    end
+
+    if not printProtoOutputPara then
+        LogInfo("[proto] ss[{}] {} msg[{}]", uid, ty, msg)
+    else
+        LogInfo("[proto] ss[{}] {} msg[{}] para[{}]", uid, ty, msg, PrintVarargs(...))
+    end
+end
+
+function _G.IsIdInIds(id, ids)  --检查一个值是否在数组中
+    if not id or not ids then
+        return false;
+    end
+
+    for k, v in pairs(ids) do
+        if  v == id then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 生成UUID
+function Uuid()
+    local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+    return string.gsub(template, '[xy]', function (c)
+        local v = (c == 'x') and math.random(0, 0xf) or math.random(8, 0xb)
+        return string.format('%x', v)
+    end)
+end
+
+---@param battleTeams MatchBattleTeam[]
+function RebuildCoopBattleTeams(battleTeams)
+    local newBattleTeam = {
+        players = {},
+        rating = 0,
+        count = 0,
+    }
+    local totalRating = 0
+    local totalCount = 0
+    for idx, battleTeam in pairs(battleTeams) do
+        totalCount = totalCount + battleTeam.count
+        for _, player in pairs(battleTeam.players) do
+            newBattleTeam.players[player.id] = player
+        end
+    end
+
+    newBattleTeam.count = totalCount
+    newBattleTeam.rating = totalRating / totalCount
+
+    return { newBattleTeam }
+end
+
+-- 准备战斗
+function NoticeBattle(mode, version, battleTeams)
+    -- count  队伍的数量
+    -- score 队伍分
+    -- players
+    -- score: score
+    -- id: uid
+    -- svr: 玩家所在lobby
+    -- 通知战斗服开始初始化流程
+    -- 随机选择战斗服
+
+    -- 根据战斗mode重构battleTeams
+    if mode == _G.BattleGameTypeMode.BATTLE_GAME_TYPE_MODE_COOP then
+        battleTeams = RebuildCoopBattleTeams(battleTeams)
+    end
+
+    -- 统一处理一下playerIndex
+    for _, team in pairs(battleTeams) do
+        local idx = 1
+        for _, player in pairs(team.players) do
+            player.playerIndex = idx;
+            idx = idx + 1;
+        end
+    end
+
+    local instance = GetLeastBattleServer()
+    if instance then
+        message.SendP2PMessage("battle", instance, "PrepareBattle", mode, version, battleTeams);
+
+        _G.BattleId2BattleCount[instance] = (_G.BattleId2BattleCount[instance] or 0) + 1
+        return instance;
+    end
+    LogErr("no battle server exist!!!")
+end
+
+-- 获取到战斗场次最少的战斗服
+function GetLeastBattleServer()
+    local instances = _G.diveSDMgr.get_all_instance_id("battle");
+    if not instances then
+        return
+    end
+
+    local leastBattleServer
+    local leastBattleCount
+    for _, instance in pairs(instances) do
+        local battleCount = _G.BattleId2BattleCount[instance] or 0
+        if not leastBattleCount or leastBattleCount > battleCount then
+            leastBattleServer = instance
+            leastBattleCount  = battleCount
+        end
+    end
+
+    LogDebug("GetLeastBattleServer _G.BattleId2BattleCount={} leastBattleServer={}", _G.BattleId2BattleCount, leastBattleServer)
+
+    return leastBattleServer
+end
+
+-- 用于问道玩法计算法宝属性
+function CalWenDaoCardAttribute(sutraCard)
+    local sutraConfig = _G.SutraTable[sutraCard.id]
+    if not sutraConfig then
+        LogErr("CalWenDaoCardAttribute, invalid card, id:{}", sutraCard.id)
+        return nil
+    end
+
+    -- 基础等级属性
+    local sutraLevelTypeGroup = _G.SutraLevelTable[sutraConfig.levelType]
+    if not sutraLevelTypeGroup then
+        LogErr("CalWenDaoCardAttribute, invalid card, id:{} levelType:{}", sutraCard.id, sutraConfig.levelType)
+        return nil
+    end
+    local sutraLevelConfig = sutraLevelTypeGroup[sutraCard.level]
+    if not sutraLevelConfig then
+        LogErr("CalWenDaoCardAttribute, invalid card, id:{} levelType:{} level:{}", sutraCard.id, sutraConfig.levelType, sutraCard.level)
+        return nil
+    end
+
+    -- 品质倍率
+    local sutraQualityTypeConfig = _G.SutraQualityTypeTable[sutraConfig.qualityType]
+    if not sutraQualityTypeConfig then
+        LogErr("CalWenDaoCardAttribute, can not find sutra quality type config, quality:{}", sutraCard.quality)
+        return nil
+    end
+    local qualityRate = sutraQualityTypeConfig.qualityAttr[sutraCard.quality] or sutraQualityTypeConfig.qualityAttr[#sutraQualityTypeConfig.qualityAttr]
+
+    -- levelParam
+    local levelParamConfig = _G.SutraLevelParamTable[sutraConfig.levelParamType]
+    if not levelParamConfig then
+        LogErr("CalWenDaoCardAttribute, can not find sutra level param config, levelParam:{}", sutraConfig.levelParamType)
+        return nil
+    end
+
+    -- 计算基础属性
+    local attributes = {}
+    attributes.baseAttack = sutraLevelConfig.baseAttack * qualityRate / 10000 * levelParamConfig.baseAttack / 10000
+    attributes.baseAttackSpeed = sutraLevelConfig.baseAttackSpeed * levelParamConfig.baseAttackSpeed / 10000
+    attributes.baseCritRate = sutraLevelConfig.baseCritRate * levelParamConfig.baseCritRate / 10000
+    attributes.baseCritDamage = sutraLevelConfig.baseCritDamage * levelParamConfig.baseCritDamage / 10000
+    attributes.baseTowerHp = sutraLevelConfig.baseTowerHp * qualityRate / 10000 * levelParamConfig.baseTowerHp / 10000
+
+    -- 如果没有数值的属性 则从属性表中获取基础数值
+    for _, data in pairs(_G.UnitAttributeTable) do
+        attributes[data.codename] = attributes[data.codename] or data.baseValue
+    end
+
+    return attributes
+end
+
+-- 用于问道玩法计算元神属性
+function CalWenDaoSpiritAttribute(spiritData, mapAttr)
+    local attrs = {}
+    local sutraHp = 0
+    local sutraAtk = 0
+    for _, sutraCard in pairs(spiritData.sutras or {}) do
+        local attributes = CalWenDaoCardAttribute(sutraCard)
+        sutraHp = sutraHp + attributes.baseTowerHp
+        sutraAtk = sutraAtk + attributes.baseAttack
+    end
+
+    attrs[_G.SpiritAttributeType.SPIRIT_ATTR_HP] = sutraHp
+    attrs[_G.SpiritAttributeType.SPIRIT_ATTR_ATK] = sutraAtk
+
+    -- 基础属性
+    local spiritConfig = _G.SpiritTable[spiritData.spiritId]
+    if not spiritConfig then
+        LogErr("CalSpiritAttribute spiritConfig is nil, spiritId={}", spiritData.spiritId)
+    else
+        for attrId, attrValue in pairs(spiritConfig.defaultAffix) do
+            attrs[attrId] = (attrs[attrId] or 0) + attrValue
+        end
+    end
+
+    local spiritStarConfig = _G.SpiritStarTable[spiritData.spiritId][spiritData.level]
+    if not spiritStarConfig then
+        LogErr("CalSpiritAttribute spiritConfig is nil, spiritId={}, level={}", spiritData.spiritId, spiritData.level)
+    else
+        for attrId, attrValue in pairs(spiritStarConfig.spiritSelfAttrAdds) do
+            attrs[attrId] = (attrs[attrId] or 0) + attrValue
+        end
+    end
+
+    -- 加点属性
+    for id, point in pairs(spiritData.affixPoints) do
+        local affixConfig = _G.SpiritAffixTable[id]
+        if not affixConfig then
+            LogErr("CalSpiritAttribute affixConfig is nil, id={}", id)
+        else
+            attrs[affixConfig.attr] = (attrs[affixConfig.attr] or 0) + affixConfig.levelValue * point
+        end
+    end
+
+    --地图加成
+    if mapAttr and mapAttr[spiritData.spiritId] then
+        for _, attrData in pairs(mapAttr[spiritData.spiritId]) do
+            attrs[attrData.attr] = (attrs[attrData.attr] or 0) + attrData.value;
+        end
+    end
+
+    -- level2属性
+    local spiritLevelGroup = _G.SpiritLevelTable[spiritConfig.spiritLevelGroup] or {}
+    local spiritLevelConfig = spiritLevelGroup[spiritData.level3 or 1]
+    if not spiritLevelConfig then
+        LogErr("CalSpiritAttribute spiritLevelConfig is nil, spiritId={}, group={} level3={}", spiritData.spiritId, spiritConfig.spiritLevelGroup, spiritData.level3)
+    else
+        attrs[_G.SpiritAttributeType.SPIRIT_ATTR_HP_FIXED] = (attrs[_G.SpiritAttributeType.SPIRIT_ATTR_HP_FIXED] or 0) + spiritLevelConfig.hp * spiritConfig.levelHpRate / 10000
+        attrs[_G.SpiritAttributeType.SPIRIT_ATTR_ATK_FIXED] = (attrs[_G.SpiritAttributeType.SPIRIT_ATTR_ATK_FIXED] or 0) + spiritLevelConfig.atk * spiritConfig.levelAtkRate / 10000
+    end
+
+    return attrs
+end
+
+-- 计算战力
+-- 元神战斗力需要计算元神身上大部分的属性
+-- 攻击战力1：	(最终攻击力*攻击力系数)*(速度/速度系数)
+-- 攻击战力2：	攻击战力1*(1+连击几率)
+-- 攻击战力3：	攻击战力2*(1+命中率)
+-- 攻击战力4：	攻击战力3*[最终暴击率*最终暴击伤害+1]
+-- 攻击战力5：	攻击战力4*(1+吸血抗性百分比)*(1+击晕抗性百)
+-- 最终攻击战力：	攻击战力5*(1+反击几率)
+-- 道心战力1：	最终道心*道心系数
+-- 道心战力2：	道心战力1*（1+连击抗性）
+-- 道心战力3：	道心战力2*（1+闪避率）
+-- 道心战力4：	道心战力3*（1+暴击抗性*基础暴击伤害）
+-- 最终道心战力：	道心战力4*(1+吸血百分比)*(1+击晕几率)
+-- 元神最终战力：	最终攻击战力+最终道心战力
+function CalWenDaoBattleScore(wenDaoTeam)
+    local totalBattleScore = 0
+
+    local getAttr = function(attrs, attrId)
+        return attrs[attrId] or 0
+    end
+
+    for _, spiritData in pairs(wenDaoTeam or {}) do
+        local battleScore = 0
+        local attrs = CalWenDaoSpiritAttribute(spiritData)
+        local attackFinal = getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_ATK)
+            * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_ATK_RATE) / 10000)
+        local attackCombat1 = (attackFinal * _G.CommonValue.wdAtkRate) *
+            (getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_SPEED_FINAL) / _G.CommonValue.wdSpeedRate)
+        local attackCombat2 = attackCombat1 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_COMBO_FINAL) / 10000)
+        local attackCombat3 = attackCombat2 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_HIT_RATE_FINAL) / 10000)
+        local attackCombat4 = attackCombat3 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_CRIT_RATE_FINAL) / 10000 * getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_CRIT_DAMAGE_FINAL) / 10000)
+        local attackCombat5 = attackCombat4 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_ANTI_LIFESTEAL_RATE_FINAL) / 10000) * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_ANTI_STUN_RATE_FINAL) / 10000)
+        local attackCombatFinal = attackCombat5 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_COUNTER_RATE_FINAL) / 10000)
+
+        local hpFinal = getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_HP)
+            * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_HP_RATE) / 10000)
+        local hpCombat1 = hpFinal * _G.CommonValue.wdHpRate
+        local hpCombat2 = hpCombat1 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_ANTI_COMBO_FINAL) / 10000)
+        local hpCombat3 = hpCombat2 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_DODGE_RATE_FINAL) / 10000)
+        local hpCombat4 = hpCombat3 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_ANTI_CRIT_RATE_FINAL) / 10000 * getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_CRIT_DAMAGE) / 10000)
+        local hpCombatFinal = hpCombat4 * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_LIFESTEAL_RATE_FINAL) / 10000) * (1 + getAttr(attrs, _G.SpiritAttributeType.SPIRIT_ATTR_STUN_RATE_FINAL) / 10000)
+        battleScore = attackCombatFinal + hpCombatFinal
+
+        totalBattleScore = totalBattleScore + battleScore
+    end
+
+    return totalBattleScore
+end
+
+----------------- 通用方法 -----------------
+---@param userAbbData table
+---@return RoleRankData
+function UserAbbDataToUserRankData(userAbbData)
+    if not userAbbData then
+        return ;
+    end
+    return {
+        uid         = userAbbData.uid,
+        head        = userAbbData.head,
+        headUrl     = userAbbData.headUrl,
+        headboxid   = userAbbData.headboxid,
+        name        = userAbbData.name,
+        guildId     = userAbbData.guildId,
+        guildName   = userAbbData.guildName,
+        rank        = userAbbData.rankData.rank,
+        score       = userAbbData.rankData.score,
+        title       = userAbbData.title,
+        spiritId    = userAbbData.spiritId,
+    }
+end
+
+---@param guildData table 从db反序列化的公会数据
+---@return RoleRankData
+function GuildDataToGuildRankData(guildData)
+    return {
+        uid         = guildData.id,
+        head        = guildData.logoId,
+        headUrl     = nil,
+        headboxid   = 0,
+        name        = guildData.leaderName,
+        guildId     = guildData.id,
+        guildName   = guildData.name,
+        rank        = guildData.level,
+        score       = 0,
+        title       = nil,
+        spiritId    = nil,
+    }
+end
+
+
+-- 版本号
+_G.ClientVersion_1_5_696 = _G.versionAtoi("1.5.696")
+_G.ClientVersion_1_6_708 = _G.versionAtoi("1.6.708")
+_G.ClientVersion_1_6_800 = _G.versionAtoi("1.6.800")

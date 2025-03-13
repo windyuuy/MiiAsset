@@ -1,0 +1,87 @@
+-- 战局模式结算
+local robotUtil = import("common/robotUtil.lua")
+
+---@param battle Battle
+function OnBattleSettle(battle)
+    if battle.battleType == _G.BattleType.BATTLE_TYPE_COOP then
+        return OnCoopBattleSettle(battle)
+    end
+end
+
+---@param battle Battle
+function OnCoopBattleSettle(battle)
+    ---@type RankInfo
+    local coopInfo = {
+        roleData = {},
+        dataValue = battle.roundNumber,
+        like = 0,
+        totalTime = _G.GetCurTimeMS() - battle.startTime,
+        rankCoopData = {
+            roleData = {},
+        },
+        serverId = nil,
+        params = {},
+    }
+
+    local serverId;
+    local matchTeamInfo = battle.matchInfo[1]
+    for _, player in pairs(matchTeamInfo.players) do
+        if not robotUtil.IsRobotUid(player.id) then
+            if serverId ~= nil and serverId ~= player.serverId then
+                LogErr("OnCoopBattleSettle, serverId not match, matchTeamInfo.players:{}", matchTeamInfo.players)
+                -- 如果已经进入战斗了则忽略这种情况，排名随机去其中一个人所属的服务器
+                -- return
+            end
+
+            serverId = serverId or player.serverId
+        end
+
+        coopInfo.roleData[player.id] = {
+            uid         = player.id,
+            name        = player.name,
+            head        = player.head,
+            headUrl     = player.headUrl,
+            headboxid   = player.headboxid,
+            guildId     = player.guildId,
+            guildName   = player.guildName,
+            rank        = player.rank,
+            score       = player.score,
+
+            title       = player.title,
+            spiritId    = player.spiritId,
+        }
+
+        local battlePlayer = battle.players[player.id]
+
+        -- 合作模式法宝数据
+        local sutraData = {}
+        local gameCardComponent = battlePlayer.gameCardComponent
+        for _, slotData in pairs(gameCardComponent.equipList) do
+            if slotData.card then
+                local fromPlayer = battle.players[slotData.card.playerUid]
+                local card = fromPlayer.gameCardComponent.cards[slotData.card.id]
+                table.insert(sutraData, {
+                    cardId = slotData.card.id,
+                    star = slotData.card.star,
+                    element = slotData.card.element,
+                    quality = card.quality
+                })
+            end
+        end
+        coopInfo.rankCoopData.roleData[player.id] = {
+            uid = player.id,
+            sutraData = sutraData,
+        }
+    end
+
+    coopInfo.serverId = serverId
+    if coopInfo.serverId == nil then
+        LogErr("OnCoopBattleSettle, serverId is nil, matchTeamInfo.players:{}", matchTeamInfo.players)
+        return
+    end
+
+    LogDebug("OnCoopBattleSettle, coopInfo:{}", coopInfo)
+    -- 暂时不改battle服排行榜同步逻辑
+    _G.CallRankMessage("CalNormalRank", { [_G.RANK_TYPE.Rank_Coop] = { coopInfo } });
+    return coopInfo
+end

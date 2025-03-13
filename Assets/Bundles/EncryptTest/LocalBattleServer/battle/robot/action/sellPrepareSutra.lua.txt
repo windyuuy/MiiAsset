@@ -1,0 +1,14 @@
+-- 卖出法宝
+
+function Run(robot, sellIdx)
+
+    local targetRegion = 1      -- 装备区id
+
+    local msg = {
+        region = targetRegion,
+        slot = sellIdx,
+    }
+
+    robot.lastRequest = "BattleLogic_SellGameCardRequest"
+    c2s.BattleLogic_SellGameCardRequest(robot, msg)
+end

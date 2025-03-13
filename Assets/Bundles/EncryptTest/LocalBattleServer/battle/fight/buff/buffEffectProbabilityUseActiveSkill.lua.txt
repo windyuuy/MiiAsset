@@ -1,0 +1,49 @@
+-- 31. 以一定概率多重释放主动技能
+local reason = import("common/reason.lua")
+local battleMgr = import("battle/battleMgr.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    if not battle then return end
+
+    local releaseEntry  = buff.origin
+    local config = _G.BuffTable[buff.buffId]
+
+    local count     = config.effectData[1]
+    local interval  = config.effectData[2]
+    local skillId   = buff.owner:GetActiveSkill()
+    local probability = 0
+    if count == 2 then
+        probability = releaseEntry:GetAttribute(_G.AttributeType.TWO_HIT_RATE)
+    elseif count == 3 then
+        probability = releaseEntry:GetAttribute(_G.AttributeType.THREE_HIT_RATE)
+    elseif count == 4 then
+        probability = releaseEntry:GetAttribute(_G.AttributeType.FOUR_HIT_RATE)
+    end
+
+    local random = math.random(1, 10000)
+    if random > probability then
+        return
+    end
+
+    buff.useSkillDelayTimerIds = {}
+    for idx = 1, count do
+        if interval <= 0 then
+            battleFightSkillLogic.ProcessEntrySkill(battle, buff.owner, skillId)
+        else
+            table.insert(buff.useSkillDelayTimerIds, battle.timer:AddTimer(nil, idx * interval, battleFightSkillLogic.ProcessEntrySkill, battle, buff.owner, skillId))
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

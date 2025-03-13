@@ -14,9 +14,9 @@ namespace MiiAsset.Runtime
     public static class AESEncrypter
     {
         private static readonly byte[] Key = Encoding.UTF8.GetBytes("1234567890123456"); // 16字节密钥
-        // private static readonly byte[] Key = Encoding.UTF8.GetBytes("1234567890123459"); // 16字节密钥
-        // private static readonly byte[] IV = Encoding.UTF8.GetBytes("6543210987654321"); // 16字节IV
         private static readonly byte[] IV = Encoding.UTF8.GetBytes("6543210987654323"); // 16字节IV
+
+        private static readonly string OKey = "f:~fDFceUQYEP&";
 
         private static Dictionary<string, string> _recoverRecord = new();
 
@@ -31,7 +31,7 @@ namespace MiiAsset.Runtime
             {
                 case ".json":
                     var jsonContent = File.ReadAllText(inputFile);
-                    var encryptedJson = Encrypt(jsonContent);
+                    var encryptedJson = Encrypt(jsonContent, inputFile);
 
                     backUpFilePath = inputFile.Replace(".json", "-backup.json");
                     backUpFilePath = backUpFilePath.Replace("Bundles", "BackUp");
@@ -46,7 +46,7 @@ namespace MiiAsset.Runtime
 
                 case ".txt":
                     var txtContent = File.ReadAllText(inputFile);
-                    var encryptedTxt = Encrypt(txtContent);
+                    var encryptedTxt = Encrypt(txtContent, inputFile);
 
                     backUpFilePath = inputFile.Replace(".txt", "-backup.txt");
                     backUpFilePath = backUpFilePath.Replace("Bundles", "BackUp");
@@ -100,7 +100,7 @@ namespace MiiAsset.Runtime
 
             if (jsonObject.TryGetValue("d", out JToken encryptedJson))
             {
-                string decryptedJson = Decrypt(encryptedJson.ToString());
+                string decryptedJson = Decrypt(encryptedJson.ToString(), encryptedFile);
                 Console.WriteLine("解密后的 JSON 内容: " + decryptedJson);
             }
             else
@@ -112,12 +112,19 @@ namespace MiiAsset.Runtime
         /// <summary>
         /// AES 加密
         /// </summary>
-        private static string Encrypt(string plainText)
+        private static string Encrypt(string plainText, string pkey)
         {
+            var result = XOREncryptDecrypt(plainText, OKey);
+            var p = XOREncryptDecrypt(pkey, OKey);
+            result = p + result;
+            return result;
+
             using (Aes aesAlg = Aes.Create())
             {
                 aesAlg.Key = Key;
                 aesAlg.IV = IV;
+                // aesAlg.Mode = EncryptionMode;
+                // aesAlg.Padding = PaddingType;
 
                 using (MemoryStream msEncrypt = new MemoryStream())
                 using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, aesAlg.CreateEncryptor(), CryptoStreamMode.Write))
@@ -135,8 +142,17 @@ namespace MiiAsset.Runtime
         /// <summary>
         /// AES 解密
         /// </summary>
-        public static string Decrypt(string cipherText)
+        public static string Decrypt(string cipherText, string pkey)
         {
+            var p = XOREncryptDecrypt(pkey, OKey);
+            if (!cipherText.StartsWith(p))
+            {
+                return cipherText;
+            }
+
+            cipherText = cipherText.Remove(0, p.Length);
+            return XOREncryptDecrypt(cipherText, OKey);
+
             // 创建一个足够大的字节数组来存储解码结果
             Span<byte> buffer = new byte[cipherText.Length * 3 / 4]; // Base64 解码后的最大长度
 
@@ -153,6 +169,8 @@ namespace MiiAsset.Runtime
                 {
                     aesAlg.Key = Key;
                     aesAlg.IV = IV;
+                    // aesAlg.Mode = EncryptionMode;
+                    // aesAlg.Padding = PaddingType;
 
                     using (MemoryStream msDecrypt = new MemoryStream(buffer.Slice(0, bytesWritten).ToArray()))
                     using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aesAlg.CreateDecryptor(), CryptoStreamMode.Read))
@@ -174,16 +192,18 @@ namespace MiiAsset.Runtime
             }
         }
 
-        public static void Do()
+        // XOR 加密/解密方法
+        private static string XOREncryptDecrypt(string input, string key)
         {
-            string inputJsonFile = "Assets/Bundles/GameConfigs/Auto/ActivityTable-ActivityDayFireTable.json"; // 原始 JSON 文件
-            string encryptedJsonFile = "Assets/Bundles/GameConfigs/encrypted.json"; // 加密后保存的 JSON 文件
+            StringBuilder output = new StringBuilder();
+            for (int i = 0; i < input.Length; i++)
+            {
+                // 对每个字符与密钥的对应字符进行 XOR 运算
+                char encryptedChar = (char)(input[i] ^ key[i % key.Length]);
+                output.Append(encryptedChar);
+            }
 
-            // 1. 加密 JSON 并保存到文件
-            EncryptAndSave(inputJsonFile, encryptedJsonFile);
-
-            // 2. 读取加密 JSON 文件并解密
-            DecryptFile(encryptedJsonFile);
+            return output.ToString();
         }
 
         /// <summary>

@@ -1,0 +1,11 @@
+local reason = import("common/reason.lua")
+
+function SkillEffect(context, effectId)
+    LogDebug("skillEffectTowerAddHp:SkillEffect effectId={}", effectId)
+    local targetTeam = context.targetTeam
+    local effectConfig = _G.FEffectTable[effectId]
+    local changeHp = _G.GetTableDataParam(effectConfig.damageValue, context.skillLevel)
+
+    local tower = targetTeam.tower
+    tower:ChangeHp(changeHp[1], reason.SKILL_EFFECT_UPDATE_HP)
+end

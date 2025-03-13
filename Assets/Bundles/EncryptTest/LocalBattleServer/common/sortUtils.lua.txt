@@ -1,0 +1,132 @@
+function IsJoinRank(rank, newData, limit, type)
+    if not rank or not next(rank) then
+        return true;
+    end
+
+    if not newData or not newData.dataValue then
+        return false;
+    end
+
+    if #rank < limit then
+        return true;
+    end
+
+    --判定是否在排行榜上
+    local flag = false;
+    for _, rankData in pairs(rank) do
+        flag = IsSelf(newData, rankData);
+
+        if flag and type == _G.RANK_TYPE.Rank_Battle and newData.dataValue ~= rankData.dataValue then
+            return true;
+        elseif flag == #newData.roleData and #newData.roleData == 2 then
+            if newData.dataValue <= rankData.dataValue then
+                return false;
+            end
+        end
+    end
+
+    if rank[limit].dataValue < newData.dataValue then
+        return true;
+    elseif rank[limit].dataValue == newData.dataValue then
+        if rank[limit].extra and rank[limit].extra < newData.extra then
+            return true;
+        end
+
+        if rank[limit].totalTime and rank[limit].totalTime > newData.totalTime then
+            return true;
+        end
+    end
+
+    return false;
+end
+
+function BubbleSort(rank, newData, limit)
+    if not next(rank) then
+        rank[1] = newData;
+    else
+        if not newData or not newData.dataValue then
+            return false;
+        end
+
+        local head = #rank;
+        local tail = 1;
+
+        local flag = false;
+        local sort = false;
+
+        for i = head, tail, -1 do
+            flag = IsSelf(newData, rank[i]);
+            if flag then
+                newData.like = rank[i].like
+                if newData.dataValue < rank[i].dataValue then
+                    tail = i + 1;
+                    sort = true;
+                    break;
+                else
+                    head = math.max(i - 1, 1);
+                    break;
+                end
+            end
+        end
+
+        if not sort then
+            -- 新数据或者原有数据变大
+            for i = head, tail, -1 do
+                if rank[i].dataValue < newData.dataValue
+                    or (rank[i].extra and rank[i].dataValue == newData.dataValue and rank[i].extra <= newData.extra)
+                    or (rank[i].dataValue == newData.dataValue and (rank[i].totalTime or 0) > newData.totalTime) then
+                    if i < limit and i ~= tail and not IsSelf(newData, rank[i]) then
+                        rank[i + 1] = rank[i];
+                    else
+                        if i < limit and not IsSelf(newData, rank[i]) then
+                            rank[i + 1] = rank[i];
+                        end
+                        rank[i] = newData;
+                    end
+                elseif rank[i].dataValue > newData.dataValue or (rank[i].dataValue == newData.dataValue and (rank[i].totalTime or 0) <= (newData.totalTime or 0)) then
+                    if not IsSelf(newData, rank[i]) then
+                        rank[i + 1] = newData;
+                        break;
+                    end
+                end
+            end
+        else
+            --原有数据降低 目前只有pve排行
+            local hasInsert = false
+            for i = tail, head, 1 do
+                if rank[i].dataValue <= newData.dataValue then
+                    rank[i - 1] = newData;
+                    hasInsert = true
+                    break;
+                else
+                    rank[i - 1] = rank[i];
+                end
+            end
+            if not hasInsert and head < limit then
+                rank[head] = newData;
+            end
+        end
+    end
+end
+
+function IsSelf(newData, rankData)
+    local flag = 0;
+    local roleCount = 0
+
+    if not newData then
+        return false;
+    end
+
+    for uid, _ in pairs(newData.roleData) do
+        roleCount = roleCount + 1;
+        if rankData.roleData[uid] then
+            flag = flag + 1;
+        end
+    end
+
+    if flag == roleCount then
+        return true;
+    end
+
+    return false
+end

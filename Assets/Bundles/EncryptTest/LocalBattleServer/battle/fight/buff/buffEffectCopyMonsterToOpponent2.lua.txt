@@ -1,0 +1,32 @@
+-- 复制触发后的对应id的妖怪到敌方场上
+
+local battleMgr = import("battle/battleMgr.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff, monsterId)
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+
+    if buff.owner:GetEntryType() ~= _G.EntryType.SUTRA then
+        return;
+    end
+
+    -- 敌方
+    for teamId, battleTeam in pairs(battle.battleTeams) do
+        if teamId ~= buff.owner.teamId then
+            for routeGroupId, _ in pairs(battleTeam.monsterPaths) do
+                battle:PushMonsterQueue(teamId, routeGroupId, monsterId, false, false, battle.roundNumber)
+            end
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

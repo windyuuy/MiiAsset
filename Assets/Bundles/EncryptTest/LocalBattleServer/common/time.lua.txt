@@ -1,0 +1,142 @@
+
+_G.timeOffset = _G.timeOffset or 0;
+
+-- 开始冻结的时间
+_G.freezingStartTime = _G.freezingStartTime or 0;
+
+--获取当前时间unixtimstamp, 允许gm调时间
+function _G.GetCurTime()
+    return dive.now or os.time();
+end
+
+function _G.FreezingBattleTime()
+    if _G.freezingStartTime == 0 then
+        -- 获取当前时间
+        _G.freezingStartTime = _G.GetCurTimeMS();
+    end
+end
+
+function _G.RecoverBattleTime()
+    if _G.freezingStartTime > 0 then
+        _G.timeOffset = _G.timeOffset - ((_G.GetCurTimeMS() - _G.freezingStartTime) / 1000);
+        _G.freezingStartTime = 0;
+    end
+end
+
+function _G.GetCurTimeMS()
+    if _G.freezingStartTime > 0 then
+        return _G.freezingStartTime + (_G.timeOffset * 1000);
+    else
+        return dive.GetTimeMS() + (_G.timeOffset * 1000);
+    end
+end
+
+--获取当前时间, 忽略gm调时间
+function _G.GetRealCurTime()
+    return dive.now or os.time();
+end
+
+function _G.SetCurTime(timestamp)
+    local systime = dive.now;
+    if (systime > timestamp) then
+        return false;
+    end
+
+    _G.timeOffset = timestamp - systime;
+    return true;
+end
+
+--unixtimestamp => 格式化时间串 (eg:2017-12-18 12:00:00)
+function _G.GetStdDateTime(timestamp)
+    return os.date("%Y-%m-%d %H:%M:%S", timestamp);
+end
+
+--unixtimestamp => 格式化时间串 (eg:2017-12-18)
+function _G.GetStdDate(timestamp)
+    return os.date("%Y-%m-%d", timestamp);
+end
+
+--格式化时间串 => unixtimestamp (eg:2017-12-18 12:00:00)
+function _G.GetUnixTimeStamp(timestring)
+    if not timestring or string.len(timestring) == 0 then
+        LogErr("error format timestring:{}", timestring);
+        return 0;
+    end
+
+    local patern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)";
+    local year, month, day, hour, min, sec = string.match(timestring, patern);
+    local time_table = {year=year, month=month, day=day, hour=hour, min=min, sec=sec};
+    return os.time(time_table);
+end
+
+--格式化时间串 => unixtimestamp (eg:12:00:00)
+function _G.GetUnixTimeSec(timestring)
+    if not timestring or string.len(timestring) == 0 then
+        LogErr("error format timestring:{}", timestring);
+        return 0;
+    end
+
+    local patern = "(%d+):(%d+):(%d+)";
+    local hour, min, sec = string.match(timestring, patern);
+
+    return hour * 60 * 60  + min * 60  + sec ;
+end
+
+function _G.GetStdDateTimeAdd8()
+    return _G.GetStdDateTime(_G.GetCurTime() + 28800)
+end
+
+-- 将 10:00:00 转换为当天时间 2024-03-04 10:00:00
+function _G.GetTodayUnixTimeStamp(timestring)
+    local currentDate = _G.GetStdDateTime(_G.GetCurTime())
+    local modifiedTimeString = string.gsub(currentDate, "%d%d:%d%d:%d%d", timestring)
+    -- 将时间字符串转换为时间戳
+    return _G.GetUnixTimeStamp(modifiedTimeString)
+end
+
+-- 获取本周指定星期、指定小时的时间戳
+function _G.GetWeeklyTimestamp(now, weekday, hour, timezone)
+    local offset = timezone * 3600
+    -- 获取当前时间
+    now = now + offset
+    local date = os.date("*t", now)
+
+    -- 当前时间的星期几（1表示星期天，2表示星期一，依次类推）
+    local dayOfWeek = date.wday == 1 and 7 or date.wday - 1
+    local day = date.day + (weekday - dayOfWeek)
+
+    -- 计算目标时间
+    local targetDate = {
+        year = date.year,
+        month = date.month,
+        day = day,
+        hour = hour,
+        min = 0,
+        sec = 0
+    }
+    local targetTime = os.time(targetDate)
+
+    return targetTime - offset
+end
+
+function AddTimeOffset(val)
+    _G.timeOffset = _G.timeOffset + val;
+    if _G.timeOffset < 0 then
+        _G.timeOffset = 0
+    end
+end
+
+function SetTimeOffset(val)
+    _G.timeOffset = val
+    if _G.timeOffset < 0 then
+        _G.timeOffset = 0
+    end
+end
+
+function ClrTimeOffset()
+    SetTimeOffset(0);
+end
+
+function GetTimeOffset()
+    return _G.timeOffset
+end

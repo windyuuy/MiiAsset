@@ -1,0 +1,185 @@
+-- ActivityTable
+_G.ActivityTable =
+{
+    [10101] = {activityId = 10101, type = 1, activityName = "七日签到", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 1, startTime = "2023-12-30 00:00:00", endTime = "2029-12-30 00:00:00", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 20101, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "签到到期奖励", mailContent = "七日签到活动已结束，你有未领取的奖励请查收。", activityShop = 0, activityFund = 0, activityTop = 0,},
+    [10201] = {activityId = 10201, type = 2, activityName = "每日在线领火种", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 0, startTime = "", endTime = "", dailyStartTime = "", dailyEndTime = "", cycleType = 1, cycleParam = 0, awardResetType = 2, awardGroupId = 0, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "", mailContent = "", activityShop = 0, activityFund = 0, activityTop = 0,},
+    [10301] = {activityId = 10301, type = 3, activityName = "累计充值一期", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 1, startTime = "2024-9-18 23:00:00", endTime = "", dailyStartTime = "", dailyEndTime = "", cycleType = 3, cycleParam = 0, awardResetType = 1, awardGroupId = 20301, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "", mailContent = "", activityShop = 0, activityFund = 0, activityTop = 0,},
+    [10401] = {activityId = 10401, type = 4, activityName = "累天充值一期", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 1, startTime = "2024-9-18 23:00:00", endTime = "", dailyStartTime = "", dailyEndTime = "", cycleType = 3, cycleParam = 0, awardResetType = 1, awardGroupId = 20401, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "", mailContent = "", activityShop = 0, activityFund = 0, activityTop = 0,},
+    [10501] = {activityId = 10501, type = 5, activityName = "浮屠塔全服冲层", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 1, startTime = "2024-9-28 02:00:00", endTime = "2024-10-08 02:00:00", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 20501, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "活动到期奖励", mailContent = "浮屠塔全服冲层活动已结束，你有未领取的奖励，请查收。", activityShop = 0, activityFund = 0, activityTop = 0,},
+    [10601] = {activityId = 10601, type = 6, activityName = "万界大会", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 0, startTime = "", endTime = "", dailyStartTime = "", dailyEndTime = "", cycleType = 2, cycleParam = 0, awardResetType = 1, awardGroupId = 0, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "", mailContent = "", activityShop = 0, activityFund = 0, activityTop = 0,},
+    [10701] = {activityId = 10701, type = 7, activityName = "仙界每日签到", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 0, startTime = "", endTime = "", dailyStartTime = "", dailyEndTime = "", cycleType = 4, cycleParam = 28, awardResetType = 1, awardGroupId = 20701, awardStepGroupId = 20702, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "签到到期奖励", mailContent = "仙界签到每日奖励已重置，你有未领取的奖励请查收。", activityShop = 0, activityFund = 0, activityTop = 0,},
+    [10801] = {activityId = 10801, type = 8, activityName = "元旦活动", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 1, startTime = "2024-12-31 16:00:00", endTime = "2025-01-09 16:00:00", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 20801, awardStepGroupId = 0, taskGroup = 10801, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "活动到期奖励", mailContent = "元旦活动已结束，你有未领取的奖励请查收。", activityShop = 8001, activityFund = 8002, activityTop = 0,},
+    [10901] = {activityId = 10901, type = 9, activityName = "每周签到", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 0, startTime = "", endTime = "", dailyStartTime = "", dailyEndTime = "", cycleType = 4, cycleParam = 7, awardResetType = 1, awardGroupId = 20901, awardStepGroupId = 20902, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "", mailContent = "", activityShop = 3003, activityFund = 0, activityTop = 0,},
+    [10802] = {activityId = 10802, type = 8, activityName = "春节活动", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "", activityParam = {}, serverType = {1, 2, 3}, startType = 1, startTime = "2025-01-25 16:00:00", endTime = "2025-02-04 16:00:00", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 20802, awardStepGroupId = 0, taskGroup = 10802, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "活动到期奖励", mailContent = "春节活动已结束，你有未领取的奖励请查收。", activityShop = 8003, activityFund = 8004, activityTop = 0,},
+    [11001] = {activityId = 11001, type = 10, activityName = "魔蛛来袭", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "c_spider", activityParam = {6901, 32}, serverType = {2}, startType = 2, startTime = "6", endTime = "8", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 0, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "", mailContent = "", activityShop = 0, activityFund = 0, activityTop = 0,},
+    [11101] = {activityId = 11101, type = 11, activityName = "元神pve冲榜活动", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "a_chongbang_yuanshenshilian", activityParam = {}, serverType = {2}, startType = 2, startTime = "3", endTime = "5", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 0, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "活动到期奖励", mailContent = "春节活动已结束，你有未领取的奖励请查收。", activityShop = 4024, activityFund = 8004, activityTop = 28,},
+    [11102] = {activityId = 11102, type = 11, activityName = "元神编队战斗力冲榜活动", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "a_chongbang_yuanzhanli", activityParam = {}, serverType = {2}, startType = 2, startTime = "3", endTime = "5", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 0, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "活动到期奖励", mailContent = "春节活动已结束，你有未领取的奖励请查收。", activityShop = 4025, activityFund = 8004, activityTop = 29,},
+    [11103] = {activityId = 11103, type = 11, activityName = "法宝总等级冲榜活动", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "a_chongbang_fabaodengji", activityParam = {}, serverType = {1}, startType = 2, startTime = "1", endTime = "3", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 0, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "活动到期奖励", mailContent = "春节活动已结束，你有未领取的奖励请查收。", activityShop = 4026, activityFund = 8004, activityTop = 30,},
+    [11104] = {activityId = 11104, type = 11, activityName = "历练进度冲榜活动", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "a_chongbang_fabaolilian", activityParam = {}, serverType = {1}, startType = 2, startTime = "1", endTime = "3", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 0, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "活动到期奖励", mailContent = "春节活动已结束，你有未领取的奖励请查收。", activityShop = 4027, activityFund = 8004, activityTop = 31,},
+    [11105] = {activityId = 11105, type = 11, activityName = "世界boss（元神）冲榜活动", activityDesc = "xxxx", fatherActivityId = 0, activityRes = "a_chongbang_shijieboss", activityParam = {}, serverType = {2}, startType = 2, startTime = "6", endTime = "8", dailyStartTime = "", dailyEndTime = "", cycleType = 0, cycleParam = 0, awardResetType = 1, awardGroupId = 0, awardStepGroupId = 0, taskGroup = 0, randomTaskGroup = 0, randomTaskNum = 0, dailyAward = 0, autoPop = false, popPriority = 0, mutexid = 0, version = 0, mailTitle = "活动到期奖励", mailContent = "春节活动已结束，你有未领取的奖励请查收。", activityShop = 4028, activityFund = 8004, activityTop = 32,},
+}
+
+-- ActivityTaskTable
+_G.ActivityTaskTable =
+{
+    [1080101] = {id = 1080101, groupId = 10801, taskId = 8101,},
+    [1080102] = {id = 1080102, groupId = 10801, taskId = 8102,},
+    [1080103] = {id = 1080103, groupId = 10801, taskId = 8103,},
+    [1080104] = {id = 1080104, groupId = 10801, taskId = 8104,},
+    [1080105] = {id = 1080105, groupId = 10801, taskId = 8105,},
+    [1080106] = {id = 1080106, groupId = 10801, taskId = 8106,},
+    [1080107] = {id = 1080107, groupId = 10801, taskId = 8107,},
+    [1080201] = {id = 1080201, groupId = 10802, taskId = 8201,},
+    [1080202] = {id = 1080202, groupId = 10802, taskId = 8202,},
+    [1080203] = {id = 1080203, groupId = 10802, taskId = 8203,},
+    [1080204] = {id = 1080204, groupId = 10802, taskId = 8204,},
+    [1080205] = {id = 1080205, groupId = 10802, taskId = 8205,},
+    [1080206] = {id = 1080206, groupId = 10802, taskId = 8206,},
+    [1080207] = {id = 1080207, groupId = 10802, taskId = 8207,},
+}
+
+-- ActivityAwardTable
+_G.ActivityAwardTable =
+{
+    [2010101] = {id = 2010101, groupId = 20101, condType = 1, condParam = "1", awards = {"1001|500"}, awardCount = 1, desc = "七日签到", isMail = false, mailId = 0,},
+    [2010102] = {id = 2010102, groupId = 20101, condType = 1, condParam = "2", awards = {"210380|1"}, awardCount = 1, desc = "七日签到", isMail = false, mailId = 0,},
+    [2010103] = {id = 2010103, groupId = 20101, condType = 1, condParam = "3", awards = {"11038|200"}, awardCount = 1, desc = "七日签到", isMail = false, mailId = 0,},
+    [2010104] = {id = 2010104, groupId = 20101, condType = 1, condParam = "4", awards = {"100004|1"}, awardCount = 1, desc = "七日签到", isMail = false, mailId = 0,},
+    [2010105] = {id = 2010105, groupId = 20101, condType = 1, condParam = "5", awards = {"1003|100"}, awardCount = 1, desc = "七日签到", isMail = false, mailId = 0,},
+    [2010106] = {id = 2010106, groupId = 20101, condType = 1, condParam = "6", awards = {"100001|500"}, awardCount = 1, desc = "七日签到", isMail = false, mailId = 0,},
+    [2010107] = {id = 2010107, groupId = 20101, condType = 1, condParam = "7", awards = {"100003|500", "100005|1"}, awardCount = 1, desc = "七日签到", isMail = false, mailId = 0,},
+    [2030101] = {id = 2030101, groupId = 20301, condType = 1, condParam = "6", awards = {"1001|50", "100001|50"}, awardCount = 1, desc = "累计充值1", isMail = false, mailId = 0,},
+    [2030102] = {id = 2030102, groupId = 20301, condType = 1, condParam = "12", awards = {"1001|100", "100001|100"}, awardCount = 1, desc = "累计充值2", isMail = false, mailId = 0,},
+    [2030103] = {id = 2030103, groupId = 20301, condType = 1, condParam = "30", awards = {"1001|500", "100001|150"}, awardCount = 1, desc = "累计充值3", isMail = false, mailId = 0,},
+    [2030104] = {id = 2030104, groupId = 20301, condType = 1, condParam = "68", awards = {"1001|1000", "100001|200"}, awardCount = 1, desc = "累计充值4", isMail = false, mailId = 0,},
+    [2030105] = {id = 2030105, groupId = 20301, condType = 1, condParam = "128", awards = {"1001|1500", "100003|150", "300010|500"}, awardCount = 1, desc = "累计充值5", isMail = false, mailId = 0,},
+    [2030106] = {id = 2030106, groupId = 20301, condType = 1, condParam = "328", awards = {"1001|2000", "100003|400", "300010|1000"}, awardCount = 1, desc = "累计充值6", isMail = false, mailId = 0,},
+    [2030107] = {id = 2030107, groupId = 20301, condType = 1, condParam = "648", awards = {"1001|2500", "100003|1200", "300010|1500"}, awardCount = 1, desc = "累计充值7", isMail = false, mailId = 0,},
+    [2030108] = {id = 2030108, groupId = 20301, condType = 1, condParam = "1000", awards = {"1001|3000", "100003|2000", "300010|2000"}, awardCount = 1, desc = "累计充值8", isMail = false, mailId = 0,},
+    [2030109] = {id = 2030109, groupId = 20301, condType = 1, condParam = "2000", awards = {"1001|4000", "100003|3000", "300010|3000"}, awardCount = 1, desc = "累计充值9", isMail = false, mailId = 0,},
+    [2030110] = {id = 2030110, groupId = 20301, condType = 1, condParam = "5000", awards = {"1001|5000", "100003|5000", "300010|5000"}, awardCount = 1, desc = "累计充值10", isMail = false, mailId = 0,},
+    [2040101] = {id = 2040101, groupId = 20401, condType = 1, condParam = "1", awards = {"1001|50", "100001|10"}, awardCount = 1, desc = "累天充值1", isMail = false, mailId = 0,},
+    [2040102] = {id = 2040102, groupId = 20401, condType = 1, condParam = "2", awards = {"1001|100", "100001|50"}, awardCount = 1, desc = "累天充值2", isMail = false, mailId = 0,},
+    [2040103] = {id = 2040103, groupId = 20401, condType = 1, condParam = "3", awards = {"1001|150", "100001|100"}, awardCount = 1, desc = "累天充值3", isMail = false, mailId = 0,},
+    [2040104] = {id = 2040104, groupId = 20401, condType = 1, condParam = "4", awards = {"1001|200", "100003|150"}, awardCount = 1, desc = "累天充值4", isMail = false, mailId = 0,},
+    [2040105] = {id = 2040105, groupId = 20401, condType = 1, condParam = "5", awards = {"1001|300", "100003|150", "300010|100"}, awardCount = 1, desc = "累天充值5", isMail = false, mailId = 0,},
+    [2040106] = {id = 2040106, groupId = 20401, condType = 1, condParam = "6", awards = {"1001|400", "100003|150", "300010|200"}, awardCount = 1, desc = "累天充值6", isMail = false, mailId = 0,},
+    [2040107] = {id = 2040107, groupId = 20401, condType = 1, condParam = "7", awards = {"1001|500", "100003|150", "300010|300"}, awardCount = 1, desc = "累天充值7", isMail = false, mailId = 0,},
+    [2050101] = {id = 2050101, groupId = 20501, condType = 1, condParam = "500", awards = {"300006|1"}, awardCount = 1, desc = "全服冲层", isMail = false, mailId = 0,},
+    [2050102] = {id = 2050102, groupId = 20501, condType = 1, condParam = "5000", awards = {"100001|500"}, awardCount = 1, desc = "全服冲层", isMail = false, mailId = 0,},
+    [2050103] = {id = 2050103, groupId = 20501, condType = 1, condParam = "10000", awards = {"1001|500"}, awardCount = 1, desc = "全服冲层", isMail = false, mailId = 0,},
+    [2050104] = {id = 2050104, groupId = 20501, condType = 1, condParam = "15000", awards = {"100003|1000"}, awardCount = 1, desc = "全服冲层", isMail = false, mailId = 0,},
+    [2050105] = {id = 2050105, groupId = 20501, condType = 1, condParam = "20000", awards = {"300007|1"}, awardCount = 1, desc = "全服冲层", isMail = false, mailId = 0,},
+    [2070101] = {id = 2070101, groupId = 20701, condType = 1, condParam = "1", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070102] = {id = 2070102, groupId = 20701, condType = 1, condParam = "2", awards = {"1003|5"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070103] = {id = 2070103, groupId = 20701, condType = 1, condParam = "3", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070104] = {id = 2070104, groupId = 20701, condType = 1, condParam = "4", awards = {"100003|100"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070105] = {id = 2070105, groupId = 20701, condType = 1, condParam = "5", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070106] = {id = 2070106, groupId = 20701, condType = 1, condParam = "6", awards = {"300010|200"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070107] = {id = 2070107, groupId = 20701, condType = 1, condParam = "7", awards = {"100004|1"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070108] = {id = 2070108, groupId = 20701, condType = 1, condParam = "8", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070109] = {id = 2070109, groupId = 20701, condType = 1, condParam = "9", awards = {"1003|5"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070110] = {id = 2070110, groupId = 20701, condType = 1, condParam = "10", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070111] = {id = 2070111, groupId = 20701, condType = 1, condParam = "11", awards = {"100003|100"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070112] = {id = 2070112, groupId = 20701, condType = 1, condParam = "12", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070113] = {id = 2070113, groupId = 20701, condType = 1, condParam = "13", awards = {"300010|200"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070114] = {id = 2070114, groupId = 20701, condType = 1, condParam = "14", awards = {"100006|2"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070115] = {id = 2070115, groupId = 20701, condType = 1, condParam = "15", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070116] = {id = 2070116, groupId = 20701, condType = 1, condParam = "16", awards = {"1003|5"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070117] = {id = 2070117, groupId = 20701, condType = 1, condParam = "17", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070118] = {id = 2070118, groupId = 20701, condType = 1, condParam = "18", awards = {"100003|100"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070119] = {id = 2070119, groupId = 20701, condType = 1, condParam = "19", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070120] = {id = 2070120, groupId = 20701, condType = 1, condParam = "20", awards = {"300010|200"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070121] = {id = 2070121, groupId = 20701, condType = 1, condParam = "21", awards = {"100004|1"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070122] = {id = 2070122, groupId = 20701, condType = 1, condParam = "22", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070123] = {id = 2070123, groupId = 20701, condType = 1, condParam = "23", awards = {"1003|5"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070124] = {id = 2070124, groupId = 20701, condType = 1, condParam = "24", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070125] = {id = 2070125, groupId = 20701, condType = 1, condParam = "25", awards = {"100003|100"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070126] = {id = 2070126, groupId = 20701, condType = 1, condParam = "26", awards = {"1001|50"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070127] = {id = 2070127, groupId = 20701, condType = 1, condParam = "27", awards = {"300010|200"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070128] = {id = 2070128, groupId = 20701, condType = 1, condParam = "28", awards = {"100005|1"}, awardCount = 1, desc = "仙界每日签到", isMail = false, mailId = 0,},
+    [2070201] = {id = 2070201, groupId = 20702, condType = 1, condParam = "3", awards = {"1003|10"}, awardCount = 1, desc = "仙界累计签到", isMail = false, mailId = 0,},
+    [2070202] = {id = 2070202, groupId = 20702, condType = 1, condParam = "5", awards = {"100003|500"}, awardCount = 1, desc = "仙界累计签到", isMail = false, mailId = 0,},
+    [2070203] = {id = 2070203, groupId = 20702, condType = 1, condParam = "7", awards = {"300010|500"}, awardCount = 1, desc = "仙界累计签到", isMail = false, mailId = 0,},
+    [2070204] = {id = 2070204, groupId = 20702, condType = 1, condParam = "14", awards = {"100005|1"}, awardCount = 1, desc = "仙界累计签到", isMail = false, mailId = 0,},
+    [2070205] = {id = 2070205, groupId = 20702, condType = 1, condParam = "25", awards = {"1001|500"}, awardCount = 1, desc = "仙界累计签到", isMail = false, mailId = 0,},
+    [2070206] = {id = 2070206, groupId = 20702, condType = 1, condParam = "35", awards = {"100006|10"}, awardCount = 1, desc = "仙界累计签到", isMail = false, mailId = 0,},
+    [2080101] = {id = 2080101, groupId = 20801, condType = 1, condParam = "1", awards = {"1001|200"}, awardCount = 1, desc = "元旦节日签到", isMail = false, mailId = 0,},
+    [2080102] = {id = 2080102, groupId = 20801, condType = 1, condParam = "2", awards = {"100003|500"}, awardCount = 1, desc = "元旦节日签到", isMail = false, mailId = 0,},
+    [2080103] = {id = 2080103, groupId = 20801, condType = 1, condParam = "3", awards = {"300020|15"}, awardCount = 1, desc = "元旦节日签到", isMail = false, mailId = 0,},
+    [2080104] = {id = 2080104, groupId = 20801, condType = 1, condParam = "4", awards = {"100006|3"}, awardCount = 1, desc = "元旦节日签到", isMail = false, mailId = 0,},
+    [2080105] = {id = 2080105, groupId = 20801, condType = 1, condParam = "5", awards = {"1003|30"}, awardCount = 1, desc = "元旦节日签到", isMail = false, mailId = 0,},
+    [2080106] = {id = 2080106, groupId = 20801, condType = 1, condParam = "6", awards = {"300010|600"}, awardCount = 1, desc = "元旦节日签到", isMail = false, mailId = 0,},
+    [2080107] = {id = 2080107, groupId = 20801, condType = 1, condParam = "7", awards = {"1001|400", "100003|800"}, awardCount = 1, desc = "元旦节日签到", isMail = false, mailId = 0,},
+    [2080201] = {id = 2080201, groupId = 20802, condType = 1, condParam = "1", awards = {"1001|200"}, awardCount = 1, desc = "春节节日签到", isMail = false, mailId = 0,},
+    [2080202] = {id = 2080202, groupId = 20802, condType = 1, condParam = "2", awards = {"100003|500"}, awardCount = 1, desc = "春节节日签到", isMail = false, mailId = 0,},
+    [2080203] = {id = 2080203, groupId = 20802, condType = 1, condParam = "3", awards = {"300020|15"}, awardCount = 1, desc = "春节节日签到", isMail = false, mailId = 0,},
+    [2080204] = {id = 2080204, groupId = 20802, condType = 1, condParam = "4", awards = {"100006|3"}, awardCount = 1, desc = "春节节日签到", isMail = false, mailId = 0,},
+    [2080205] = {id = 2080205, groupId = 20802, condType = 1, condParam = "5", awards = {"1003|30"}, awardCount = 1, desc = "春节节日签到", isMail = false, mailId = 0,},
+    [2080206] = {id = 2080206, groupId = 20802, condType = 1, condParam = "6", awards = {"300010|600"}, awardCount = 1, desc = "春节节日签到", isMail = false, mailId = 0,},
+    [2080207] = {id = 2080207, groupId = 20802, condType = 1, condParam = "7", awards = {"1001|400", "100003|800"}, awardCount = 1, desc = "春节节日签到", isMail = false, mailId = 0,},
+    [2090101] = {id = 2090101, groupId = 20901, condType = 1, condParam = "1", awards = {"100001|50"}, awardCount = 1, desc = "每周签到_免费", isMail = false, mailId = 0,},
+    [2090102] = {id = 2090102, groupId = 20901, condType = 1, condParam = "2", awards = {"1001|50"}, awardCount = 1, desc = "每周签到_免费", isMail = false, mailId = 0,},
+    [2090103] = {id = 2090103, groupId = 20901, condType = 1, condParam = "3", awards = {"100003|50"}, awardCount = 1, desc = "每周签到_免费", isMail = false, mailId = 0,},
+    [2090104] = {id = 2090104, groupId = 20901, condType = 1, condParam = "4", awards = {"300020|20"}, awardCount = 1, desc = "每周签到_免费", isMail = false, mailId = 0,},
+    [2090105] = {id = 2090105, groupId = 20901, condType = 1, condParam = "5", awards = {"1001|50"}, awardCount = 1, desc = "每周签到_免费", isMail = false, mailId = 0,},
+    [2090106] = {id = 2090106, groupId = 20901, condType = 1, condParam = "6", awards = {"100003|50"}, awardCount = 1, desc = "每周签到_免费", isMail = false, mailId = 0,},
+    [2090107] = {id = 2090107, groupId = 20901, condType = 1, condParam = "7", awards = {"100006|1"}, awardCount = 1, desc = "每周签到_免费", isMail = false, mailId = 0,},
+    [2090201] = {id = 2090201, groupId = 20902, condType = 1, condParam = "1", awards = {"1001|150"}, awardCount = 1, desc = "每周签到_周卡", isMail = false, mailId = 0,},
+    [2090202] = {id = 2090202, groupId = 20902, condType = 1, condParam = "2", awards = {"1003|10"}, awardCount = 1, desc = "每周签到_周卡", isMail = false, mailId = 0,},
+    [2090203] = {id = 2090203, groupId = 20902, condType = 1, condParam = "3", awards = {"100003|100"}, awardCount = 1, desc = "每周签到_周卡", isMail = false, mailId = 0,},
+    [2090204] = {id = 2090204, groupId = 20902, condType = 1, condParam = "4", awards = {"300008|100"}, awardCount = 1, desc = "每周签到_周卡", isMail = false, mailId = 0,},
+    [2090205] = {id = 2090205, groupId = 20902, condType = 1, condParam = "5", awards = {"300020|10"}, awardCount = 1, desc = "每周签到_周卡", isMail = false, mailId = 0,},
+    [2090206] = {id = 2090206, groupId = 20902, condType = 1, condParam = "6", awards = {"1003|20"}, awardCount = 1, desc = "每周签到_周卡", isMail = false, mailId = 0,},
+    [2090207] = {id = 2090207, groupId = 20902, condType = 1, condParam = "7", awards = {"100006|4"}, awardCount = 1, desc = "每周签到_周卡", isMail = false, mailId = 0,},
+}
+
+-- ActivityOnlineRewardTable
+_G.ActivityOnlineRewardTable =
+{
+    [1] = {id = 1, items = {"1001|10"}, nextAd = 2, cd = 60, defaultReward = true,},
+    [2] = {id = 2, items = {"1001|10"}, nextAd = 3, cd = 600, defaultReward = false,},
+    [3] = {id = 3, items = {"1001|10"}, nextAd = 0, cd = 1200, defaultReward = false,},
+}
+
+-- ActivityDayFireTable
+_G.ActivityDayFireTable =
+{
+    [1] = {id = 1, startTime = "03:00:00", overTime = "16:00:00", awards = {"100001|100"},},
+    [2] = {id = 2, startTime = "09:00:00", overTime = "16:00:00", awards = {"100001|100"},},
+}
+
+-- ActivityWorldCompetitionTable
+_G.ActivityWorldCompetitionTable =
+{
+    [1] = {id = 1, items = {"300020|4"},},
+    [2] = {id = 2, items = {"300020|2"},},
+    [3] = {id = 3, items = {"300020|3"},},
+}
+
+-- WorldCompetitionRoundTable
+_G.WorldCompetitionRoundTable =
+{
+    [1] = {id = 1, randomType = 1, randomGroupCount = 3, randomPerCount = 3, spellCategory = 0,},
+    [2] = {id = 2, randomType = 2, randomGroupCount = 3, randomPerCount = 3, spellCategory = 0,},
+    [3] = {id = 3, randomType = 1, randomGroupCount = 3, randomPerCount = 3, spellCategory = 0,},
+    [4] = {id = 4, randomType = 2, randomGroupCount = 3, randomPerCount = 3, spellCategory = 1,},
+    [5] = {id = 5, randomType = 1, randomGroupCount = 3, randomPerCount = 3, spellCategory = 0,},
+    [6] = {id = 6, randomType = 2, randomGroupCount = 3, randomPerCount = 3, spellCategory = 2,},
+}
+
+-- WorldCompetitionStageTable
+_G.WorldCompetitionStageTable =
+{
+    [1] = {id = 1, stage = 1, stageName = "开赛预告", stageDesc = "周一 00:00", openWeekDay = 1, openTime = 0, continueTime = 36, canBuild = false, canBattle = false, battleTime = {}, stageTimeDesc = {"0|36|{0}后开始配置阵容"},},
+    [2] = {id = 2, stage = 2, stageName = "可抽取法宝", stageDesc = "周二 12:00", openWeekDay = 2, openTime = 12, continueTime = 12, canBuild = true, canBattle = false, battleTime = {}, stageTimeDesc = {"0|12|{0}后开始配置阵容", "12|31|{0}后开始开启第一日比赛"},},
+    [3] = {id = 3, stage = 3, stageName = "第一日积分赛", stageDesc = "周三 19:00", openWeekDay = 3, openTime = 0, continueTime = 24, canBuild = true, canBattle = true, battleTime = {19, 21}, stageTimeDesc = {"0|19|{0}后开始开启第一日比赛", "19|2|{0}后第一日比赛结束", "21|22|{0}后开始开启第二日比赛"},},
+    [4] = {id = 4, stage = 4, stageName = "第二日积分赛", stageDesc = "周四 19:00", openWeekDay = 4, openTime = 0, continueTime = 24, canBuild = true, canBattle = true, battleTime = {19, 21}, stageTimeDesc = {"0|19|{0}后开始开启第二日比赛", "19|2|{0}后第二日比赛结束", "21|22|{0}后开始开启第三日比赛"},},
+    [5] = {id = 5, stage = 5, stageName = "第三日积分赛", stageDesc = "周五 19:00", openWeekDay = 5, openTime = 0, continueTime = 22, canBuild = true, canBattle = true, battleTime = {19, 21}, stageTimeDesc = {"0|19|{0}后开始开启第三日比赛", "19|2|{0}后第三日比赛结束", "21|2|本周比赛已结束"},},
+    [6] = {id = 6, stage = 6, stageName = "发放奖励", stageDesc = "周五 22:00", openWeekDay = 5, openTime = 22, continueTime = 50, canBuild = false, canBattle = false, battleTime = {}, stageTimeDesc = {"0|50|本周比赛已结束"},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("ActivityTable")
+end

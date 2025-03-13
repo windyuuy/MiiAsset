@@ -1,0 +1,33 @@
+--持续时间内无法D牌
+local battleMgr = import("battle/battleMgr.lua")
+
+-- 持续时间内，无法D牌
+-- 不需要buff参数配置
+-- 需要通知客户端，若当前玩家sp足够，也无法D牌
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    ---@type Battle
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    for _, player in pairs(battle.players) do
+        if player.teamId == buff.owner.teamId then
+            player.gameCardComponent.cannotRefreshCard = (player.gameCardComponent.cannotRefreshCard or 0) + 1
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    ---@type Battle
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    for _, player in pairs(battle.players) do
+        if player.teamId == buff.owner.teamId then
+            player.gameCardComponent.cannotRefreshCard = player.gameCardComponent.cannotRefreshCard - 1
+        end
+    end
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

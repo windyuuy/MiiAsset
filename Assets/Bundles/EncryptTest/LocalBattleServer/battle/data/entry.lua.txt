@@ -1,0 +1,1005 @@
+-- 实体模块
+
+local battleIntent = import("battle/battleIntent.lua")
+local battleMgr = import("battle/battleMgr.lua")
+local eventManager = import("battle/event/eventManager.lua")
+local reason = import("common/reason.lua")
+local attributeComp = import("battle/components/attributeComponent.lua")
+local statusComp = import("battle/components/statusComponent.lua")
+local buffComp = import("battle/components/buffComponent.lua")
+local elementComp = import("battle/components/elementComponent.lua")
+local skillComp = import("battle/components/skillComponent.lua")
+local resourceComp = import("battle/components/resourceComponent.lua")
+local skillCondition    = import("battle/fight/skillCondition/skillCondition.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+local battleFightMoveLogic = import("battle/fight/battleFightMoveLogic.lua")
+local grid = import("battle/utils/grid.lua")
+
+_G.EntryType = {
+    NONE = 0, -- 未知
+    TOWER = 2, -- 基地
+    MONSTER = 3, -- 怪物
+    FLYER = 4, -- 飞行物
+    SUMMONER = 5, -- 召唤物
+    RANGE_EFFECT = 6, -- 范围效果
+}
+
+---@param monster Monster
+function MonsterDead(monster)
+    if monster.curHP > 0 then
+        return
+    end
+
+    local battle = battleMgr.GetBattle(monster.battleId)
+    local battleTeam = battle.battleTeams[monster.teamId]
+    for _, player in pairs(battle.players) do
+        if player.teamId == monster.teamId then
+            -- 给自己阵营玩家增加法力
+            resourceComp.ChangeMana(player.resourceComponent, player, monster.monsterAttributeConfig.dropMana);
+        end
+    end
+    for _, team in pairs(battle.battleTeams) do
+        if team.teamId ~= monster.teamId then
+            -- 在对方场地生成怪物
+            if monster.monsterAttributeConfig.transmigration == 1 and monster.isReborn == false then
+                -- 延迟2s生成怪物
+                _G.timer.AddTimer(nil, 2, createMonsterOnEnemy, battle.battleId, team.teamId, monster.monsterId)
+            end
+        end
+    end
+
+    -- 怪物数量变化事件
+    local eventMonsterCountChange = eventManager.CreateMonsterCountChangeEvent(battleTeam)
+    eventManager.DispatchEvent(battle.eventManager, eventMonsterCountChange)
+
+    -- 广播怪物死亡
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.MONSTER_DESTROY, {
+        teamId = monster.teamId,
+        monster = monster:GetMonsterData(),
+        reason = reason.MONSTER_DEAD_DESTROY,
+    })
+end
+
+function createMonsterOnEnemy(battleId, teamId, monsterId)
+    local battle = battleMgr.GetBattle(battleId)
+    if not battle then
+        LogDebug("createMonsterOnEnemy: battle is nil: {}", battleId)
+        return
+    end
+    local battleTeam = battle.battleTeams[teamId]
+
+    local nowMS = _G.GetTimeMS()
+    if nowMS > battle.roundEndTime then
+        -- 如果已经结束当前回合，则不再生成怪物
+        return
+    end
+    --battle:CreateMonster(teamId, monsterId, false, 0, true)
+    local createMonsterParam = {
+        teamId = teamId,
+        monsterId = monsterId,
+        isReborn = true
+    }
+    table.insert(battle.monsterQueue, createMonsterParam)
+
+    -- 怪物数量变化事件
+    local eventMonsterCountChange = eventManager.CreateMonsterCountChangeEvent(battleTeam)
+    eventManager.DispatchEvent(battle.eventManager, eventMonsterCountChange)
+end
+
+---@class Entry 实体基类
+---@field entryId number 实体id
+---@field battleId number 战局id
+---@field teamId number 队伍id
+---@field position Position 坐标
+---@field level number 等级
+---@field curHP number 当前血量
+Entry = class()
+
+function CreateEntry(...)
+    return Entry.new(...)
+end
+
+function Entry:ctor(entryId, battleId, teamId, position, level)
+    self.entryId = entryId
+    self.battleId = battleId
+    self.teamId = teamId
+    self.position = position
+
+    self.level = level
+    self.curHP = 1
+end
+
+function Entry:Reset()
+
+end
+
+function Entry:GetEntryType()
+    return _G.EntryType.NONE
+end
+
+function Entry:GetAttribute(attrId)
+    if self.attributeComponent then
+        return self.attributeComponent:GetAttribute(attrId)
+    end
+
+    return 0
+end
+
+function Entry:ChangeHp(changeHp, updateReason)
+    local oldHP = self.curHP
+
+    if changeHp == 0 then
+        return
+    elseif changeHp > 0 then
+        self:AddHP(changeHp)
+    else
+        self:DelHP(-changeHp)
+    end
+
+    -- 通知血量变化
+    local msg = {
+        teamId = self.teamId,
+        entry = self:GetEntryData(),
+        attributeType = _G.ATTRIBUTE_TYPE.HP,
+        oldValue = oldHP,
+        newValue = self.curHP,
+        reason = updateReason,
+    }
+    battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.ENTRY_ATTRIBUTE_CHANGE, msg)
+
+    if self:GetEntryType() == _G.EntryType.MONSTER then
+        -- 怪物死亡
+        if self.curHP <= 0 then
+            MonsterDead(self)
+        end
+    elseif self:GetEntryType() == _G.EntryType.TOWER then
+        local battle = battleMgr.GetBattle(self.battleId)
+        local eventTowerHpChange = eventManager.CreateTowerHpChangeEvent(self)
+        eventManager.DispatchEvent(battle.eventManager, eventTowerHpChange)
+    end
+end
+
+function Entry:AddHP(addHP)
+    if addHP <= 0 then
+        return
+    end
+
+    self.curHP = self.curHP + addHP
+    local maxHP = self:GetAttribute(_G.AttributeType.FINAL_HEALTH)
+    self.curHP = math.min(self.curHP, maxHP)
+end
+
+function Entry:DelHP(delHP)
+    if delHP <= 0 then
+        return
+    end
+
+    self.curHP = self.curHP - delHP
+    self.curHP = math.max(self.curHP, 0)
+end
+
+---------------------------------------------------
+
+---@class Monster : Entry 怪物
+---@field monsterId number 怪物id
+---
+---@field curHP number 当前hp
+---@field routeId number 怪物路径id
+---@field lastMoveTime number 上一次移动时间
+---@field totalMoveDistance number 总移动距离
+---@field monsterLevel number 怪物局外等级
+---
+---@field attributeComponent AttributeComponent 属性组件
+---@field statusComponent StatusComponent 状态组件
+---@field buffComponent BuffComponent buff组件
+---@field elementComponent ElementComponent 元素组件
+---@field skillComponent SkillComponent 技能组件
+---
+---@field skillTimerId number 释放技能定时器id
+---@field monsterAttributeConfig table 怪物属性配置
+---
+---@field isReborn boolean 是否是重生怪
+Monster = class(Entry)
+
+function CreateMonster(...)
+    return Monster.new(...)
+end
+
+function Monster:ctor(entryId, battleId, teamId, position, level, monsterId, monsterLevel, routeId)
+    self.monsterId          = monsterId
+
+    self.curHP = 0
+
+    self.routeId            = routeId
+    self.lastMoveTime       = _G.GetTimeMS()
+    self.totalMoveDistance  = 0
+
+    self.attributeComponent = nil
+    self.statusComponent    = statusComp.CreateStatusComponent()
+    self.buffComponent      = buffComp.CreateBuffComponent()
+    self.elementComponent   = elementComp.CreateElementComponent()
+    self.skillComponent     = skillComp.CreateSkillComponent()
+
+    self.monsterLevel   = monsterLevel
+    self.skillTimerId = nil
+    self.isReborn = false
+end
+
+function Monster:Init(isReborn)
+    local config = self:GetMonsterConfig()
+    local attributeConfig = self:GetMonsterAttributeConfig(config)
+
+    -- 初始化状态组件
+    self.statusComponent:Init(_G.EntryType.MONSTER)
+
+    self.curHP = attributeConfig.baseHealth
+    self.attributeComponent = attributeComp.CreateAttributeComponent(self)
+    self.attributeComponent:Init(attributeConfig)
+
+    self.monsterAttributeConfig = config
+
+    self.isReborn = isReborn
+end
+
+function Monster:Reset()
+    local battle = battleMgr.GetBattle(self.battleId)
+    buffComp.Reset(battle, self.buffComponent)
+
+    if self.skillTimerId then
+        _G.timer.DelTimer(self.skillTimerId)
+    end
+end
+
+function Monster:GetEntryType()
+    return _G.EntryType.MONSTER
+end
+
+function Monster:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+
+        position = self.position,
+        level = self.round,
+        maxHP = self:GetAttribute(_G.AttributeType.FINAL_HEALTH),
+        curHP = self.curHP,
+        speed = self:GetAttribute(_G.AttributeType.FINAL_MOVE_SPEED),
+    }
+end
+
+function Monster:GetMonsterData()
+    return {
+        monsterId = self.monsterId,
+        entry = self:GetEntryData()
+    }
+end
+
+function Monster:GetMonsterConfig()
+    local config = nil
+    -- 每一轮的怪物属性倍率不同
+    if _G.MonsterAttributeTable[self.monsterId] then
+        if _G.MonsterAttributeTable[self.monsterId][self.level] then
+            config = _G.MonsterAttributeTable[self.monsterId][self.level]
+        else
+            local maxMonsterRound = 0
+            for level, _ in pairs(_G.MonsterAttributeTable[self.monsterId]) do
+                if level > maxMonsterRound then
+                    maxMonsterRound = level
+                end
+            end
+
+            config = _G.MonsterAttributeTable[self.monsterId][maxMonsterRound]
+        end
+    end
+
+    if not config then
+        LogErr("GetMonsterAttributeConfig, could not find monster attribute table, monsterId={}", self.monsterId)
+    end
+
+    return config
+end
+
+function Monster:GetMonsterAttributeConfig(config)
+    local monsterLevelConfig = _G.MonsterLevelTable[self.monsterId][self.monsterLevel]
+    if not monsterLevelConfig then
+        LogErr("GetMonsterAttributeConfig, could not find monster level table, monsterId={}, monsterLevel={}", self.monsterId, self.monsterLevel)
+        return config
+    end
+
+    local attributeConfig = {}
+    attributeConfig.baseAttack = config.baseAttack * monsterLevelConfig.baseAttack
+    attributeConfig.baseHealth = config.baseHealth * monsterLevelConfig.baseHealth
+    attributeConfig.baseMoveSpeed = config.baseMoveSpeed * monsterLevelConfig.baseMoveSpeed
+    attributeConfig.baseToughness = config.baseToughness * monsterLevelConfig.baseToughness
+    attributeConfig.baseJinDefence = config.baseJinDefence * monsterLevelConfig.baseJinDefence
+    attributeConfig.baseMuDefence = config.baseMuDefence * monsterLevelConfig.baseMuDefence
+    attributeConfig.baseShuiDefence = config.baseShuiDefence * monsterLevelConfig.baseShuiDefence
+    attributeConfig.baseShuiDefence = config.baseShuiDefence * monsterLevelConfig.baseShuiDefence
+    attributeConfig.baseHuoDefence = config.baseHuoDefence * monsterLevelConfig.baseHuoDefence
+    attributeConfig.baseTuDefence = config.baseTuDefence * monsterLevelConfig.baseTuDefence
+    --LogDebug("Monster:GetMonsterAttributeConfig, round:{} attributeConfig:{} monsterLevelConfig:{}", config.level, attributeConfig, monsterLevelConfig)
+    return attributeConfig
+end
+
+function Monster:CanUseSkill(skillId)
+    local nowMS = _G.GetTimeMS()
+    return skillComp.CanUseSkill(self.skillComponent, skillId, nowMS)
+end
+
+---------------------------------------------------
+
+---@class Flyer : Entry 飞行物
+---@field flyerId number 飞行物id
+---@field releaseEntry Entry 释放单位
+---@field targetEntry Entry 目标单位
+---@field skillComponent SkillComponent 技能组件
+---@field buffComponent buffComponent buff组件
+---@field skillTimerId number 释放技能定时器id
+Flyer = class(Entry)
+
+function CreateFlyer(...)
+    return Flyer.new(...)
+end
+
+function Flyer:ctor(entryId, battleId, teamId, position, level, flyerId, releaseEntry, targetEntry)
+    self.flyerId = flyerId
+    self.position = releaseEntry.position
+    self.releaseEntry = releaseEntry
+    self.targetEntry = targetEntry
+
+    self.skillComponent = skillComp.CreateSkillComponent()
+    self.buffComponent = buffComp.CreateBuffComponent()
+
+    self.skillTimerId = nil
+end
+
+function Flyer:Reset()
+    if self.skillTimerId then
+        _G.timer.DelTimer(self.skillTimerId)
+    end
+end
+
+function Flyer:GetEntryType()
+    return _G.EntryType.FLYER
+end
+
+function Flyer:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+
+        position = self.position,
+
+        level = self.level,
+        speed = self:GetAttribute(_G.AttributeType.FINAL_MOVE_SPEED),
+    }
+end
+
+function Flyer:GetFlyerData()
+    return {
+        flyerId = self.flyerId,
+        entry = self:GetEntryData(),
+        releaseEntry = self.releaseEntry:GetEntryData(),
+        targetEntry = self.targetEntry:GetEntryData(),
+    }
+end
+
+function Flyer:GetAttribute(attrId)
+    if attrId == _G.AttributeType.FINAL_MOVE_SPEED then
+        local config = _G.FFlyerTable[self.flyerId]
+        if not config then
+            LogErr("Flyer:GetAttribute can not found flyer config, flyer id {}", self.flyerId)
+            return 0
+        end
+
+        return config.moveSpeed
+    end
+
+    -- 飞行物没有属性
+    return 0
+end
+
+---------------------------------------------------
+
+---@class Summoner : Entry 召唤物
+---@field summonerId number 召唤物id
+---@field playerId string 所属玩家id
+---@field quality number 卡牌品质
+---@field skillComponent SkillComponent 技能组件
+---@field buffComponent BuffComponent buff组件
+---@field attributeComponent AttributeComponent 属性组件
+---@field skillTimerId number 技能定时器id
+---@field activePassiveList table<number> 已经激活的被动列表
+---@field critBuffCount number 暴击buff数量
+Summoner = class(Entry)
+
+function CreateSummoner(...)
+    return Summoner.new(...)
+end
+
+function Summoner:ctor(entryId, battleId, teamId, position, level, summonerId, playerId)
+    self.summonerId = summonerId
+    self.playerId = playerId
+    self.quality = 0
+    self.skillComponent = skillComp.CreateSkillComponent()
+    self.buffComponent = buffComp.CreateBuffComponent()
+    self.attributeComponent = nil
+    self.skillTimerId = nil
+    self.activePassiveList = {}
+    self.critBuffCount = 0
+end
+
+function Summoner:Init(cardBaseInfo)
+    self.attributeComponent = attributeComp.CreateAttributeComponent(self)
+    self.attributeComponent:Init(cardBaseInfo.attributes)
+
+    self.quality = self:GetQualityByLevel(self.level)
+end
+
+function Summoner:Reset()
+    if self.skillTimerId then
+        _G.timer.DelTimer(self.skillTimerId)
+    end
+
+    local battle = battleMgr.GetBattle(self.battleId)
+    buffComp.Reset(battle, self.buffComponent)
+end
+
+function Summoner:GetEntryType()
+    return _G.EntryType.SUMMONER
+end
+
+function Summoner:GetSummonerData()
+    local data = {
+        summonerId = self.summonerId,
+        entry = self:GetEntryData(),
+        playerId = self.playerId,
+    }
+
+    return data
+end
+
+function Summoner:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+
+        level = self.level,
+    }
+end
+
+function Summoner:CanUseSkill(skillId)
+    local nowMS = _G.GetTimeMS()
+    return skillComp.CanUseSkill(self.skillComponent, skillId, nowMS)
+end
+
+---重置主动技能
+function Summoner:ResetActiveSkill()
+    local sutraConfig = _G.SutraSkillUpTable[self.summonerId][self.quality]
+    if not sutraConfig then
+        LogErr("Summoner:ResetActiveSkill, cannot find sutra config in table, sutraId:{}, quality:{}", self.summonerId, self.quality)
+        return
+    end
+
+    local cd = self:GetAttribute(_G.AttributeType.FINAL_ATTACK_SPEED)
+    skillComp.UpdateSkillCD(self.skillComponent, sutraConfig.defaultSkillID, _G.GetTimeMS(), cd)
+end
+
+function Summoner:ProcessPassiveSkill(equipList)
+    local battle = battleMgr.GetBattle(self.battleId)
+    local battleTeam = battle.battleTeams[self.teamId]
+    local passiveList = {}
+    local sutraConfig = _G.SutraSkillUpTable[self.summonerId][self.quality]
+    if not sutraConfig then
+        LogErr("Summoner:ProcessPassiveSkill, cannot find sutra config in table, sutraId:{}, quality:{}", self.summonerId, self.quality)
+        return
+    end
+    -- 初始被动
+    if sutraConfig.baseCondition == 0 or skillCondition.CheckCondition(battleTeam, equipList, sutraConfig.baseCondition) then
+        LogDebug("Summoner:ProcessPassiveSkill active base passive, summoner id:{} skill id:{}", self.summonerId, sutraConfig.basePassive)
+        passiveList[1] = sutraConfig.basePassive
+    end
+
+    -- 满星被动
+    if self.level >= _G.MAX_SUTRA_STAR then
+        if sutraConfig.maxCondition == 0 or skillCondition.CheckCondition(battleTeam, equipList, sutraConfig.maxCondition) then
+            LogDebug("Summoner:ProcessPassiveSkill active max passive, summoner id:{} skill id:{}", self.summonerId, sutraConfig.maxPassive)
+            passiveList[2] = sutraConfig.maxPassive
+        end
+    end
+
+    for i = 1, 2 do
+        if self.activePassiveList[i] ~= passiveList[i] then
+            if passiveList[i] then
+                -- 激活被动
+                battleFightSkillLogic.ProcessSummonerPassiveSkill(battle, self, passiveList[i])
+            else
+                -- 取消被动
+                battleFightSkillLogic.ProcessSummonerCancelPassiveSkill(battle, self, self.activePassiveList[i])
+            end
+        end
+    end
+
+    self.activePassiveList = passiveList
+end
+
+---在提升星级时更新基础属性
+---@param cardBaseInfo table 卡牌基础信息（包括局外带入属性）
+function Summoner:UpdateBaseAttribute(cardBaseInfo)
+    local star = self.level
+    local configCopy = _G.DeepClone(cardBaseInfo.attributes)
+
+    -- 根据法宝升星表更新属性
+    for _, data in pairs(_G.SutraStarTable) do
+        local attr = _G.AttrShortName[data.attributeId]
+        if not attr then
+            LogErr("Summoner:UpdateBaseAttribute, attrId:{} is valid in SutraStar", data.attributeId)
+            goto continue
+        end
+
+        -- 目前此处只有等级攻击力加成，该数值使用乘法运算（局外加成 * 星级加成），结果会在计算攻击力的方法中重新参与计算
+        configCopy[attr] = (configCopy[attr] or 0) * data.starValues[star]
+        ::continue::
+    end
+
+    -- 重新赋值基础属性
+    self.attributeComponent:InitBaseAttr(configCopy)
+end
+
+function Summoner:Print()
+    LogInfo("summoner entryId:{} battleId:{} teamId:{} position:{} level:{} curHP:{} summonerId:{} playerId:{}", self.entryId, self.battleId, self.teamId, self.position, self.level, self.curHP, self.summonerId, self.playerId)
+end
+
+-- 根据配置和局外数据计算最终基础数值
+function Summoner:CalBaseAttribute(attrConfig, baseInfo)
+    local config = _G.DeepClone(attrConfig)
+    return config
+end
+
+function Summoner:GetQualityByLevel(level)
+    for quality, data in pairs(_G.SutraQualityTable) do
+        if level >= data.minLevel and level <= data.maxLevel then
+            return quality
+        end
+    end
+
+    return 0
+end
+
+---------------------------------------------------
+
+---@class Tower: Entry 基地
+---@field towerId number 基地id
+---@field invincibleCount number 无敌buff数量
+---@field maxHP number 最大血量
+---@field buffComponent BuffComponent buff组件
+---@field skillComponent SkillComponent 技能组件
+Tower = class(Entry)
+
+function CreateTower(...)
+    return Tower.new(...)
+end
+
+function Tower:ctor(entryId, battleId, teamId, position, level, towerId, hp)
+    self.towerId = towerId
+    self.curHP = 0
+    self.maxHP = 0
+    self.invincibleCount = 0
+    self.buffComponent = buffComp.CreateBuffComponent()
+    self.skillComponent = skillComp.CreateSkillComponent()
+end
+
+function Tower:GetEntryType()
+    return _G.EntryType.TOWER
+end
+
+function Tower:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+        maxHP = self.maxHP,
+        curHP = self.curHP,
+    }
+end
+
+function Tower:GetTowerData()
+    return {
+        towerId = self.towerId,
+        entry = self:GetEntryData()
+    }
+end
+
+function Tower:GetAttribute(attrId)
+    if attrId == _G.AttributeType.FINAL_HEALTH then
+        return self.maxHP
+    end
+
+    return 0
+end
+
+-- 是否无敌
+function Tower:isInvincible()
+    return self.invincibleCount > 0
+end
+
+function Tower:CanUseSkill(skillId)
+    local nowMS = _G.GetTimeMS()
+    return skillComp.CanUseSkill(self.skillComponent, skillId, nowMS)
+end
+
+---------------------------------------------------
+
+---@class RangeEffect: Entry 范围效果
+---@field rangeEffectId number 范围效果id
+---@field releaseEntry Entry 释放实体
+---@field duration number 持续时间
+---@field rangeType number 范围类型
+---@field radius number 范围半径
+---@field monsters table<number, Monster> 范围内怪物
+---@field affectMonsters table<number, boolean> 已经作用的怪物<entryId, boolean>
+---@field entries table<number, Entry> 范围内实体
+---@field affectEntries table<number, boolean> 已经作用的实体<entryId, boolean>
+---@field totalMoveDistance number 总移动距离
+---@field lastMoveTime number 上一次移动时间
+---@field movePath table<Position> 移动路径
+---@field skillComponent SkillComponent 技能组件
+---@field lastReleaseTime number 上一次释放技能时间
+---@field period number 技能周期
+_G.RangeEffectType = {
+    NONE = 0,
+    CIRCLE = 1, -- 圆形范围
+    ALL_CAMP = 2, -- 阵营全体
+}
+
+_G.RangeEffectMoveType = {
+    NOT_MOVE = 0, -- 不移动
+    MOVE_TO_START = 1, -- 移动到起始位置
+}
+
+RangeEffect = class(Entry)
+
+function CreateRangeEffect(...)
+    return RangeEffect.new(...)
+end
+
+function RangeEffect:ctor(entryId, battleId, teamId, position, level, rangeEffectId, releaseEntry, battleTeam)
+    local config = _G.FAreaEffectTable[rangeEffectId]
+    if not config then
+        LogErr("CreateRangeEffect not found range effect:{}", rangeEffectId)
+        return
+    end
+
+    self.rangeEffectId = rangeEffectId
+    self.releaseEntry = releaseEntry
+    if config.continueTime > 0 then
+        self.duration = _G.GetTimeMS() + config.continueTime
+    else
+        self.duration = 0
+    end
+
+    self.rangeType = config.type
+    self.position = nil
+    self.radius = nil
+
+    self.monsters = {}
+    self.affectMonsters = {}
+
+    self.entries = {}
+    self.affectEntries = {}
+
+    self.totalMoveDistance = 0
+    self.lastMoveTime = _G.GetTimeMS()
+    self.movePath = nil
+
+    self.skillComponent = skillComp.CreateSkillComponent()
+
+    self.lastReleaseTime = _G.GetTimeMS()
+    self.period = config.cycleTime
+end
+
+function RangeEffect:Init(position, battleTeam)
+    local config = _G.FAreaEffectTable[self.rangeEffectId]
+    if not config then
+        LogErr("CreateRangeEffect not found range effect:{}", self.rangeEffectId)
+        return
+    end
+
+    self.position = self:getPosition(config, position, battleTeam)
+    self.radius = self:getRadius(config)
+    self.movePath = self:getMovePath(config, battleTeam)
+end
+
+function RangeEffect:Reset()
+    -- 移除所有范围内怪物的buff
+    for _, monster in pairs(self.monsters) do
+        self:removeRangeBuff(monster)
+    end
+
+    for _, entry in pairs(self.entries) do
+        self:removeRangeBuff(entry)
+    end
+end
+
+function RangeEffect:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+
+        level = self.level,
+        speed = self:GetMoveSpeed(),
+    }
+end
+
+function RangeEffect:GetRangeEffectData()
+    return {
+        rangeEffectId = self.rangeEffectId,
+        entry = self:GetEntryData()
+    }
+end
+
+function RangeEffect:Update(nowMS)
+    -- 处理范围效果移动
+    self:rangeEffectMove(nowMS)
+
+    -- 处理范围逻辑
+    if self.rangeType == _G.RangeEffectType.ALL_CAMP then
+        self:UpdateRangeEffectOfAllCamp()
+    elseif self.rangeType == _G.RangeEffectType.CIRCLE then
+        self:UpdateRangeEffectOfCircle()
+    end
+
+    -- 释放周期技能
+    self:ReleasePeriodSkill(nowMS)
+
+    -- 持续时间结束
+    self:rangeEffectEnd(nowMS)
+end
+
+function RangeEffect:UpdateRangeEffectOfAllCamp()
+    local battle = battleMgr.GetBattle(self.battleId)
+    local battleTeam = battle.battleTeams[self.teamId]
+
+    -- TODO: 根据作用目标区分
+    local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+    if rangeEffectConfig.targetEntryType == _G.EntryType.MONSTER then
+        local monsters = {}
+        for _, monster in pairs(battleTeam.monsters) do
+            if not self.affectMonsters[monster.entryId] then
+                -- 第一次进入范围
+                self.affectMonsters[monster.entryId] = true
+                self:releaseFirstEnterSkill(monster)
+                self:releaseRangeBuff(monster)
+            end
+
+            monsters[monster.entryId] = monster
+        end
+        self.monsters = monsters
+    elseif rangeEffectConfig.targetEntryType == _G.EntryType.SUMMONER then
+        local entries = {}
+        for _, summoner in pairs(battleTeam.summoners) do
+            if not self.affectEntries[summoner.entryId] then
+                -- 第一次进入范围
+                self.affectEntries[summoner.entryId] = true
+                self:releaseFirstEnterSkill(summoner)
+                self:releaseRangeBuff(summoner)
+            end
+
+            entries[summoner.entryId] = summoner
+        end
+        self.entries = entries
+    end
+end
+
+function RangeEffect:UpdateRangeEffectOfCircle()
+    local battle = battleMgr.GetBattle(self.battleId)
+    local battleTeam = battle.battleTeams[self.teamId]
+
+    -- TODO: 根据作用目标区分
+    local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+    if rangeEffectConfig.targetEntryType == _G.EntryType.MONSTER then
+        local monsters = {}
+        for _, monster in pairs(battleTeam.monsters) do
+            -- 判断怪物在范围内
+            if grid.IsPointInCircle(self.position, self.radius, monster.position) then
+                if not self.affectMonsters[monster.entryId] then
+                    -- 怪物是第一次进入范围
+                    self:releaseFirstEnterSkill(monster)
+                    self.affectMonsters[monster.entryId] = true
+                end
+
+                if not self.monsters[monster.entryId] then
+                    -- 怪物进入范围
+                    self:releaseRangeBuff(monster)
+                end
+                monsters[monster.entryId] = monster
+            else
+                if self.monsters[monster.entryId] then
+                    -- 怪物走出范围
+                    --LogInfo("怪物走出范围, rangeEffect.monsters:{} monster.entryId:{}", rangeEffect.monsters, monster.entryId)
+                    self:removeRangeBuff(monster)
+                end
+            end
+        end
+        self.monsters = monsters
+    elseif rangeEffectConfig.targetEntryType == _G.EntryType.SUMMONER then
+        -- TODO: 815版本没有圆形范围的对法宝产生效果的范围技能
+    end
+end
+
+function RangeEffect:ReleasePeriodSkill(nowMS)
+    if self.period > 0 and nowMS - self.lastReleaseTime < self.period then
+        return
+    end
+
+    local entries = {}
+    if next(self.monsters) then
+        for _, monster in pairs(self.monsters) do
+            table.insert(entries, monster)
+        end
+    elseif next(self.entries) then
+        for _, entry in pairs(self.entries) do
+            table.insert(entries, entry)
+        end
+    else
+        --LogDebug("RangeEffect:ReleasePeriodSkill not found monsters and entries")
+    end
+
+    if next(entries) then
+        local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+        if not rangeEffectConfig then
+            LogErr("ReleasePeriodSkill not found rangeEffect:{} config", self.rangeEffectId)
+            return
+        end
+
+        local battle = battleMgr.GetBattle(self.battleId)
+
+        for _, skillId in pairs(rangeEffectConfig.timedSkills) do
+            battleFightSkillLogic.ProcessRangeEffectSkillToEntries(battle, self, skillId, entries)
+        end
+    end
+
+    self.lastReleaseTime = self.lastReleaseTime + self.period
+end
+
+-- 范围效果等级变化
+function RangeEffect:OnLevelUpdate()
+    -- 对范围内的对象重新释放buff
+    local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+    if rangeEffectConfig.targetEntryType == _G.EntryType.MONSTER then
+        for _, monster in pairs(self.monsters) do
+            self:removeRangeBuff(monster)
+            self:releaseRangeBuff(monster)
+        end
+    elseif rangeEffectConfig.targetEntryType == _G.EntryType.SUMMONER then
+        for _, entry in pairs(self.entries) do
+            self:removeRangeBuff(entry)
+            self:releaseRangeBuff(entry)
+        end
+    end
+end
+
+function RangeEffect:GetMoveSpeed()
+    local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("RangeEffect:GetMoveSpeed not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    return rangeEffectConfig.moveSpeed
+end
+
+-- 处理范围效果移动
+function RangeEffect:rangeEffectMove(nowMS)
+    local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("rangeEffectMove not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+    local moveType = rangeEffectConfig.moveType
+    if moveType == _G.RangeEffectMoveType.NOT_MOVE then
+        return
+    elseif moveType == _G.RangeEffectMoveType.MOVE_TO_START then
+        local battle = battleMgr.GetBattle(self.battleId)
+        local battleTeam = battle.battleTeams[self.teamId]
+        local path = self.movePath
+        battleFightMoveLogic.ProcessRangeEffectMove(battle, battleTeam, self, path, nowMS)
+    end
+end
+
+-- 使用首次进入范围的技能
+function RangeEffect:releaseFirstEnterSkill(entry)
+    local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("releaseFirstEnterSkill not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    for _, skillId in pairs(rangeEffectConfig.firstEnterSkills) do
+        --LogDebug("releaseFirstEnterSkill rangeEffectConfig.firstEnterSkills:{}, monster:{}, monsterTeamId:{}, skillId:{}", rangeEffectConfig.firstEnterSkills, monster.entryId, monster.teamId, skillId)
+        local battle = battleMgr.GetBattle(self.battleId)
+        battleFightSkillLogic.ProcessRangeEffectSkill(battle, self, skillId, entry)
+    end
+end
+
+-- 范围内怪物添加buff
+function RangeEffect:releaseRangeBuff(entry)
+    local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("releaseRangeBuff not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    local battle = battleMgr.GetBattle(self.battleId)
+    for _, buffId in pairs(rangeEffectConfig.buffs) do
+        buffComp.AddBuff(battle, buffId, entry, self.releaseEntry, self.level, nil, nil)
+    end
+end
+
+-- 移除走出范围怪物的buff
+function RangeEffect:removeRangeBuff(entry)
+    local rangeEffectConfig = _G.FAreaEffectTable[self.rangeEffectId]
+    if not rangeEffectConfig then
+        LogErr("removeRangeBuff not found rangeEffect:{} config", self.rangeEffectId)
+        return
+    end
+
+    local battle = battleMgr.GetBattle(self.battleId)
+    for _, buffId in pairs(rangeEffectConfig.buffs) do
+        buffComp.RemoveBuff(battle, buffId, entry)
+    end
+end
+
+function RangeEffect:rangeEffectEnd(nowMS)
+    if self.duration > 0 and self.duration <= nowMS then
+        battleIntent.InsertBattleIntent(self.battleId, _G.INTENT_TYPE.RANGE_EFFECT_DESTROY, {
+            teamId = self.teamId,
+            rangeEffect = self:GetRangeEffectData(),
+        });
+    end
+end
+
+function RangeEffect:getPosition(config, position, battleTeam)
+    if position then
+        return position
+    end
+
+    if config.moveType == _G.RangeEffectMoveType.NOT_MOVE then
+        return nil
+    elseif config.moveType == _G.RangeEffectMoveType.MOVE_TO_START then
+        return battleTeam.monsterPath.points[#battleTeam.monsterPath.points]
+    end
+end
+
+function RangeEffect:getRadius(config)
+    if config.type == _G.RangeEffectType.CIRCLE then
+        return config.param
+    end
+    return 0
+end
+
+function RangeEffect:getMovePath(config, battleTeam)
+    if config.moveType == _G.RangeEffectMoveType.NOT_MOVE then
+        return nil
+    elseif config.moveType == _G.RangeEffectMoveType.MOVE_TO_START then
+        return self:getReversePath(battleTeam.monsterPath)
+    end
+end
+
+function RangeEffect:getReversePath(path)
+    local newPath = {
+        points = {},
+        lengths = {},
+        length = path.length
+    }
+    for i = #path[1].points, 1, -1 do
+        table.insert(newPath.points, {
+            x = path[1].points[i].x,
+            y = path[1].points[i].y
+        })
+        table.insert(newPath.lengths, path[1].lengths[i])
+    end
+    return newPath
+end

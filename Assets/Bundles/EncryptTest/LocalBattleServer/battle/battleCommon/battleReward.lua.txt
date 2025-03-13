@@ -1,0 +1,47 @@
+-- 战局奖励结算逻辑
+
+_G.BattleRewardCalType = {
+    BATTLE_REWARD_CAL_TYPE_RANDOM_COUNT = 1, -- 随机数量
+    BATTLE_REWARD_CAL_TYPE_BY_ROUND     = 2, -- 根据轮次发放奖励
+}
+
+function CalBattleReward(battle, rewardId)
+    local reward = {}
+
+    if rewardId <= 0 then
+        reward["0"] = 0     -- pve特殊处理，防止客户端json转换错误
+        return reward
+    end
+
+    local battleRewardConfig = _G.BattleAwardTable[rewardId]
+    if not battleRewardConfig then
+        LogErr("CalBattleReward rewardId not exist rewardId={}", rewardId)
+        reward["0"] = 0     -- pve特殊处理，防止客户端json转换错误
+        return reward
+    end
+
+    if battleRewardConfig.type == _G.BattleRewardCalType.BATTLE_REWARD_CAL_TYPE_RANDOM_COUNT then
+        CalRandomCountReward(reward, battle, battleRewardConfig)
+    elseif battleRewardConfig.type == _G.BattleRewardCalType.BATTLE_REWARD_CAL_TYPE_BY_ROUND then
+        CalByRoundReward(reward, battle, battleRewardConfig)
+    end
+
+    return reward
+end
+
+function CalRandomCountReward(reward, battle, battleRewardConfig)
+    for idx, itemId in pairs(battleRewardConfig.randomAwardItems) do
+        local minNum = battleRewardConfig.minNum[idx]
+        local maxNum = battleRewardConfig.maxNum[idx]
+        reward[itemId] = reward[itemId] or 0
+        reward[itemId] = reward[itemId] + math.random(minNum, maxNum)
+    end
+end
+
+function CalByRoundReward(reward, battle, battleRewardConfig)
+    for idx, itemId in pairs(battleRewardConfig.roundAwardItems) do
+        local roundRate = battleRewardConfig.roundRate[idx]
+        reward[itemId] = reward[itemId] or 0
+        reward[itemId] = reward[itemId] + math.floor(battle.roundNumber * roundRate)
+    end
+end

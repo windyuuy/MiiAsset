@@ -1,0 +1,208 @@
+local table   = table
+local os      = os
+local pairs   = pairs
+local ipairs  = ipairs
+
+
+-- 最大精度 1s(battle服0.1S)
+TimerList  = TimerList or {}
+TimerTable = TimerTable or {}
+-- 临时列表
+TmpTimerAddList = TmpTimerAddList or {}
+TmpTimerDelList = TmpTimerDelList or {}
+-- 自增ID
+TimerId = TimerId or 0
+-- 遍历序列
+LastDispatchTimerIdx = LastDispatchTimerIdx or 0;
+
+MAX_PIECE      = 60;
+_G.TIMER_PIECE = _G.TIMER_PIECE or 1;
+
+-----------------------------------
+_G.timer = _G.timer or {};
+
+local function GetTimerIndex(time)
+    -- LogDebug("GetTimerIndex={}", math.floor(time * _G.TIMER_PIECE) % (MAX_PIECE * _G.TIMER_PIECE));
+    return math.floor(time * _G.TIMER_PIECE) % (MAX_PIECE * _G.TIMER_PIECE) + 1;
+end
+
+-- interval s
+local function GetANode(start, interval, stop, f, ...)
+    local timerNode = {};
+    TimerId               = TimerId + 1;
+    timerNode.id          = TimerId;
+    timerNode.interval    = interval;
+    timerNode.callback    = f;
+    timerNode.param       = table.pack(...);
+    timerNode.triggerTime = start or (_G.GetCurTime() + interval);
+    timerNode.stopTime    = _G.GetCurTime() + stop;
+    timerNode.piece       = GetTimerIndex(timerNode.triggerTime);
+    return timerNode;
+end
+
+local function DispatchTimerTask()
+    local now = _G.GetCurTime()
+
+    local nowDispatchTimerIdx = GetTimerIndex(now);
+    local piece    = MAX_PIECE * _G.TIMER_PIECE;
+    local startIdx = LastDispatchTimerIdx + 1;
+    local endIdx   = LastDispatchTimerIdx < nowDispatchTimerIdx and nowDispatchTimerIdx or nowDispatchTimerIdx + piece;
+
+    while true do
+        if startIdx > endIdx then
+            break;
+        end
+
+        local timerList = TimerTable[startIdx > piece and startIdx - piece or startIdx];
+        if not timerList then
+            goto continue;
+        end
+
+        for id, timerNode in pairs(timerList) do
+            if timerNode.triggerTime then
+                if now - timerNode.triggerTime + 1 / _G.TIMER_PIECE > 0 then
+                    if timerNode.isLoop then
+                        if now - timerNode.stopTime > 0 then
+                            -- 已过期 删除掉
+                            timerList[id] = nil;
+                            TimerList[id] = nil;
+                        else
+                            local oldPiece        = timerNode.piece;
+                            timerNode.triggerTime = timerNode.triggerTime + timerNode.interval;
+                            timerNode.piece       = GetTimerIndex(timerNode.triggerTime);
+
+                            if oldPiece ~= timerNode.piece then
+                                TimerTable[timerNode.piece]     = TimerTable[timerNode.piece] or {};
+                                TimerTable[timerNode.piece][id] = timerNode;
+
+                                timerList[id] = nil;
+                            end
+
+                            -- LogDebug("triggerTime={} now={} stopTime={}", timerNode.triggerTime, now, timerNode.stopTime)
+                            xpcall(timerNode.callback, LogErr, table.unpack(timerNode.param));
+                        end
+                    else
+                        -- del the once timer
+                        timerList[id] = nil;
+                        TimerList[id] = nil;
+                        xpcall(timerNode.callback, LogErr, table.unpack(timerNode.param));
+                    end
+                end
+            else
+                -- mean have be flaged
+                timerList[id] = nil;
+                TimerList[id] = nil;
+            end
+        end
+        ::continue::
+
+        startIdx = startIdx + 1;
+    end
+    LastDispatchTimerIdx = nowDispatchTimerIdx;
+end
+
+function _G.timer.AddTimer(start, interval, f, ...)
+    local timerNode  = GetANode(start, interval, 0, f, ...);
+    timerNode.isLoop = false;
+    TmpTimerAddList[timerNode.id] = timerNode;
+    -- LogDebug("AddTimer start={}, interval={} timerNode.piece={} id={}", start, interval, timerNode.piece, timerNode.id)
+    return timerNode.id;
+end
+
+function _G.timer.AddLoopTimer(start, interval, stop, f, ...)
+    local timerNode  = GetANode(start, interval, stop, f, ...);
+    timerNode.isLoop = true;
+    TmpTimerAddList[timerNode.id] = timerNode;
+
+    if start then
+        -- 因为这一帧已经不会被tick了，所以+1，再下一帧会直接触发
+        timerNode.piece = timerNode.piece + 1;
+    end
+    -- LogDebug("AddLoopTimer start={} interval={} stop={} id={}", start, interval, stop, timerNode.id)
+    return timerNode.id;
+end
+
+function _G.timer.DelTimer(id)
+    if TimerList[id] and not TmpTimerDelList[id] then
+        TmpTimerDelList[id] = 1;
+    end
+    if TmpTimerAddList[id] then
+        TmpTimerAddList[id] = nil;
+    end
+end
+
+function _G.timer.UpdateTimer(id, start, interval)
+    if TimerList[id] then
+        TimerList[id].triggerTime = start or (_G.GetCurTime() + interval);
+    end
+end
+
+function _G.timer.stop()
+    TimerList       = {};
+    TimerTable      = {};
+    TmpTimerAddList = {};
+    TmpTimerDelList = {};
+    TimerId         = 0;
+end
+
+-- 其他服1s一次
+function _G.timer.Update(frame)
+    -- 1秒钟一次
+    if frame % 10  == 0 then
+        -- add逻辑
+        for id, timerNode in pairs(TmpTimerAddList) do
+            TimerList[id] = timerNode;
+
+            TimerTable[timerNode.piece]     = TimerTable[timerNode.piece] or {};
+            TimerTable[timerNode.piece][id] = timerNode;
+        end
+        TmpTimerAddList = {};
+
+        -- del逻辑
+        for id, _ in pairs(TmpTimerDelList) do
+            local timerNode = TimerList[id];
+            if timerNode then
+                TimerList[id] = nil;
+
+                TimerTable[timerNode.piece]     = TimerTable[timerNode.piece] or {};
+                TimerTable[timerNode.piece][id] = nil;
+            end
+        end
+        TmpTimerDelList = {};
+
+        -- 遍历
+        xpcall(DispatchTimerTask, LogErr);
+
+        return true;
+    end
+
+    return false;
+end
+
+-- battle服0.1s一次
+function _G.timer.BattleUpdate(frame)
+    for id, timerNode in pairs(TmpTimerAddList) do
+        TimerList[id] = timerNode;
+
+        TimerTable[timerNode.piece]     = TimerTable[timerNode.piece] or {};
+        TimerTable[timerNode.piece][id] = timerNode;
+    end
+    TmpTimerAddList = {};
+
+    -- del逻辑
+    for id, _ in pairs(TmpTimerDelList) do
+        local timerNode = TimerList[id];
+        if timerNode then
+            TimerList[id] = nil;
+
+            TimerTable[timerNode.piece]     = TimerTable[timerNode.piece] or {};
+            TimerTable[timerNode.piece][id] = nil;
+        end
+    end
+    TmpTimerDelList = {};
+
+    -- 遍历
+    xpcall(DispatchTimerTask, LogErr);
+
+    return true;
+end

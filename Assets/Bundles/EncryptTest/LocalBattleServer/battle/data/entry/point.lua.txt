@@ -1,0 +1,26 @@
+
+---@class Point: Entry
+---@field pointId number 点id
+
+_G.Point = class(Entry)
+
+function CreatePoint(...)
+    return Point.new(...)
+end
+
+function Point:GetEntryType()
+    return _G.EntryType.POINT
+end
+
+function Point:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+        level = self.level,
+    }
+end
+
+function Point:ctor(entryId, battleId, teamId, position, level, pointId)
+    self.pointId = pointId
+end

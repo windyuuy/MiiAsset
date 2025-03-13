@@ -1,0 +1,14 @@
+local statusMgr = import("battle/fight/status/statusMgr.lua")
+
+function SkillEffect(context, effectId)
+    local effectConfig = _G.FEffectTable[effectId]
+    local changeDistanceParam = _G.GetTableDataParam(effectConfig.changeDistance, context.skillLevel)
+    local speed = changeDistanceParam[1]
+    local duration = changeDistanceParam[2]
+    --LogDebug("skillEffectChangeDistance:SkillEffect, effectId:{} speed:{} duration:{}", effectId, speed, duration)
+    for _, entry in pairs(context.targetEntries) do
+        if entry:GetEntryType() == _G.EntryType.MONSTER then
+            statusMgr.ChangeStatus(entry, _G.EntryStatus.ENTRY_STATUS_REPEL, duration, { speed = speed })
+        end
+    end
+end

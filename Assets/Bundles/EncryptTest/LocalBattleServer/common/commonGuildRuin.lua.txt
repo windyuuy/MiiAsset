@@ -1,0 +1,141 @@
+-- 宗门界墟公用逻辑
+
+_G.GuildRuinsStatus = {
+    GUILD_RUINS_STATUS_NO_OPEN = 0;
+    GUILD_RUINS_STATUS_CLOSE   = 1;
+    GUILD_RUINS_STATUS_OPEN    = 2;
+    GUILD_RUINS_STATUS_LOCK    = 3;
+}
+
+_G.GuildMagStatus = {
+    GUILD_MAG_STATUS_NONE   = 0;     -- 不在界墟争夺战中
+    GUILD_MAG_STATUS_JOIN   = 1;     -- 报名阶段
+    GUILD_MAG_STATUS_WAIT   = 2;     -- 等待阶段
+    GUILD_MAG_STATUS_OP     = 3;     -- 操作阶段
+    GUILD_MAG_STATUS_BATTLE = 4;     -- 宗门战中
+}
+
+_G.GuildMagOP = {
+    GUILD_MAG_STATUS_PROCESS    = 1;     -- 处理其他人的加入请求
+    GUILD_MAG_STATUS_LEAVE      = 2;     -- 离开宗门
+    GUILD_MAG_STATUS_KICK       = 3;     -- 踢出宗门
+    GUILD_MAG_STATUS_DISMISS    = 4;     -- 解散宗门
+    GUILD_MAG_STATUS_PERSONNEL  = 5;     -- 官职任免
+}
+
+_G.GuildItemEffectType = {
+    GUILD_ITEM_EFFECT_GUILD_ATTACK  = 1;    -- 宗门攻击力
+    GUILD_ITEM_EFFECT_HP            = 2;    -- 血量
+    GUILD_ITEM_EFFECT_DIZZINESS     = 3;    -- 眩晕
+    GUILD_ITEM_EFFECT_REVIVE        = 4;    -- 复活
+    GUILD_ITEM_EFFECT_SPEED         = 6;    -- 攻速
+}
+
+_G.GuildMagOpPower = {
+    [_G.GuildMagStatus.GUILD_MAG_STATUS_NONE] = {
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PROCESS]    = true;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_LEAVE]      = true;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_KICK]       = true;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_DISMISS]    = true;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PERSONNEL]  = true;
+    },
+    [_G.GuildMagStatus.GUILD_MAG_STATUS_JOIN] = {
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PROCESS]    = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_LEAVE]      = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_KICK]       = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_DISMISS]    = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PERSONNEL]  = true;
+    },
+    [_G.GuildMagStatus.GUILD_MAG_STATUS_WAIT] = {
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PROCESS]    = true;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_LEAVE]      = true;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_KICK]       = true;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_DISMISS]    = true;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PERSONNEL]  = true;
+    },
+    [_G.GuildMagStatus.GUILD_MAG_STATUS_OP] = {
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PROCESS]    = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_LEAVE]      = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_KICK]       = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_DISMISS]    = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PERSONNEL]  = false;
+    },
+    [_G.GuildMagStatus.GUILD_MAG_STATUS_BATTLE] = {
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PROCESS]    = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_LEAVE]      = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_KICK]       = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_DISMISS]    = false;
+        [_G.GuildMagOP.GUILD_MAG_STATUS_PERSONNEL]  = false;
+    },
+}
+
+_G.ReikiTaskType = {
+    GUILD_RUINS_REIKI_TASK_NONE       = 1;
+    GUILD_RUINS_REIKI_TASK_CAVE       = 2;
+}
+
+function GetOneRuinStatus(guildRuinId, guildRuinConfig, now)
+    if guildRuinConfig.firstSignTime == 0 then
+        return {
+            status = _G.GuildRuinsStatus.GUILD_RUINS_STATUS_NO_OPEN
+        }
+    end
+
+    if _G.GmStartGuildRuinId == guildRuinId and _G.GmStartGuildRuinData and _G.GmStartGuildRuinData.ruinDeadline > now then
+        if now < _G.GmStartGuildRuinData.joinDeadline then
+            status = _G.GuildRuinsStatus.GUILD_RUINS_STATUS_OPEN
+        elseif now < _G.GmStartGuildRuinData.lockDeadline then
+            status = _G.GuildRuinsStatus.GUILD_RUINS_STATUS_LOCK
+        else
+            status = _G.GuildRuinsStatus.GUILD_RUINS_STATUS_CLOSE
+        end 
+        return {
+            startTime    = _G.GmStartGuildRuinData.startTime,
+            joinDeadline = _G.GmStartGuildRuinData.joinDeadline,
+            lockDeadline = _G.GmStartGuildRuinData.lockDeadline,
+            ruinDeadline = _G.GmStartGuildRuinData.ruinDeadline,
+            status       = status,
+        }
+    end
+
+    local count = math.max(0, math.floor((now - guildRuinConfig.firstSignTime) / guildRuinConfig.openCycle))
+    local startTime = count * guildRuinConfig.openCycle + guildRuinConfig.firstSignTime
+    local joinDeadline = count * guildRuinConfig.openCycle + guildRuinConfig.firstSignTime + guildRuinConfig.signStopTime
+
+    local status
+    if now < guildRuinConfig.firstSignTime then
+        status = _G.GuildRuinsStatus.GUILD_RUINS_STATUS_CLOSE
+    elseif now < joinDeadline then
+        status = _G.GuildRuinsStatus.GUILD_RUINS_STATUS_OPEN
+    elseif now - joinDeadline < guildRuinConfig.signLockTime then
+        status = _G.GuildRuinsStatus.GUILD_RUINS_STATUS_LOCK
+    else
+        status = _G.GuildRuinsStatus.GUILD_RUINS_STATUS_CLOSE
+    end
+    return {
+        startTime    = startTime,
+        joinDeadline = joinDeadline,
+        lockDeadline = joinDeadline + guildRuinConfig.signLockTime,
+        ruinDeadline = joinDeadline + guildRuinConfig.signLockTime + guildRuinConfig.ruinOpenDuring,
+        status       = status,
+    }
+end
+
+-- 获取当前有哪些界墟开启报名中
+function GetAllGuildRuinsStatusData()
+    local now = _G.GetCurTime()
+    local guildRuinsStatus = {}
+    for guildRuinId, guildRuinConfig in pairs(_G.GuildRuinsTable) do
+        guildRuinsStatus[guildRuinId] = GetOneRuinStatus(guildRuinId, guildRuinConfig, now)
+    end
+    return guildRuinsStatus
+end
+
+function GetGuildRuinsStatusData(guildRuinId)
+    local guildRuinConfig = _G.GuildRuinsTable[guildRuinId]
+    if not guildRuinConfig then
+        LogErr("GetGuildRuinsStatusData guildRuinId={} not exist!", guildRuinId)
+        return
+    end
+    return GetOneRuinStatus(guildRuinId, guildRuinConfig, _G.GetCurTime())
+end

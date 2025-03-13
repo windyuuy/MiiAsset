@@ -1,0 +1,67 @@
+_G.DamageType = {
+    DAMAGE_TYPE_NORMAL  = 0,
+    DAMAGE_TYPE_PHYSICS = 1,
+    DAMAGE_TYPE_MAGIC   = 2,
+    DAMAGE_TYPE_REAL    = 3,
+}
+
+function CreateDamageInfo(attacker, attacked, damageType)
+    return {
+        damage   = 0,
+        attacker = attacker,
+        attacked = attacked,
+
+        isCritical = false,     -- 是否暴击
+        --isSplash = false,     -- 是否是溅射伤害
+
+        damageType = damageType,      -- 伤害类型
+
+        -- 伤害数据统计
+        dependUnitType    = 0,  -- 依赖单位类型
+        dependAttrId      = 0,  -- 依赖属性id
+        dependAttrValue   = 0,  -- 依赖属性值
+        dependAttrPercent = 0,  -- 依赖属性百分比
+        fixedValue        = 0,  -- 固定值
+
+        finalDamageRatio  = 0,  -- 最终伤害加成
+        finalInjuryRatio  = 0,  -- 最终承伤加成
+        finalDamageReduce = 0,  -- 最终伤害减免
+        critDamageRatio   = 0,  -- 暴击伤害加成
+
+        resist            = 0,  -- 抗性
+        perPenetrate      = 0,  -- 百分比穿透
+        fixedPenetrate    = 0,  -- 固定穿透
+        finalResist       = 0,  -- 最终抗性
+
+        buffLayer         = 0,  -- buff层数
+        damageRate        = 10000,  -- 伤害比例(用于计算伤害递减)
+    }
+end
+
+function GetDamageInfoData(damageInfo)
+    local data = {
+        attackerId = damageInfo.attacker.entryId,
+        attackedId = damageInfo.attacked.entryId,
+        damage     = damageInfo.damage,
+        damageType = damageInfo.damageType,
+        isCritical = damageInfo.isCritical,
+
+        -- 伤害统计
+        dependUnitType    = damageInfo.dependUnitType,
+        dependAttrId      = damageInfo.dependAttrId,
+        dependAttrValue   = damageInfo.dependAttrValue,
+        dependAttrPercent = damageInfo.dependAttrPercent,
+        fixedValue        = damageInfo.fixedValue,
+        finalDamageRatio  = damageInfo.finalDamageRatio,
+        finalInjuryRatio  = damageInfo.finalInjuryRatio,
+        finalDamageReduce = damageInfo.finalDamageReduce,
+        critDamageRatio   = damageInfo.critDamageRatio,
+        resist            = damageInfo.resist,
+        perPenetrate      = damageInfo.perPenetrate,
+        fixedPenetrate    = damageInfo.fixedPenetrate,
+        finalResist       = damageInfo.finalResist,
+        buffLayer         = damageInfo.buffLayer,
+    }
+
+    return data
+end

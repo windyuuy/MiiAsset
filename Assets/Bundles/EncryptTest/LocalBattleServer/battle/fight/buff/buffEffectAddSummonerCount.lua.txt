@@ -1,0 +1,25 @@
+-- 24. 增加召唤物数量
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local addCount   = buffConfig.effectData[1]
+    local owner      = buff.owner
+
+    owner.addSummonerCount = owner.addSummonerCount or 0 + addCount
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local addCount   = buffConfig.effectData[1]
+    local owner      = buff.owner
+
+    owner.addSummonerCount = math.max(owner.addSummonerCount or 0 - addCount, 0)
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

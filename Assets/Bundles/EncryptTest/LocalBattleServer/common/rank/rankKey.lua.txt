@@ -1,0 +1,45 @@
+--- 处理对应排行榜类型在redis中的key
+
+function getRankKeyByRankGuildBattle(params)
+    return params.guildId .. ":" .. params.levelId
+end
+
+_G.RankKeyFunc = {
+    [_G.RANK_TYPE.Rank_GuildBattle] = getRankKeyByRankGuildBattle,
+}
+
+---@param rankType number
+---@param params table
+function GetRankKey(serverId, rankType, params)
+
+    local rankConfig = _G.RankConfigTable[rankType]
+    if not rankConfig then
+        return nil
+    end
+
+    local rankKeyList = {}
+    table.insert(rankKeyList, "RankData")
+    table.insert(rankKeyList, rankType)
+    table.insert(rankKeyList, rankConfig.rankServerType)
+
+    -- 根据rankServerType判断serverId值
+    if rankConfig.rankServerType == _G.RankServerType.SINGLE_USER_SERVER then
+        table.insert(rankKeyList, serverId)
+    else
+        table.insert(rankKeyList, 0)
+    end
+
+    local func = _G.RankKeyFunc[rankType]
+    if func then
+        local subRankKey = func(params)
+        table.insert(rankKeyList, subRankKey)
+    end
+
+    return table.concat(rankKeyList, ":")
+end
+
+function GetRankType(key)
+    local v = _G.SplitString(key, ":")
+
+    return tonumber(v[2])
+end

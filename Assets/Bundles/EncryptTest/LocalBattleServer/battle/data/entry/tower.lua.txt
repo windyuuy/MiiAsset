@@ -1,0 +1,113 @@
+import("battle/data/entry/entry.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+
+---@class Tower: Entry 基地
+---@field towerId number 基地id
+---@field maxHP number 最大血量
+---@field buffComponent BuffComponent buff组件
+---@field skillComponent SkillComponent 技能组件
+---@field attributeComponent AttributeComponent 属性组件
+---@field roundSkillData table 轮次技能数据
+_G.Tower = class(Entry)
+
+function CreateTower(...)
+    return Tower.new(...)
+end
+
+function Tower:ctor(entryId, battleId, teamId, position, level, towerId, hp)
+    self.towerId = towerId
+    self.curHP = 0
+    self.maxHP = 0
+    self.buffComponent = BuffComponent.new()
+    self.skillComponent = SkillComponent.new()
+    self.roundSkillData = {}
+end
+
+function Tower:Init()
+    local towerConfig = _G.TowerTable[self.towerId]
+    if not towerConfig then
+        LogErr("Tower:Init towerId is invalid:{} not found", self.towerId)
+        return false
+    end
+    self.attributeComponent = AttributeComponent.new(self)
+    self.attributeComponent:Init(towerConfig)
+    self.maxHP = towerConfig.towerHp
+    self.curHP = towerConfig.towerHp
+
+    -- 初始化轮次技能
+    for i = 1, #towerConfig.roundSkills, 2 do
+        local roundTime = towerConfig.roundSkills[i]
+        local skillId = towerConfig.roundSkills[i + 1]
+        self.roundSkillData[skillId] = {
+            roundTime = roundTime,
+            skillId = skillId,
+            isRelease = false,
+        }
+    end
+
+    return true
+end
+
+function Tower:GetEntryType()
+    return _G.EntryType.TOWER
+end
+
+function Tower:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+        position = self.position,
+        maxHP = self.maxHP,
+        curHP = self.curHP,
+    }
+end
+
+function Tower:GetTowerData()
+    return {
+        towerId = self.towerId,
+        entry = self:GetEntryData()
+    }
+end
+
+function Tower:GetTowerSnapshotData()
+    return {
+        entry = {
+            maxHP = self.maxHP,
+            curHP = self.curHP,
+        }
+    }
+end
+
+function Tower:InitFromTowerData(data)
+    self.maxHP = data.entry.maxHP
+    self.curHP = data.entry.curHP
+end
+
+function Tower:GetAttribute(attrId)
+    if attrId == _G.AttributeType.FINAL_HEALTH then
+        return self.maxHP
+    end
+
+    return 0
+end
+
+function Tower:CanUseSkill(skillId)
+    return self.skillComponent:CanUseSkill(skillId, _G.GetCurTimeMS())
+end
+
+function Tower:CheckRoundSkill(battle, roundStartTime)
+    local delta = _G.GetCurTimeMS() - roundStartTime
+    for _, skillData in pairs(self.roundSkillData) do
+        if not skillData.isRelease and delta >= skillData.roundTime then
+            battleFightSkillLogic.ProcessEntrySkill(battle, self, skillData.skillId)
+            skillData.isRelease = true
+        end
+    end
+end
+
+function Tower:ResetRoundSkill(battle)
+    for _, skillData in pairs(self.roundSkillData) do
+        skillData.isRelease = false
+        battleFightSkillLogic.ProcessEntryCancelPassiveSkill(battle, self, skillData.skillId)
+    end
+end

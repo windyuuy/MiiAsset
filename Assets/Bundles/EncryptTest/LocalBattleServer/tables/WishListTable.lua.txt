@@ -1,0 +1,10 @@
+-- WishListTable
+_G.WishListTable =
+{
+    [1001] = {id = 1001, notes = "法宝基础卡池心愿单", times = 500, slotNum = 3, resetType = 0,},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("WishListTable")
+end

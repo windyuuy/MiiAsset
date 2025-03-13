@@ -1,0 +1,77 @@
+local handleCardChangeListIntent    = import("battle/robot/intentHandler/handleCardChangeListIntent.lua")
+local handleResourceIntent          = import("battle/robot/intentHandler/handleResourceIntent.lua")
+local handleCardOptionListIntent    = import("battle/robot/intentHandler/handleCardOptionListIntent.lua")
+local handleRoundInfoIntent         = import("battle/robot/intentHandler/handleRoundInfoIntent.lua")
+local handleFormationStatusIntent   = import("battle/robot/intentHandler/handleFormationStatusIntent.lua")
+local handleGameCardsUpdateIntent   = import("battle/robot/intentHandler/handleGameCardsUpdateIntent.lua")
+local handleGameSpellCardsUpdate    = import("battle/robot/intentHandler/handleGameSpellCardsUpdate.lua")
+local handleMonsterCreate           = import("battle/robot/intentHandler/handleMonsterCreate.lua")
+local handleMonsterDestroy          = import("battle/robot/intentHandler/handleMonsterDestroy.lua")
+
+_G.IntentType = {
+    NONE                    = 0, -- 未知
+    SETTLE                  = 1, -- 结算
+    MONSTER_CREATE          = 2, -- 怪物创建
+    MONSTER_MOVE            = 3, -- 怪物移动
+    MONSTER_DESTROY         = 4, -- 怪物销毁
+    USE_SKILL               = 5, -- 使用技能
+    ENTRY_ATTRIBUTE_CHANGE  = 6, -- 实体属性变化
+    ADD_BUFF                = 7, -- 添加buff
+    REMOVE_BUFF             = 8, -- 移除buff
+    FLYER_CREATE            = 9, -- 飞行物创建
+    ROUND_INFO              = 10, -- 回合信息
+    RESOURCE                = 11, -- 资源
+    SUTRA_CREATE            = 12, -- 法宝创建
+    SUTRA_DESTROY           = 13, -- 法宝销毁
+    ENTRY_STATUS            = 14, -- 实体状态
+    RANGE_EFFECT_CREATE     = 15, -- 范围效果创建
+    RANGE_EFFECT_MOVE       = 16, -- 范围效果移动
+    RANGE_EFFECT_DESTROY    = 17, -- 范围效果销毁
+    DAMAGE_INFO             = 18, -- 伤害信息
+    ELEMENT_ATTACH          = 19, -- 元素附着
+    SUTRA_MOVE              = 20, -- 法宝移动
+    CARD_OPTIONAL_LIST      = 21, -- 选择列表
+    CARD_CHANGE_LIST        = 22, -- 改变列表
+    FORMATION_STATUS        = 23, -- 结阵状态
+    EMOJI                   = 24, -- 发送表情
+    GAME_CARDS_UPDATE       = 25, -- 卡牌区域数据
+    GAME_SPELL_CARDS_UPDATE = 26, -- 法术牌数据更新
+    SUMMONER_CREATE         = 27, -- 召唤物创建
+    SUMMONER_DESTROY        = 28, -- 召唤物销毁
+}
+
+function initIntentTypeHandler()
+    _G.AllIntentTypeHandler = {
+        [_G.IntentType.MONSTER_CREATE]          = handleMonsterCreate,
+        [_G.IntentType.MONSTER_DESTROY]         = handleMonsterDestroy,
+        [_G.IntentType.CARD_CHANGE_LIST]        = handleCardChangeListIntent,
+        [_G.IntentType.ROUND_INFO]              = handleRoundInfoIntent,
+        [_G.IntentType.FORMATION_STATUS]        = handleFormationStatusIntent,
+        [_G.IntentType.GAME_SPELL_CARDS_UPDATE] = handleGameSpellCardsUpdate,
+    }
+
+    _G.PlayersIntentTypeHandler = {
+        [_G.IntentType.RESOURCE]            = handleResourceIntent,
+        [_G.IntentType.CARD_OPTIONAL_LIST]  = handleCardOptionListIntent,
+        [_G.IntentType.GAME_CARDS_UPDATE]   = handleGameCardsUpdateIntent,
+    }
+end
+
+function Handler(robot, params)
+    for _, intent in pairs(params.allIntentList) do
+        local handlerClz = _G.AllIntentTypeHandler[intent.intentType]
+        if handlerClz then
+            handlerClz.Execute(robot, intent)
+        end
+    end
+
+    for _, intent in pairs(params.playersIntentList) do
+        local handlerClz = _G.PlayersIntentTypeHandler[intent.intentType]
+        if handlerClz then
+            handlerClz.Execute(robot, intent)
+        end
+    end
+end
+
+
+initIntentTypeHandler();

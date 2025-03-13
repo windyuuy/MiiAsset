@@ -1,0 +1,61 @@
+--- 根据不同类型计算rankScore
+
+TIMESTAMP_DIVISOR = 10000000000
+TOTAL_TIME_DIVISOR = 100000
+
+-- 按照value, timestamp顺序
+function getRankScoreByValueAndTimestamp(rankInfo)
+    local now = _G.GetCurTime()
+    return rankInfo.dataValue + (1 - now / TIMESTAMP_DIVISOR)
+end
+
+-- 按照value, totalTime, timestamp顺序
+function getRankScoreByValueAndTimeAndTimestamp(rankInfo)
+    local now = _G.GetCurTime()
+
+    local adjustedTotalTime = TOTAL_TIME_DIVISOR - rankInfo.totalTime / 1000    -- 按秒计算
+    local adjustedTimestamp = TIMESTAMP_DIVISOR - now
+
+    return rankInfo.dataValue + adjustedTotalTime / TOTAL_TIME_DIVISOR + adjustedTimestamp / TIMESTAMP_DIVISOR
+end
+
+
+_G.RankScoreFunc = {
+    [_G.RANK_TYPE.Rank_Battle] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_Refiner] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_Coop] = getRankScoreByValueAndTimeAndTimestamp,
+    [_G.RANK_TYPE.Rank_GuildBattle] = getRankScoreByValueAndTimeAndTimestamp,
+    [_G.RANK_TYPE.Rank_WinningStreak] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower1] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower2] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower3] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower4] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower5] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower6] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower7] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower8] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower9] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower10] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower11] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower12] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_MonsterTower13] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_GlobalTower] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_CardBattle]  = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_GuildBattleCombat]  = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_SpiritBoss1] = getRankScoreByValueAndTimestamp,
+    [_G.RANK_TYPE.Rank_GuildBossAll]  = getRankScoreByValueAndTimeAndTimestamp,
+}
+
+---@param rankType number
+---@param rankInfo RankInfo
+function GetRankScore(rankType, rankInfo)
+    local rankScore;
+    local func = _G.RankScoreFunc[rankType]
+    if func then
+        rankScore = func(rankInfo)
+    else
+        rankScore = rankInfo.dataValue
+    end
+
+    return rankScore
+end

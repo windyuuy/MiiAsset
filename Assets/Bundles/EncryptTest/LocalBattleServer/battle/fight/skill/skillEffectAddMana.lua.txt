@@ -1,0 +1,20 @@
+local battleMgr = import("battle/battleMgr.lua")
+local resourceComp = import("battle/components/resourceComponent.lua")
+
+function SkillEffect(context, effectId)
+    local skillId = context.skillId
+    local config = _G.FEffectTable[effectId]
+
+    local player = battleMgr.GetPlayer(context.releaseEntry.playerId)
+    if not player then
+        LogErr("buffEffectAddMana:BuffEffect, can not find player, skillId:{}, uid:{}", context.skillId, context.releaseEntry.playerId)
+        return
+    end
+
+    local params = _G.GetTableDataParam(config.damageValue, context.skill)
+    local fixed = params[1]
+    local rate = params[2]
+    local addValue = fixed + player.resourceComponent.mana * rate / 1000
+    LogDebug("skillEffectAddMana:SkillEffect skillId:{} addValue:{}", skillId, addValue)
+    resourceComp.ChangeMana(player.resourceComponent, player, addValue)
+end

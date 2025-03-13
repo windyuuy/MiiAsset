@@ -1,0 +1,21 @@
+-- 是否有需要卖出的备战区法宝
+
+function Execute(robot)
+    local battleData = robot.battleData;
+
+    local equipCardIds = {}
+    for i=1, 5 do
+        local slot = battleData.equipList[i];
+        if slot.card and slot.card.id and slot.card.id ~= 0 then
+            equipCardIds[slot.card.id] = 1
+        end 
+    end
+
+    for i=1, 4 do
+        local slot = battleData.prepareList[i];
+        if slot.card and slot.card.id and slot.card.id ~= 0 and not equipCardIds[slot.card.id] then
+            return i;
+        end 
+    end
+    return;
+end

@@ -1,0 +1,23 @@
+
+local battleFightAttackLogic = import("battle/fight/battleFightAttackLogic.lua")
+
+-- buff生效
+function BuffEffect(buff)
+    local buffConfig = buff:GetConfig()
+    if buffConfig.type == _G.BuffEffectType.DAMAGE then
+        local effectParam = _G.GetTableDataParam(buffConfig.effectParam, buff.level)
+        local owner = buff.owner
+        local damageValue = owner:GetAttribute(_G.AttributeType.FINAL_HEALTH) * effectParam[1] * buff.layer
+        battleFightAttackLogic.BuffDamageHandler(buff.origin, buff.owner, buff, damageValue)
+        --LogInfo("BuffEffectDamage buff.origin:{} buff.owner:{}, damageValue:{}", buff.origin, buff.owner, damageValue)
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

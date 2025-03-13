@@ -1,0 +1,114 @@
+-- Desc: 地图配置解析
+
+---@class MonsterRoute 怪物路径
+---@field points table<number, Position>
+---@field lengths table<number, number>
+
+---@class PlayerMapConfig 玩家地图配置
+---@field formationPos Position 法阵坐标
+---@field formationSlots table<number, Position> 阵眼坐标
+---@field summonerPoints table<number, Position> 召唤物坐标
+
+---@class TeamMapConfig 队伍地图配置
+---@field towerPos Position 基地坐标
+---@field monsterPaths table<number, table<number, MonsterRoute>> 怪物路径 <路径组id, 多条随机怪物路径>
+---@field randomPathPoints table<number, table<number, Position>> 随机路径坐标 <路径组id, 多个随机路径坐标>
+---@field playerMapConfig table<number, PlayerMapConfig> 玩家地图配置
+
+---@class MapConfig 地图配置
+---@field teamMapConfig table<number, TeamMapConfig> 地图配置
+
+--- 解析 Position
+---@param data table
+---@return Position
+local function parsePosition(data)
+    return { x = data[1], y = data[2] }
+end
+
+--- 解析 MonsterRoute
+---@param data table
+---@return MonsterRoute
+local function parseMonsterRoute(data)
+    local points = {}
+    for i, point in ipairs(data) do
+        points[i] = parsePosition(point)
+    end
+    -- 计算路径长度（假设每个点之间的距离计算）
+    local lengths = {}
+    for i = 1, #points - 1 do
+        local dx = points[i + 1].x - points[i].x
+        local dy = points[i + 1].y - points[i].y
+        lengths[i] = math.sqrt(dx * dx + dy * dy)
+    end
+    return { points = points, lengths = lengths }
+end
+
+--- 解析 PlayerMapConfig
+---@param data table
+---@return PlayerMapConfig
+local function parsePlayerMapConfig(data)
+    local formationPos = parsePosition(data.FormationPos)
+    local formationSlots = {}
+    for i, slot in ipairs(data.SutraSlot) do
+        formationSlots[i] = parsePosition(slot)
+    end
+    local summonerPoints = {}
+    for i, point in ipairs(data.SummonerPoint) do
+        summonerPoints[i] = parsePosition(point)
+    end
+    return {
+        formationPos = formationPos,
+        formationSlots = formationSlots,
+        summonerPoints = summonerPoints,
+    }
+end
+
+--- 解析 TeamMapConfig
+---@param data table
+---@return TeamMapConfig
+local function parseTeamMapConfig(data)
+    local towerPos = parsePosition(data.TowerPos)
+
+    -- 解析怪物路径
+    local monsterPaths = {}
+    for groupId, paths in ipairs(data.PathGroup) do
+        monsterPaths[groupId] = monsterPaths[groupId] or {}
+        for i, pathData in ipairs(paths) do
+            monsterPaths[groupId][i] = parseMonsterRoute(pathData)
+        end
+    end
+
+    -- 解析随机路径坐标
+    local randomPathPoints = {}
+    for groupId, points in ipairs(data.RandomPathGroup) do
+        randomPathPoints[groupId] = randomPathPoints[groupId] or {}
+        for i, pointData in ipairs(points) do
+            randomPathPoints[groupId][i] = parsePosition(pointData)
+        end
+    end
+
+    local playerMapConfig = {}
+    for i, playerData in ipairs(data.Player) do
+        playerMapConfig[i] = parsePlayerMapConfig(playerData)
+    end
+    return {
+        towerPos = towerPos,
+        monsterPaths = monsterPaths,
+        randomPathPoints = randomPathPoints,
+        playerMapConfig = playerMapConfig
+    }
+end
+
+--- 解析 MapConfig
+---@param content string
+---@return MapConfig
+function ParseMapConfig(content)
+    local data = _G.jsonDecode(content)
+    local teamMapConfig = {}
+    for i, teamData in ipairs(data.Team) do
+        teamMapConfig[i] = parseTeamMapConfig(teamData)
+    end
+    return {
+        teamMapConfig = teamMapConfig
+    }
+end

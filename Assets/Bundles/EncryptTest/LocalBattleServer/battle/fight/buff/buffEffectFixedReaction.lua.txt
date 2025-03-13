@@ -1,0 +1,29 @@
+-- 47. 固定反应类型
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    local owner = buff.owner
+    if owner:GetEntryType() ~= _G.EntryType.SUTRA then
+        return
+    end
+
+    local reactionType = buffConfig.effectData[1]
+    owner.fixedReactionType = reactionType
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    local owner = buff.owner
+    if owner:GetEntryType() ~= _G.EntryType.SUTRA then
+        return
+    end
+
+    owner.fixedReactionType = nil
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

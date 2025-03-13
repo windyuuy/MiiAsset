@@ -1,0 +1,10 @@
+-- ResourceVersionTable
+_G.ResourceVersionTable =
+{
+    [1] = {id = 1, versionCode = 1, forceVersionCode = 1, apkUrl = "https://taco-test.static.zhiyouhz.com/uu3duapp/android/tf-2-8583865bd952352fd52adb0b6624b65e.apk",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("ResourceVersionTable")
+end

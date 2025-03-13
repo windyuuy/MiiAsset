@@ -1,0 +1,41 @@
+function Execute(robot)
+    local battleData = robot.battleData
+
+    local equipIds = {}     -- 所有已装备法宝的id列表
+    for idx, slot in pairs(battleData.equipList) do
+        if idx == 5 and not battleData.formationStatus then
+            goto continue
+        end
+        if slot.card and slot.card.id and slot.card.id ~= 0 then
+            equipIds[slot.card.id] = slot.card.star
+        end
+        ::continue::
+    end
+
+    -- 检查备战区是否有空位
+    local freeCount = 0
+    local prepareIds = {}
+    for _, slot in pairs(battleData.prepareList) do
+        if not slot.isLocked and (not slot.card or not slot.card.id or slot.card.id == 0) then
+            freeCount = freeCount + 1
+        else
+            prepareIds[slot.card.id] = slot.card.star
+        end
+    end
+
+    for idx, card in pairs(battleData.optionalList) do
+        if equipIds[card.id] then
+            if equipIds[card.id] == 1 then
+                return idx, 2
+            elseif equipIds[card.id] == 2 then
+                if prepareIds[card.id] then
+                    return idx
+                elseif freeCount > 0 then
+                    return idx
+                end
+            end
+        end
+    end
+
+    return
+end

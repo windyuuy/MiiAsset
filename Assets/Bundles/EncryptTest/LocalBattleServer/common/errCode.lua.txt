@@ -1,0 +1,475 @@
+--各系统返回客户端的错误码
+SUCCESS = 0
+
+-- 登录相关错误
+LOGIN_ERROR_NOT_IN_OPEN_TIME    = 1000001 -- 不在登录时间
+LOGIN_ERROR_LOW_VERSION_DIFF    = 1000002 -- 版本太低
+LOGIN_ERROR_DB_ERROR            = 1000003 -- 数据库错误
+LOGIN_ERROR_LOGIN_NEXT          = 1000004 -- 登录中，需要三秒后重试
+LOGIN_ERROR_IN_BLACK_LIST       = 1000005 -- 黑名单
+LOGIN_ERROR_NOT_IN_WHITE_LIST   = 1000006 -- 不在白名单
+LOGIN_ERROR_NOT_LOGIN           = 1000007 -- 还未登录
+LOGIN_ERROR_ROBOT_ALREADY_LOGIN = 1000008 -- 机器人已经登录
+LOGIN_ERROR_PARAM_ERROR         = 1000009 -- 登录参数错误
+LOGIN_ERROR_PHONE_ERROR         = 1000010 -- 手机号不合法
+LOGIN_ERROR_AUTH_ERROR          = 1000011 -- 身份验证错误
+LOGIN_ERROR_TIME_ERROR          = 1000012 -- 当前不在游戏时间(防沉迷)
+LOGIN_ERROR_PASSWORD_ERROR      = 1000013 -- 密码错误
+LOGIN_ERROR_CODE_ERROR          = 1000014 -- 验证码错误
+LOGIN_ERROR_CODE_EXPIRE         = 1000015 -- 验证码已失效
+LOGIN_ERROR_ACCOUNT_DELETED     = 1000016 -- 账号已注销
+LOGIN_ERROR_NOT_LOAD_AUTH       = 1000017 -- 未加载用户验证信息
+LOGIN_ERROR_NOT_ACCOUNT         = 1000018 -- 用户名不存在
+LOGIN_ERROR_BAN_LOGIN           = 1000019 -- 禁止登录
+LOGIN_ERROR_CHECK_FAILED        = 1000020 -- 登陆验证失败
+LOGIN_ERROR_TOO_OFTEN           = 1000021 -- 登陆太频繁
+
+-- kick相关原因
+KICK_RES_LOGIN_OTHER_DEVICE     = 1000101 -- 在别的设备上登录
+KICK_RES_DELETE_ACCOUNT         = 1000102 -- 注销账户
+KICK_RES_NOT_GAME_TIME          = 1000103 -- 不在游戏时间
+KICK_RES_TEST_DISCONNECT        = 1000104 -- 测试断开连接
+KICK_RES_BAN_LOGIN              = 1000105 -- 禁止登录
+
+-- 匹配相关的错误
+MATCH_ERROR_FEW_PLAYER          = 1001001 -- 人太少匹配超时
+MATCH_ERROR_OVERLOAD            = 1001002 -- 匹配服过载
+MATCH_ERROR_PLAYER_MATCHING     = 1001003 -- 已在匹配中
+MATCH_ERROR_INVALID_TEAMSIZE    = 1001004 -- 队伍人数不符合要求
+MATCH_ERROR_NOT_LOGIN           = 1001005 -- 未登录
+MATCH_ERROR_MODE_ERROR          = 1001006 -- 模式错误（可以旧模式已下线）
+MATCH_ERROR_STATUS_MATCHING     = 1001007 -- 玩家正在匹配中
+MATCH_ERROR_STATUS_NOT_MATCHING = 1001008 -- 玩家未在匹配中
+MATCH_ERROR_REDUCE_POWER_FAIL   = 1001009 -- 扣除体力值失败
+MATCH_ERROR_POWER_NOT_ENOUGH    = 1001010 -- 体力值不够
+MATCH_ERROR_PARAM_ERROR         = 1001011 -- 参数错误
+MATCH_ERROR_SERVER_NOT_EXIST    = 1001012 -- 没有匹配服
+MATCH_ERROR_SERVER_STOP         = 1001013 -- 服务器关闭
+MATCH_ERROR_STATUS_BATTLE       = 1001014 -- 玩家正在战斗中
+MATCH_ERROR_CARD_TEAM_INVALID   = 1001015 -- 卡组配置错误
+MATCH_ERROR_COOPERATE_COUNT     = 1001016 -- 合作模式次数不足
+MATCH_ERROR_GAME_PLATFORM       = 1001017 -- 该平台禁止匹配
+MATCH_ERROR_NOT_IN_SEASON       = 1001018 -- 不在赛季中
+MATCH_ERROR_PRE_UN_MATCH        = 1001019 -- 赛季切换前禁止匹配
+MATCH_ERROR_UN_MATCH            = 1001020 -- 赛季切换中禁止匹配
+MATCH_ERROR_WORLD_COMPETITION   = 1001021 -- 万界大会当前不能匹配
+
+-- 战斗相关的错误
+BATTLE_ERROR_NO_BATTLE_ID                       = 1002001 -- 没有battle_id
+BATTLE_ERROR_PARAM_ERROR                        = 1002002 -- 接口参数错误
+BATTLE_ERROR_MODE_NOT_EXIST                     = 1002003 -- 模式错误
+BATTLE_ERROR_SERVER_STOP                        = 1002004 -- 战斗服关闭中
+BATTLE_ERROR_SERVER_NOT_EXIST                   = 1002005 -- 没有战斗服
+BATTLE_ERROR_SERVER_CFG                         = 1002006 -- 表数据错误
+BATTLE_ERROR_CLIENT_NOT_CON                     = 1002007 -- 客户端未连接
+BATTLE_ERROR_NO_ROBOT                           = 1002008 -- 没有机器人
+BATTLE_ERROR_BATTLE_STARTED                     = 1002009 -- 战斗已经开始了
+BATTLE_ERROR_BATTLE_NOT_READY                   = 1002010 -- 战斗初始化中
+BATTLE_ERROR_CLIENT_NOT_READY                   = 1002011 -- 客户端未准备
+BATTLE_ERROR_FIGHT_NOT_START                    = 1002012 -- 战斗未开始
+BATTLE_ERROR_PLAYERID_ERROR                     = 1002013 -- 玩家不在战斗中
+BATTLE_ERROR_SKILL_IN_CD                        = 1002014 -- 技能还在CD中
+BATTLE_ERROR_NO_FIGHT_STATUS                    = 1002015 -- 不在战斗流程中
+BATTLE_ERROR_NO_TARGET                          = 1002016 -- 没有目标
+BATTLE_ERROR_GOLD_NOT_ENOUGH                    = 1002017 -- 资源不够
+BATTLE_ERROR_NOT_CONSUME_SUTRA                  = 1002018 -- 非消耗型法宝
+BATTLE_ERROR_BATTLE_CONSUME_SUTRA               = 1002019 -- 消耗型法宝上阵
+BATTLE_ERROR_BATTLE_REPEAT                      = 1002020 -- 法宝重复上阵
+BATTLE_CARDS_ERROR_HAS_SUTRA                    = 1002021 -- 当前位置已有法宝
+BATTLE_ERROR_SPELL_IN_CD                        = 1002022 -- 符箓还在CD中
+BATTLE_ERROR_REFRESH_NOT_ENOUGH_MANA            = 1002023 -- 刷新卡牌没有足够灵力
+BATTLE_ERROR_SPELL_PREPARE_IS_FULL              = 1002024 -- 法术牌备战区已满
+BATTLE_ERROR_SPELL_REFRESH_NOT_ENOUGH           = 1002025 -- 法术牌刷新次数不足
+BATTLE_ERROR_GIVE_CARD_PREPARE_IS_FULL          = 1002026 -- 给予卡牌备战区已满
+BATTLE_ERROR_GIVE_CARD_IN_COOLING               = 1002027 -- 给予卡牌正在冷却中
+BATTLE_ERROR_BTN_CD                             = 1002028 -- cd中
+BATTLE_ERROR_REFRESH_CANNOT_REFRESH             = 1002029 -- DeBuff，持续时间无法D牌
+BATTLE_ERROR_SYMBOL_IN_CD                       = 1002030 -- 使用法术牌还在CD中
+
+COMMON_ERROR_PARAM_ERROR                        = 1003001 -- 参数错误
+
+-- 新手引导
+NEWBIE_GUIDE_ERROR_DATA_NOT_READY               = 1003101 -- 数据还未准备好
+NEWBIE_GUIDE_ERROR_PARAM                        = 1003102 -- 参数错误
+NEWBIE_GUIDE_ERROR_MODULE_ID_ILLEAGAL           = 1003103 -- module id 不存在
+NEWBIE_GUIDE_ERROR_KEY_LIMIT                    = 1003104 -- key的数量已达上限
+
+-- 活动类 之 七日签到
+WEEK_SIGNUP_ERROR_AWARD_TABLE                   = 1004001 -- 奖励表错误
+WEEK_SIGNUP_ERROR_ADD_ITEM_FAIL                 = 1004002 -- 增加物品失败
+WEEK_SIGNUP_ERROR_HAVE_AWARD                    = 1004003 -- 已领取奖励
+
+-- 活动类 之 每日火种
+DAILY_FIRE_SEEK_ERROR_AWARD_TABLE                     = 1004201 -- 奖励表错误
+DAILY_FIRE_SEEK_ERROR_PARAM                           = 1004202 -- 参数错误
+DAILY_FIRE_SEEK_ERROR_HAVE_AWARD                      = 1004203 -- 已领取奖励
+DAILY_FIRE_SEEK_ERROR_NOT_TIME                        = 1004204 -- 未到领取时间
+DAILY_FIRE_SEEK_ERROR_ADD_ITEM_FAIL                   = 1004005 -- 增加物品失败
+
+-- 活动类 之 基础活动
+ACTIVITY_NOT_EXIST                              = 1004101 -- 活动已不存在
+ACTIVITY_AWARD_NOT_EXIST                        = 1004102 -- 奖励不存在
+ACTIVITY_AWARD_HAS_GOT                          = 1004103 -- 奖励已领取
+ACTIVITY_NOT_DONE                               = 1004104 -- 活动未完成
+ACTIVITY_HAVE_END                               = 1004105 -- 活动已结束
+ACTIVITY_CANNOT_JOIN                            = 1004106 -- 无法领取活动
+ACTIVITY_ERROR_SYSTEM_ERROR                     = 1004107 -- 系统错误
+ACTIVITY_ERROR_TBL                              = 1004108 -- 活动表错误
+ACTIVITY_ERROR_PARAM_ERROR                      = 1004109 -- 参数错误
+ACTIVITY_ERROR_WORLD_COMPETITION_SELECT_END     = 1004110 -- 万界大会选卡阶段结束
+ACTIVITY_ERROR_WORLD_COMPETITION_SELECT_NOT_END = 1004111 -- 万界大会选卡阶段未结束
+ACTIVITY_ERROR_WORLD_COMPETITION_OWN_CARD       = 1004112 -- 万界大会卡池中已有该卡牌
+ACTIVITY_ERROR_WORLD_COMPETITION_NOT_OWN_CARD   = 1004113 -- 万界大会未拥有该卡牌
+ACTIVITY_ERROR_WORLD_COMPETITION_SELECT_NOT_TIME = 1004114 -- 万界大会选卡时间未到
+ACTIVITY_ERROR_USE_NOT_ENOUGH                    = 1004115 -- 道具数量不足
+ACTIVITY_ERROR_WORLD_COMPETITION_AWARD_RECEIVED  = 1004116 -- 万界大会奖励已领取
+ACTIVITY_NOT_SUPPORT_MULTIPLE_AWARDS             = 1004117 -- 不支持多次领取活动奖励
+
+-- 商城
+SHOP_BUY_POWER_MAX_COUNT                        = 1005001 -- 购买体力次数到达限制
+SHOP_BUY_POWER_NOT_ENOUGH_DIAMOND               = 1005002 -- 购买体力金币不够
+SHOP_ERROR_PARAM                                = 1005003 -- 参数错误
+SHOP_ERROR_BUY_CD                               = 1005004 -- 购买cd时间限制
+SHOP_ERROR_BUY_LIMIT                            = 1005005 -- 购买每日数量限制
+SHOP_ERROR_NOT_ENOUGH_BALANCE                   = 1005006 -- 余额不足
+SHOP_ERROR_MONEY                                = 1005007 -- 货币处理失败
+SHOP_ERROR_DEPOT                                = 1005008 -- 背包处理失败
+SHOP_ERROR_DEPOT_ITEM_MAX                       = 1005009 -- 背包物品数量超限
+SHOP_ERROR_NOT_REFRESH                          = 1005010 -- 刷新次数不足
+SHOP_ERROR_BUY_GOLD                             = 1005011 -- 货币购买商品失败
+SHOP_ERROR_ORDER_FAIL                           = 1005012 -- 订单支付失败
+SHOP_ERROR_CARD_MAX_DAY                         = 1005013 -- 已到最大天数数量
+SHOP_ERROR_CARD_NOT_BUY                         = 1005014 -- 没有买
+SHOP_ERROR_CARD_HAS_REWARD                      = 1005015 -- 已领取
+SHOP_ERROR_NO_AUTH_INFO                         = 1005016 -- 没有身份信息
+SHOP_ERROR_SINGLE_LIMIT                         = 1005017 -- 单次充值金额限制
+SHOP_ERROR_MONTH_LIMIT                          = 1005018 -- 月充值金额限制
+SHOP_ERROR_FUND_HAS_NOT_BUY                     = 1005019 -- 该基金还未购买
+SHOP_ERROR_FUND_CAN_NOT_AWARD                   = 1005020 -- 该基金的奖励还不能领取
+SHOP_ERROR_FUND_HAS_AWARD                       = 1005021 -- 该基金的奖励已经领取
+SHOP_ERROR_FUND_NOT_FINISH                      = 1005022 -- 前置任务未完成
+SHOP_ERROR_DB_ERROR                             = 1005023 -- 商城db错误
+SHOP_ERROR_NOT_PAID                             = 1005024 -- 未支付
+SHOP_ERROR_HAVE_DISPATCHED                      = 1005025 -- 奖励已经发放
+SHOP_ERROR_NOT_ENOUGH_OPPORTUNITY               = 1005026 -- 机缘不够
+SHOP_ERROR_CANT_OPPORTUNITY                     = 1005027 -- 机缘商店不能用机缘购买
+SHOP_ERROR_GOODS_NOT_UNLOCK                     = 1005028 -- 商品未解锁
+SHOP_ERROR_GOODS_ID_ERROR                       = 1005029 -- 商品id错误
+SHOP_ERROR_SHOP_NOT_OPEN                        = 1005030 -- 商店未开启
+SHOP_ERROR_PASSCARD_FLY                         = 1005031 -- 未飞升无法购买战令
+SHOP_ERROR_FIRST_HAS_NOT_BUY                    = 1005032 -- 该首充礼包还未购买
+SHOP_ERROR_FIRST_HAS_RECEIVED                   = 1005033 -- 该首充礼包已经领取
+SHOP_ERROR_FIRST_NOT_AVAILABLE                  = 1005034 -- 该首充礼包今日不可领取
+
+-- 邮件
+MAIL_ERROR_PARAM                           = 1006001 -- 参数错误
+MAIL_ERROR_NO_ATTACGNEBTS                  = 1006002 -- 没有附件
+MAIL_ERROR_ATTACGNEBTS_FETCHED             = 1006003 -- 附件已领取
+MAIL_ERROR_ATTACGNEBTS_DEPOT_MAX           = 1006004 -- 附件无法领取因为背包已满
+MAIL_ERROR_ATTACGNEBTS_DEPOT_ERR           = 1006005 -- 附件无法领取因为背包添加失败
+MAIL_ERROR_ATTACGNEBTS_NO_FETCHED          = 1006006 -- 还没有领取附件
+MAIL_ERROR_MODULE_MAIL_ID                  = 1006007 -- 邮件ID错误
+
+-- 副本相关
+DUNGEON_ERROR_INVALID_PARAMETER                 = 1008401 -- 参数无效
+DUNGEON_ERROR_CHAPTER_REPEATED_COMPLETED        = 1008402 -- 主线关卡重复挑战
+DUNGEON_ERROR_MAIN_DUNGEON_NOT_COMPLETED        = 1008403 -- 主线关卡未通关
+DUNGEON_ERROR_REWARD_ALREADY_RECEIVED           = 1008404 -- 奖励已经领取
+DUNGEON_ERROR_NPC_CHAPTER_NOT_UNLOCK            = 1008405 -- Npc章节未解锁
+DUNGEON_ERROR_NPC_COPY_NOT_UNLOCK               = 1008406 -- Npc副本未解锁
+DUNGEON_ERROR_NPC_DUNGEON_NOT_COMPLETED         = 1008407 -- Npc关卡未通关
+DUNGEON_ERROR_TOWER_FLOOR_ERROR                 = 1008408 -- 爬塔层数错误
+DUNGEON_ERROR_NO_SKIP_TOWER_RIGHT               = 1008409 -- 没有跳过爬塔层的权益
+DUNGEON_ERROR_IN_PVE_BATTLE                     = 1008410 -- 正在战斗中
+DUNGEON_ERROR_TOWER_JUMP_NOT_OPEN               = 1008411 -- 爬塔跳层未开启
+DUNGEON_ERROR_TOWER_NOT_EXIST                   = 1008412 -- 爬塔不存在
+DUNGEON_ERROR_TOWER_DAY_MAX_FLOOR               = 1008413 -- 爬塔每日次数已达上限
+DUNGEON_ERROR_ADVENTURE_NOT_OPEN                = 1008414 -- 秘境未开启
+DUNGEON_ERROR_INQUIRED_NOT_AWARD                = 1008415 -- 没有累计奖励
+DUNGEON_ERROR_INQUIRED_NOT_ADD                  = 1008416 -- 累计奖励添加失败
+DUNGEON_ERROR_TOWER_MAX_FLOOR                   = 1008417 -- 爬塔层数已达上限
+DUNGEON_ERROR_TOWER_DECK_ERROR                  = 1008418 -- 爬塔卡组错误
+DUNGEON_ERROR_TOWER_GROUP_NOT_EXIST             = 1008419 -- 爬塔组不存在
+DUNGEON_ERROR_GUILD_BOSS_NOT_ENOUGH             = 1008420 -- 巨兽挑战次数不足
+DUNGEON_ERROR_SPIRIT_NOT_UNLOCK                 = 1008421 -- 元神关卡未解锁
+DUNGEON_ERROR_SPIRIT_COUNT_ENOUGH               = 1008422 -- 元神关卡扫荡次数不足
+DUNGEON_ERROR_NO_AUTO_TOWER_RIGHT               = 1008423 -- 没有自动爬塔的权益
+DUNGEON_ERROR_GUILD_TIME_ENOUGH                 = 1008424 -- 宗门巨兽未开启
+
+-- 掉落
+DROP_NOT_GROUP_ID                               = 1010001 -- 掉落组id不存在
+
+-- 奖池
+LOTTERY_POOL_NOT_EXIST                          = 1011001 -- 奖池不存在
+LOTTERY_ERR_PARAM                               = 1011002 -- 参数错误
+LOTTERY_UP_LOTTERY_MAX_COUNT                    = 1011003 -- 超过今天上限
+
+-- 兑换码
+REDEEM_INVALID_PARAMETER                        = 1012001 -- 参数错误
+REDEEM_NOT_EXIST                                = 1012002 -- 兑换码不存在
+REDEEM_CONFIG_ERROR                             = 1012003 -- 服务器配置错误
+REDEEM_NOT_START                                = 1012004 -- 还未开始
+REDEEM_HAS_END                                  = 1012005 -- 已经结束
+REDEEM_USER_LIMIT_COUNT                         = 1012006 -- 已到本人可以领取的限制
+REDEEM_SERVER_LIMIT_COUNT                       = 1012007 -- 已到全服可以领取的限制
+REDEEM_NO_ONLINE_SERVER                         = 1012008 -- online服重启中，稍后再试
+REDEEM_CHECK_WAIT                               = 1012009 -- 查询中，稍后再试
+REDEEM_EXCHANGED                                = 1012010 -- 该兑换码已兑换
+REDEEM_TIME_OUT                                 = 1012011 -- 兑换码已过期
+
+-- 背包相关
+DEPOT_ERROR_DEPOT_NOT_INIT                      = 100010001 -- 背包还未初始化
+DEPOT_ERROR_USE_ITEM_COUNT                      = 100010002 -- 使用物品的数量出错
+DEPOT_ERROR_USE_ITEM_NOT_EXIST                  = 100010003 -- 使用物品不存在
+DEPOT_ERROR_USE_ITEM_DELETE                     = 100010004 -- 使用物品删除失败
+DEPOT_ERROR_DROP_ITEM_UNUSABLE                  = 100010005 -- 物品不能使用
+DEPOT_ERROR_DROP_CANT_DROP                      = 100010006 -- 没有可以掉落的
+
+-- 聊天
+CHAT_ERROR_PARAM_ERROR                          = 100020001 -- 聊天系统参数错误
+CHAT_ERROR_SYSTEM_ERROR                         = 100020002 -- 聊天系统系统错误
+CHAT_ERROR_DIRTY_WORDS                          = 100020003 -- 存在脏字
+CHAT_ERROR_BANNED                               = 100020004 -- 被禁言
+CHAT_ERROR_TOO_QUICK                            = 100020005 -- 说话太快
+CHAT_ERROR_NO_SECT                              = 100020006 -- 没有宗门
+CHAT_ERROR_CHAT_BUSY                            = 100020007 -- 聊天服已经过载
+CHAT_ERROR_NO_RUIN                              = 100020008 -- 没有军团战
+CHAT_ERROR_NOT_FRIEND                           = 100020009 -- 私聊对象不是好友
+
+-- 广告
+ADVERTISEMENT_ERROR_GETREWARD                   = 100030001 -- 领取广告奖励失败
+
+-- 玩家信息
+ROLE_ERROR_PARAM_ERROR                          = 100040001 -- 角色信息参数错误
+ROLE_ERROR_HEAD_NOT_UNLOCK                      = 100040002 -- 头像未解锁
+ROLE_ERROR_DIRTY_WORDS                          = 100040003 -- 存在脏字
+ROLE_ERROR_GOLD_NOT_ENOUGH                      = 100040004 -- 修改名字货币不足
+ROLE_ERROR_RANK_NOT_ENOUGH                      = 100040005 -- 段位分数不够
+ROLE_ERROR_RANK_REWARD_ALREADY_RECEIVED         = 100040006 -- 段位奖励已经领取
+ROLE_ERROR_GET_RANK_REWARD                      = 100040007 -- 领取段位奖励
+ROLE_ERROR_NOT_BUY_RANK_REWARD_CARD             = 100040008 -- 未购买战令卡无法领取奖励
+ROLE_ERROR_BATTLE_REWARD                        = 100040009 -- PVP领取奖励时battleId错误
+ROLE_ERROR_NAME_DUPLICATE                       = 100040010 -- 名字重复
+ROLE_ERROR_TITLE_UNLOCK                         = 100040011 -- 称号未解锁
+ROLE_ERROR_TITLE_PARAM_ERROR                    = 100040012 -- 称号参数错误
+ROLE_ERROR_SPIRIT_NOT_UNLOCK                    = 100040013 -- 元神未解锁
+ROLE_ERROR_SPIRIT_PARAM_ERROR                   = 100040014 -- 元神参数错误
+ROLE_ERROR_SPIRIT_ALREADY_DEP                   = 100040015 -- 元神已上阵
+ROLE_ERROR_SPIRIT_ALREADY_MAX                   = 100040016 -- 元神达到最大级
+ROLE_ERROR_ORIGIN_ALREADY_MAX                   = 100040017 -- 本源达到最大级
+ROLE_ERROR_ORIGIN_PARAM_ERROR                   = 100040018 -- 元神参数错误
+ROLE_ERROR_NAME_TOO_LONG                        = 100040019 -- 名字太长
+ROLE_ERROR_NAME_NUMBER                          = 100040020 -- 名字不能全为数字
+
+-- 公会
+GUILD_ERROR_DB_ERROR                            = 100050001 -- 公会系统数据库错误
+GUILD_ERROR_SYS_ERROR                           = 100050002 -- 公会系统错误
+GUILD_ERROR_PARAM_ERROR                         = 100050003 -- 参数错误
+GUILD_ERROR_TABLE_ERROR                         = 100050004 -- 公会配表错误
+GUILD_ERROR_PERMISSION_DENIED                   = 100050005 -- 权限不足
+GUILD_ERROR_DIRTY_WORDS                         = 100050006 -- 存在脏字
+GUILD_ERROR_NOT_FOUNT                           = 100050007 -- 未找到对应公会
+GUILD_ERROR_RES_NOT_ENOUGH                      = 100050008 -- 所需资源不足
+GUILD_ERROR_GUILD_IS_FULL                       = 100050009 -- 公会已满
+GUILD_ERROR_HAS_GUILD                           = 100050010 -- 已有宗门
+GUILD_ERROR_HAS_APPLY                           = 100050011 -- 已经申请
+GUILD_ERROR_REWARD_ALREADY_RECEIVED             = 100050012 -- 贡献值奖励已经领取
+GUILD_ERROR_REFINER_LEVEL_INSUFFICIENT          = 100050013 -- 炼器等级不够
+GUILD_ERROR_NAME_EMPTY                          = 100050014 -- 宗门名称不能为空
+GUILD_ERROR_NAME_REPEAT                         = 100050015 -- 宗门名称已重复
+GUILD_ERROR_USER_HAS_GUILD                      = 100050016 -- 用户已有宗门
+GUILD_ERROR_CHALLENGE_COUNT_LIMIT               = 100050017 -- 挑战次数不足
+GUILD_ERROR_CONTRIBUTION_TIMES_LIMIT            = 100050018 -- 宗门捐献次数不足
+GUILD_ERROR_NAME_NUMBER                         = 100050019 -- 宗门名称不能全为数字
+GUILD_ERROR_PERSONNEL_AD_FAILED                 = 100050020 -- 宗门人事任免失败
+GUILD_ERROR_JOIN_CD                             = 100050021 -- 加入宗门cd中
+GUILD_ERROR_CAVE_CD                             = 100050022 -- 开拓宗门冷却cd中
+GUILD_ERROR_CAVE_COND_FAILED                    = 100050023 -- 开拓宗门洞天条件未达到
+GUILD_ERROR_CAVE_UPGRADEING                     = 100050024 -- 宗门洞天在开拓中
+GUILD_ERROR_CAVE_COUNT_LIMIT                    = 100050025 -- 宗门洞天开拓次数不足
+GUILD_ERROR_CAVE_END                            = 100050026 -- 宗门洞天开拓已结束
+GUILD_ERROR_HAVE_CAVE_REWARD                    = 100050027 -- 今日已领取过洞天奖励
+GUILD_ERROR_CAVE_NEED_SELF_FLY                  = 100050028 -- 未完成个人飞升无法进行洞天开拓
+GUILD_ERROR_HAVE_RUIN                           = 100050029 -- 在界墟争夺战中
+GUILD_ERROR_JOIN_RUIN_NEED_LEADER               = 100050030 -- 权限不够
+GUILD_ERROR_RUIN_NOT_OPEN                       = 100050031 -- 报名的争夺战没有开始
+GUILD_ERROR_LEVEL_NOT_RUIN                      = 100050032 -- 等级未达到报名条件
+GUILD_ERROR_PERSON_NOT_RUIN                     = 100050033 -- 军团人数未达到报名条件
+GUILD_ERROR_NOT_HAVE_RUIN                       = 100050034 -- 未报名界墟争夺战
+GUILD_ERROR_CANT_CANCEL                         = 100050035 -- 报名界墟争夺战成功，无法取消
+GUILD_ERROR_DETECT_NO_POWER                     = 100050036 -- 没有权限开始探索
+GUILD_ERROR_ATTACK_NO_POWER                     = 100050037 -- 没有权限开始攻击操作
+GUILD_ERROR_NOT_RUIN_TIME                       = 100050038 -- 当前属于停战时间
+GUILD_ERROR_NOT_CAVEID                          = 100050039 -- 洞天不存在
+GUILD_ERROR_HAVE_DETECT                         = 100050040 -- 洞天已经探索
+GUILD_ERROR_NOT_ENOUGH_ENERGY                   = 100050041 -- 能量不足
+GUILD_ERROR_NOT_REACH_REIKI                     = 100050042 -- 灵气未达到
+GUILD_ERROR_NOT_CONNECT_REACHABLE               = 100050043 -- 未联通起来，无法探索
+GUILD_ERROR_HAVE_ATTACKED                       = 100050044 -- 洞天已经打下来了
+GUILD_ERROR_JOIN_SAME_DAY                       = 100050045 -- 加入宗门后需要第二天才能领取奖励
+GUILD_ERROR_REWARD_SAME_DAY                     = 100050046 -- 该洞天的奖励今天已经领取过了
+GUILD_ERROR_NOT_ATTACKING                       = 100050047 -- 没有正在攻打
+GUILD_ERROR_HAS_ATTACKING                       = 100050048 -- 玩家已经攻打过，无法重复攻打
+GUILD_ERROR_TASK_NOT_FINISH                     = 100050049 -- 任务未完成
+GUILD_ERROR_USER_NOT_IN_RUIN                    = 100050050 -- 用户不在本次界墟争夺战里面
+GUILD_ERROR_HAS_TASK_REWARD                     = 100050051 -- 已经领取了世界任务奖励
+GUILD_ERROR_RUIN_NOT_START                      = 100050052 -- 界墟争夺战还未开始
+GUILD_ERROR_IN_GUILD_RUIN                       = 100050053 -- 在界墟争夺战中，有些数据无法修改
+GUILD_ERROR_STATUS_NOT_OP                       = 100050054 -- 当前状态无法进行该行为
+GUILD_ERROR_ONLY_RUIN_GUILD                     = 100050055 -- 界墟争夺战期间只能申请加入这个组的宗门
+GUILD_ERROR_PROCESS_ONLY_RUIN                   = 100050056 -- 界墟争夺战期间只能处理本次标记的玩家
+GUILD_ERROR_GOLD_NOT_ENOUGH                     = 100050057 -- 修改名字的钱不够
+GUILD_ERROR_CAVE_NOT_UPGRADEING                 = 100050058 -- 不在开拓中
+GUILD_ERROR_RUIN_BATTLE_NOT_END                 = 100050059 -- 宗门战还没有结束
+GUILD_ERROR_RUIN_NOT_HAVE_BATTLE                = 100050060 -- 宗门战不存在
+GUILD_ERROR_BATTLE_OVER_PRE                     = 100050061 -- 宗门战已不在准备状态
+GUILD_ERROR_BATTLE_HAVE_INTO                    = 100050062 -- 已经参与宗门战
+GUILD_ERROR_BATTLE_POS_NOT_EMPTY                = 100050063 -- 位置上已经有玩家
+GUILD_ERROR_BATTLE_POS_EMPTY                    = 100050064 -- 位置上没有玩家
+GUILD_ERROR_BATTLE_NO_OFFICE_POWER              = 100050065 -- 没有权限
+GUILD_ERROR_BATTLE_SLOT                         = 100050066 -- 上阵位置错误
+GUILD_ERROR_JOIN_RUIN_CD                        = 100050067 -- 报名cd中
+GUILD_ERROR_RUIN_ITEM_ERROR                     = 100050068 -- 宗门战物品错误
+GUILD_ERROR_BATTLE_IN_PRE                       = 100050069 -- 宗门战还在准备状态
+GUILD_ERROR_NAME_TOO_LONG                       = 100050070 -- 宗门名称太长
+GUILD_ERROR_NOT_IN_GUILD                        = 100050071 -- 不在宗门中
+GUILD_ERROR_NOT_DETECT                          = 100050072 -- 洞天还未探索
+GUILD_ERROR_MAX_COUNT_LIMIT                     = 100050073 -- 攻击超过最大数量限制
+GUILD_ERROR_CANT_ATTACK_BORN                    = 100050074 -- 出生地无法攻击
+GUILD_ERROR_NOT_HAVE_ATTACKED                   = 100050075 -- 洞天还未打下来了
+GUILD_ERROR_CANT_ABANDON_BORN                   = 100050076 -- 不能放弃初试洞天
+GUILD_ERROR_GUILD_FLYING                        = 100050077 -- 宗门飞升中,无法加入宗门
+GUILD_ERROR_IN_PROTECT_TIME                     = 100050078 -- 宗门保护时间内,无法加入宗门
+GUILD_ERROR_BUY_GUILD_CAVE_MAX                  = 100050079 -- 宗门洞天购买次数已达上限
+GUILD_ERROR_BUY_GUILD_CAVE_CLIENT               = 100050080 -- 宗门洞天购买次数客户端显示错误
+GUILD_ERROR_LEADER_ERROR                        = 100050081 -- 宗主已被其他人罢免
+GUILD_ERROR_LEADER_TIME                         = 100050082 -- 宗主离线时间还未达到可弹劾时间
+GUILD_ERROR_HAVE_ATTACKING                      = 100050083 -- 已有攻击中的洞天
+GUILD_ERROR_JOIN_RUIN_FAILED                    = 100050084 -- 加入界墟争夺战失败
+
+REFINER_ERROR_SYS_ERROR                         = 100060000 -- 炼器系统错误
+REFINER_ERROR_RES_NOT_ENOUGH                    = 100060001 -- 炼器所需资源数量不足
+REFINER_ERROR_TABLE_ERR                         = 100060002 -- 炼器配表错误
+REFINER_ERROR_HAS_SUTRA                         = 100060003 -- 已拥有对应法宝
+REFINER_ERROR_NOT_SUTRA                         = 100060004 -- 未获得所需法宝
+REFINER_ERROR_IN_PROMOTE                        = 100060005 -- 炼器炉还在突破中
+REFINER_ERROR_MAX_STAGE                         = 100060006 -- 炼器已达到最大阶级
+REFINER_ERROR_MAX_COUNT                         = 100060007 -- 炼器队列已满
+REFINER_ERROR_ITEM_SKIP_AD                      = 100060008 -- 炼器炉升级中使用道具跳过广告失败
+REFINER_ERROR_PARAM_ERROR                       = 100060009 -- 参数错误
+REFINER_ERROR_SPEEDUP_ITEM_NOT_ENOUGH           = 100060010 -- 炼器炉加速道具不够
+REFINER_ERROR_UPDATE_FURNACE_PROMOTETIME        = 100060011 -- 更新炼器炉时间错误
+REFINER_ERROR_AD_NOT_UP                         = 100060012 -- 广告冷却时间未到
+REFINER_ERROR_MAX_STAR                          = 100060013 -- 炼器已达到最大星级
+REFINER_ERROR_POOL_NOT_OPEN                     = 100060014 -- 卡池未开启
+REFINER_ERROR_BTN_CD                            = 100060015 -- 按钮cd中
+REFINER_ERROR_BREAK_CD                          = 100060016 -- 渡劫cd中
+REFINER_ERROR_TASK_NOT_COMPLETE                 = 100060017 -- 任务未完成
+REFINER_ERROR_POOL_NO_CARD                      = 100060018 -- 卡池中没有对应卡牌
+REFINER_ERROR_SUTRA_EXIST                       = 100060019 -- 已经拥有该法宝
+REFINER_ERROR_SUTRA_NOT_EXIST                   = 100060020 -- 没有拥有对应法宝
+
+TASK_ERROR_NOT_COMPLETE                         = 100070001 -- 任务未完成
+TASK_ERROR_NOT_FOUND                            = 100070002 -- 任务不存在
+TASK_ERROR_RECEIVE_REWARD                       = 100070003 -- 领取任务奖励失败
+-- 每日任务
+TASK_ERROR_DAILY_PARAM_ERROR                    = 100070004 -- 每日任务参数错误
+TASK_ERROR_DAILY_REWARD_ALREADY_RECEIVED        = 100080005 -- 每日任务奖励以及领取
+
+-- 积分任务
+POINT_ERROR_REWARD                              = 100080001 -- 积分奖励领取失败
+
+-- 卡牌系统
+CARD_ERROR_PARAM_ERROR                          = 100090001 -- 参数错误
+CARD_ERROR_RES_NOT_ENOUGH                       = 100090002 -- 资源不足
+CARD_ERROR_TABLE_ERR                            = 100090003 -- 配表错误
+CARD_ERROR_NO_CARD                              = 100090004 -- 没有卡牌
+CARD_ERROR_CARD_REPEAT                          = 100090005 -- 卡组卡牌重复
+CARD_ERROR_FORMATION_MAX_LEVEL                  = 100090006 -- 法阵已经达到最大等级
+CARD_ERROR_SPELL_CARD_MAX_LEVEL                 = 100090007 -- 法术牌已经达到最大等级
+CARD_ERROR_NO_FORMATION                         = 100090008 -- 没有拥有改法阵
+CARD_ERROR_NO_SPELL                             = 100090009 -- 没有拥有改法术牌
+
+-- 排行榜
+RANK_ERROR_PARAMETER                    = 100100001 -- 参数错误
+RANK_ERROR_LIKE_COUNT                   = 100100002 -- 次数已达上限
+RANK_ERROR_LIKE_WAIT                    = 100100003 -- 点赞点击太快
+
+-- 房间
+ROOM_ERROR_ALREADY_IN_ROOM              = 100110001 -- 已在房间中
+ROOM_ERROR_NOT_APPLYING                 = 100110002 -- 不在申请中
+ROOM_ERROR_NOT_IN_ROOM                  = 100110003 -- 不在房间中
+ROOM_ERROR_NO_ROOM                      = 100110004 -- 房间不存在
+ROOM_ERROR_NOT_OWNER                    = 100110005 -- 不是房主
+ROOM_ERROR_NO_APPLY                     = 100110006 -- 没有申请
+
+-- 好友系统
+FRIENTD_ERR_PARAM                       = 100120001 -- 参数错误
+FRIENTD_ERR_SERVER                      = 100120002 -- 服务器错误
+FRIENTD_ERR_SELF_COUNT                  = 100120003 -- 本人好友列表已满
+FRIENTD_ERR_FRI_COUNT                   = 100120004 -- 对方好友列表已满
+FRIENTD_ERR_NOT_INVITED                 = 100120005 -- 未被请求添加好友
+FRIENTD_ERR_IS_FRIEND                   = 100120006 -- 已经是好友
+FRIENTD_ERR_NOT_FRIEND                  = 100120007 -- 还不是好友
+FRIENTD_ERR_IN_BLACK                    = 100120008 -- 已经在黑名单中
+FRIENTD_ERR_SO_FAST                     = 100120009 -- 操作太快cd中
+FRIENTD_ERR_NOT_SELF                    = 100120010 -- 对象不能是自己
+FRIENTD_ERR_INVITE_FAIL                 = 100120011 -- 好友服发送失败
+FRIENTD_ERR_NOT_IN_BLACK                = 100120012 -- 不在黑名单中
+FRIENTD_ERR_NOT_ONLINE                  = 100120013 -- 玩家不在线
+FRIENTD_ERR_REFUSE_BATTLE               = 100120014 -- 拒绝切磋
+FRIENTD_ERR_IN_BATTLE                   = 100120015 -- 正在战斗中
+FRIENTD_ERR_IN_MATCH                    = 100120016 -- 正在匹配中
+FRIENTD_ERR_NOT_INVITED_BATTLE          = 100120017 -- 未邀请切磋
+FRIENTD_ERR_NO_BATTLE_SERVER            = 100120018 -- 没有战斗服
+FRIENTD_ERR_IN_INVITATION               = 100120019 -- 有邀请在等待中
+FRIENTD_ERR_NOT_IN_INVITATION           = 100120020 -- 没有在邀请在等待中
+FRIENTD_ERR_FIND_NONE                   = 100120021 -- 搜索的用户不存在
+FRIENTD_ERR_MODE_COUNT                  = 100120022 -- 自己的模式次数已经到达限制
+FRIENTD_ERR_FRIEND_MODE_COUNT           = 100120023 -- 对方的模式次数已经到达限制
+
+-- 分服飞升系统
+SERVER_ERROR_SELF_FLY_SELF_NOT_ACHIEVE              = 100130001         -- 个人飞升的个人要求还未达到
+SERVER_ERROR_HAS_GUILD_CANT_SELF_FLY                = 100130002         -- 有宗门无法进行个人飞升
+SERVER_ERROR_AFTER_SERVER_START                     = 100130003         -- 需要在开服X时间后才能飞升
+SERVER_ERROR_GUILD_FLY_NOT_LEADER                   = 100130004         -- 宗门飞升只能宗主点击
+SERVER_ERROR_GUILD_FLY_SELF_NOT_DONE                = 100130005         -- 宗门飞升时个人飞升未完成
+SERVER_ERROR_SELF_FLY_GUILD_NOT_ACHIEVE             = 100130006         -- 宗门飞升的宗门要求还未达到
+SERVER_ERROR_SELF_FLY_NOT_DONE                      = 100130007         -- 个人飞升未完成
+
+--iaa系统
+IAA_ERR_PARAM                                       = 100140001         -- 参数错误
+IAA_ERR_COUNT_MAX                                   = 100140002         -- 达到上限
+IAA_ERR_NOT_TIME                                    = 100140003         -- 广告冷却时间未到
+IAA_ERROR_NOT_SKIP_RIGHT                            = 100140005         -- 没有跳过广告特权
+
+-- 元神系统
+SPIRIT_ERROR_PARAM_ERROR                         = 100150001 -- 参数错误
+SPIRIT_ERROR_TBL_ERROR                           = 100150002 -- 配表错误
+SPIRIT_ERROR_SPIRIT_ALREADY_MAX                  = 100150003 -- 元神已达到最大等级
+SPIRIT_ERROR_NOT_ENOUGH_ITEM                     = 100150004 -- 升级道具不足
+SPIRIT_ERROR_ATTR_POINTS_ID                      = 100150005 -- 属性不能养成
+SPIRIT_ERROR_ATTR_POINTS_MAX                     = 100150006 -- 属性已达到最大等级
+SPIRIT_ERROR_ATTR_POINTS_NOT_ENOUGH              = 100150007 -- 属性点不足
+SPIRIT_ERROR_SUTRA_ALREADY_EQUIP                 = 100150008 -- 法宝已装备
+
+-- 问道
+WENDAO_ERROR_FLUSH_ITEM_NOT_ENOUGT               = 100160001 -- 刷新劵不足
+WENDAO_ERROR_SLOT_NOT_EXIST                      = 100160002 -- 阵型槽位id不存在
+WENDAO_ERROR_SPIRIT_NOT_EXIST                    = 100160003 -- 元神未拥有
+WENDAO_ERROR_SPIRIT_DUPLICATE                    = 100160004 -- 元神重复上阵
+WENDAO_ERROR_SPIRIT_TEAM_ERROR                   = 100160005 -- 未上阵法宝
+WENDAO_ERROR_CHALLENGE_COUNT_NOT_ENOUGH          = 100160006 -- 挑战次数不足
+WENDAO_ERROR_BATTLE_NOT_IN_LIST                  = 100160007 -- 挑战对手不在列表中
+WENDAO_ERROR_BATTLE_NOT_IN_LOG                   = 100160008 -- 已经在列表中挑战过了
+WENDAO_ERROR_BATTLE_PARAM_ERROR                  = 100160009 -- 参数错误
+WENDAO_ERROR_BATTLE_BOSS_NOT_ENOUGH              = 100160010 -- BOSS挑战次数不足
+WENDAO_ERROR_SLOT_NOT_UNLOCK                     = 100160011 -- 问道阵型槽位未解锁
+
+COOP_ERROR_PARAM_ERROR                           = 100170001 -- 参数错误
+COOP_ERROR_TODAY_NOT_BATTLE                      = 100170002 -- 今日未参与战斗
+COOP_ERROR_DAILY_LIMIT                           = 100170003 -- 每日次数已达上限
+
+-- 炉子
+FURNACE_ERROR_NOT_SKIN_ID                        = 100180001 -- 参数不是皮肤id
+FURNACE_ERROR_NOT_HAVE_SKIN                      = 100180002 -- 未拥有该皮肤

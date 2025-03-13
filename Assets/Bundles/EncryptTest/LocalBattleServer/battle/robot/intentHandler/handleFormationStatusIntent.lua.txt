@@ -1,0 +1,10 @@
+function Execute(robot, intent)
+    local battleData = robot.battleData
+    -- LogInfo("handleFormationStatusIntent {} {} {}", intent.formationStatus.isActive, robot.id == intent.formationStatus.playerId, intent.formationStatus.formationId == battleData.formationId)
+    if not intent.formationStatus.isActive and robot.id == intent.formationStatus.playerId then
+        battleData.formationStatus = false;
+    end
+    if intent.formationStatus.isActive and robot.id == intent.formationStatus.playerId and intent.formationStatus.formationId == battleData.formationId then
+        battleData.formationStatus = true;
+    end
+end

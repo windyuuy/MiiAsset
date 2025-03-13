@@ -1,0 +1,279 @@
+-- 战斗队伍模块
+
+local playerClz = import("battle/data/player.lua")
+local battleMgr = import("battle/battleMgr.lua")
+local buffComp = import("battle/components/buffComponent.lua")
+local haloComp = import("battle/components/haloComponent.lua")
+local fateComp = import("battle/components/fateComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+---@class PlayerSiteData 场地数据
+---@field playerUid string 所属玩家uid
+---@field formationPos Position 阵型坐标
+---@field summonerPoints table<number, Position> 召唤物坐标 <坐标id, Position>
+---@field formationSlots table<number, Position> 阵眼坐标
+---
+---@field sutras table<number, Sutra> 法宝列表 <法宝id, Sutra>
+---@field slots table<number, FormationSlot> 法宝槽 <槽位id, FormationSlot>
+
+---@class BattleTeam 战斗队伍
+---@field teamId number 队伍id
+---@field battle Battle 战局
+---@field tower Tower 基地
+---@field playerSiteDatas table<number, PlayerSiteData> 玩家场地数据
+---@field randomPathPoints table<number, table<number, Position>> 随机路径坐标 <路径组id, 多个随机路径坐标>
+---
+---@field monsters table<number, Monster> 怪物列表 <entryId, Monster>
+---@field summoners table<number, Summoner> 召唤物列表 <entryId, Summoner>
+---@field rangeEffects table<number, RangeEffect> 范围效果列表 <entryId, RangeEffect>
+---@field randomRoutePoints table<number, Point> 随机路径点 <路点id, RandomRoutePoint>
+---
+---@field monsterPaths table<number, table<number, MonsterRoute>> 怪物路径 <路径组id, table<路径序号, MonsterRoute>>
+---@field formationPos Position 地图配置
+---
+---@field teamMapConfig TeamMapConfig 地图配置
+---@field points table<number, number> 队伍积分
+---
+---@field isBossReach boolean 本轮boss是否到达
+---
+---@field haloComponent HaloComponent 光环组件
+---@field fateComponent FateComponent 缘分组件
+
+BattleTeam = class()
+
+function CreateBattleTeam(...)
+    return BattleTeam.new(...)
+end
+
+---@param battle Battle
+---@param teamId number
+---@param config MapConfig
+function BattleTeam:ctor(battle, teamId, config)
+    self.teamId = teamId
+    self.battle = battle
+    -- 创建基地
+    self.tower = nil
+
+    self.playerSiteDatas = {}
+
+    self.randomPathPoints = {}
+
+    self.monsters = {}
+    self.summoners = {}     -- 召唤物
+    self.rangeEffects = {}
+    self.randomRoutePoints = {}
+
+    self.monsterPaths = {}
+    self.formationPos = {}
+
+    self.teamMapConfig = config
+
+    self.points = {}
+
+    self.isBossReach = false
+
+    self.haloComponent = haloComp.CreateHaloComponent(self)
+    self.fateComponent = fateComp.CreateFateComponent()
+end
+
+---@param matchTeamData MatchBattleTeam
+function BattleTeam:Init(matchTeamData, towerId)
+    local towerEntryId = self.battle:GetNextEntryId()
+    self.tower = Tower.new(towerEntryId, self.battle.battleId, self.teamId, self.teamMapConfig.towerPos, 1, towerId);
+    if not self.tower:Init() then
+        return false
+    end
+
+    -- 初始化场地数据
+    self:InitSiteData(matchTeamData)
+
+    self.randomPathPoints = self.teamMapConfig.randomPathPoints
+
+    self.monsterPaths = self.teamMapConfig.monsterPaths
+
+    local pointId = 0
+    for _, positions in pairs(self.randomPathPoints) do
+        for _, position in pairs(positions) do
+            pointId = pointId + 1
+            local randomRoutePoint = self.battle:CreateRandomRoutePoint(self, pointId, position)
+            self.randomRoutePoints[pointId] = randomRoutePoint
+        end
+    end
+
+    return true
+end
+
+---@param matchTeamData MatchBattleTeam
+function BattleTeam:InitSiteData(matchTeamData)
+    for _, matchPlayer in pairs(matchTeamData.players) do
+        local playerId = matchPlayer.playerIndex
+        local playerMapConfig = self.teamMapConfig.playerMapConfig[playerId]
+        local siteData = {
+            playerUid = matchPlayer.id,
+            formationPos = playerMapConfig.formationPos,
+            summonerPoints = playerMapConfig.summonerPoints,
+            formationSlots = {},
+            sutras = {},
+            slots = {},
+        }
+        for _, slotPosition in pairs(playerMapConfig.formationSlots) do
+            local pos = {
+                x = siteData.formationPos.x + slotPosition.x,
+                y = siteData.formationPos.y + slotPosition.y
+            }
+            table.insert(siteData.formationSlots, pos)
+        end
+
+        self.playerSiteDatas[playerId] = siteData
+
+        for idx, position in pairs(siteData.formationSlots) do
+            local formationSlot = self.battle:CreateFormationSlot(self, idx, position)
+            siteData.slots[idx] = formationSlot
+        end
+    end
+end
+
+function BattleTeam:Reset()
+    for _, monster in pairs(self.monsters) do
+        monster:Reset()
+    end
+
+    for _, rangeEffect in pairs(self.rangeEffects) do
+        rangeEffect:Reset()
+    end
+
+    for _, playerSiteData in pairs(self.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            sutra:Reset()
+        end
+    end
+
+    self.tower:Reset()
+end
+
+function BattleTeam:Update(nowMS)
+
+end
+
+function BattleTeam:ResetRoundStatus()
+    self.isBossReach = false
+end
+
+function BattleTeam:GetPlayerSiteData(playerIndex)
+    local playerSiteData = self.playerSiteDatas[playerIndex]
+
+    local data = {
+        playerIdx = playerIndex,
+        playerId = playerSiteData.playerUid,
+        sutras = {}
+    }
+
+    for _, sutra in pairs(playerSiteData.sutras) do
+        table.insert(data.sutras, sutra:GetSutraData())
+    end
+
+    return data
+end
+
+function BattleTeam:GetBattleTeamData(battle)
+    local towerData = self.tower:GetTowerData()
+    local data = {
+        teamId = self.teamId,
+        players = {},
+        tower = towerData,
+        monsters = {},
+        summoners = {},
+        playerSiteDatas = {},
+    }
+
+    for _, monster in pairs(self.monsters) do
+        table.insert(data.monsters, monster:GetMonsterData())
+    end
+
+    for _, player in pairs(battle.players) do
+        if player.teamId == self.teamId then
+            table.insert(data.players, playerClz.GetPlayerData(player))
+        end
+    end
+
+    for _, summoner in pairs(self.summoners) do
+        table.insert(data.summoners, summoner:GetSummonerData())
+    end
+
+    for idx, playerSiteData in pairs(self.playerSiteDatas) do
+        table.insert(data.playerSiteDatas, self:GetPlayerSiteData(idx))
+    end
+
+    return data
+end
+
+function BattleTeam:GetBattleTeamSnapshotData()
+    local data = {
+        teamId = self.teamId,
+        tower = self.tower:GetTowerSnapshotData(),
+        players = {},
+    }
+
+    for _, player in pairs(self.battle.players) do
+        if player.teamId == self.teamId then
+            table.insert(data.players, playerClz.GetPlayerSnapshotData(player))
+        end
+    end
+
+    return data
+end
+
+function BattleTeam:InitFromBattleTeamData(data)
+    self.tower:InitFromTowerData(data.tower)
+
+    for _, playerData in pairs(data.players) do
+        local playerSiteData = self.playerSiteDatas[playerData.playerIdx]
+        local player = self.battle:GetPlayer(tostring(playerSiteData.playerUid))
+        if player then
+            -- 先把数据存起来，等同步完之后再初始化
+            player.playerInitData = playerData
+        end
+    end
+end
+
+function BattleTeam:AddHalo(haloId, skillId)
+    self.haloComponent:AddHalo(haloId, skillId)
+end
+
+function BattleTeam:RemoveHalo(haloId)
+    self.haloComponent:RemoveHalo(haloId)
+end
+
+function BattleTeam:GetSkillConditionCount()
+    return self.haloComponent.skillConditionCount
+end
+
+function BattleTeam:GetSpellCD()
+    return math.max(10000 + self.haloComponent:GetSpellCD(), 0)
+end
+
+function BattleTeam:UpdateFates()
+    local sutraMap = {}
+    ---@type Player
+    for _, player in pairs(self.battle.players) do
+        if player.teamId == self.teamId then
+            for _, slotData in pairs(player.gameCardComponent.equipList) do
+                if slotData.card then
+                    sutraMap[slotData.card.id] = true
+                end
+            end
+        end
+    end
+
+    self.fateComponent:ActiveFate(self.battle, self.teamId, sutraMap)
+end
+
+function BattleTeam:AddPoint(battle, pointId, value)
+    self.points[pointId] = self.points[pointId] or 0
+    self.points[pointId] = self.points[pointId] + value
+
+    --LogDebug("BattleTeam:AddPoint, teamId:{} pointId:{} addValue:{} curPoint:{}", self.teamId, pointId, value, self.points[pointId])
+
+    local event = eventManager.CreatePointValueEvent(pointId, self.points[pointId])
+    eventManager.DispatchEvent(battle.eventManager, event)
+end

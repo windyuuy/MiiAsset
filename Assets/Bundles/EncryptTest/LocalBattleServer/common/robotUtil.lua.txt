@@ -1,0 +1,56 @@
+robotUserIdStart  = 10000;
+robotUserIdEnd    = 69999;
+robotOpenidPrefix = "ROBOT_";
+
+robotUidStart = 117000
+robotUidEnd   = 119100
+
+function GetUidFromOpenid(openid)
+    if IsRobotOpenid(openid) then
+        return string.sub(openid, string.len(robotOpenidPrefix) + 1, string.len(openid));
+    end
+end
+
+function IsRobotOpenid(openid)
+    if not openid then
+        return false;
+    end
+
+    if not string.sub(openid, 1, string.len(robotOpenidPrefix))==robotOpenidPrefix then
+        return false;
+    end
+
+    local uid = string.sub(openid, string.len(robotOpenidPrefix) + 1, string.len(openid));
+    if not uid then
+        return false;
+    end
+    return IsRobotUid(uid);
+end
+
+function IsRobotUid(uid)
+    local calUid = tonumber(uid);
+
+    if not calUid then
+        return false;
+    end
+
+    if calUid >= robotUidStart and calUid <= robotUidEnd then
+        return true;
+    end
+
+    if calUid >= robotUserIdStart and calUid <= robotUserIdEnd then
+        return true;
+    end
+
+    return false;
+end
+
+function RandomRobotOpenid(robotCount)
+    local uid = RandomRobotUid(robotCount);
+
+    return string.format("%s%s", robotOpenidPrefix, uid);
+end
+
+function RandomRobotUid(robotCount)
+    return math.random(robotUserIdStart, math.min(robotUserIdStart+robotCount, robotUserIdEnd));
+end

@@ -1,0 +1,4 @@
+function Execute(robot, intent)
+    local battleData = robot.battleData
+    battleData.roundNumber = intent.roundInfo.roundNumber;
+end

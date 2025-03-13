@@ -1,0 +1,17 @@
+-- 26. 忽略伤害
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local owner       = buff.owner
+    owner.ignoreLastDamage = true
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+
+end

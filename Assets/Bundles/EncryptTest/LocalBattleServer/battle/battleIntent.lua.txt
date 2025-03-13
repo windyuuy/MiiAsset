@@ -1,0 +1,289 @@
+-- 同步给客户端的数据
+local message        = import("common/message.lua");
+local robotUtil      = import("common/robotUtil.lua")
+local battleTeamData = import("battle/data/battleTeam.lua");
+
+-- 同步类型
+_G.INTENT_TYPE = {
+    NONE                    = 0, -- 未知
+    SETTLE                  = 1, -- 结算
+    MONSTER_CREATE          = 2, -- 怪物创建
+    MONSTER_MOVE            = 3, -- 怪物移动
+    MONSTER_DESTROY         = 4, -- 怪物销毁
+    USE_SKILL               = 5, -- 使用技能
+    ENTRY_ATTRIBUTE_CHANGE  = 6, -- 实体属性变化
+    ADD_BUFF                = 7, -- 添加buff
+    REMOVE_BUFF             = 8, -- 移除buff
+    FLYER_CREATE            = 9, -- 飞行物创建
+    ROUND_INFO              = 10, -- 回合信息
+    RESOURCE                = 11, -- 资源
+    SUTRA_CREATE            = 12, -- 法宝创建
+    SUTRA_DESTROY           = 13, -- 法宝销毁
+    ENTRY_STATUS            = 14, -- 实体状态
+    RANGE_EFFECT_CREATE     = 15, -- 范围效果创建
+    RANGE_EFFECT_MOVE       = 16, -- 范围效果移动
+    RANGE_EFFECT_DESTROY    = 17, -- 范围效果销毁
+    DAMAGE_INFO             = 18, -- 伤害信息
+    ELEMENT_ATTACH          = 19, -- 元素附着
+    SUTRA_MOVE              = 20, -- 法宝移动
+    CARD_OPTIONAL_LIST      = 21, -- 选择列表
+    CARD_CHANGE_LIST        = 22, -- 改变列表
+    FORMATION_STATUS        = 23, -- 结阵状态
+    EMOJI                   = 24, -- 发送表情
+    GAME_CARDS_UPDATE       = 25, -- 卡牌区域数据
+    GAME_SPELL_CARDS_UPDATE = 26, -- 法术牌数据更新
+    SUMMONER_CREATE         = 27, -- 召唤物创建
+    SUMMONER_DESTROY        = 28, -- 召唤物销毁
+    BUFF_EFFECT             = 29, -- buff生效
+    EXTRA_FATE_COUNT        = 30, -- 额外缘分计数
+}
+
+-- 所有需要发送的intent
+battlesIntent = battlesIntent or {};
+-- battlesIntent {
+--     frameId           = 1, 帧信息
+--     allIntentList     = list(),  -- 所有玩家都需要同步的信息
+--     playersIntentList = table(), -- 特定玩家需要同步的信息
+-- }
+
+intentType2DataName = {
+    [_G.INTENT_TYPE.SETTLE]                      = "settle",
+    [_G.INTENT_TYPE.MONSTER_CREATE]              = "monsterCreate",
+    [_G.INTENT_TYPE.MONSTER_MOVE]                = "monsterMove",
+    [_G.INTENT_TYPE.MONSTER_DESTROY]             = "monsterDestroy",
+    [_G.INTENT_TYPE.USE_SKILL]                   = "useSkill",
+    [_G.INTENT_TYPE.ENTRY_ATTRIBUTE_CHANGE]      = "entryAttributeChange",
+    [_G.INTENT_TYPE.ADD_BUFF]                    = "addBuff",
+    [_G.INTENT_TYPE.REMOVE_BUFF]                 = "removeBuff",
+    [_G.INTENT_TYPE.FLYER_CREATE]                = "flyerCreate",
+    [_G.INTENT_TYPE.ROUND_INFO]                  = "roundInfo",
+    [_G.INTENT_TYPE.RESOURCE]                    = "resource",
+    [_G.INTENT_TYPE.SUTRA_CREATE]                = "sutraCreate",
+    [_G.INTENT_TYPE.SUTRA_DESTROY]               = "sutraDestroy",
+    [_G.INTENT_TYPE.RANGE_EFFECT_CREATE]         = "rangeEffectCreate",
+    [_G.INTENT_TYPE.RANGE_EFFECT_MOVE]           = "rangeEffectMove",
+    [_G.INTENT_TYPE.RANGE_EFFECT_DESTROY]        = "rangeEffectDestroy",
+    [_G.INTENT_TYPE.DAMAGE_INFO]                 = "damageInfo",
+    [_G.INTENT_TYPE.ELEMENT_ATTACH]              = "elementAttach",
+    [_G.INTENT_TYPE.SUTRA_MOVE]                  = "sutraMove",
+    [_G.INTENT_TYPE.CARD_OPTIONAL_LIST]          = "cardOptionalList",
+    [_G.INTENT_TYPE.CARD_CHANGE_LIST]            = "cardChangeList",
+    [_G.INTENT_TYPE.FORMATION_STATUS]            = "formationStatus",
+    [_G.INTENT_TYPE.EMOJI]                       = "emoji",
+    [_G.INTENT_TYPE.GAME_CARDS_UPDATE]           = "gameCardsUpdate",
+    [_G.INTENT_TYPE.GAME_SPELL_CARDS_UPDATE]     = "gameSpellCardsUpdate",
+    [_G.INTENT_TYPE.SUMMONER_CREATE]             = "summonerCreate",
+    [_G.INTENT_TYPE.SUMMONER_DESTROY]            = "summonerDestroy",
+    [_G.INTENT_TYPE.BUFF_EFFECT]                 = "buffEffect",
+    [_G.INTENT_TYPE.EXTRA_FATE_COUNT]            = "extraFateCount",
+}
+
+function InsertBattleIntent(battleId, intentType, dataMap)
+    local info = GetBattleIntent(battleId);
+    info["allIntentList"] = info["allIntentList"] or {};
+    local allIntentList = info["allIntentList"];
+
+    local dataName = intentType2DataName[intentType];
+    if not dataName then return; end
+
+    table.insert(allIntentList, #allIntentList+1, {
+        intentType = intentType,
+        [dataName] = dataMap
+    });
+    -- LogInfo("InsertBattleIntent intentType={}", intentType);
+end
+
+function InsertUserIntent(battleId, uid, intentType, dataMap)
+    local info = GetBattleIntent(battleId);
+    if intentType == _G.INTENT_TYPE.SETTLE then
+        info.hasSettleIntent = true;
+    end
+    local playersIntentList = info.playersIntentList;
+    playersIntentList[uid] = playersIntentList[uid] or {}
+    local playerIntentList = playersIntentList[uid];
+
+    local dataName = intentType2DataName[intentType];
+    if not dataName then return; end
+    table.insert(playerIntentList, {
+        intentType = intentType,
+        [dataName] = dataMap
+    });
+end
+
+function ClearBattleIntent(battleId)
+    battlesIntent[battleId] = {
+        frameId = 0,
+        allIntentList     = {},
+        playersIntentList = {}
+    }
+end
+
+function GetBattleIntent(battleId)
+    battlesIntent[battleId] = battlesIntent[battleId] or {
+        frameId = 0,
+        allIntentList     = {},
+        playersIntentList = {}
+    };
+    return battlesIntent[battleId];
+end
+
+function SendIntents(nowMS, battleId, battle)
+    if battle.status < _G.BattleStatus.PLAY then
+        return;
+    end
+
+    local intentInfo = GetBattleIntent(battleId);
+    intentInfo.frameId = intentInfo.frameId + 1;
+    intentInfo.hasSettleIntent = nil;
+
+    -- 发送前进行清理
+    battlesIntent[battleId] = {
+        frameId = intentInfo.frameId,
+        allIntentList     = {},
+        playersIntentList = {}
+    };
+
+    battle.tickState = 100
+    for id, player in pairs(battle.players) do
+        local updateInfo = {
+            battleId          = battleId,
+            frameId           = intentInfo.frameId,
+            occurTime         = nowMS,
+            allIntentList     = intentInfo.allIntentList,
+            playersIntentList = (intentInfo.playersIntentList or {})[player.id] or {}
+        }
+
+        if robotUtil.IsRobotUid(player.id) then
+            battle.tickState = 101
+            battle.lastIntents = updateInfo
+            s2r.BattleLogic_NotifyBattleUpdate(player, updateInfo)
+            battle.tickState = 102
+            goto continue;
+        end
+
+        local ss = _G.GetAgentByUid(player.id);
+        if not ss then
+            goto continue;
+        end
+        if not ss.battleId or ss.battleId ~= battleId then
+            goto continue;
+        end
+
+        if battle.robotStop and robotUtil.IsRobotUid(player.id) then
+            goto continue;
+        end
+
+        -- 输出intentType
+        --if updateInfo.allIntentList then
+        --    for _, intent in pairs(updateInfo.allIntentList) do
+        --        if intent.intentType == _G.INTENT_TYPE.ADD_BUFF then
+        --            LogInfo("send intent, intent:{}", intent)
+        --        end
+        --    end
+        --end
+        battle.tickState = 103
+        battle.lastIntents = updateInfo
+        ss.Call("BattleLogic_NotifyBattleUpdate", updateInfo);
+        battle.tickState = 104
+        ::continue::
+    end
+end
+
+-- 同步轮次信息给客户端
+function NotifyRoundInfo(battle)
+    local roundInfo = {
+        roundNumber     = battle.roundNumber,
+        roundEndTime    = battle.roundEndTime,
+        monsterGroupId  = battle.currentRoundMonsterGroupId,
+    }
+
+    -- 同步轮次信息
+    InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.ROUND_INFO, roundInfo);
+end
+
+---@param battle Battle
+function NotifyBattleStart(battle, nowMS)
+    LogInfo("NotifyBattleStart, battleId={}", battle.battleId)
+    local msg = {
+        battleId = battle.battleId,
+        occurTime = nowMS,
+        teams = {}
+    }
+
+    for _, battleTeam in pairs(battle.battleTeams) do
+        local data = battleTeam:GetBattleTeamData(battle)
+        table.insert(msg.teams, data)
+    end
+
+    -- 同步战斗开始信息
+    for _, player in pairs(battle.players) do
+        if robotUtil.IsRobotUid(player.id) then
+            s2r.BattleLogic_NotifyBattleStart(player, msg)
+            goto continue;
+        end
+
+        local ss = _G.GetAgentByUid(player.id);
+        if not ss then
+            LogInfo("NotifyBattleStart, player not online, playerId={}", player.id)
+            goto continue;
+        end
+
+        if not ss.battleId or ss.battleId ~= battle.battleId then
+            goto continue;
+        end
+
+        LogInfo("NotifyBattleStart, modeId={} msg={} playerId:{}", battle.mode, msg, player.id)
+        ss.Call("BattleLogic_NotifyBattleStart", msg);
+
+        -- 下面是测试用的，可以删掉
+        -- ss.Call("BattleLogic_BattleReadyResponse", {battleId=battle.battleId});
+
+        _G.LogPlayer(ss, "StartBattle", {
+            battleId = battle.battleId,
+        });
+
+        ::continue::
+    end
+end
+
+function NotifyBattleStop(nowMS, battleId, battle)
+    -- stop前需要先把intent的发送出去
+    local info = GetBattleIntent(battleId);
+    if info.hasSettleIntent then
+        SendIntents(nowMS, battleId, battle);
+    end
+
+    -- 发送stop的消息
+    for _, player in pairs(battle.players) do
+        if robotUtil.IsRobotUid(player.id) then
+            s2r.BattleLogic_NotifyBattleStop(player, {battleId=battleId, stopReason=battle.stopReason})
+            goto continue;
+        end
+
+        if not player.svr then
+            LogInfo("理论上只有测试的时候才会出现该问题");
+            goto continue;
+        end
+
+        -- 通知修改玩家状态
+        message.SendP2PMessage("lobby", player.svr, "BattleStop", player.id, battleId, battle.mode, battle.stopReason);
+
+        local ss = _G.GetAgentByUid(player.id);
+        if not ss then
+            goto continue;
+        end
+        if not ss.battleId or ss.battleId ~= battleId then
+            goto continue;
+        end
+        ss.Call("BattleLogic_NotifyBattleStop", {battleId=battleId, stopReason=battle.stopReason});
+
+        _G.LogPlayer(ss, "StopBattle", {
+            battleId = battleId,
+            battle.stopReason
+        });
+
+        ::continue::
+    end
+
+    battlesIntent[battleId] = nil
+end

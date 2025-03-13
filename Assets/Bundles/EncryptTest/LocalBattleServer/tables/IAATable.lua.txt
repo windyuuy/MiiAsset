@@ -1,0 +1,20 @@
+-- IAAConfigTable
+_G.IAAConfigTable =
+{
+    [100001] = {id = 100001, adType = "1", adAwardsType = 1, adDesc = "升级炼器炉", maxDailyImpressions = 3, adUnitID = "adunit-e4bbe61952fc4db2", backAdUnitID = "adunit-e4bbe61952fc4db2", goodId = {},},
+    [100002] = {id = 100002, adType = "1", adAwardsType = 2, adDesc = "渡劫", maxDailyImpressions = 3, adUnitID = "adunit-042990ef5653c82a", backAdUnitID = "adunit-042990ef5653c82a", goodId = {},},
+    [100003] = {id = 100003, adType = "1", adAwardsType = 3, adDesc = "渡劫减少冷却", maxDailyImpressions = 3, adUnitID = "adunit-0a6ac6372630b312", backAdUnitID = "adunit-0a6ac6372630b312", goodId = {},},
+    [100004] = {id = 100004, adType = "1", adAwardsType = 4, adDesc = "斗法结算胜利", maxDailyImpressions = 3, adUnitID = "adunit-9f003eae16be3564", backAdUnitID = "adunit-9f003eae16be3564", goodId = {},},
+    [100005] = {id = 100005, adType = "1", adAwardsType = 5, adDesc = "斗法结算失败", maxDailyImpressions = 3, adUnitID = "adunit-b4851966cd3cb206", backAdUnitID = "adunit-b4851966cd3cb206", goodId = {},},
+    [100006] = {id = 100006, adType = "1", adAwardsType = 6, adDesc = "合作模式", maxDailyImpressions = 1, adUnitID = "adunit-a49a2784d8b33deb", backAdUnitID = "adunit-a49a2784d8b33deb", goodId = {},},
+    [100007] = {id = 100007, adType = "1", adAwardsType = 7, adDesc = "免费火种", maxDailyImpressions = 3, adUnitID = "adunit-debbc4b82da935b7", backAdUnitID = "adunit-debbc4b82da935b7", goodId = {},},
+    [100008] = {id = 100008, adType = "1", adAwardsType = 8, adDesc = "挂机历练", maxDailyImpressions = 3, adUnitID = "adunit-07ac26f284686cc2", backAdUnitID = "adunit-07ac26f284686cc2", goodId = {},},
+    [100009] = {id = 100009, adType = "1", adAwardsType = 9, adDesc = "合作扫荡", maxDailyImpressions = 999, adUnitID = "adunit-a49a2784d8b33deb", backAdUnitID = "adunit-a49a2784d8b33deb", goodId = {},},
+    [900501] = {id = 900501, adType = "1", adAwardsType = 10, adDesc = "每日特惠_前七天_广告商品", maxDailyImpressions = 1, adUnitID = "adunit-debbc4b82da935b7", backAdUnitID = "adunit-debbc4b82da935b7", goodId = {2, 900501},},
+    [900601] = {id = 900601, adType = "1", adAwardsType = 10, adDesc = "每日特惠_七天后_广告商品", maxDailyImpressions = 1, adUnitID = "adunit-debbc4b82da935b7", backAdUnitID = "adunit-debbc4b82da935b7", goodId = {2, 900601},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("IAATable")
+end

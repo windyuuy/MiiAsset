@@ -1,0 +1,367 @@
+local eventManager = import("battle/event/eventManager.lua")
+local battleIntent = import("battle/battleIntent.lua")
+local buffData     = import("battle/data/buff.lua")
+local battleMgr    = import("battle/battleMgr.lua")
+local buffMgr      = import("battle/fight/buff/buffMgr.lua");
+
+local buffTriggerOnAdd              = import("battle/fight/buffTriggerType/buffTriggerOnAdd.lua")
+local buffTriggerOnAfterAttack      = import("battle/fight/buffTriggerType/buffTriggerOnAfterAttack.lua")
+local buffTriggerOnAfterBeHit       = import("battle/fight/buffTriggerType/buffTriggerOnAfterBeHit.lua")
+local buffTriggerOnAfterUseSkill    = import("battle/fight/buffTriggerType/buffTriggerOnAfterUseSkill.lua")
+local buffTriggerOnBeforeAddBuff    = import("battle/fight/buffTriggerType/buffTriggerOnBeforeAddBuff.lua")
+local buffTriggerOnBeforeAttack     = import("battle/fight/buffTriggerType/buffTriggerOnBeforeAttack.lua")
+local buffTriggerOnBeforeBeHit      = import("battle/fight/buffTriggerType/buffTriggerOnBeforeBeHit.lua")
+local buffTriggerOnBeforeUseSkill   = import("battle/fight/buffTriggerType/buffTriggerOnBeforeUseSkill.lua")
+local buffTriggerOnBossCreate       = import("battle/fight/buffTriggerType/buffTriggerOnBossCreate.lua")
+local buffTriggerOnBuffEnd          = import("battle/fight/buffTriggerType/buffTriggerOnBuffEnd.lua")
+local buffTriggerOnCampKill         = import("battle/fight/buffTriggerType/buffTriggerOnCampKill.lua")
+local buffTriggerOnCycle            = import("battle/fight/buffTriggerType/buffTriggerOnCycle.lua")
+local buffTriggerOnDead             = import("battle/fight/buffTriggerType/buffTriggerOnDead.lua")
+local buffTriggerOnEnemyUseSpell    = import("battle/fight/buffTriggerType/buffTriggerOnEnemyUseSpell.lua")
+local buffTriggerOnKill             = import("battle/fight/buffTriggerType/buffTriggerOnKill.lua")
+local buffTriggerOnPointValue       = import("battle/fight/buffTriggerType/buffTriggerOnPointValue.lua")
+local buffTriggerOnRefreshGameCard  = import("battle/fight/buffTriggerType/buffTriggerOnRefreshGameCard.lua")
+local buffTriggerOnRoundStart       = import("battle/fight/buffTriggerType/buffTriggerOnRoundStart.lua")
+local buffTriggerOnSelfManaChange   = import("battle/fight/buffTriggerType/buffTriggerOnSelfManaChange.lua")
+local buffTriggerOnSelfMonsterCountChange = import("battle/fight/buffTriggerType/buffTriggerOnSelfMonsterCountChange.lua")
+local buffTriggerOnSelfTowerHpChange      = import("battle/fight/buffTriggerType/buffTriggerOnSelfTowerHpChange.lua")
+local buffTriggerOnSelfTowerHpChangeTo    = import("battle/fight/buffTriggerType/buffTriggerOnSelfTowerHpChangeTo.lua")
+local buffTriggerOnSutraSell        = import("battle/fight/buffTriggerType/buffTriggerOnSutraSell.lua")
+local buffTriggerOnSutraStarChange  = import("battle/fight/buffTriggerType/buffTriggerOnSutraStarChange.lua")
+local buffTriggerOnCriticalStrike   = import("battle/fight/buffTriggerType/buffTriggerOnCriticalStrike.lua")
+local buffTriggerOnEntryAttackHit   = import("battle/fight/buffTriggerType/buffTriggerOnEntryAttackHit.lua")
+local buffTriggerOnIncreasePointValue = import("battle/fight/buffTriggerType/buffTriggerOnIncreasePointValue.lua")
+local buffTriggerOnAddBuff          = import("battle/fight/buffTriggerType/buffTriggerOnAddBuff.lua")
+local buffTriggerOnSutraOn          = import("battle/fight/buffTriggerType/buffTriggerOnSutraOn.lua")
+local buffTriggerOnMonsterBeExecute = import("battle/fight/buffTriggerType/buffTriggerOnMonsterBeExecute.lua")
+
+_G.MAX_BUFF_DURATION = 86400
+
+_G.BuffTriggerRemoveType = {
+    BUFF_TRIGGER_REMOVE_TYPE_DEFAULT    = 0,    -- 默认不处理
+    BUFF_TRIGGER_REMOVE_TYPE_REMOVE_ONE = 1,    -- 触发后删除一层
+    BUFF_TRIGGER_REMOVE_TYPE_REMOVE_ALL = 2,    -- 触发后全部删除
+}
+
+_G.BuffTriggerTypeClz = {
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_ADD] = buffTriggerOnAdd,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_CYCLE] = buffTriggerOnCycle,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_END] = buffTriggerOnBuffEnd,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_DEAD] = buffTriggerOnDead,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_BEFORE_BE_HIT] = buffTriggerOnBeforeBeHit,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_AFTER_BE_HIT] = buffTriggerOnAfterBeHit,
+    --[_G.BuffTriggerType.BUFF_TRIGGER_TYPE_BEFORE_ATTACK] = buffTriggerOnBeforeAttack,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_AFTER_ATTACK] = buffTriggerOnAfterAttack,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_KILL_MONSTER] = buffTriggerOnKill,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_REACTION] = buffTriggerOnAfterBeHit,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_ENEMY_USE_SPELL] = buffTriggerOnEnemyUseSpell,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_BEFORE_USE_SKILL] = buffTriggerOnBeforeUseSkill,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_AFTER_USE_SKILL] = buffTriggerOnAfterUseSkill,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_SELF_TOWER_HP_CHANGE] = buffTriggerOnSelfTowerHpChange,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_SELF_TOWER_HP_CHANGE_TO] = buffTriggerOnSelfTowerHpChangeTo,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_SELF_MONSTER_COUNT_CHANGE] = buffTriggerOnSelfMonsterCountChange,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_REFRESH_GAME_CARD] = buffTriggerOnRefreshGameCard,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_SELF_SUTRA_STAR_CHANGE] = buffTriggerOnSutraStarChange,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_SELF_MANA_CHANGE] = buffTriggerOnSelfManaChange,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_ROUND_START] = buffTriggerOnRoundStart,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_BOSS_CREATE] = buffTriggerOnBossCreate,
+    --[_G.BuffTriggerType.BUFF_TRIGGER_TYPE_SUTRA_UP] = buffTriggerOnSutraUp,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_SUTRA_SELL] = buffTriggerOnSutraSell,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_POINT_VALUE] = buffTriggerOnPointValue,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_CRITICAL_STRIKE] = buffTriggerOnCriticalStrike,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_INCREASE_POINT_VALUE] = buffTriggerOnIncreasePointValue,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_CAMP_KILL] = buffTriggerOnCampKill,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_ADD_BUFF] = buffTriggerOnAddBuff,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_BEFORE_ADD_BUFF] = buffTriggerOnBeforeAddBuff,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_ENTRY_ATTACK_HIT] = buffTriggerOnEntryAttackHit,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_SUTRA_ON] = buffTriggerOnSutraOn,
+    [_G.BuffTriggerType.BUFF_TRIGGER_TYPE_MONSTER_BE_EXECUTE] = buffTriggerOnMonsterBeExecute,
+}
+
+---@class BuffComponent buff组件
+---@field buffs table<number, Buff> buff列表
+_G.BuffComponent = class()
+
+function CreateBuffComponent(...)
+    BuffComponent.new(...)
+end
+
+function BuffComponent:ctor()
+    self.buffs = {}
+end
+
+function BuffComponent:Reset(battle)
+    for _, buff in pairs(self.buffs) do
+        RemoveAllLayer(battle, buff.buffId, buff.owner)
+    end
+end
+
+---给目标添加buff
+---@param battle Battle 战局信息
+---@param buffId number buff的id
+---@param target Entry 目标
+---@param origin Entry buff的来源
+---@param layer number buff层数
+---@param skillId number 属于技能id
+function AddBuff(battle, buffId, target, origin, layer, skillId)
+    --LogDebug("AddBuff buffId:{} layer:{} entryId:{}", buffId, layer, target.entryId)
+    local buffComponent = target.buffComponent
+
+    local beforeAddBuffEvent = eventManager.CreateBeforeAddBuffEvent(target, origin, buffId)  --添加buff前触发
+    eventManager.DispatchEvent(battle.eventManager, beforeAddBuffEvent)
+
+    if not CheckMutexAndReplace(target, buffId) then
+        return
+    end
+
+    local buff = buffComponent.buffs[buffId]
+    if buff then
+        -- update buff
+        buff:UpdateLayer(battle, target, origin, layer, false)
+    else
+        buff = buffData.CreateBuff(buffId, target, origin, skillId)
+        buff:Init(battle)
+        buffComponent.buffs[buffId] = buff
+        -- 根据buff触发类型注册事件
+        registerBuffTriggerEvent(buffComponent, battle, buff)
+    end
+
+    local event = eventManager.CreateAddBuffEvent(target, origin, buffId)  --被添加buff触发
+    eventManager.DispatchEvent(battle.eventManager, event)
+
+    -- 通知buff添加
+    sendAddBuffIntent(target.battleId, {
+        teamId = target.teamId,
+        entryId = target.entryId,
+        entryType = target:GetEntryType(),
+        buffId = buffId,
+        layer = buff.layer,
+        endTime = buff.duration,
+        skillId = buff.skillId,
+    });
+end
+
+---检查互斥buff并替换
+function CheckMutexAndReplace(entry, buffId)
+    local buffComponent = entry.buffComponent
+    local battle        = battleMgr.GetBattle(entry.battleId)
+    local buffConfig    = _G.BuffTable[buffId]
+
+    if not buffConfig then
+        return
+    end
+
+    -- 与当前所拥有的buff进行互斥检查
+    for id, _ in pairs(buffComponent.buffs) do
+        local config = _G.BuffTable[id]
+        if config.opposite then
+            for _, mutexTag in pairs(config.opposite) do
+                if table.contains(buffConfig.buffTags, mutexTag) then
+                    return false
+                end
+            end
+        end
+    end
+    if not buffConfig then
+        LogInfo("buff id:{} Config is not exist",buffId)
+        return false
+    end
+    -- buff替换
+    for _, id in pairs(buffConfig.replace) do
+        local delBuf = buffComponent.buffs[id]
+        if delBuf then
+            local event = eventManager.CreateBuffEndEvent(entry.entryId)-- 触发buff结束事件
+            eventManager.DispatchEvent(battle.eventManager, event)
+            delBuf.layer = 0
+            buffUnEffect(delBuf)  -- buff移除效果
+            buffComponent.buffs[id] = nil;
+            delBuf:Reset(battle)     -- 清理buff数据
+            sendRemoveBuffIntent(entry.battleId, {
+                teamId = entry.teamId,
+                entryId = entry.entryId,
+                entryType = entry:GetEntryType(),
+                buffId = delBuf.buffId,
+                layer = delBuf.layer,
+                endTime = delBuf.duration,
+                skillId = delBuf.skillId,
+            });
+        end
+    end
+
+    return true
+end
+
+function RemoveBuff(battle, buffId, entry)
+    local buffComponent = entry.buffComponent
+    local buff = buffComponent.buffs[buffId];
+    if not buff then return end
+
+    local buffConfig = _G.BuffTable[buff.buffId];
+    if buffConfig.layerType == _G.BuffLayerRemoveType.ALL then
+        RemoveAllLayer(battle, buffId, entry)
+    elseif buffConfig.layerType == _G.BuffLayerRemoveType.SINGLE then
+        buff.layer = buff.layer - 1
+
+        -- 更新buff持续时间
+        buff:UpdateContinueTime(battle)
+
+        if buff.layer <= 0 then
+            RemoveAllLayer(battle, buffId, entry)
+        else
+            -- 通知buff移除
+            sendRemoveBuffIntent(entry.battleId, {
+                teamId = entry.teamId,
+                entryId = entry.entryId,
+                entryType = entry:GetEntryType(),
+                buffId = buffId,
+                layer = buff.layer,
+                endTime = buff.duration,
+                skillId = buff.skillId,
+            });
+        end
+    else
+        LogErr("RemoveBuff, invalid buffRemoveType buffId:{} buffRemoveType:{}", buff.buffId, buffConfig.layerType)
+        return
+    end
+end
+
+function RemoveAllLayer(battle, buffId, entry)
+    local buffComponent = entry.buffComponent
+    local buff = buffComponent.buffs[buffId];
+    if not buff then return end
+
+    local event = eventManager.CreateBuffEndEvent(entry.entryId)-- 触发buff结束事件
+    eventManager.DispatchEvent(battle.eventManager, event)
+    buffUnEffect(buff)  -- buff移除效果
+
+    buff.layer = 0
+    buffComponent.buffs[buffId] = nil;
+    buff:Reset(battle)     -- 清理buff数据
+
+    -- 通知buff移除
+    sendRemoveBuffIntent(entry.battleId, {
+        teamId = entry.teamId,
+        entryId = entry.entryId,
+        entryType = entry:GetEntryType(),
+        buffId = buffId,
+        layer = buff.layer,
+        endTime = buff.duration,
+        skillId = buff.skillId,
+    });
+end
+
+function SetBuffLayer(target, origin, buffId, layer)
+    local battle = battleMgr.GetBattle(target.battleId)
+
+    local buffComponent = target.buffComponent
+    local buff = buffComponent.buffs[buffId]
+    if not buff then
+        AddBuff(battle, buffId, target, origin, layer, 0)
+        return
+    end
+
+    buff:UpdateLayer(battle, target, origin, layer, true)
+end
+
+---@param battle Battle
+---@param buff Buff
+function registerBuffTriggerEvent(buffComponent, battle, buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    --LogDebug("registerBuffTriggerEvent, register trigger event, buffId:{} triggerType:{}", buff.buffId, buffConfig.triggerType)
+
+    for idx, triggerType in pairs(buffConfig.triggerTypes) do
+        local clz = _G.BuffTriggerTypeClz[triggerType]
+        if not clz then
+            LogErr("registerBuffTriggerEvent, invalid triggerType, buffId:{} triggerType:{}", buff.buffId, triggerType)
+            return
+        end
+
+        local res, err = xpcall(clz.buffTrigger, LogErr, buffComponent, battle, buff, idx)
+        if not res then
+            LogErr("registerBuffTriggerEvent, register trigger event failed, buffId:{} triggerType:{} err:{}", buff.buffId, triggerType, err)
+        end
+    end
+
+end
+
+----------------------------------------------------------------
+-- buff效果
+---@param buffComponent BuffComponent
+---@param buff Buff 信息
+---@param skillContext SkillContext 技能上下文 目前只对攻击相关触发的buff有效
+function buffEffect(buffComponent, buff, ...)
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    if not battle then
+        return
+    end
+
+    local releaseEntry = buff.origin
+
+    local buffConfig  = _G.BuffTable[buff.buffId]
+    local random      = math.random(1, 10000)
+    local probability = buffConfig.probability + releaseEntry:GetAttribute(_G.AttributeType.BUFF_EFFECTIVE_PROBABILITY)
+    if random > probability then
+        return
+    end
+
+    buff.hasEffect = true
+
+    local buffEffectClz = _G.BuffEffectTypeFunc[buffConfig.effectType]
+    if not buffEffectClz then
+        LogDebug("buffEffect, cannot find buffEffectType, buffId:{} effectType:{}", buff.buffId, buffConfig.effectType)
+        return
+    end
+    buffEffectClz.BuffEffect(buff, ...)
+
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.BUFF_EFFECT, {
+        entryId = buff.owner.entryId,
+        buffId = buff.buffId,
+        effectTime = _G.GetCurTimeMS(),
+    })
+
+    -- 触发子buff效果
+    for _, subBuffId in pairs(buffConfig.subBuffIds) do
+        local subBuff = buffComponent.buffs[subBuffId]
+        if subBuff then
+            buffEffect(buffComponent, subBuff)
+        end
+    end
+
+    -- 触发删除逻辑
+    if buffConfig.triggerRemoveType == _G.BuffTriggerRemoveType.BUFF_TRIGGER_REMOVE_TYPE_REMOVE_ONE then
+        RemoveBuff(battle, buff.buffId, buff.owner)
+    elseif buffConfig.triggerRemoveType == _G.BuffTriggerRemoveType.BUFF_TRIGGER_REMOVE_TYPE_REMOVE_ALL then
+        RemoveAllLayer(battle, buff.buffId, buff.owner)
+    end
+end
+
+function buffUnEffect(buff)
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local buffEffectClz = _G.BuffEffectTypeFunc[buffConfig.effectType]
+    if not buffEffectClz then
+        return
+    end
+    buffEffectClz.UnBuffEffect(buff)
+end
+
+function buffUpgrade(buff)
+    if not buff.hasEffect then
+        return
+    end
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local buffEffectClz = _G.BuffEffectTypeFunc[buffConfig.effectType]
+    if not buffEffectClz then
+        return
+    end
+    buffEffectClz.OnBuffUpgrade(buff)
+end
+
+-- @param battleId number 战局id
+-- @param buffIntent table buff帧数据
+function sendAddBuffIntent(battleId, buffIntent)
+    battleIntent.InsertBattleIntent(battleId, _G.INTENT_TYPE.ADD_BUFF, buffIntent)
+end
+
+function sendRemoveBuffIntent(battleId, buffIntent)
+    battleIntent.InsertBattleIntent(battleId, _G.INTENT_TYPE.REMOVE_BUFF, buffIntent)
+end

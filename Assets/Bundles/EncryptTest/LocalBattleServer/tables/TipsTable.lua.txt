@@ -1,0 +1,15 @@
+-- TipsTable
+_G.TipsTable =
+{
+    [990001] = {id = 990001, name = "炼器通用信息1", targetid = {1}, content = "提升炼器炉等级，提高更高品质的掉落概率。",},
+    [990002] = {id = 990002, name = "炼器通用信息2", targetid = {1}, content = "完成任务获得丰厚奖励。",},
+    [990003] = {id = 990003, name = "炼器通用信息3", targetid = {1}, content = "限时卡池，每日都会轮换哦！",},
+    [990004] = {id = 990004, name = "炼器通用信息4", targetid = {1}, content = "剑来！",},
+    [990005] = {id = 990005, name = "炼器通用信息5", targetid = {1}, content = "限时卡池里获取的新法宝，会加入基础卡池哦！",},
+    [990006] = {id = 990006, name = "炼器通用信息6", targetid = {1}, content = "小窍门：先抽限定卡池，会让基础卡池的性价比更高哦！",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("TipsTable")
+end

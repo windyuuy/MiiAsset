@@ -1,0 +1,34 @@
+-- 30. 以一定概率给目标添加buff
+local battleMgr = import("battle/battleMgr.lua")
+local buffComp = import("battle/components/buffComponent.lua")
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    if not battle then return end
+
+    local releaseEntry  = buff.origin
+    local buffConfig = _G.BuffTable[buff.buffId]
+
+    local probability = releaseEntry:GetAttribute(_G.AttributeType.BUFF_EFFECTIVE_PROBABILITY)
+    local random = math.random(1, 10000)
+    if random > probability then
+        return
+    end
+
+    for i = 1, #buffConfig.effectData, 2 do
+        local buffId = buffConfig.effectData[i]
+        local layer  = buffConfig.effectData[i + 1]
+        buffComp.AddBuff(battle, buffId, buff.owner, buff.origin, layer, buff.skillId)
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

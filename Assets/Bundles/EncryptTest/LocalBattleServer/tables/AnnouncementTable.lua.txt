@@ -1,0 +1,10 @@
+-- AnnouncementTable
+_G.AnnouncementTable =
+{
+    [1] = {id = 1, announcement = "[color=#000000][size=46]尊敬的玩家：[/size][/color]<br><br>法宝灵光映长空，飞天遁地显神通。<br>心怀浩渺追云梦，逍遥自在任翱翔。<br><br>欢迎来到法宝世界，在这里你可以炼制法宝，追求极品至尊法宝；也可以与其他炼器者斗技切磋，看看谁是使法宝的好手。<br><br>你的传说，将由你谱写！<br><br>[color=#000000][size=46]开服活动[/size][/color]<br>“仙音传讯”获取限定资源、道具<br><br>[color=#000000][size=46]防诈骗公告[/size][/color]<br>道友们在游戏过程中，需提高警惕，仔细甄别以下常规的骗术套路，谨防受骗:<br>1、[世界聊天等发布买卖信息]在世界聊天以“送稀有道具、稀有装备、充值折扣、游戏代练”等为噱头，引导玩家添加QQ微信诈骗，以及在世界聊天上发布买卖信息的行为都会进行永久封号 ;<br>2、[世界聊天等发布充值福利]在世界聊天以“福利号、免费领取XX充值”等噱头，引导玩家添加QQ、微信诈骗等行为都会进行永久封号;<br>3、[宗门]在盟内引导线下群，进行其他游戏宣传或第三方充值渠道等引导，一经发现都会进行永久封号;<br>请玩家们切勿尝试。",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("AnnouncementTable")
+end

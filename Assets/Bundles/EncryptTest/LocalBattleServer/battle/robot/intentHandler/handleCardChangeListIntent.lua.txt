@@ -1,0 +1,38 @@
+function Execute(robot, intent)
+    local battleData = robot.battleData
+    local cardChangeList = intent.cardChangeList
+    if robot.id ~= cardChangeList.playerId then
+        return
+    end
+
+    for _, cardChange in pairs(cardChangeList.changeList) do
+        processCardChange(battleData, cardChange)
+    end
+
+    --LogDebug("handlerCardChangeListIntent:Execute, battleData:{} changeList:{}", battleData, cardChangeList.changeList)
+end
+
+function processCardChange(battleData, cardChange)
+    local changeRegion = nil
+    if cardChange.region == 0 then
+        -- 选择区域
+    elseif cardChange.region == 1 then
+        -- 备战区
+        changeRegion = battleData.prepareList
+    elseif cardChange.region == 2 then
+        -- 装备区域
+        changeRegion = battleData.equipList
+    end
+
+    if not changeRegion then
+        return
+    end
+
+    if cardChange.changeType == 1 then
+        -- DELETE
+        changeRegion[cardChange.slot] = {isLocked=false}
+    else
+        changeRegion[cardChange.slot] = cardChange.data
+    end
+end
+

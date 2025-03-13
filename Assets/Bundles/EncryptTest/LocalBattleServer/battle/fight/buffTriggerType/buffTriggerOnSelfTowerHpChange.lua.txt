@@ -1,0 +1,39 @@
+-- 14. 己方基地血量变化
+
+local buffComponent = import("battle/components/buffComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    local callback = function(listener, properties, event)
+        local tower = event.tower
+        local changeType = event.delta
+
+        if tower.teamId ~= properties.teamId then
+            return false
+        end
+
+        if properties.targetType ~= changeType then
+            return false
+        end
+
+        -- 触发器计数逻辑
+        listener.count = (listener.count or 0) + 1
+        if listener.count < properties.targetCount then
+            return false
+        else
+            -- 触发后还原计数器
+            listener.count = 0
+        end
+
+        buffComponent.buffEffect(properties.buffComponent, properties.buff)
+        return true
+    end
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local triggerTypeData = buffConfig.triggerTypeDatas[triggerTypeIndex]
+    local targetCount = triggerTypeData[1]
+    local targetType = triggerTypeData[2]
+    local properties = { teamId = buff.owner.teamId, buff = buff, buffComponent = component, targetCount = targetCount, targetType = targetType}
+    local listenerId = eventManager.AddEventListener(battle.eventManager, _G.EventType.TOWER_HP_CHANGE, callback, properties, false)
+    buff.listenerEventType = _G.EventType.TOWER_HP_CHANGE
+    table.insert(buff.listenerIds, listenerId)
+end

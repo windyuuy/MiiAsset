@@ -1,0 +1,513 @@
+local grid = import("battle/utils/grid.lua")
+local gameCardComp = import("battle/components/gameCardComponent.lua")
+
+_G.SkillRangeType = {
+    SKILL_RANGE_TYPE_CIRCLE = 1,
+}
+
+---获取技能目标
+---@param context SkillContext
+function UpdateSkillTarget(context)
+    local skillConfig = context.skillConfig
+
+    local attacker = context.releaseEntry
+    local extraAttackTargetCount = 0
+    -- 普攻类型技能增加额外攻击目标属性值
+    if skillConfig.skillType == _G.SkillType.SKILL_TYPE_ATTACK then
+        extraAttackTargetCount = attacker:GetAttribute(_G.AttributeType.EXTRA_ATTACK_TARGET_COUNT)
+    end
+
+    local targetCount = skillConfig.targetCount + extraAttackTargetCount
+
+    if skillConfig.targetType == _G.SkillTargetType.SKILL_TARGET_TYPE_SELF then
+        -- 自己
+        context.targetEntries = { context.releaseEntry }
+    elseif skillConfig.targetType == _G.SkillTargetType.SKILL_TARGET_TYPE_MONSTER then
+        -- 怪物
+        context.targetEntries = getMonsterTargets(context, targetCount)
+    elseif skillConfig.targetType == _G.SkillTargetType.SKILL_TARGET_TYPE_SUTRA then
+        -- 法宝
+        context.targetEntries = getSutraTargets(context, targetCount)
+    elseif skillConfig.targetType == _G.SkillTargetType.SKILL_TARGET_TYPE_TOWER then
+        -- 基地
+        context.targetEntries = { context.targetTeam.tower }
+    elseif skillConfig.targetType == _G.SkillTargetType.SKILL_TARGET_TYPE_SUMMON then
+        -- 召唤物
+        context.targetEntries = getSummonerTargets(context, targetCount)
+    elseif skillConfig.targetType == _G.SkillTargetType.SKILL_TARGET_TYPE_SLOT then
+        -- 阵眼
+        context.targetEntries = getSlotTargets(context, targetCount)
+    elseif skillConfig.targetType == _G.SkillTargetType.SKILL_TARGET_TYPE_POINT then
+        -- 路点
+        context.targetEntries = getPointTargets(context, targetCount)
+    else
+        --LogErr("UpdateSkillTarget, targetType is invalid, type:{}", skillConfig.targetType)
+    end
+
+    return context.targetEntries and #context.targetEntries or 0
+end
+
+---计算范围目标
+---@param context SkillContext
+function CalRangeTargets(context, targetEntry)
+    local skillConfig = context.skillConfig
+    local skillRangeType = skillConfig.rangeType
+    local skillRangeParam = skillConfig.rangeParam
+    if not skillConfig.isRange then
+        return { targetEntry }
+    end
+
+    -- 只能通过范围选择怪物
+    local targets = {}
+    for _, monster in pairs(context.targetTeam.monsters) do
+        -- 判断是否在目标范围内
+        if skillRangeType == _G.SkillRangeType.SKILL_RANGE_TYPE_CIRCLE then
+            if grid.IsPointInCircle(targetEntry.position, skillRangeParam, monster.position) then
+                table.insert(targets, monster)
+            end
+        end
+
+        :: continue ::
+    end
+
+    return targets
+end
+
+---选择技能作用目标阵营
+---@param context SkillContext
+function UpdateSkillTargetTeam(context)
+    local battle = context.battle
+    if context.skillConfig.targetCampType == _G.SkillTargetCamp.SKILL_TARGET_CAMP_SELF then
+        -- 己方阵营
+        for _, battleTeam in pairs(battle.battleTeams) do
+            if battleTeam.teamId == context.releaseEntry.teamId then
+                context.targetTeam = battleTeam
+                break
+            end
+        end
+    elseif context.skillConfig.targetCampType == _G.SkillTargetCamp.SKILL_TARGET_CAMP_ENEMY then
+        -- 敌方阵营
+        for _, battleTeam in pairs(battle.battleTeams) do
+            if battleTeam.teamId ~= context.releaseEntry.teamId then
+                context.targetTeam = battleTeam
+                break
+            end
+        end
+    elseif context.skillConfig.targetCampType == _G.SkillTargetCamp.SKILL_TARGET_CAMP_RANDOM then
+        -- 随机阵营
+        context.targetTeam = battle.battleTeams[math.random(#battle.battleTeams)]
+    else
+        LogErr("UpdateSkillTargetTeam, skill target camp error, skillId:{} context.skillConfig.targetCampType:{}", context.skillId, context.skillConfig.targetCampType)
+        return
+    end
+
+    if not context.targetTeam then
+        LogDebug("UpdateSkillTargetTeam, skillId:{} no targetTeam", context.skillId)
+    end
+end
+
+----------------------- 获取怪物目标 -----------------------
+---@param context SkillContext
+function getMonsterTargets(context, targetCount)
+    local skillConfig = context.skillConfig
+
+    if skillConfig.skillPriority == _G.SkillMonsterPriority.SKILL_MONSTER_PRIORITY_ALL then
+        -- 全体
+        return getAllMonsterTargets(context)
+    elseif skillConfig.skillPriority == _G.SkillMonsterPriority.SKILL_MONSTER_PRIORITY_RANDOM then
+        -- 随机目标
+        return getRandomMonsterTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillMonsterPriority.SKILL_MONSTER_PRIORITY_CLOSET then
+        -- 距离最近
+        return getClosestMonsterTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillMonsterPriority.SKILL_MONSTER_PRIORITY_HP_HIGHEST then
+        -- 当前血量最高
+        return getCurHpHighestMonsterTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillMonsterPriority.SKILL_MONSTER_PRIORITY_HP_PERCENT_LOWEST then
+        -- 血量百分比最低
+        return getHpPercentLowestMonsterTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillMonsterPriority.SKILL_MONSTER_PRIORITY_SPECIFIED_BUFF then
+        return getSpecifiedBuffMonsterTargets(context, targetCount)
+    else
+        LogErr("getMonsterTargets, skill monster priority error, skillId:{} skillPriority:{}", context.skillId, skillConfig.skillPriority)
+        return {}
+    end
+end
+
+---获取全部怪物
+function getAllMonsterTargets(context)
+    local targets = {}
+    for _, monster in pairs(context.targetTeam.monsters) do
+        table.insert(targets, monster)
+    end
+    return targets
+end
+
+---获取随机怪物目标
+function getRandomMonsterTargets(context, targetCount)
+    return _G.RandomN(context.targetTeam.monsters, targetCount)
+end
+
+---获取距离基地最近的怪物目标
+function getClosestMonsterTargets(context, targetCount)
+    return getMonsterTargetsBySorted(context, targetCount, function(a, b)
+        return a.totalMoveDistance > b.totalMoveDistance
+    end)
+end
+
+---获取当前血量最高的怪物目标
+function getCurHpHighestMonsterTargets(context, targetCount)
+    return getMonsterTargetsBySorted(context, targetCount, function(a, b)
+        return a.curHP > b.curHP
+    end)
+end
+
+---获取血量百分比最低的怪物目标
+function getHpPercentLowestMonsterTargets(context, targetCount)
+    return getMonsterTargetsBySorted(context, targetCount, function(a, b)
+        return a.curHP / a:GetAttribute(_G.AttributeType.FINAL_HEALTH) <
+                b.curHP / b:GetAttribute(_G.AttributeType.FINAL_HEALTH)
+    end)
+end
+
+
+-- 获取指定buff的怪物
+function getSpecifiedBuffMonsterTargets(context, targetCount)
+    -- 技能Id
+    local targetParam = context.skillConfig.targetParam or {}
+    local monsters = {}
+    for _, monster in pairs(context.targetTeam.monsters) do
+        local buffs = monster.buffComponent.buffs
+        for _, buffId in pairs(targetParam) do
+            if buffs[buffId] then
+                table.insert(monsters, monster)
+                break
+            end
+        end
+    end
+    return _G.RandomN(monsters, targetCount)
+end
+
+---根据优先级排序获取怪物目标
+---@param comp function 排序函数
+function getMonsterTargetsBySorted(context, targetCount, comp)
+    local monsters = {}
+    for _, monster in pairs(context.targetTeam.monsters) do
+        table.insert(monsters, monster)
+    end
+
+    table.sort(monsters, comp)
+
+    local result = {}
+    for i = 1, targetCount do
+        local monster = monsters[i]
+        if not monster then
+            break
+        end
+
+        table.insert(result, monsters[i])
+    end
+    return result
+end
+
+----------------------- 获取法宝目标 -----------------------
+---@param context SkillContext
+function getSutraTargets(context, targetCount)
+    local skillConfig = context.skillConfig
+
+    if skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_ALL then
+        return getAllSutraTargets(context)
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_RANDOM then
+        return getRandomSutraTargets(context, targetCount);
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_RANDOM_NOT_MAX then
+        return getNotMaxRandomSutraTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_ATK_HIGHEST then
+        return getAtkHighestSutraTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_STAR_HIGHEST then
+        return getStarHighestSutraTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_SPECIFIED_BUFF then
+        return getSpecifiedBuffSutraTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_FIVE_ELEMENT then
+        return getFiveElementSutraTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_SPECIFIED_FATE then
+        return getSpecifiedFateSutraTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_SPECIFIED_FATE_COUNT then
+        return getSpecifiedFateSutraCountTargets(context, targetCount)
+    elseif skillConfig.skillPriority == _G.SkillSutraPriority.SKILL_SUTRA_PRIORITY_SPECIFIED_ID then
+        return getSpecifiedIdSutraTargets(context)
+    else
+        LogErr("getSutraTargets, skill sutra priority error, skillId:{}", context.skillId)
+        return
+    end
+end
+
+---获取全部法宝
+function getAllSutraTargets(context)
+    local targets = {}
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            table.insert(targets, sutra)
+        end
+    end
+    return targets
+end
+
+---获取随机法宝
+function getRandomSutraTargets(context, targetCount)
+    local targets = {}
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            table.insert(targets, sutra)
+        end
+    end
+    return _G.RandomN(targets, targetCount)
+end
+
+---获取随机不满星的法宝
+function getNotMaxRandomSutraTargets(context, targetCount)
+    local targets = {}
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            if sutra.level < _G.MAX_SUTRA_STAR then
+                table.insert(targets, sutra)
+            end
+        end
+    end
+
+    return _G.RandomN(targets, targetCount)
+end
+
+---获取攻击最高的法宝
+function getAtkHighestSutraTargets(context, targetCount)
+    return getSutraTargetsBySorted(context, targetCount, function(a, b)
+        return a:GetAttribute(_G.AttributeType.FINAL_ATTACK) >
+            b:GetAttribute(_G.AttributeType.FINAL_ATTACK)
+    end)
+end
+
+---获取星级最高的法宝
+function getStarHighestSutraTargets(context, targetCount)
+    return getSutraTargetsBySorted(context, targetCount, function(a, b)
+        return a.level > b.level
+    end)
+end
+
+-- 获取拥有指定buff的法宝
+function getSpecifiedBuffSutraTargets(context, targetCount)
+    local targetParam = context.skillConfig.targetParam or {}
+    local sutras = {}
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            local buffs = sutra.buffComponent.buffs
+            for _, buffId in pairs(targetParam) do
+                if buffs[buffId] then
+                    table.insert(sutras, sutra)
+                    break
+                end
+            end
+        end
+    end
+    return _G.RandomN(sutras, targetCount)
+end
+
+-- 指定五行的法宝
+function getFiveElementSutraTargets(context, targetCount)
+
+end
+
+-- 指定羁绊的法宝
+function getSpecifiedFateSutraTargets(context, targetCount)
+    local targetParam = context.skillConfig.targetParam or {}
+    local sutras = {}
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            for _, fateId in pairs(targetParam) do
+                local fateConfig = _G.SutraFateTable[fateId]
+                if table.contains(fateConfig.sutras, sutra.sutraId) then
+                    table.insert(sutras, sutra)
+                    break
+                end
+            end
+        end
+    end
+    return sutras
+end
+
+-- 指定羁绊的法宝（支持技能目标数量）
+function getSpecifiedFateSutraCountTargets(context, targetCount)
+    local targetParam = context.skillConfig.targetParam or {}
+    local sutras = {}
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            for _, fateId in pairs(targetParam) do
+                local fateConfig = _G.SutraFateTable[fateId]
+                if table.contains(fateConfig.sutras, sutra.sutraId) then
+                    table.insert(sutras, sutra)
+                    break
+                end
+            end
+        end
+    end
+    return _G.RandomN(sutras, targetCount)
+end
+
+-- 指定id的法宝
+function getSpecifiedIdSutraTargets(context)
+    local targetParam = context.skillConfig.targetParam or {}  --法宝id列表
+    local sutras = {}
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            for _, sutraId in pairs(targetParam) do
+                if sutraId == sutra.sutraId then
+                    table.insert(sutras, sutra)
+                    return sutras
+                end
+            end
+        end
+    end
+    return sutras
+end
+
+---根据优先级排序获取法宝目标
+---@param comp function 排序函数
+function getSutraTargetsBySorted(context, targetCount, comp)
+    local sutras = {}
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for _, sutra in pairs(playerSiteData.sutras) do
+            table.insert(sutras, sutra)
+        end
+    end
+
+    table.sort(sutras, comp)
+
+    local result = {}
+    for i = 1, targetCount do
+        local sutra = sutras[i]
+        if not sutra then
+            break
+        end
+
+        table.insert(result, sutras[i])
+    end
+    return result
+end
+
+-------------------------- 获取召唤物目标 -----------------------
+------@param context SkillContext
+function getSummonerTargets(context, targetCount)
+    local skillConfig = context.skillConfig
+
+    if skillConfig.skillPriority == _G.SkillSummonerPriority.SKILL_SUMMONER_PRIORITY_ALL then
+        -- 获取所有召唤物（目前暂无需求，先实现一下）
+        return getAllSummonerTargets(context)
+    elseif skillConfig.skillPriority == _G.SkillSummonerPriority.SKILL_SUMMONER_PRIORITY_RANDOM then
+        -- 获取随机召唤物（目前暂无需求，先实现一下）
+        return getRandomSummonerTargets(context, targetCount);
+    elseif skillConfig.skillPriority == _G.SkillSummonerPriority.SKILL_SUMMONER_PRIORITY_SPECIFIED_ID then
+        -- 获取指定id的召唤物
+        return getSpecifiedSummonerIdSummonTargets(context)
+    else
+        LogErr("getSummonerTargets, skill summoner priority error, skillId:{}", context.skillId)
+        return
+    end
+end
+
+--- 所有召唤物（目前暂无需求，先实现一下）
+function getAllSummonerTargets(context)
+    local summoners = {}
+    for _, summoner in pairs(context.targetTeam.summoners) do
+        table.insert(summoners, summoner)
+    end
+    return summoners
+end
+
+--- 随机召唤物（目前暂无需求，先实现一下）
+function getRandomSummonerTargets(context, targetCount)
+    return _G.RandomN(context.targetTeam.summoners, targetCount)
+end
+
+--- 指定召唤物ID的召唤物
+function getSpecifiedSummonerIdSummonTargets(context)
+    local targetParam = context.skillConfig.targetParam or {}  --召唤物id列表
+    local summoners = {}
+    for _, summoner in pairs(context.targetTeam.summoners) do
+        for _, summonerId in pairs(targetParam) do
+            if summonerId == summoner.summonerId then
+                table.insert(summoners, summoner)
+            end
+        end
+    end
+    return summoners
+end
+
+-------------------------- 获取阵眼目标 -----------------------
+------@param context SkillContext
+function getSlotTargets(context, targetCount)
+    local skillConfig = context.skillConfig
+
+    if skillConfig.skillPriority == _G.SkillSlotPriority.SKILL_SLOT_PRIORITY_RANDOM then
+        -- 获取随机已经解锁阵眼
+        return getRandomSlotTargets(context, targetCount);
+    elseif skillConfig.skillPriority == _G.SkillSlotPriority.SKILL_SLOT_PRIORITY_SPECIFIED_ID then
+        -- 获取指定id的阵眼
+        return getSpecifiedSlotIdSummonTargets(context)
+    else
+        LogErr("getSlotTargets, skill slot priority error, skillId:{}", context.skillId)
+        return
+    end
+end
+
+--- 随机已经解锁阵眼
+function getRandomSlotTargets(context, targetCount)
+    local slots = {}
+    local battle = context.battle
+    for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+        for slotIdx, slot in pairs(playerSiteData.slots) do
+            local player = battle.players[playerSiteData.playerUid]
+            if player then
+                if not player.gameCardComponent.equipList[slotIdx].isLocked then
+                    table.insert(slots, slot)
+                end
+            end
+        end
+    end
+    return _G.RandomN(slots, targetCount)
+end
+
+--- 指定id的阵眼
+function getSpecifiedSlotIdSummonTargets(context)
+    local targetParam = context.skillConfig.targetParam or {}  --阵眼id列表
+    local slots = {}
+    for _, slotId in pairs(targetParam) do
+        for _, playerSiteData in pairs(context.targetTeam.playerSiteDatas) do
+            local slot = playerSiteData.slots[slotId]
+            if slot then
+                table.insert(slots, slot)
+            end
+        end
+    end
+    return slots
+end
+
+-------------------------- 获取路点目标 -----------------------
+---@param context SkillContext
+function getPointTargets(context, targetCount)
+    local skillConfig = context.skillConfig
+
+    if skillConfig.skillPriority == _G.SkillPointPriority.SKILL_POINT_PRIORITY_RANDOM then
+        -- 获取随机已经解锁阵眼
+        return getRandomPointTargets(context, targetCount);
+    else
+        LogErr("getPointTargets, skill point priority error, skillId:{}", context.skillId)
+        return
+    end
+end
+
+---@param context SkillContext
+function getRandomPointTargets(context, targetCount)
+    local points = {}
+    for _, point in pairs(context.targetTeam.randomRoutePoints) do
+        table.insert(points, point)
+    end
+    return _G.RandomN(points, targetCount)
+end

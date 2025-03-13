@@ -1,0 +1,18 @@
+-- 2. 伤害型buff
+local battleFightAttackLogic = import("battle/fight/battleFightAttackLogic.lua")
+
+
+-- buff生效
+---@param buff Buff
+function BuffEffect(buff)
+    battleFightAttackLogic.BuffDamageHandler(buff.origin, buff.owner, buff)
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

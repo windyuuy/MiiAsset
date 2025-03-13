@@ -1,0 +1,64 @@
+-- 40. 传送怪物到指定点位(只能基于距离)
+
+local grid         = import("battle/utils/grid.lua")
+local battleMgr    = import("battle/battleMgr.lua")
+local battleIntent = import("battle/battleIntent.lua")
+local battleFightMoveLogic = import("battle/fight/battleFightMoveLogic.lua")
+
+function BuffEffect(buff)
+    if buff.owner:GetEntryType() ~= _G.EntryType.MONSTER then
+        return
+    end
+
+    ---@type Monster
+    local monster        = buff.owner
+    local buffConfig     = _G.BuffTable[buff.buffId]
+    local battle         = battleMgr.GetBattle(monster.battleId)
+    local battleTeam     = battle.battleTeams[monster.teamId]
+    local pointType      = buffConfig.effectData[1]
+    local targetDistance = 0
+
+    if pointType == 1 then
+        -- 传送到出生点
+        targetDistance = 0
+    else
+        LogErr("BuffEffectTransferMonster, pointType:{} not support, buffId:{}, effectData:{}", pointType, buff.buffId, buffConfig.effectData)
+        return
+    end
+
+    local path = battleTeam.monsterPaths[monster.routeGroupId][monster.routeId]
+
+    -- 计算移动后的坐标
+    local movePosition = grid.CalculatePosition(path, targetDistance);
+
+    -- 移动
+    monster.position = movePosition;
+
+    -- 记录怪物总位移
+    local totalPathLength = grid.GetLength(path);
+    if targetDistance >= totalPathLength then
+        monster.totalMoveDistance = -1; -- 位移为-1表示怪物已经到达终点
+        monster.curHP = 0;
+        battleFightMoveLogic.monsterReach(battle, battleTeam, monster);
+    else
+        monster.totalMoveDistance = targetDistance;
+    end
+
+    -- 记录本次移动时间
+    monster.lastMoveTime = _G.GetCurTimeMS();
+
+    -- 广播怪物移动
+    battleIntent.InsertBattleIntent(battle.battleId, _G.INTENT_TYPE.MONSTER_MOVE, {
+        teamId = battleTeam.teamId,
+        monster = monster:GetMonsterData(),
+        moveType = _G.MonsterMoveType.MONSTER_MOVE_TYPE_TRANSFER
+    });
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

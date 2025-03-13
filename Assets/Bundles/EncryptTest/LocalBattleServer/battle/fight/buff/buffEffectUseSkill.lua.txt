@@ -1,0 +1,35 @@
+-- 3. 释放技能buff
+
+local battleMgr = import("battle/battleMgr.lua")
+local battleFightSkillLogic = import("battle/fight/battleFightSkillLogic.lua")
+
+-- buff生效
+-- 此buff只对法宝生效
+function BuffEffect(buff)
+    local battle = battleMgr.GetBattle(buff.owner.battleId)
+    if not battle then return end
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local skillId    = buffConfig.effectData[1]      -- 技能id
+    local skillTarget    = buffConfig.effectData[2]  -- 释放技能的目标(0.buff的来源 1.buff的拥有者)
+    -- LogDebug("buffEffectUseSkill:BuffEffect skillId={} skillTarget={}", skillId, skillTarget)
+    if skillTarget == 0 then
+        for _ = 1, buff.layer do
+            battleFightSkillLogic.ProcessEntrySkill(battle, buff.origin, skillId)
+        end
+    elseif skillTarget == 1 then
+        for _ = 1, buff.layer do
+            battleFightSkillLogic.ProcessEntrySkill(battle, buff.owner, skillId)
+        end
+    end
+
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+    
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

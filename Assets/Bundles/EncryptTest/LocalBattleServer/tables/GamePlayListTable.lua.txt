@@ -1,0 +1,15 @@
+-- GamePlayListTable
+_G.GamePlayListTable =
+{
+    [1] = {id = 1, desc = "斗法", gameType = 1, gameTypeIdType = 1, gameTypeIdList = {1000, 1001, 1002}, gamePlayName = "c_gameplay_title_doufa_01", gamePlayBg = "c_gameplay_bg_doufa_01", openType = 1, openParam = "10009", lockTip = "再完成第[b][color=#d8994d]{0}[/b][/color]个主线任务后解锁", showUnLock = true, orderId = 1,},
+    [2] = {id = 2, desc = "合作", gameType = 2, gameTypeIdType = 1, gameTypeIdList = {3001}, gamePlayName = "c_gameplay_title_hezuo", gamePlayBg = "c_gameplay_bg_hezuo", openType = 1, openParam = "10041", lockTip = "再完成第[b][color=#d8994d]{0}[/b][/color]个主线任务后解锁", showUnLock = true, orderId = 2,},
+    [3] = {id = 3, desc = "浮屠塔", gameType = 3, gameTypeIdType = 2, gameTypeIdList = {2001}, gamePlayName = "c_gameplay_title_fututa", gamePlayBg = "c_gameplay_bg_fututa", openType = 1, openParam = "10105", lockTip = "再完成第[b][color=#d8994d]{0}[/b][/color]个主线任务后解锁", showUnLock = true, orderId = 3,},
+    [4] = {id = 4, desc = "感应塔", gameType = 4, gameTypeIdType = 2, gameTypeIdList = {2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013}, gamePlayName = "c_gameplay_title_ganyingta", gamePlayBg = "c_gameplay_bg_ganyingta", openType = 1, openParam = "10105", lockTip = "再完成第[b][color=#d8994d]{0}[/b][/color]个主线任务后解锁", showUnLock = true, orderId = 4,},
+    [5] = {id = 5, desc = "问道", gameType = 5, gameTypeIdType = 3, gameTypeIdList = {1}, gamePlayName = "c_gameplay_title_wendao", gamePlayBg = "c_gameplay_bg_wendao", openType = 1, openParam = "10176|51040", lockTip = "再完成第[b][color=#d8994d]{0}[/b][/color]个主线任务且开服第4天后解锁", showUnLock = true, orderId = 5,},
+    [6] = {id = 6, desc = "万界大会", gameType = 6, gameTypeIdType = 1, gameTypeIdList = {9001}, gamePlayName = "c_gameplay_title_wanjie", gamePlayBg = "c_gameplay_bg_wanjie", openType = 1, openParam = "10176|51042", lockTip = "再完成第[b][color=#d8994d]{0}[/b][/color]个主线任务且开服第7天后解锁", showUnLock = true, orderId = 6,},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("GamePlayListTable")
+end

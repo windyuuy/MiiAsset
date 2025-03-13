@@ -1,0 +1,19 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    local callback = function(listener, properties, event)
+        local attackedId = event.attacked.entryId
+        if attackedId ~= properties.attackedId then
+            return false
+        end
+
+        local skillContext = event.skillContext
+        buffComponent.buffEffect(properties.buffComponent, properties.buff, skillContext)
+        return true
+    end
+    local properties = { attackedId = buff.owner.entryId, buff = buff, buffComponent = component }
+    local listenerId = eventManager.AddEventListener(battle.eventManager, _G.EventType.ENTRY_AFTER_BE_HIT, callback, properties, false)
+    buff.listenerEventType = _G.EventType.ENTRY_AFTER_BE_HIT
+    table.insert(buff.listenerIds, listenerId)
+end

@@ -1,0 +1,170 @@
+local battleMgr = import("battle/battleMgr.lua")
+
+_G.MonsterType = {
+    NORMAL  = 1,
+    ELITE   = 2,
+    BOSS    = 3,
+}
+
+---@class Monster : Entry 怪物
+---@field monsterId number 怪物id
+---
+---@field curHP number 当前hp
+---@field routeGroupId number 怪物路径组id
+---@field routeId number 怪物路径id
+---@field lastMoveTime number 上一次移动时间
+---@field totalMoveDistance number 总移动距离
+---@field monsterLevel number 怪物局外等级
+---
+---@field attributeComponent AttributeComponent 属性组件
+---@field statusComponent StatusComponent 状态组件
+---@field buffComponent BuffComponent buff组件
+---@field skillComponent SkillComponent 技能组件
+---
+---@field skillTimerId number 释放技能定时器id
+---@field monsterConfig table 怪物配置
+---@field monsterLevelConfig table 怪物等级配置
+---@field monsterRoundConfig table 怪物波次配置
+---
+---@field isReborn boolean 是否是重生怪
+---@field isBoss boolean 是否是boss
+---@field roundNumber number 属于第几轮怪物
+_G.Monster = class(Entry)
+
+
+function CreateMonster(...)
+    return Monster.new(...)
+end
+
+function Monster:ctor(entryId, battleId, teamId, position, level, monsterId, monsterLevel, routeGroupId, routeId, isBoss, roundNumber)
+    self.monsterId          = monsterId
+
+    self.curHP = 0
+
+    self.routeGroupId       = routeGroupId
+    self.routeId            = routeId
+    self.lastMoveTime       = _G.GetCurTimeMS()
+    self.totalMoveDistance  = 0
+
+    self.attributeComponent = nil
+    self.statusComponent    = StatusComponent.new()
+    self.buffComponent      = BuffComponent.new()
+    self.skillComponent     = SkillComponent.new()
+
+    self.monsterLevel = monsterLevel
+    self.skillTimerId = nil
+    self.isReborn     = false
+    self.isBoss       = isBoss
+    self.roundNumber  = roundNumber
+end
+
+function Monster:Init(isReborn)
+    local monsterConfig = _G.MonsterInfoTable[self.monsterId]
+    if not monsterConfig then
+        LogErr("Monster:Init, could not find monster config, monsterId={}", self.monsterId)
+        return false
+    end
+
+    -- 等级属性
+    local monsterLevelGroup = _G.MonsterLevelTable[monsterConfig.levelGroupId]
+    if not monsterLevelGroup then
+        LogErr("Monster:Init, could not find monster level group, monsterId={}", self.monsterId)
+        return false
+    end
+    local monsterLevelConfig = monsterLevelGroup[self.monsterLevel] or monsterLevelGroup[#monsterLevelGroup]
+    if not monsterLevelConfig then
+        LogErr("Monster:Init, could not find monster level table, monsterId={}, monsterLevel={}", self.monsterId, self.monsterLevel)
+        return false
+    end
+
+    -- 波次系数
+    local monsterRoundGroup = _G.MonsterRoundTable[monsterConfig.roundGroupId]
+    if not monsterRoundGroup then
+        LogErr("Monster:Init, could not find monster round group, monsterId={}, monsterLevel={}", self.monsterId, self.monsterLevel)
+        return false
+    end
+    local monsterRoundConfig = monsterRoundGroup[self.level] or monsterRoundGroup[#monsterRoundGroup]
+    if not monsterRoundConfig then
+        LogErr("Monster:Init, could not find monster round table, monsterId={}, monsterLevel={}, round={}", self.monsterId, self.monsterLevel, self.level)
+        return false
+    end
+
+    self.monsterConfig = monsterConfig
+    self.monsterLevelConfig = monsterLevelConfig
+    self.monsterRoundConfig = monsterRoundConfig
+    local attributeConfig = self:GetMonsterAttributeConfig()
+
+    -- 初始化状态组件
+    self.statusComponent:Init(_G.EntryType.MONSTER)
+
+    self.curHP = attributeConfig.baseHealth
+    self.attributeComponent = AttributeComponent.new(self)
+    self.attributeComponent:Init(attributeConfig)
+
+    self.isReborn = isReborn
+
+    return true
+end
+
+function Monster:Reset()
+    local battle = battleMgr.GetBattle(self.battleId)
+    self.buffComponent:Reset(battle)
+
+    if self.skillTimerId then
+        battle.timer:DelTimer(self.skillTimerId)
+    end
+end
+
+function Monster:GetEntryType()
+    return _G.EntryType.MONSTER
+end
+
+function Monster:GetEntryData()
+    return {
+        entryId = self.entryId,
+        entryType = self:GetEntryType(),
+
+        position = self.position,
+        level = self.round,
+        maxHP = self:GetAttribute(_G.AttributeType.FINAL_HEALTH),
+        curHP = self.curHP,
+        speed = self:GetAttribute(_G.AttributeType.FINAL_MOVE_SPEED),
+    }
+end
+
+function Monster:GetMonsterData()
+    return {
+        monsterId = self.monsterId,
+        entry = self:GetEntryData(),
+        routeGroupId = self.routeGroupId,
+        routeId = self.routeId,
+        totalMoveDistance = self.totalMoveDistance,
+    }
+end
+
+function Monster:IsAlive()
+    return self.curHP > 0 and self.totalMoveDistance >= 0
+end
+
+function Monster:GetMonsterAttributeConfig()
+    -- levelParam
+    local levelParamConfig = _G.MonsterLevelParamTable[self.monsterConfig.levelParamType] or {}
+
+    local attributeConfig = {}
+
+    attributeConfig.baseAttack = self.monsterLevelConfig.baseAttack * self.monsterRoundConfig.baseAttack * (levelParamConfig.baseAttack or 10000) / 10000
+    attributeConfig.baseHealth = math.floor(self.monsterLevelConfig.baseHealth * self.monsterRoundConfig.baseHealth * (levelParamConfig.baseHealth or 10000) / 10000)
+    attributeConfig.baseMoveSpeed = self.monsterLevelConfig.baseMoveSpeed * self.monsterRoundConfig.baseMoveSpeed * (levelParamConfig.baseMoveSpeed or 10000) / 10000
+    attributeConfig.perControlDefense = self.monsterLevelConfig.perControlDefense * self.monsterRoundConfig.perControlDefense * (levelParamConfig.perControlDefense or 10000) / 10000
+    attributeConfig.basePhysiResistance = self.monsterLevelConfig.basePhysiResistance * self.monsterRoundConfig.basePhysiResistance * (levelParamConfig.basePhysiResistance or 10000) / 10000
+    attributeConfig.baseMagicResistance = self.monsterLevelConfig.baseMagicResistance * self.monsterRoundConfig.baseMagicResistance * (levelParamConfig.baseMagicResistance or 10000) / 10000
+    return attributeConfig
+end
+
+function Monster:CanUseSkill(skillId)
+    return self.skillComponent:CanUseSkill(skillId, _G.GetCurTimeMS())
+end
+
+function Monster:HasBuff(buffId)
+    return self.buffComponent.buffs[buffId] ~= nil
+end

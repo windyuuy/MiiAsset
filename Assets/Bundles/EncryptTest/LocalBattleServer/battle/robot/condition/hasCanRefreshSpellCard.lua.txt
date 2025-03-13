@@ -1,0 +1,9 @@
+-- 是否可以刷新法术牌
+
+function Execute(robot)
+    local battleData = robot.battleData;
+    if battleData.spellRefreshCount > 0 and #(battleData.spellCards) < 2 then
+        return true;
+    end
+    return false;
+end

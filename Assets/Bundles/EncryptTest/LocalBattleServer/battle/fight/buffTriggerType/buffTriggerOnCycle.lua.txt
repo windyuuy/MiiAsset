@@ -1,0 +1,20 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    -- 触发周期
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local cycle      = buffConfig.cycleTime
+    local delay      = buffConfig.delayTime
+    local continue   = buffConfig.continueTime
+    local duration   = 0
+
+    -- 如果持续时间是永久的话 stop默认取最大
+    if continue == 0 then
+        duration = _G.MAX_BUFF_DURATION;
+    else
+        duration = continue / 1000
+    end
+
+    local timerId = battle.timer:AddLoopTimer((_G.GetCurTimeMS() + delay) / 1000, cycle / 1000, duration, buffComponent.buffEffect, component, buff)
+    buff.timerId = timerId
+end

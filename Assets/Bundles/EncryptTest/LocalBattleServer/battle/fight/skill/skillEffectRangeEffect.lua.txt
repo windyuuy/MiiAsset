@@ -1,0 +1,13 @@
+function Execute(context, targetEntry)
+    local battle = context.battle
+    local targetTeam = context.targetTeam
+    local skillConfig = context.skillConfig
+
+    for _, rangeEffectId in pairs(skillConfig.addAreaEffects) do
+        local rangeEffect = battle:CreateRangeEffect(targetTeam.teamId, rangeEffectId,
+            context.releaseEntry, context.skillLevel, targetEntry.position)
+        if not rangeEffect then
+            LogErr("CreateRangeEffect failed, skillId:{} rangeEffectId:{}", skillConfig.skillId, rangeEffectId)
+        end
+    end
+end

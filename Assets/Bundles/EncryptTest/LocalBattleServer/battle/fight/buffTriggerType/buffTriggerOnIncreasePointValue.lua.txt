@@ -1,0 +1,52 @@
+local buffComponent = import("battle/components/buffComponent.lua")
+local eventManager = import("battle/event/eventManager.lua")
+
+-- 积分每增加x值时触发
+function buffTrigger(component, battle, buff, triggerTypeIndex)
+    local callback = function(listener, properties, event)
+        if event.pointId ~= properties.pointId then
+            return false
+        end
+        -- 获取事件值增加的增量
+        local increment = event.value - properties.previousValue
+        --LogDebug("buffTriggerOnIncreasePointValue:callback, event.pointId:{} increment:{}, event.value:{} com.zhiyou.projectf.properties.previousValue:{}", event.pointId, increment, event.value, com.zhiyou.projectf.properties.previousValue)
+        -- 检查事件值是否增加了 x
+        if increment >= properties.perValue then
+            -- 计算应该触发的次数
+            local triggerCount = math.floor(increment / properties.perValue)
+            -- 循环触发 buff
+            for i = 1, triggerCount do
+                buffComponent.buffEffect(properties.buffComponent, properties.buff)
+            end
+            --LogDebug("buffTriggerOnIncreasePointValue:callback, triggerCount:{} increment:{} perValue:{}", triggerCount, increment, com.zhiyou.projectf.properties.perValue)
+            properties.previousValue = event.value - (increment % properties.perValue)
+        else
+            return false
+        end
+        return true
+    end
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local triggerTypeData = buffConfig.triggerTypeDatas[triggerTypeIndex]
+    local pointId = triggerTypeData[1]
+    local perValue = triggerTypeData[2]
+
+    local battleTeam = battle.battleTeams[buff.owner.teamId]
+    if not battleTeam then
+        return false
+    end
+    local previousValue = battleTeam.points[pointId] or 0
+
+    local properties = {
+        attackerId = buff.owner.entryId,
+        buff = buff,
+        buffComponent = component,
+        pointId = pointId,
+        perValue = perValue,
+        previousValue = previousValue
+    }
+    local listenerId =
+        eventManager.AddEventListener(battle.eventManager, _G.EventType.POINT_VALUE_CHANGE, callback, properties, false)
+    buff.listenerEventType = _G.EventType.POINT_VALUE_CHANGE
+    table.insert(buff.listenerIds, listenerId)
+end

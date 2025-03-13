@@ -1,0 +1,6 @@
+-- 是否到达最大解锁数
+
+function Execute(robot)
+    local battleData = robot.battleData
+    return battleData.curUnlockCount >= battleData.maxUnlockCount
+end

@@ -1,0 +1,25 @@
+-- StickerTable
+_G.StickerTable =
+{
+    [1] = {id = 1, name = "头像1", Icon = "a_sticker1",},
+    [2] = {id = 2, name = "头像2", Icon = "a_sticker2",},
+    [3] = {id = 3, name = "头像3", Icon = "a_sticker3",},
+    [4] = {id = 4, name = "头像4", Icon = "a_sticker4",},
+    [5] = {id = 5, name = "头像5", Icon = "a_sticker5",},
+    [6] = {id = 6, name = "头像6", Icon = "a_sticker6",},
+    [7] = {id = 7, name = "头像7", Icon = "a_sticker7",},
+    [8] = {id = 8, name = "头像8", Icon = "a_sticker8",},
+    [9] = {id = 9, name = "头像9", Icon = "a_sticker9",},
+    [10] = {id = 10, name = "头像10", Icon = "a_sticker10",},
+    [11] = {id = 11, name = "头像11", Icon = "a_sticker11",},
+    [12] = {id = 12, name = "头像12", Icon = "a_sticker12",},
+    [13] = {id = 13, name = "头像13", Icon = "a_sticker13",},
+    [14] = {id = 14, name = "头像14", Icon = "a_sticker14",},
+    [15] = {id = 15, name = "头像15", Icon = "a_sticker15",},
+    [16] = {id = 16, name = "头像16", Icon = "a_sticker16",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("StickerTable")
+end

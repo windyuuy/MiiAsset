@@ -1,0 +1,42 @@
+-- 43. 刷新指定五行卡牌
+
+local battleMgr = import("battle/battleMgr.lua")
+
+function BuffEffect(buff)
+    --LogDebug("buffEffectRefreshSpecifiedElement:BuffEffect buffId={}", buff.buffId)
+    local owner = buff.owner
+    if owner:GetEntryType() ~= _G.EntryType.TOWER then
+        return
+    end
+
+    ---@type Battle
+    local battle = battleMgr.GetBattle(owner.battleId)
+    if not battle then
+        LogDebug("buffEffectRefreshSpecifiedElement:BuffEffect battle is nil, battleId={}", owner.battleId)
+        return
+    end
+
+    local buffConfig = _G.BuffTable[buff.buffId]
+    local count   = buffConfig.effectData[1]
+    local element = buffConfig.effectData[2]
+
+    for _, player in pairs(battle.players) do
+        if player.teamId == buff.owner.teamId then
+            -- 清空指定五行和羁绊卡牌队列
+            player.gameCardComponent.specifiedElementQueue = {}
+            player.gameCardComponent.specifiedFateQueue    = {}
+
+            for _ = 1, count do
+                table.insert(player.gameCardComponent.specifiedElementQueue, element)
+            end
+        end
+    end
+end
+
+-- 取消buff
+function UnBuffEffect(buff)
+end
+
+-- buff升级
+function OnBuffUpgrade(buff)
+end

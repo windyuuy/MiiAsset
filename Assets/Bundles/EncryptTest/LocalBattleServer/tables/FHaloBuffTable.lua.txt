@@ -1,0 +1,11 @@
+-- FHaloBuffTable
+_G.FHaloBuffTable =
+{
+    [150021] = {id = 150021, name = "八卦阵", description = "五行被动触发需求五行数量-1", targetType = 0, type = 1, effectParam = {"{-1}"}, opposite = {}, replace = {},},
+    [150023] = {id = 150023, name = "三才阵", description = "符箓无CD", targetType = 0, type = 2, effectParam = {"{-10000}"}, opposite = {}, replace = {},},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("FHaloBuffTable")
+end

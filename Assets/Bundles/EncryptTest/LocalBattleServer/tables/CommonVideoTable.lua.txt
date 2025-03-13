@@ -1,0 +1,11 @@
+-- CommonVideoTable
+_G.CommonVideoTable =
+{
+    [1] = {id = 1, description = "宗门任务广告", videoId = "wx123",},
+    [2] = {id = 2, description = "在线礼包广告", videoId = "wx123",},
+}
+
+if _G.TABLE_INITED then
+    local tableUtils = import("common/tableUtils.lua")
+    tableUtils.LoadTable("CommonVideoTable")
+end
