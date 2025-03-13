@@ -20,6 +20,7 @@ MonoBehaviour:
     scanRoot: Assets/Bundles/AA
     tags: 
     isOffline: 1
+    isEncrypt: 0
   - title: BB
     path: Assets/Bundles/BB/
     groupName: bb
@@ -27,6 +28,7 @@ MonoBehaviour:
     scanRoot: Assets/Bundles/BB
     tags: 
     isOffline: 1
+    isEncrypt: 0
   - title: CC
     path: Assets/Bundles/CC/
     groupName: cc
@@ -34,6 +36,15 @@ MonoBehaviour:
     scanRoot: Assets/Bundles/CC
     tags: 
     isOffline: 1
+    isEncrypt: 0
+  - title: EncryptTest
+    path: Assets/Bundles/EncryptTest/
+    groupName: encrypt_test
+    groupRoot: '{0}*'
+    scanRoot: Assets/Bundles/EncryptTest
+    tags: 
+    isOffline: 1
+    isEncrypt: 1
   excludeExtensions: []
   excludePaths: []
   isShaderGroupOffline: 1

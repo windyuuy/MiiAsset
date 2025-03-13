@@ -33,6 +33,11 @@ namespace MiiAsset.Runtime
 		/// </summary>
 		public bool isOffline;
 
+		/// <summary>
+		/// 是否加密
+		/// </summary>
+		public bool isEncrypt;
+
 		public GroupScanInfo GetScanRootInfo(bool analyzeOnly)
 		{
 			if (Application.isPlaying && !analyzeOnly)
@@ -103,5 +108,6 @@ namespace MiiAsset.Runtime
 		public bool IsRemote;
 		public string Guid;
 		public string AssetPath;
+		public bool NeedEncrypt;
 	}
 }

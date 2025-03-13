@@ -167,6 +167,7 @@ namespace MiiAsset.Runtime
 					groupInfo.Tags = groupInfo.Tags.Prepend(groupInfo.GroupName).ToArray();
 
 					groupInfo.IsRemote = !config.isOffline;
+					groupInfo.NeedEncrypt = config.isEncrypt;
 					return groupInfo;
 				}
 				catch (Exception e)

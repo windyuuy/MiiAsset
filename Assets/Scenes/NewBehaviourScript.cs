@@ -265,7 +265,7 @@ public class NewBehaviourScript : MonoBehaviour
 
     private async void Test5()
     {
-        var configJson = await AssetLoader.LoadAssetByRefer<TextAsset>("Assets/Bundles/AA/Json/ActivityTable-ActivityDayFireTable.json");
-        var lua = await AssetLoader.LoadAssetByRefer<TextAsset>("Assets/Bundles/AA/Txt/battle.lua.txt");
+        var configJson = await AssetLoader.LoadAssetByRefer<TextAsset>("Assets/Bundles/EncryptTest/ActivityTable-ActivityDayFireTable.json");
+        var lua = await AssetLoader.LoadAssetByRefer<TextAsset>("Assets/Bundles/AA/battle1.lua.txt");
     }
 }

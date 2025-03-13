@@ -3,6 +3,7 @@ namespace MiiAsset.MiiAssetHint
 {
 	public interface AssetTags
 	{
+		public const string Encrypt_test = "encrypt_test";
 		public const string Aa = "aa";
 		public const string Bb = "bb";
 		public const string Cc = "cc";

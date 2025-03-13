@@ -14,7 +14,9 @@ namespace MiiAsset.Runtime
     public static class AESEncrypter
     {
         private static readonly byte[] Key = Encoding.UTF8.GetBytes("1234567890123456"); // 16字节密钥
-        private static readonly byte[] IV = Encoding.UTF8.GetBytes("6543210987654321"); // 16字节IV
+        // private static readonly byte[] Key = Encoding.UTF8.GetBytes("1234567890123459"); // 16字节密钥
+        // private static readonly byte[] IV = Encoding.UTF8.GetBytes("6543210987654321"); // 16字节IV
+        private static readonly byte[] IV = Encoding.UTF8.GetBytes("6543210987654323"); // 16字节IV
 
         private static Dictionary<string, string> _recoverRecord = new();
 
@@ -58,7 +60,7 @@ namespace MiiAsset.Runtime
                     break;
 
                 default:
-                    Debug.Log($"[AESEncrypter]未处理的文件类型{ext}");
+                    // Debug.Log($"[AESEncrypter]未处理的文件类型{ext}");
                     break;
             }
 
@@ -135,19 +137,40 @@ namespace MiiAsset.Runtime
         /// </summary>
         public static string Decrypt(string cipherText)
         {
-            byte[] buffer = Convert.FromBase64String(cipherText);
+            // 创建一个足够大的字节数组来存储解码结果
+            Span<byte> buffer = new byte[cipherText.Length * 3 / 4]; // Base64 解码后的最大长度
 
-            using (Aes aesAlg = Aes.Create())
+            // 尝试将 Base64 字符串解码为字节数组
+            if (!Convert.TryFromBase64String(cipherText, buffer, out int bytesWritten))
             {
-                aesAlg.Key = Key;
-                aesAlg.IV = IV;
+                // 解码失败
+                return cipherText;
+            }
 
-                using (MemoryStream msDecrypt = new MemoryStream(buffer))
-                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aesAlg.CreateDecryptor(), CryptoStreamMode.Read))
-                using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+            try
+            {
+                using (Aes aesAlg = Aes.Create())
                 {
-                    return srDecrypt.ReadToEnd();
+                    aesAlg.Key = Key;
+                    aesAlg.IV = IV;
+
+                    using (MemoryStream msDecrypt = new MemoryStream(buffer.Slice(0, bytesWritten).ToArray()))
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aesAlg.CreateDecryptor(), CryptoStreamMode.Read))
+                    using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                    {
+                        return srDecrypt.ReadToEnd();
+                    }
                 }
+            }
+            catch (CryptographicException e)
+            {
+                // 如果解密失败（例如密钥或 IV 不匹配）
+                throw;
+            }
+            catch (Exception e)
+            {
+                // 其他异常情况
+                throw;
             }
         }
 

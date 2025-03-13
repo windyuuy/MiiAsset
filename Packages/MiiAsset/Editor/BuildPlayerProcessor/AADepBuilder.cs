@@ -34,17 +34,33 @@ namespace MiiAsset.Editor.Build
 					Code = ReturnCode.UnsavedChanges,
 				};
 			}
-
+			
 			// collect tag bundles
 			var depCollector = new DepCollector();
 			depCollector.CollectDeps(pathInfo);
-
+			
 			var tagBundleMap = depCollector.TagBundleMap;
 			var tagOrderMap = depCollector.TagOrderMap;
 			var guidBundleMap = depCollector.GuidBundleMap;
 			var tagsNameBundleMap = depCollector.TagsNameBundleMap;
 
 			var tagBundles = tagBundleMap.Values.ToArray();
+			
+			#region 加密资源
+
+			foreach (var assetBundleBuild in tagBundles)
+			{
+				if(!assetBundleBuild.IsEncrypt) continue;
+				
+				foreach (var addressableName in assetBundleBuild.GetAssetAddresses())
+				{
+					var path = addressableName;
+					AESEncrypter.EncryptAndSave(path,path);
+				}
+			}
+			AssetDatabase.Refresh();
+
+			#endregion
 
 			// build content
 			var bundleBuilds = tagBundles.Select(tagBundle =>
@@ -91,22 +107,15 @@ namespace MiiAsset.Editor.Build
 				MonoScriptBundleName = null,
 				BuiltinShaderBundleName = "builtinshader",
 			};
-			
-			//加密资源
-			foreach (var assetBundleBuild in bundleBuilds)
-			{
-				foreach (var addressableName in assetBundleBuild.addressableNames)
-				{
-					var path = addressableName;
-					AESEncrypter.EncryptAndSave(path,path);
-				}
-			}
-			AssetDatabase.Refresh();
-			
+
 			var buildResult = AssetBuildScript.BuildBundles(bundleBuilds, buildParams, buildOptions);
-			//重写本地资源
+
+			#region 重写本地资源
+
 			AESEncrypter.RecoverFile();
 			AssetDatabase.Refresh();
+
+			#endregion
 
 			if (buildResult.ExitCode == 0)
 			{

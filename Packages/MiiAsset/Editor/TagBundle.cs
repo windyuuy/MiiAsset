@@ -45,6 +45,7 @@ namespace MiiAsset.Editor.Build
 		public HashSet<string> Deps = new();
 		public BundleDetails BuildInfo;
 		public bool IsOffline = false;
+		public bool IsEncrypt = false;
 
 		/// <summary>
 		/// 多少byte

@@ -159,6 +159,7 @@ namespace MiiAsset.Editor.Build
 							Tags = groupNameInfo.Tags,
 							TagsAdditional = Array.Empty<string>(),
 							TagsUKey = tagsKey,
+							IsEncrypt = groupNameInfo.NeedEncrypt
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
@@ -167,6 +168,7 @@ namespace MiiAsset.Editor.Build
 					{
 						tagBundle.IsOffline |= !groupNameInfo.IsRemote;
 						tagBundle.Guids.Add(groupNameInfo.Guid);
+						tagBundle.IsEncrypt= groupNameInfo.NeedEncrypt;
 
 						// Debug.LogError($"conflict item: {groupNameInfo.AssetPath}");
 					}
