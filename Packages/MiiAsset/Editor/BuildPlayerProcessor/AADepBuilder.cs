@@ -181,7 +181,12 @@ namespace MiiAsset.Editor.Build
 				// collect link.xml
 				var m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
 				m_Linker.AddAssemblies(new[]
-					{ typeof(AssetLoader).Assembly, typeof(IOManager).Assembly, typeof(WXAdapter).Assembly });
+				{
+					typeof(AssetLoader).Assembly, typeof(IOManager).Assembly,
+				#if SUPPORT_WECHATGAME
+						typeof(WXAdapter).Assembly
+				#endif
+				});
 
 				foreach (var r in buildResult.Results.WriteResults)
 				{
