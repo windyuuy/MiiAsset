@@ -1,7 +1,7 @@
 ﻿{
   "name": "windy.miiasset.core",
   "displayName": "MiiAsset",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "unity": "2019.4",
   "description": "Unity Resource and Code hot update",
   "dependencies": {
