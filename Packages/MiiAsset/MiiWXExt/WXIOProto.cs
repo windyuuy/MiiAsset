@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
-using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
 using MonoExtLib.AsyncExt;
 
