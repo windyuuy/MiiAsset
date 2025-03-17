@@ -12,6 +12,7 @@ using MiiAsset.Runtime.Adapter;
 using MonoExtLib.AsyncExt;
 
 #if UNITY_WEBGL && SUPPORT_WECHATGAME
+using Lang.Encoding;
 using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
