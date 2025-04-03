@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Threading.Tasks;
 using Lang.Time;
 using MiiAsset.AssetWeakRefer.Runtime;
@@ -24,11 +25,22 @@ public class NewBehaviourScript : MonoBehaviour
 		TaskScheduler.UnobservedTaskException += (s, e) => { Debug.LogException(e.Exception); };
 		AppDomain.CurrentDomain.UnhandledException += (s, args) => { Debug.LogError((Exception)args.ExceptionObject); };
 		LoomMG.Init();
+		StartCoroutine(DelayRecycle());
 		await UniAsyncUtils.WaitForFrames(1);
 		var dt1 = Date.Now();
 		await Test_LoadFromLocal();
 		var dt2 = Date.Now();
 		Debug.Log($"test-timecost: {dt2 - dt1}");
+	}
+
+	IEnumerator DelayRecycle()
+	{
+		while (true)
+		{
+			// 调用此函数延迟卸载资源
+			AssetLoader.RunDelayedTasks();
+			yield return new WaitForSeconds(1);
+		}
 	}
 
 	private static async Task Test_LoadFromLocal()
