@@ -70,5 +70,6 @@ namespace MiiAsset.Runtime
 		NetError = 1,
 		FileSystemError = 2,
 		DataIncorrect = 4,
+		CatalogIncorrect = 5,
 	}
 }

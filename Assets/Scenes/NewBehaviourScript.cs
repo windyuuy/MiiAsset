@@ -26,9 +26,27 @@ public class NewBehaviourScript : MonoBehaviour
 		LoomMG.Init();
 		await UniAsyncUtils.WaitForFrames(1);
 		var dt1 = Date.Now();
-		await TestProgress();
+		await Test_LoadFromLocal();
 		var dt2 = Date.Now();
 		Debug.Log($"test-timecost: {dt2 - dt1}");
+	}
+
+	private static async Task Test_LoadFromLocal()
+	{
+		await AssetLoader.Init();
+		var result = await AssetLoader.LoadLocalCatalog();
+		if (result.IsOk)
+		{
+			var address = "Assets/Bundles/BB/Capsule.prefab";
+			var capsulePrefab = await AssetLoader.LoadAssetByRefer<GameObject>(address);
+			var capsule = GameObject.Instantiate(capsulePrefab);
+			await AssetLoader.UnLoadAssetByRefer(address);
+			Debug.Log("done");
+		}
+		else
+		{
+			result.Print();
+		}
 	}
 
 	private static async Task Test1_1()

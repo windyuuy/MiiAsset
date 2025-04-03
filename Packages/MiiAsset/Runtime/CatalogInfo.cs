@@ -82,21 +82,31 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		void ParseDeps(AssetBundleInfo bundleInfo, HashSet<string> deps)
+		void ParseDeps(AssetBundleInfo bundleInfo, HashSet<string> deps, PipelineResult result)
 		{
 			var bundleInfoDeps = bundleInfo.deps;
-			foreach (var dep in bundleInfoDeps.Append(bundleInfo.fileName))
+			var bundleInfoDeps2 = bundleInfoDeps.Append(bundleInfo.fileName);
+			foreach (var dep in bundleInfoDeps2)
 			{
-				if (!deps.Contains(dep))
+				if (deps.Add(dep))
 				{
-					deps.Add(dep);
-					var depAssetBundleInfo = this.NameBundleMap[dep];
-					ParseDeps(depAssetBundleInfo, deps);
+					if (this.NameBundleMap.TryGetValue(dep, out var depAssetBundleInfo))
+					{
+						ParseDeps(depAssetBundleInfo, deps, result);
+					}
+					else
+					{
+						var exception = new KeyNotFoundException($"AssetBundle-Dependence-Missing: {dep}");
+						result.Exception ??= exception;
+						result.IsOk = false;
+						result.ErrorType = PipelineErrorType.CatalogIncorrect;
+						MyLogger.LogException(exception);
+					}
 				}
 			}
 		}
 
-		public void LoadCatalogInfo(CatalogConfig catalog)
+		public void LoadCatalogInfo(CatalogConfig catalog, PipelineResult result)
 		{
 			foreach (var bundleInfo in catalog.bundleInfos)
 			{
@@ -126,7 +136,7 @@ namespace MiiAsset.Runtime
 
 				if (bundleInfo.deps.Length > 0)
 				{
-					ParseDeps(bundleInfo, deps);
+					ParseDeps(bundleInfo, deps, result);
 				}
 			}
 
