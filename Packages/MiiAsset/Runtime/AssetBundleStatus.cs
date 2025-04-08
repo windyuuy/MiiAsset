@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Lang.Time;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Status;
@@ -452,7 +453,7 @@ namespace MiiAsset.Runtime
 				{
 					try
 					{
-						var decrypt = AESEncrypter.Decrypt(textAsset.text,address);
+						var decrypt = AESEncrypter.Decrypt(textAsset.text, address);
 						// 创建新的 TextAsset
 						var decryptedTextAsset = new TextAsset(decrypt);
 						// 替换原始的 TextAsset
@@ -470,7 +471,7 @@ namespace MiiAsset.Runtime
 						Debug.Log($"{address} 解密耗时: {t3 - t2}, {fc3 - fc2}, from: {fc2}");
 					}
 				}
-				
+
 				return asset;
 			}
 			else
@@ -534,7 +535,7 @@ namespace MiiAsset.Runtime
 				{
 					try
 					{
-						var decrypt = AESEncrypter.Decrypt(textAsset.text,address);
+						var decrypt = AESEncrypter.Decrypt(textAsset.text, address);
 						// 创建新的 TextAsset
 						var decryptedTextAsset = new TextAsset(decrypt);
 						// 替换原始的 TextAsset
@@ -552,7 +553,7 @@ namespace MiiAsset.Runtime
 						Debug.Log($"{address} 解密耗时: {t3 - t2}, {fc3 - fc2}, from: {fc2}");
 					}
 				}
-				
+
 				return System.Threading.Tasks.Task.FromResult(asset);
 			}
 			else
