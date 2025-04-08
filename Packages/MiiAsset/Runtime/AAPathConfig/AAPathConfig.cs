@@ -31,7 +31,7 @@ namespace MiiAsset.Runtime
 		/// <summary>
 		/// 是否打进包内
 		/// </summary>
-		public bool isOffline;
+		public bool isOffline = true;
 
 		/// <summary>
 		/// 是否加密

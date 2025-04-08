@@ -14,9 +14,11 @@ namespace MiiAsset.Runtime.Adapter
 			}
 
 			IsAdaptDefaultDone = true;
-#if UNITY_WEBGL && !UNITY_EDITOR
+		#if UNITY_WEBGL && SUPPORT_WECHATGAME && !UNITY_EDITOR
 			this.Adapt(new WXAdapter());
-#endif
+		#elif UNITY_WEBGL && !SUPPORT_WECHATGAME && !UNITY_EDITOR
+			// MyLogger.LogError($"cur webgl platform not support: {Application.platform}");
+		#endif
 		}
 
 		public void Adapt(IAdapter adapter)

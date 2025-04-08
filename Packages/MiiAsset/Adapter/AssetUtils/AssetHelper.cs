@@ -17,7 +17,7 @@ namespace MiiAsset.Runtime.AssetUtils
 				Directory.CreateDirectory(internalBaseUri);
 			}
 #else
-			var internalBaseUri = Application.dataPath + "/mii/";
+			var internalBaseUri = Application.streamingAssetsPath + "/mii/";
 #endif
 			return internalBaseUri;
 		}

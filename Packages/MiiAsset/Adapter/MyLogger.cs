@@ -29,5 +29,11 @@ namespace MiiAsset.Runtime.Adapter
 		{
 			Debug.LogException(exception);
 		}
+
+		public static bool Assert(bool b, string s)
+		{
+			Debug.Assert(b, $"-[mii]{s}");
+			return b;
+		}
 	}
 }

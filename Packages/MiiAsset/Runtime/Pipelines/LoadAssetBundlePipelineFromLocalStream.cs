@@ -4,11 +4,10 @@ using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOStreams;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace MiiAsset.Runtime.Pipelines
 {
-	public class LoadAssetBundlePipeline : ILoadAssetBundlePipeline
+	public class LoadAssetBundlePipelineFromLocalStream : ILoadAssetBundlePipeline
 	{
 		protected LoadAssetBundleStream LoadStream;
 		protected IRandomReadStream ReadStream;
@@ -16,7 +15,7 @@ namespace MiiAsset.Runtime.Pipelines
 		protected string Uri;
 		protected uint Crc;
 
-		public LoadAssetBundlePipeline Init(string uri, uint crc)
+		public LoadAssetBundlePipelineFromLocalStream Init(string uri, uint crc)
 		{
 			Uri = uri;
 			Crc = crc;

@@ -1,6 +1,6 @@
 ﻿using System;
 using MiiAsset.Runtime.Adapter;
-using UnityEngine;
+using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime
 {
@@ -21,7 +21,7 @@ namespace MiiAsset.Runtime
 		public bool IsDone => Status == PipelineStatus.Done;
 		public Exception Exception;
 
-		public int Code;
+		public long Code;
 		public string Msg;
 		public PipelineErrorType ErrorType;
 		public PipelineStatus Status = PipelineStatus.Init;
@@ -52,6 +52,17 @@ namespace MiiAsset.Runtime
 			this.Code = result.Code;
 			this.Msg = result.Msg;
 		}
+
+		public void SetWithUwr(UnityWebRequest uwr)
+		{
+			var isOk = uwr.result == UnityWebRequest.Result.Success;
+			this.IsOk = isOk;
+			this.Exception = isOk ? null : new Exception(uwr.error);
+			this.Code = (int)uwr.responseCode;
+			this.Msg = uwr.error;
+			this.ErrorType = PipelineErrorType.NetError;
+			this.Status = PipelineStatus.Done;
+		}
 	}
 
 	public enum PipelineErrorType
@@ -59,5 +70,6 @@ namespace MiiAsset.Runtime
 		NetError = 1,
 		FileSystemError = 2,
 		DataIncorrect = 4,
+		CatalogIncorrect = 5,
 	}
 }

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
-using lang.time;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Status;
+using MonoExtLib.AsyncExt;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace MiiAsset.Runtime
 {
@@ -29,8 +29,8 @@ namespace MiiAsset.Runtime
 		Task<PipelineResult> Download(CatalogInfo catalogInfo);
 		public long GetDownloadSize(CatalogInfo catalogInfo);
 		Task UnLoad();
-		Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : UnityEngine.Object;
-		Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : UnityEngine.Object;
+		Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : Object;
+		Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : Object;
 		Task UnLoadAssetJust(string address);
 		bool IsLoaded();
 	}
@@ -54,6 +54,7 @@ namespace MiiAsset.Runtime
 		public long FileSize = -1;
 		public string BundleInternalName = null;
 		public uint Crc;
+		public Hash128 Hash128;
 
 		public Task<PipelineResult> Task { get; set; } = null;
 		public int RefCount { get; set; }
@@ -148,7 +149,8 @@ namespace MiiAsset.Runtime
 			Debug.Assert(RefCount > 0, $"Bundle is not allowed: {this.BundleName}");
 			if (AssetBundle == null)
 			{
-				if (Task == null || (Task.IsCompleted && (!Task.IsCompletedSuccessfully || Task.Result == null || (!Task.Result.IsOk))))
+				if (Task == null || (Task.IsCompleted &&
+				                     (!Task.IsCompletedSuccessfully || Task.Result == null || (!Task.Result.IsOk))))
 				{
 					Task = null;
 					Task = LoadInternal(catalogInfo, true);
@@ -180,6 +182,7 @@ namespace MiiAsset.Runtime
 				var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
 				FileSize = bundleInfo.size;
 				Crc = bundleInfo.crc;
+				Hash128 = bundleInfo.hash128;
 				IsInternalBundle = catalogInfo.IsInternalBundle(BundleName);
 				BundleInternalName = bundleInfo.bundleName;
 			}
@@ -196,6 +199,7 @@ namespace MiiAsset.Runtime
 
 		protected async Task<PipelineResult> LoadInternal(CatalogInfo catalogInfo, bool autoLoad)
 		{
+			MyLogger.Log($"AssetBundle-Loading: {this.BundleName}");
 			UpdateFileSizeInfo(catalogInfo);
 
 			var unloadTask = UnloadTask;
@@ -216,7 +220,7 @@ namespace MiiAsset.Runtime
 			{
 				var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
 				var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
-				loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource, Crc);
+				loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource, Crc, Hash128);
 				var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
 				downloadPipeline?.PresetDownloadSize(FileSize);
 				this.LoadPipeline = loadAssetBundlePipeline;
@@ -236,9 +240,9 @@ namespace MiiAsset.Runtime
 				var assetBundle = loadAssetBundlePipeline.AssetBundle;
 				Debug.Assert(this.AssetBundle == null, $"this.AssetBundle==null, {this.BundleName}");
 				this.AssetBundle = assetBundle;
-#if UNITY_EDITOR
+			#if UNITY_EDITOR
 				BundleStatusNotify.OnBundleLoad?.Invoke(this);
-#endif
+			#endif
 				Result.Merge(result);
 
 				if (IsInternalBundle)
@@ -338,9 +342,9 @@ namespace MiiAsset.Runtime
 					{
 						MyLogger.Log($"AssetBundle-DownLoaded: {this.BundleName}");
 					}
-#if UNITY_EDITOR
+				#if UNITY_EDITOR
 					BundleStatusNotify.OnBundleDownLoad?.Invoke(this);
-#endif
+				#endif
 				}
 
 				return downloadResult;
@@ -381,9 +385,9 @@ namespace MiiAsset.Runtime
 				UnloadTask = null;
 				MyLogger.Log($"AssetBundle-unloaded: {this.BundleName}");
 
-#if UNITY_EDITOR
+			#if UNITY_EDITOR
 				BundleStatusNotify.OnBundleUnLoad?.Invoke(this);
-#endif
+			#endif
 			}
 			else
 			{
@@ -397,7 +401,7 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public async Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : UnityEngine.Object
+		public async Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : Object
 		{
 			if (AssetBundle == null && !Task.IsCompletedSuccessfully)
 			{
@@ -481,7 +485,7 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : UnityEngine.Object
+		public Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : Object
 		{
 			if (AssetBundle == null && !Task.IsCompletedSuccessfully)
 			{
@@ -603,9 +607,9 @@ namespace MiiAsset.Runtime
 				this.AssetBundle.UnloadAsync(true);
 				this.AssetBundle = null;
 
-#if UNITY_EDITOR
+			#if UNITY_EDITOR
 				BundleStatusNotify.OnBundleUnLoad?.Invoke(this);
-#endif
+			#endif
 			}
 
 			if (this.LoadPipeline != null)

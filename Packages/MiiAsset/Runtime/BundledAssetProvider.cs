@@ -7,6 +7,7 @@ using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Pipelines;
 using MiiAsset.Runtime.Status;
+using MonoExtLib.AsyncExt;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -96,7 +97,7 @@ namespace MiiAsset.Runtime
 					if (externalCatalog != null)
 					{
 						var loadSource = new ResourceLoadSource(sourceUri, cacheDir);
-						LoadCatalogInfo(externalCatalog, loadSource);
+						LoadCatalogInfo(externalCatalog, loadSource, Result);
 
 						// merge internal catalog
 						if (internalCatalog != null)
@@ -121,10 +122,13 @@ namespace MiiAsset.Runtime
 						}
 
 						var loadSource = new ResourceLoadSource(sourceUri, null);
-						LoadCatalogInfo(internalCatalog, loadSource);
+						LoadCatalogInfo(internalCatalog, loadSource, Result);
 					}
 
-					Result.IsOk = true;
+					if (Result.Exception == null)
+					{
+						Result.IsOk = true;
+					}
 				}
 				catch (Exception exception)
 				{
@@ -134,9 +138,9 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		private void LoadCatalogInfo(CatalogConfig catalog, ResourceLoadSource loadSource)
+		private void LoadCatalogInfo(CatalogConfig catalog, ResourceLoadSource loadSource, PipelineResult result)
 		{
-			CatalogInfo.LoadCatalogInfo(catalog);
+			CatalogInfo.LoadCatalogInfo(catalog, result);
 
 			foreach (var bundleInfo in catalog.bundleInfos)
 			{

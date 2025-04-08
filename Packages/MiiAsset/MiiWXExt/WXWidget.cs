@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿#if UNITY_WEBGL && SUPPORT_WECHATGAME
+using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
@@ -26,3 +27,4 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 	}
 }
+#endif

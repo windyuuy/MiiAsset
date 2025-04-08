@@ -1,40 +1,65 @@
 using System;
+using System.Collections;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
-using lang.time;
+using Lang.Time;
 using MiiAsset.AssetWeakRefer.Runtime;
 using MiiAsset.MiiAssetHint;
 using MiiAsset.Runtime;
 using MiiAsset.Runtime.Status;
+using MonoExtLib.AsyncExt;
+using MonoExtLib.Loom;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 using UnityEngine.U2D;
 
 public class NewBehaviourScript : MonoBehaviour
 {
-    public AssetReference assetRefer1;
-    public AssetReferenceT<Sprite> assetRefer2;
+	public AssetReference assetRefer1;
+	public AssetReferenceT<Sprite> assetRefer2;
 
-    public SpriteAssetReference spriteAssetRefer1;
+	public SpriteAssetReference spriteAssetRefer1;
 
-    // Start is called before the first frame update
-    async void Start()
-    {
-        TaskScheduler.UnobservedTaskException += (s, e) => { Debug.LogException(e.Exception); };
-        AppDomain.CurrentDomain.UnhandledException += (s, args) => { Debug.LogError((Exception)args.ExceptionObject); };
-        LoomMG.Init();
-        // await UniAsyncUtils.WaitForFrames(1);
-        // var dt1 = Date.Now();
-        // await TestProgress();
-        // var dt2 = Date.Now();
-        // Debug.Log($"test-timecost: {dt2 - dt1}");
-        
-        await AssetLoader.Init();
-        await AssetLoader.LoadLocalCatalog();
+	// Start is called before the first frame update
+	async void Start()
+	{
+		TaskScheduler.UnobservedTaskException += (s, e) => { Debug.LogException(e.Exception); };
+		AppDomain.CurrentDomain.UnhandledException += (s, args) => { Debug.LogError((Exception)args.ExceptionObject); };
+		LoomMG.Init();
+		StartCoroutine(DelayRecycle());
+		await UniAsyncUtils.WaitForFrames(1);
+		var dt1 = Date.Now();
+		await Test_LoadFromLocal();
+		var dt2 = Date.Now();
+		Debug.Log($"test-timecost: {dt2 - dt1}");
+	}
 
-        Test5();
-    }
+	IEnumerator DelayRecycle()
+	{
+		while (true)
+		{
+			// 调用此函数延迟卸载资源
+			AssetLoader.RunDelayedTasks();
+			yield return new WaitForSeconds(1);
+		}
+	}
+
+	private static async Task Test_LoadFromLocal()
+	{
+		await AssetLoader.Init();
+		var result = await AssetLoader.LoadLocalCatalog();
+		if (result.IsOk)
+		{
+			var address = "Assets/Bundles/BB/Capsule.prefab";
+			var capsulePrefab = await AssetLoader.LoadAssetByRefer<GameObject>(address);
+			var capsule = GameObject.Instantiate(capsulePrefab);
+			await AssetLoader.UnLoadAssetByRefer(address);
+			Debug.Log("done");
+		}
+		else
+		{
+			result.Print();
+		}
+	}
 
     private static async Task Test1_1()
     {
