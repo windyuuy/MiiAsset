@@ -21,7 +21,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public override void Flush()
 		{
-			MyLogger.LogError("NotImplementException");
+			MyLogger.LogError($"NotImplementException-{nameof(LoadAssetBundleStream)}::{nameof(Flush)}()");
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)
@@ -45,18 +45,21 @@ namespace MiiAsset.Runtime.IOStreams
 			}
 			else
 			{
-				throw new NotImplementedException();
+				throw new NotImplementedException(
+					$"invalid SeekOrigin: {nameof(LoadAssetBundleStream)}::{nameof(Seek)}({offset},{origin})");
 			}
 		}
 
 		public override void SetLength(long value)
 		{
-			throw new NotImplementedException();
+			throw new NotImplementedException(
+				$"NotImplementedException-{nameof(LoadAssetBundleStream)}::{nameof(SetLength)}()");
 		}
 
 		public override void Write(byte[] buffer, int offset, int count)
 		{
-			throw new NotImplementedException();
+			throw new NotImplementedException(
+				$"NotImplementedException-{nameof(LoadAssetBundleStream)}::{nameof(Write)}()");
 		}
 
 		public override bool CanRead => true;

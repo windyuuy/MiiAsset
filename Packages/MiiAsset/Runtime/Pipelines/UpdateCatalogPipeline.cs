@@ -248,7 +248,7 @@ namespace MiiAsset.Runtime.Pipelines
 			}
 
 			CatalogConfig internalCatalog;
-			const string invalidJsonFormat = "invalid json format";
+			const string invalidJsonFormat = "invalid catalog json format: ";
 			if (loadInternalCatalogPipeline != null)
 			{
 				try
@@ -257,12 +257,13 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (Exception exception)
 				{
-					MyLogger.LogError(invalidJsonFormat);
+					var errMsg = $"{invalidJsonFormat}{internalCatalogUri}";
+					MyLogger.LogError(errMsg);
 					MyLogger.LogException(exception);
 					Result = new()
 					{
 						Exception = exception,
-						Msg = invalidJsonFormat,
+						Msg = errMsg,
 						ErrorType = PipelineErrorType.DataIncorrect,
 					};
 					return Result;
@@ -282,12 +283,13 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (Exception exception)
 				{
-					MyLogger.LogError(invalidJsonFormat);
+					var errMsg = $"{invalidJsonFormat}{externalCatalogUri}";
+					MyLogger.LogError(errMsg);
 					MyLogger.LogException(exception);
 					Result = new()
 					{
 						Exception = exception,
-						Msg = invalidJsonFormat,
+						Msg = errMsg,
 						ErrorType = PipelineErrorType.DataIncorrect,
 					};
 					return Result;

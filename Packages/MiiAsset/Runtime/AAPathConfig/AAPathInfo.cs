@@ -98,7 +98,7 @@ namespace MiiAsset.Runtime
 
 			if (groupNameInfo == null)
 			{
-				MyLogger.LogError($"loading asset not in bundle");
+				MyLogger.LogError($"loading asset not exist in any bundle: {assetPath}");
 			}
 
 			return groupNameInfo;
