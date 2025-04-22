@@ -40,6 +40,7 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 
 		public string Address => guid != null ? AssetLoader.GetAddressFromGuid(guid) : null;
 		public object RuntimeKey => Address ?? guid;
+		public string DisplayInfo => $"Address: {Address}, Guid: {AssetGUID}";
 
 	#if UNITY_EDITOR
 		public Object RawAsset
