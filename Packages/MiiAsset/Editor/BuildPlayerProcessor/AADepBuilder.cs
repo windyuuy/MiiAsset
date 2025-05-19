@@ -23,6 +23,8 @@ namespace MiiAsset.Editor.Build
 {
 	public class AADepBuilder
 	{
+		public static string GetRemoteAssetBundlesPublishDir() => "AssetBundles";
+
 		public static BuildAssetBundlesResult BuildAssetBundles(AAPathInfo pathInfo,
 			ScriptCompilationSettings scriptCompilationSettings, ExtraBuildOptions options)
 		{
@@ -58,7 +60,8 @@ namespace MiiAsset.Editor.Build
 				};
 				return build;
 			});
-			var folderPath = $"AssetBundles/{AssetHelper.GetBuildTarget(scriptCompilationSettings.target)}";
+			var folderPath =
+				$"{GetRemoteAssetBundlesPublishDir()}/{AssetHelper.GetBuildTarget(scriptCompilationSettings.target)}";
 			var outPath = "Temp/MiiAsset/AssetBundles";
 			var tmpPath = "Temp/MiiAsset/Temp";
 			if (Directory.Exists(outPath))

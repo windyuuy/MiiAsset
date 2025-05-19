@@ -12,6 +12,14 @@ namespace MiiAsset.Editor.Build
 		public string Msg;
 		public ReturnCode Code;
 		public BuildResult BuildResult;
+
+		public bool IsOk => Code switch
+		{
+			ReturnCode.Success => true,
+			ReturnCode.SuccessCached => true,
+			ReturnCode.SuccessNotRun => true,
+			_ => false
+		};
 	}
 
 	public class ExtraBuildOptions
