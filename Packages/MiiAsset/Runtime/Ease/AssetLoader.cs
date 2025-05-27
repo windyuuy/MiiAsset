@@ -92,17 +92,6 @@ namespace MiiAsset.Runtime
 		// 	Consumer.Init();
 		// }
 
-		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
-		{
-			CheckUri(remoteBaseUri);
-			if (!remoteBaseUri.EndsWith("/"))
-			{
-				remoteBaseUri = $"{remoteBaseUri}/";
-			}
-
-			return Consumer.UpdateCatalog(remoteBaseUri);
-		}
-
 		private static void CheckUri(string remoteBaseUri)
 		{
 			if (remoteBaseUri.Contains(":/") && remoteBaseUri.Contains("://") == false)
@@ -111,9 +100,31 @@ namespace MiiAsset.Runtime
 			}
 		}
 
+		private static readonly TaskCompletionSource<bool> LoadCatalogTaskSource = new TaskCompletionSource<bool>();
+
+		public static Task<bool> WaitLoadCatalogDone()
+		{
+			return LoadCatalogTaskSource.Task;
+		}
+
+		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
+		{
+			CheckUri(remoteBaseUri);
+			if (!remoteBaseUri.EndsWith("/"))
+			{
+				remoteBaseUri = $"{remoteBaseUri}/";
+			}
+
+			var task = Consumer.UpdateCatalog(remoteBaseUri);
+			task.ContinueWith(t => { LoadCatalogTaskSource.SetResult(t.IsCompletedSuccessfully); });
+			return task;
+		}
+
 		public static Task<PipelineResult> LoadLocalCatalog()
 		{
-			return Consumer.LoadLocalCatalog();
+			var task = Consumer.LoadLocalCatalog();
+			task.ContinueWith(t => { LoadCatalogTaskSource.SetResult(t.IsCompletedSuccessfully); });
+			return task;
 		}
 
 		/// <summary>
