@@ -100,11 +100,17 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		private static readonly TaskCompletionSource<bool> LoadCatalogTaskSource = new TaskCompletionSource<bool>();
+		private static TaskCompletionSource<bool> _loadCatalogTaskSource = new TaskCompletionSource<bool>();
+		private static readonly Task<bool> CompletedTask = Task.FromResult(true);
 
 		public static Task<bool> WaitLoadCatalogDone()
 		{
-			return LoadCatalogTaskSource.Task;
+			if (_loadCatalogTaskSource != null)
+			{
+				return _loadCatalogTaskSource.Task;
+			}
+
+			return CompletedTask;
 		}
 
 		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
@@ -116,14 +122,22 @@ namespace MiiAsset.Runtime
 			}
 
 			var task = Consumer.UpdateCatalog(remoteBaseUri);
-			task.ContinueWith(t => { LoadCatalogTaskSource.SetResult(t.IsCompletedSuccessfully); });
+			task.ContinueWith(t =>
+			{
+				_loadCatalogTaskSource.SetResult(t.IsCompletedSuccessfully);
+				_loadCatalogTaskSource = null;
+			});
 			return task;
 		}
 
 		public static Task<PipelineResult> LoadLocalCatalog()
 		{
 			var task = Consumer.LoadLocalCatalog();
-			task.ContinueWith(t => { LoadCatalogTaskSource.SetResult(t.IsCompletedSuccessfully); });
+			task.ContinueWith(t =>
+			{
+				_loadCatalogTaskSource.SetResult(t.IsCompletedSuccessfully);
+				_loadCatalogTaskSource = null;
+			});
 			return task;
 		}
 
