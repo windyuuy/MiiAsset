@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using MiiAsset.Runtime;
 using UnityEditor;
@@ -16,6 +17,7 @@ namespace MiiAsset.Editor.Build
 		public readonly Dictionary<string, int> TagOrderMap = new();
 		public readonly Dictionary<string, TagBundle> GuidBundleMap = new();
 		public readonly Dictionary<string, TagBundle> TagsNameBundleMap = new();
+		public readonly Dictionary<string, ExtraAddressInfo> ExtraAddressInfoMap = new();
 
 		protected int TagOrderAcc = 0;
 
@@ -40,6 +42,19 @@ namespace MiiAsset.Editor.Build
 		protected AAPathInfo PathInfo;
 		protected HashSet<string> FilterMap0 = new();
 
+		protected void AddExtraAddressInfo(string address, string atlasAddress)
+		{
+			var extraAddressInfo = new ExtraAddressInfo
+			{
+				loadType = AddressLoadType.AtlasSprite,
+				address = address,
+				guid = AssetDatabase.AssetPathToGUID(address),
+				sourceAddress = atlasAddress,
+				key = Path.GetFileNameWithoutExtension(address),
+			};
+			ExtraAddressInfoMap.Add(address, extraAddressInfo);
+		}
+
 		public void CollectValidAssets(AAPathInfo pathInfo)
 		{
 			// CollectDeps(pathInfo);
@@ -56,7 +71,7 @@ namespace MiiAsset.Editor.Build
 			Reset();
 			// collect sprites in spriteatlas
 			FilterMap0.Clear();
-			CollectSpriteAtlas(FilterMap0);
+			CollectSpriteAtlas(FilterMap0, AddExtraAddressInfo);
 
 			PathInfo = pathInfo;
 		}
@@ -95,17 +110,21 @@ namespace MiiAsset.Editor.Build
 			return true;
 		}
 
-		void CollectSpriteAtlas(HashSet<string> filterMap0)
+		void CollectSpriteAtlas(HashSet<string> filterMap0, Action<string, string> handle)
 		{
 			var guids = AssetDatabase.FindAssets("t:spriteatlas", new string[] { "Assets" });
 			foreach (var guid in guids)
 			{
+				var atlasAddress = AssetDatabase.GUIDToAssetPath(guid);
 				var spriteatlas =
-					AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(guid));
+					AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasAddress);
 				var objs = spriteatlas.GetPackables();
 				foreach (var o in objs)
 				{
-					filterMap0.Add(AssetDatabase.GetAssetPath(o));
+					var spriteAddress = AssetDatabase.GetAssetPath(o);
+					filterMap0.Add(spriteAddress);
+
+					handle(spriteAddress, atlasAddress);
 				}
 			}
 		}
@@ -116,7 +135,7 @@ namespace MiiAsset.Editor.Build
 
 			// collect sprites in spriteatlas
 			var filterMap = new HashSet<string>();
-			CollectSpriteAtlas(filterMap);
+			CollectSpriteAtlas(filterMap, AddExtraAddressInfo);
 
 			foreach (var scanInfo in pathInfo.GetScanRootInfos(true))
 			{
@@ -185,6 +204,7 @@ namespace MiiAsset.Editor.Build
 			GuidBundleMap.Clear();
 			TagsNameBundleMap.Clear();
 			TagOrderAcc = 0;
+			ExtraAddressInfoMap.Clear();
 		}
 	}
 }

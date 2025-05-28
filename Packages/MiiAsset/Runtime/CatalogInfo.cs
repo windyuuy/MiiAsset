@@ -12,6 +12,7 @@ namespace MiiAsset.Runtime
 
 		public Dictionary<string, HashSet<string>> BundleFlatRelationMap = new();
 		public Dictionary<string, HashSet<string>> TagFlatBundlesMap = new();
+		public Dictionary<string, ExtraAddressInfo> ExtraAddressInfoMap = new();
 
 		/// <summary>
 		/// 合并后的bundle加载清单
@@ -21,7 +22,7 @@ namespace MiiAsset.Runtime
 		public Dictionary<string, IResourceLoadSource> InternalBundles = new();
 
 		// record bundles cleaned before update
-		public List<string> BundlesToClean = new();
+		public readonly List<string> BundlesToClean = new();
 
 		public void GetTagsDependBundles(IEnumerable<string> tags, HashSet<string> depBundles)
 		{
@@ -165,6 +166,20 @@ namespace MiiAsset.Runtime
 					}
 				}
 			}
+
+			foreach (var extraAddressInfo in catalog.extraAddressInfos)
+			{
+				ExtraAddressInfoMap.Add(extraAddressInfo.address, extraAddressInfo);
+				if (!string.IsNullOrEmpty(extraAddressInfo.guid))
+				{
+					GuidAddressMap.Add(extraAddressInfo.guid, extraAddressInfo.address);
+				}
+			}
+		}
+
+		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return ExtraAddressInfoMap.TryGetValue(address, out extraAddressInfo);
 		}
 
 		public AssetBundleInfo GetAssetBundleInfo(string bundleName)

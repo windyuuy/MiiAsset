@@ -700,5 +700,10 @@ namespace MiiAsset.Runtime
 		{
 			Consumer?.RunDelayedTasks();
 		}
+
+		public static bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return Consumer.TryGetExtraAddressInfo(address, out extraAddressInfo);
+		}
 	}
 }

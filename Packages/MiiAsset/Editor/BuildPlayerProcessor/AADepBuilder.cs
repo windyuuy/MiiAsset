@@ -45,6 +45,11 @@ namespace MiiAsset.Editor.Build
 			var tagOrderMap = depCollector.TagOrderMap;
 			var guidBundleMap = depCollector.GuidBundleMap;
 			var tagsNameBundleMap = depCollector.TagsNameBundleMap;
+			var extraAddressInfoMap = depCollector.ExtraAddressInfoMap;
+
+			var extraAddressInfos = extraAddressInfoMap
+				.Select(item => item.Value)
+				.ToArray();
 
 			var tagBundles = tagBundleMap.Values.ToArray();
 
@@ -269,9 +274,11 @@ namespace MiiAsset.Editor.Build
 					};
 				}).ToArray();
 
+				// 远程
 				var catalog = new CatalogConfig
 				{
 					bundleInfos = catalogBundleInfos,
+					extraAddressInfos = extraAddressInfos,
 				};
 				var catalogFilePath =
 					$"{folderPath}/catalog_{options.UpdateTunnel}.{options.CatalogType}".Replace("_.", ".");
@@ -311,10 +318,12 @@ namespace MiiAsset.Editor.Build
 					return collectOfflineBundles;
 				}
 
+				// 包内
 				var internalCatalog = new CatalogConfig
 				{
 					bundleInfos = CollectOfflineBundles(catalogBundleInfos).ToArray(),
-					EntryBundleMap = null
+					extraAddressInfos = extraAddressInfos,
+					EntryBundleMap = null,
 				};
 				var internalCatalogFilePath = $"{internalBuildPath}{Path.GetRelativePath(folderPath, catalogFilePath)}";
 				SaveCatalog(internalCatalog, internalCatalogFilePath);

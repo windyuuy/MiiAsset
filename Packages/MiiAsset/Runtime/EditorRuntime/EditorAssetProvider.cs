@@ -77,7 +77,7 @@ namespace MiiAsset.Runtime
 			return true;
 		}
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			if (!CheckPathAndTags<T>(address))
 			{
@@ -119,7 +119,7 @@ namespace MiiAsset.Runtime
 			return Task.CompletedTask;
 		}
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
@@ -146,12 +146,13 @@ namespace MiiAsset.Runtime
 			return exist;
 		}
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
 
-		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus)
+			where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
@@ -209,7 +210,11 @@ namespace MiiAsset.Runtime
 
 		public void RunDelayedTasks()
 		{
-			
+		}
+
+		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return DepCollector.ExtraAddressInfoMap.TryGetValue(address, out extraAddressInfo);
 		}
 
 		public void Dispose()
