@@ -207,18 +207,10 @@ namespace MiiAsset.Runtime.IOManagers
 		{
 			InitBundleExistMap();
 			// Debug.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
-#if SUPPORT_WECHATGAME
-			// 修复微信小游戏崩溃
-			if (BundleExistMap.ContainsKey(bundleName))
-			{
-				return true;
-			}
-#else
 			if (BundleExistMap.TryGetValue(bundleName, out var exist))
 			{
 				return exist;
 			}
-#endif
 			else
 			{
 				var exists = Exists(CacheDir + bundleName) || Exists(InternalDir + bundleName);
