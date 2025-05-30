@@ -139,6 +139,11 @@ namespace MiiAsset.Editor.Build
 				tagBundles = tagBundleMap.Values.ToArray();
 				foreach (var tagBundle in tagBundles)
 				{
+					tagBundle.UpdateFileHashName();
+				}
+
+				foreach (var tagBundle in tagBundles)
+				{
 					tagsNameBundleMap[tagBundle.GetTagsKey()] = tagBundle;
 				}
 
