@@ -162,6 +162,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				filePath = uri,
@@ -255,6 +256,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				filePath = uri,
@@ -271,6 +273,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("write-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				data = bytes,
@@ -323,7 +326,12 @@ namespace MiiAsset.Runtime.IOManagers
 						}
 					}
 				},
-				fail = (resp) => { ts.SetException(new IOException(resp.GetExceptionDesc("read catalog failed"))); },
+				fail = (resp) =>
+				{
+					var ioException = new IOException(resp.GetExceptionDesc("read catalog failed"));
+					MyLogger.LogException(ioException);
+					ts.SetException(ioException);
+				},
 				entries = "all",
 				filePath = uri,
 				encoding = "utf-8",

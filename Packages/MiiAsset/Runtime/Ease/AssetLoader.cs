@@ -113,7 +113,7 @@ namespace MiiAsset.Runtime
 			return CompletedTask;
 		}
 
-		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
+		public static async Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
 			CheckUri(remoteBaseUri);
 			if (!remoteBaseUri.EndsWith("/"))
@@ -121,24 +121,55 @@ namespace MiiAsset.Runtime
 				remoteBaseUri = $"{remoteBaseUri}/";
 			}
 
-			var task = Consumer.UpdateCatalog(remoteBaseUri);
-			task.ContinueWith(t =>
+			try
 			{
-				_loadCatalogTaskSource.SetResult(t.IsCompletedSuccessfully);
+				var result = await Consumer.UpdateCatalog(remoteBaseUri);
+				try
+				{
+					_loadCatalogTaskSource?.SetResult(true);
+					_loadCatalogTaskSource = null;
+				}
+				catch (Exception exception2)
+				{
+					Debug.LogException(exception2);
+				}
+
+				return result;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+
+				_loadCatalogTaskSource?.SetResult(false);
 				_loadCatalogTaskSource = null;
-			});
-			return task;
+				throw;
+			}
 		}
 
-		public static Task<PipelineResult> LoadLocalCatalog()
+		public static async Task<PipelineResult> LoadLocalCatalog()
 		{
-			var task = Consumer.LoadLocalCatalog();
-			task.ContinueWith(t =>
+			try
 			{
-				_loadCatalogTaskSource.SetResult(t.IsCompletedSuccessfully);
+				var result = await Consumer.LoadLocalCatalog();
+				try
+				{
+					_loadCatalogTaskSource?.SetResult(true);
+					_loadCatalogTaskSource = null;
+				}
+				catch (Exception exception2)
+				{
+					Debug.LogException(exception2);
+				}
+
+				return result;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+				_loadCatalogTaskSource?.SetResult(false);
 				_loadCatalogTaskSource = null;
-			});
-			return task;
+				throw;
+			}
 		}
 
 		/// <summary>
