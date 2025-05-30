@@ -45,12 +45,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
-		#if UNITY_EDITOR
+#if UNITY_EDITOR
 
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
-		#else
+#else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
-		#endif
+#endif
 			var persistentDataPath = WX.env.USER_DATA_PATH;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
@@ -176,11 +176,13 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 
 		protected Dictionary<string, bool> BundleExistMap;
+		protected bool IsInitedBundleExistMap = false;
 
 		protected void InitBundleExistMap()
 		{
-			if (BundleExistMap == null)
+			if (!IsInitedBundleExistMap)
 			{
+				IsInitedBundleExistMap = true;
 				BundleExistMap = new();
 				var files1 = FileSystemManager.ReaddirSync(CacheDir);
 				var files2 = ExistsDir(InternalDir)
@@ -202,19 +204,20 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public bool EnsureBundle(string bundleName)
 		{
+			InitBundleExistMap();
 			// Debug.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
-		#if SUPPORT_WECHATGAME
+#if SUPPORT_WECHATGAME
 			// 修复微信小游戏崩溃
 			if (BundleExistMap.ContainsKey(bundleName))
 			{
 				return true;
 			}
-		#else
+#else
 			if (BundleExistMap.TryGetValue(bundleName, out var exist))
 			{
 				return exist;
 			}
-		#endif
+#endif
 			else
 			{
 				var exists = Exists(CacheDir + bundleName) || Exists(InternalDir + bundleName);
