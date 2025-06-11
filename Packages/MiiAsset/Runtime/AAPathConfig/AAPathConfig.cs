@@ -68,6 +68,20 @@ namespace MiiAsset.Runtime
 		}
 	}
 
+	[Serializable]
+	public class AASingleFileItem
+	{
+		public string group;
+		public string key;
+		public UnityEngine.Object asset;
+
+		
+		public string GetGroupName()
+		{
+			return group.Replace("/", "_").ToLower();
+		}
+    }
+
 	[CreateAssetMenu(fileName = "AAPathConfig", menuName = "AppConfig/AAPathConfig", order = 0)]
 	public class AAPathConfig : ScriptableObject
 	{
@@ -91,6 +105,8 @@ namespace MiiAsset.Runtime
 
 		public bool isShaderGroupOffline = true;
 		public bool isMyBuiltinShaderGroupOffline = true;
+
+		public List<AASingleFileItem> singleFiles = new List<AASingleFileItem>();
 	}
 
 	public class GroupNameInfo

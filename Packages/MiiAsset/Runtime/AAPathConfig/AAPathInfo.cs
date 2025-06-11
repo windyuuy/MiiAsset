@@ -27,6 +27,8 @@ namespace MiiAsset.Runtime
 		public bool IsShaderGroupOffline = true;
 		public bool IsMyBuiltinShaderGroupOffline = true;
 
+		public Dictionary<string, AASingleFileItem> SingleFileItems = new Dictionary<string, AASingleFileItem>();
+
 		public IEnumerable<GroupScanInfo> GetScanRootInfos(bool analyzeOnly)
 		{
 			return Paths.Select(p => p.GetScanRootInfo(analyzeOnly)).Distinct();

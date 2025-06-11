@@ -7,6 +7,7 @@ using UnityEngine.Build.Pipeline;
 using System.Security.Cryptography;
 using System.IO;
 using System.Text;
+using MiiAsset.Runtime;
 
 namespace MiiAsset.Editor.Build
 {
@@ -48,7 +49,7 @@ namespace MiiAsset.Editor.Build
 		/// <summary>
 		/// for debug
 		/// </summary>
-		public string[] Addresses => Guids.Select(guid => AssetDatabase.GUIDToAssetPath((string)guid)).ToArray();
+		public string[] Addresses => GetAssetAddresses();
 
 		public string TagsUKey;
 		public string BundleFileName => $"{GetTagsKey()}_{BuildInfo.Hash}{BundleFileHash}.bundle";
@@ -101,14 +102,41 @@ namespace MiiAsset.Editor.Build
 			return $"{GetTagsKey()}";
 		}
 
+		// public Dictionary<string, AASingleFileItem> SingleFileItems;
 		public string[] GetAssetNames()
 		{
-			return Guids.Select(guid => AssetDatabase.GUIDToAssetPath(guid)).ToArray();
+			return Guids.Select(guid => AssetDatabase.GUIDToAssetPath(guid))
+				.ToArray();
 		}
 
+		public readonly Dictionary<string, string> AddressMap = new();
 		public string[] GetAssetAddresses()
 		{
-			return GetAssetNames();
+			return Guids
+				.Select(guid =>
+				{
+					if (AddressMap.TryGetValue(guid, out var address))
+					{
+						return address;
+					}
+					else
+					{
+						return AssetDatabase.GUIDToAssetPath((string)guid);
+					}
+
+				})
+				.ToArray();
+			// return GetAssetNames()
+			// .Select((address) =>
+			// {
+			// 	if (SingleFileItems.TryGetValue(address, out var item))
+			// 	{
+			// 		return item.key;
+			// 	}
+			// 	return address;
+			// })
+			// .ToArray();
+			// ;
 		}
 
 		public string GetBundlePathWithHash(string dir)

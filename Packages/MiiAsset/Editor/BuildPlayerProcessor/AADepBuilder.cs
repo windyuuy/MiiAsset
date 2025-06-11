@@ -56,12 +56,13 @@ namespace MiiAsset.Editor.Build
 			// build content
 			var bundleBuilds = tagBundles.Select(tagBundle =>
 			{
+				var addressableNames = tagBundle.GetAssetAddresses();
 				var build = new AssetBundleBuild
 				{
 					assetBundleName = tagBundle.GetBundleName(),
 					assetBundleVariant = "",
 					assetNames = tagBundle.GetAssetNames(),
-					addressableNames = tagBundle.GetAssetAddresses(),
+					addressableNames = addressableNames,
 				};
 				return build;
 			});
@@ -205,12 +206,12 @@ namespace MiiAsset.Editor.Build
 				{
 					var resultValue = r.Value;
 					m_Linker.AddTypes(resultValue.includedTypes);
-				#if UNITY_2021_1_OR_NEWER
+#if UNITY_2021_1_OR_NEWER
 					m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
-				#else
+#else
                         if (resultValue.GetType().GetProperty("includedSerializeReferenceFQN") != null)
                             m_Linker.AddSerializedClass(resultValue.GetType().GetProperty("includedSerializeReferenceFQN").GetValue(resultValue) as System.Collections.Generic.IEnumerable<string>);
-				#endif
+#endif
 				}
 
 				m_Linker.AddTypes(typeof(AssetLoader));
@@ -243,7 +244,15 @@ namespace MiiAsset.Editor.Build
 						File.Delete(destPath);
 					}
 
-					File.Move(sourcePath, destPath);
+					try
+					{
+						File.Move(sourcePath, destPath);
+					}
+					catch (Exception)
+					{
+						Debug.LogError($"Move-Bundle-Failed: {sourcePath} -> {destPath}");
+						throw;
+					}
 					Debug.Assert(!File.Exists(sourcePath));
 					Debug.Assert(File.Exists(destPath));
 				}

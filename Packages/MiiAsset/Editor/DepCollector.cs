@@ -10,6 +10,13 @@ using UnityEngine.U2D;
 
 namespace MiiAsset.Editor.Build
 {
+	public static class AASingleFileItemExt
+	{
+		public static string GetGuid(this AASingleFileItem item)
+		{
+			return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(item.asset));
+		}
+	}
 	public class DepCollector
 	{
 		// collect tag bundles
@@ -134,6 +141,7 @@ namespace MiiAsset.Editor.Build
 			Reset();
 
 			// collect sprites in spriteatlas
+			var singleFileItems = pathInfo.SingleFileItems;
 			var filterMap = new HashSet<string>();
 			CollectSpriteAtlas(filterMap, AddExtraAddressInfo);
 
@@ -157,6 +165,10 @@ namespace MiiAsset.Editor.Build
 					.Where(item => item != null);
 				foreach (var groupNameInfo in validGroupNameInfo)
 				{
+					if (singleFileItems.ContainsKey(groupNameInfo.Guid))
+					{
+						continue;
+					}
 					if (GuidBundleMap.ContainsKey(groupNameInfo.Guid))
 					{
 						continue;
@@ -178,6 +190,7 @@ namespace MiiAsset.Editor.Build
 							Tags = groupNameInfo.Tags,
 							TagsAdditional = Array.Empty<string>(),
 							TagsUKey = tagsKey,
+							// SingleFileItems = pathInfo.SingleFileItems,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
@@ -191,6 +204,41 @@ namespace MiiAsset.Editor.Build
 					}
 					//
 					// guidBundleMap[groupNameInfo.Guid] = tagBundle;
+				}
+			}
+
+
+			foreach (var group in singleFileItems.Values.GroupBy(item => item.GetGroupName()))
+			{
+				var groupName = group.Key;
+				var tags = new string[]{
+					groupName,
+				};
+				var tagsKey = ToTagsKey(tags);
+				var items = group.Where(item =>
+				{
+					return false == GuidBundleMap.ContainsKey(item.GetGuid());
+				}).ToArray();
+				if (items.Length > 0)
+				{
+					if (!TagBundleMap.TryGetValue(tagsKey, out var tagBundle))
+					{
+						tagBundle = new TagBundle()
+						{
+							Tags = tags,
+							TagsAdditional = Array.Empty<string>(),
+							TagsUKey = tagsKey,
+							// SingleFileItems = pathInfo.SingleFileItems,
+						};
+						TagBundleMap.Add(tagsKey, tagBundle);
+					}
+
+					foreach (var item in items)
+					{
+						tagBundle.Guids.Add(item.GetGuid());
+						tagBundle.AddressMap.Add(item.GetGuid(), item.key);
+						GuidBundleMap.Add(item.GetGuid(), tagBundle);
+					}
 				}
 			}
 
