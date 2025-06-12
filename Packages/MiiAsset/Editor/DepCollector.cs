@@ -16,6 +16,10 @@ namespace MiiAsset.Editor.Build
 		{
 			return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(item.asset));
 		}
+		public static string GetLoadPath(this AASingleFileItem item)
+		{
+			return AssetDatabase.GetAssetPath(item.asset);
+		}
 	}
 	public class DepCollector
 	{
@@ -24,7 +28,12 @@ namespace MiiAsset.Editor.Build
 		public readonly Dictionary<string, int> TagOrderMap = new();
 		public readonly Dictionary<string, TagBundle> GuidBundleMap = new();
 		public readonly Dictionary<string, TagBundle> TagsNameBundleMap = new();
+		/// <summary>
+		/// 零散文件
+		/// </summary>
 		public readonly Dictionary<string, ExtraAddressInfo> ExtraAddressInfoMap = new();
+		public readonly Dictionary<string, AASingleFileItem> SingleFileMap = new();
+		public readonly Dictionary<string, AASingleFileItem> InvalidSingleFileAddressMap = new();
 
 		protected int TagOrderAcc = 0;
 
@@ -44,7 +53,7 @@ namespace MiiAsset.Editor.Build
 			return tagKey;
 		}
 
-		public readonly Dictionary<string, bool> AddressExistMap = new();
+		public readonly Dictionary<string, string> AddressExistMap = new();
 
 		protected AAPathInfo PathInfo;
 		protected HashSet<string> FilterMap0 = new();
@@ -79,41 +88,71 @@ namespace MiiAsset.Editor.Build
 			// collect sprites in spriteatlas
 			FilterMap0.Clear();
 			CollectSpriteAtlas(FilterMap0, AddExtraAddressInfo);
+			var singleFileItems = pathInfo.SingleFileItems;
+			foreach (var (guid, value) in singleFileItems)
+			{
+				SingleFileMap.Add(value.key, value);
+				var address = value.GetLoadPath();
+				InvalidSingleFileAddressMap.Add(address, value);
+			}
 
 			PathInfo = pathInfo;
 		}
 
-		public bool IsValidAsset(string address)
+		public bool TryGetLoadUri(string address, out string loadUri)
 		{
-			if (AddressExistMap.TryGetValue(address, out var ret))
+			if (AddressExistMap.TryGetValue(address, out loadUri))
 			{
-				return ret;
+				return false == string.IsNullOrEmpty(loadUri);
 			}
 
-			var isValid = IsValidAssetInternal(address);
-			AddressExistMap.Add(address, isValid);
+			var isValid = TryGetLoadUriInternal(address, out loadUri);
+			if (isValid)
+			{
+				AddressExistMap.Add(address, loadUri);
+			}
+			else
+			{
+				AddressExistMap.Add(address, null);
+			}
 			return isValid;
 		}
 
-		protected bool IsValidAssetInternal(string address)
+		protected bool TryGetLoadUriInternal(string address, out string loadUri)
 		{
 			if (FilterMap0.Contains(address))
 			{
+				loadUri = null;
 				return false;
 			}
 
 			var pathInfo = PathInfo;
 			if (!AAPathInfo.IsValidAsset(pathInfo, address))
 			{
+				loadUri = null;
+				return false;
+			}
+
+			if (SingleFileMap.TryGetValue(address, out var singleFileItem))
+			{
+				loadUri = singleFileItem.GetLoadPath();
+				return true;
+			}
+
+			if (InvalidSingleFileAddressMap.TryGetValue(address, out var _))
+			{
+				loadUri = null;
 				return false;
 			}
 
 			var groupInfo = AAPathInfo.ParseGroupName(pathInfo, address, AssetDatabase.AssetPathToGUID(address));
 			if (groupInfo == null)
 			{
+				loadUri = null;
 				return false;
 			}
 
+			loadUri = address;
 			return true;
 		}
 
