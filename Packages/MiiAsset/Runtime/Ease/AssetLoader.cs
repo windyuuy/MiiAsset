@@ -736,5 +736,10 @@ namespace MiiAsset.Runtime
 		{
 			return Consumer.TryGetExtraAddressInfo(address, out extraAddressInfo);
 		}
+		
+		public static bool ExistExtraAddressInfo(string address)
+		{
+			return Consumer.TryGetExtraAddressInfo(address, out var extraAddressInfo);
+		}
 	}
 }
