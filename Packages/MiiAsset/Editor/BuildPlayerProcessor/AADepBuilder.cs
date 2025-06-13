@@ -281,7 +281,7 @@ namespace MiiAsset.Editor.Build
 						hash128 = resultsBundleInfo.Hash,
 						deps = tagBundle.Deps.ToArray(),
 						tags = tagBundle.Tags.Concat(tagBundle.TagsAdditional).ToArray(),
-						entries = tagBundle.GetAssetNames(),
+						entries = tagBundle.GetAssetAddresses(),
 						guids = options.BuildGuids ? tagBundle.Guids.ToArray() : null,
 						IsOffline = tagBundle.IsOffline,
 						size = tagBundle.FileSize,
