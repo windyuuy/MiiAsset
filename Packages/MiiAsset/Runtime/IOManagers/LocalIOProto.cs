@@ -186,5 +186,26 @@ namespace MiiAsset.Runtime.IOManagers
 				uwr.timeout = this.Timeout;
 			}
 		}
+
+		public Task<bool> CleanAllFileCaches()
+		{
+			var succeed = true;
+			var externalDir = this.ExternalDir;
+			var files = Directory.GetFiles(externalDir);
+			foreach (var file in files)
+			{
+				try
+				{
+					File.Delete(file);
+				}
+				catch (Exception e)
+				{
+					succeed = false;
+					MyLogger.LogException(e);
+				}
+			}
+
+			return Task.FromResult(succeed);
+		}
 	}
 }

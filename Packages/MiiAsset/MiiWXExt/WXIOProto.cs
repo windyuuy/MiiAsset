@@ -403,6 +403,13 @@ namespace MiiAsset.Runtime.IOManagers
 				uwr.timeout = this.Timeout;
 			}
 		}
+
+		public Task<bool> CleanAllFileCaches()
+		{
+			var ts = new TaskCompletionSource<bool>();
+			WX.CleanAllFileCache((ret) => { ts.SetResult(ret); });
+			return ts.Task;
+		}
 	}
 }
 #endif

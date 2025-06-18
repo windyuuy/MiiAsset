@@ -212,6 +212,11 @@ namespace MiiAsset.Runtime
 			
 		}
 
+		public void CleanAllCaches()
+		{
+			Debug.Log("编辑器清理缓存");
+		}
+
 		public void Dispose()
 		{
 		}

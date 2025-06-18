@@ -68,5 +68,9 @@ namespace MiiAsset.Runtime
 		public Task<PipelineResult> CleanUpOldVersionFiles();
 		public bool IsAssetBundlesOfAssetLoaded(string address);
 		public void RunDelayedTasks();
+		/// <summary>
+		/// 清理所有缓存
+		/// </summary>
+		public void CleanAllCaches();
 	}
 }

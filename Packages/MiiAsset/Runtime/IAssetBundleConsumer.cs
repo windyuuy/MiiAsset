@@ -164,6 +164,11 @@ namespace MiiAsset.Runtime
 			Provider.RunDelayedTasks();
 		}
 
+		public void CleanAllCaches()
+		{
+			Provider.CleanAllCaches();
+		}
+
 		public void Dispose()
 		{
 			this.Provider.Dispose();

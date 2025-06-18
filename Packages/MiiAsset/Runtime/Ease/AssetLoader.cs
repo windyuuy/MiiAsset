@@ -618,5 +618,10 @@ namespace MiiAsset.Runtime
 			Consumer?.RunDelayedTasks();
 		}
 
+		public static void CleanAllCache()
+		{
+			Consumer?.CleanAllCaches();
+		}
+
 	}
 }
