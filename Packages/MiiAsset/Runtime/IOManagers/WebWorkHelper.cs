@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
 using MiiAsset.Runtime.Adapter;
+using MonoExtLib.AsyncExt;
 using UnityEngine;
 
 namespace MiiAsset.Runtime.IOManagers

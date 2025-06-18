@@ -8,23 +8,28 @@ namespace MiiAsset.Editor.Optimization
 {
 	public class AAPathConfigLoader
 	{
-		public static AAPathInfo LoadConfig(string configPath)
+		public static AAPathInfo LoadConfig(AAPathInfo pathInfo, string configPath)
 		{
 			var aaPathConfig = AssetDatabase.LoadAssetAtPath<AAPathConfig>(configPath);
 			var paths = aaPathConfig.paths.ToList();
 			paths.Sort((p1, p2) => p2.scanRoot.Length - p1.scanRoot.Length);
 			paths.ForEach((item) => { item.pathRegex = new Regex(item.path); });
 
-			var pathInfo = new AAPathInfo();
-			pathInfo.Paths = paths;
-			pathInfo.ExcludePaths = aaPathConfig.excludePaths;
-			pathInfo.ExcludeExtensions = aaPathConfig.excludeExtensions;
-			pathInfo.IsShaderGroupOffline = aaPathConfig.isShaderGroupOffline;
-			pathInfo.IsMyBuiltinShaderGroupOffline = aaPathConfig.isMyBuiltinShaderGroupOffline;
+			pathInfo.Paths.AddRange(paths);
+			pathInfo.ExcludePaths.AddRange(aaPathConfig.excludePaths);
+			pathInfo.ExcludeExtensions.AddRange(aaPathConfig.excludeExtensions);
+			pathInfo.IsShaderGroupOffline |= aaPathConfig.isShaderGroupOffline;
+			pathInfo.IsMyBuiltinShaderGroupOffline |= aaPathConfig.isMyBuiltinShaderGroupOffline;
+			foreach (var singleFile in aaPathConfig.singleFiles)
+			{
+				var path = AssetDatabase.GetAssetPath(singleFile.asset);
+				var guid = AssetDatabase.AssetPathToGUID(path);
+				pathInfo.SingleFileItems.Add(guid, singleFile);
+			}
 			return pathInfo;
 		}
 
-		public static string GetDefaultConfigPath()
+		public static string[] GetDefaultConfigPath()
 		{
 			var guids = AssetDatabase.FindAssets("t:AAPathConfig", new[]
 			{
@@ -36,21 +41,21 @@ namespace MiiAsset.Editor.Optimization
 				return null;
 			}
 
-			var assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);
-			return assetPath;
+			var assetPaths = guids.Select(AssetDatabase.GUIDToAssetPath).ToArray();
+			return assetPaths;
 		}
 
-		public static AAPathConfig LoadDefaultConfig()
-		{
-			var assetPath = GetDefaultConfigPath();
-			var aaPathConfig = AssetDatabase.LoadAssetAtPath<AAPathConfig>(assetPath);
-			return aaPathConfig;
-		}
+		// public static AAPathConfig LoadDefaultConfig()
+		// {
+		// 	var assetPath = GetDefaultConfigPath();
+		// 	var aaPathConfig = AssetDatabase.LoadAssetAtPath<AAPathConfig>(assetPath);
+		// 	return aaPathConfig;
+		// }
 
 		public static AAPathInfo LoadDefaultConfigs()
 		{
-			var assetPath = GetDefaultConfigPath();
-			if (assetPath == null)
+			var assetPaths = GetDefaultConfigPath();
+			if (assetPaths == null)
 			{
 				var defaultAAPathInfo = new AAPathInfo()
 				{
@@ -63,7 +68,12 @@ namespace MiiAsset.Editor.Optimization
 				return defaultAAPathInfo;
 			}
 
-			return LoadConfig(assetPath);
+			var pathInfo = new AAPathInfo();
+			foreach (var assetPath in assetPaths)
+			{
+				LoadConfig(pathInfo, assetPath);
+			}
+			return pathInfo;
 		}
 	}
 }

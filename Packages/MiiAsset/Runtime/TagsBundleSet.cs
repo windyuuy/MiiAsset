@@ -11,6 +11,9 @@ namespace MiiAsset.Runtime
 {
 	public class NotInTagsBundleSetException : Exception
 	{
+		public NotInTagsBundleSetException(string s) : base(s)
+		{
+		}
 	}
 
 	public class TagsBundleSet
@@ -60,7 +63,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogException(new NotInTagsBundleSetException());
+				MyLogger.LogException(new NotInTagsBundleSetException($"{address}"));
 				return default;
 			}
 		}
@@ -70,7 +73,8 @@ namespace MiiAsset.Runtime
 			return AssetProvider.UnLoadAsset(address);
 		}
 
-		public Task LoadScene(string sceneAddress, LoadSceneParameters parameters = new(), AssetLoadStatusGroup loadStatus = null)
+		public Task LoadScene(string sceneAddress, LoadSceneParameters parameters = new(),
+			AssetLoadStatusGroup loadStatus = null)
 		{
 			if (AssetProvider.IsAddressInTags(sceneAddress, Tags))
 			{
@@ -78,7 +82,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogException(new NotInTagsBundleSetException());
+				MyLogger.LogException(new NotInTagsBundleSetException($"{sceneAddress}"));
 				return default;
 			}
 		}

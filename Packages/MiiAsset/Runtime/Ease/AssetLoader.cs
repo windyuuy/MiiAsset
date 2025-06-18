@@ -9,6 +9,7 @@ using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace MiiAsset.Runtime
 {
@@ -46,7 +47,7 @@ namespace MiiAsset.Runtime
 
 		private static void InitDispose()
 		{
-			Application.quitting += AssetLoader.Dispose;
+			Application.quitting += Dispose;
 		}
 
 		public static void Dispose()
@@ -67,7 +68,7 @@ namespace MiiAsset.Runtime
 		{
 			Debug.Assert(config != null, "config != null");
 			SetLoadAssetTimeout(config.LoadTimeout / 1000.0f, config.checkLoadTimeout, config.displayLoadTimeout);
-#if UNITY_EDITOR
+		#if UNITY_EDITOR
 			if (config.loadType == AssetConsumerConfig.LoadType.LoadFromBundle)
 			{
 				Consumer = new BundledAssetProvider();
@@ -80,9 +81,9 @@ namespace MiiAsset.Runtime
 			{
 				throw new ArgumentException($"loadType: {config.loadType}");
 			}
-#else
+		#else
 			Consumer = new BundledAssetProvider();
-#endif
+		#endif
 			return await Consumer.Init(config);
 		}
 		//
@@ -91,19 +92,84 @@ namespace MiiAsset.Runtime
 		// 	Consumer.Init();
 		// }
 
-		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
+		private static void CheckUri(string remoteBaseUri)
 		{
+			if (remoteBaseUri.Contains(":/") && remoteBaseUri.Contains("://") == false)
+			{
+				Debug.LogError($"Uri格式错误: {remoteBaseUri}");
+			}
+		}
+
+		private static TaskCompletionSource<bool> _loadCatalogTaskSource = new TaskCompletionSource<bool>();
+		private static readonly Task<bool> CompletedTask = Task.FromResult(true);
+
+		public static Task<bool> WaitLoadCatalogDone()
+		{
+			if (_loadCatalogTaskSource != null)
+			{
+				return _loadCatalogTaskSource.Task;
+			}
+
+			return CompletedTask;
+		}
+
+		public static async Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
+		{
+			CheckUri(remoteBaseUri);
 			if (!remoteBaseUri.EndsWith("/"))
 			{
 				remoteBaseUri = $"{remoteBaseUri}/";
 			}
 
-			return Consumer.UpdateCatalog(remoteBaseUri);
+			try
+			{
+				var result = await Consumer.UpdateCatalog(remoteBaseUri);
+				try
+				{
+					_loadCatalogTaskSource?.SetResult(true);
+					_loadCatalogTaskSource = null;
+				}
+				catch (Exception exception2)
+				{
+					Debug.LogException(exception2);
+				}
+
+				return result;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+
+				_loadCatalogTaskSource?.SetResult(false);
+				_loadCatalogTaskSource = null;
+				throw;
+			}
 		}
 
-		public static Task<PipelineResult> LoadLocalCatalog()
+		public static async Task<PipelineResult> LoadLocalCatalog()
 		{
-			return Consumer.LoadLocalCatalog();
+			try
+			{
+				var result = await Consumer.LoadLocalCatalog();
+				try
+				{
+					_loadCatalogTaskSource?.SetResult(true);
+					_loadCatalogTaskSource = null;
+				}
+				catch (Exception exception2)
+				{
+					Debug.LogException(exception2);
+				}
+
+				return result;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+				_loadCatalogTaskSource?.SetResult(false);
+				_loadCatalogTaskSource = null;
+				throw;
+			}
 		}
 
 		/// <summary>
@@ -134,6 +200,11 @@ namespace MiiAsset.Runtime
 			return Consumer.AllowTags(tags1);
 		}
 
+		/// <summary>
+		/// 包含一个特殊tag "all", 表示标记所有
+		/// </summary>
+		/// <param name="tags"></param>
+		/// <returns></returns>
 		public static bool AllowTags(params string[] tags)
 		{
 			return Consumer.AllowTags(tags);
@@ -229,7 +300,15 @@ namespace MiiAsset.Runtime
 			return Consumer.GetAddressFromGuid(guid);
 		}
 
-#if !DISABLE_NOREFERCOUNT_API
+		public static void CheckAddress(string address)
+		{
+			if (string.IsNullOrEmpty(address))
+			{
+				MyLogger.Log($"address is null or empty(可能catalog为空,或者检查是否isremote选项不正确)");
+			}
+		}
+
+	#if !DISABLE_NOREFERCOUNT_API
 		/// <summary>
 		/// 无视bundle引用计数, 直接加载资源
 		/// </summary>
@@ -240,6 +319,7 @@ namespace MiiAsset.Runtime
 		public static Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus = null)
 			where T : UnityEngine.Object
 		{
+			CheckAddress(address);
 			return Consumer.LoadAssetJust<T>(address, loadStatus);
 		}
 
@@ -250,6 +330,7 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task UnloadAssetJust(string address)
 		{
+			CheckAddress(address);
 			return Consumer.UnloadAssetJust(address);
 		}
 
@@ -260,8 +341,10 @@ namespace MiiAsset.Runtime
 		/// <param name="loadStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		public static Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus =
+			null) where T : UnityEngine.Object
 		{
+			CheckAddress(address);
 			return Consumer.LoadAsset<T>(address, loadStatus);
 		}
 
@@ -272,6 +355,7 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task UnLoadAsset(string address)
 		{
+			CheckAddress(address);
 			return Consumer.UnLoadAsset(address);
 		}
 
@@ -285,6 +369,7 @@ namespace MiiAsset.Runtime
 		public static Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters = new(),
 			AssetLoadStatusGroup loadStatus = null)
 		{
+			CheckAddress(sceneAddress);
 			return Consumer.LoadScene(sceneAddress, parameters, loadStatus);
 		}
 
@@ -296,9 +381,10 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task UnLoadScene(string sceneAddress, UnloadSceneOptions options = UnloadSceneOptions.None)
 		{
+			CheckAddress(sceneAddress);
 			return Consumer.UnLoadScene(sceneAddress, options);
 		}
-#endif
+	#endif
 
 		private static bool _enableTimeout = true;
 		private static bool _displayTimeout = true;
@@ -317,11 +403,12 @@ namespace MiiAsset.Runtime
 			_displayTimeout = displayTimeout;
 		}
 
-		private static readonly PooledLinkedList<(float timeEnd, string address)> TimeoutMap = new PooledLinkedList<(float, string)>();
+		private static readonly PooledLinkedList<(float timeEnd, string address)> TimeoutMap =
+			new PooledLinkedList<(float, string)>();
 
 		public static int CheckTimeout()
 		{
-			var time = UnityEngine.Time.time;
+			var time = Time.time;
 			var timeoutCount = 0;
 			foreach (var node in TimeoutMap.ToEnumerable())
 			{
@@ -355,7 +442,8 @@ namespace MiiAsset.Runtime
 		/// <param name="loadStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		public static Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus = null)
+			where T : Object
 		{
 			if (_enableTimeout)
 			{
@@ -366,15 +454,20 @@ namespace MiiAsset.Runtime
 				return LoadAssetByReferWithInternal<T>(address, loadStatus);
 			}
 		}
-		public static Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+
+		public static Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus = null)
+			where T : Object
 		{
+			CheckAddress(address);
 			return Consumer.LoadAssetByReferSync<T>(address, loadStatus);
 		}
 
-		private static async Task<T> LoadAssetByReferWithInternal<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		private static async Task<T> LoadAssetByReferWithInternal<T>(string address,
+			AssetLoadStatusGroup loadStatus = null) where T : Object
 		{
 			try
 			{
+				CheckAddress(address);
 				return await Consumer.LoadAssetByRefer<T>(address, loadStatus);
 			}
 			catch (Exception exception)
@@ -385,17 +478,19 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		private static async Task<T> LoadAssetByReferWithTimeout<T>(string address, AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		private static async Task<T> LoadAssetByReferWithTimeout<T>(string address,
+			AssetLoadStatusGroup loadStatus = null) where T : Object
 		{
-			var timeStart = UnityEngine.Time.time;
+			var timeStart = Time.time;
 			var timeEnd = timeStart + _timeout;
 			var node = TimeoutMap.AddLast((timeEnd, address));
 			try
 			{
+				CheckAddress(address);
 				var ret = await Consumer.LoadAssetByRefer<T>(address, loadStatus);
 				if (!TimeoutMap.Remove(node))
 				{
-					var time2 = UnityEngine.Time.time;
+					var time2 = Time.time;
 					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {address},TimeCost: {time2 - timeStart}");
 				}
 
@@ -418,7 +513,8 @@ namespace MiiAsset.Runtime
 		/// <param name="createStatus"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public static AsyncLoadingStatus<T> LoadAssetByReferWrapped<T>(string address, bool createStatus = false) where T : UnityEngine.Object
+		public static AsyncLoadingStatus<T> LoadAssetByReferWrapped<T>(string address, bool createStatus = false)
+			where T : Object
 		{
 			AssetLoadStatusGroup loadStatus = createStatus ? new AssetLoadStatusGroup() : null;
 			var task = LoadAssetByRefer<T>(address, loadStatus);
@@ -446,11 +542,13 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		private static async Task<Scene> LoadSceneByReferInternal(string sceneAddress, LoadSceneParameters parameters = new(),
+		private static async Task<Scene> LoadSceneByReferInternal(string sceneAddress,
+			LoadSceneParameters parameters = new(),
 			AssetLoadStatusGroup loadStatus = null)
 		{
 			try
 			{
+				CheckAddress(sceneAddress);
 				return await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 			}
 			catch (Exception exception)
@@ -461,18 +559,20 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		private static async Task<Scene> LoadSceneByReferWithTimeout(string sceneAddress, LoadSceneParameters parameters = new(),
+		private static async Task<Scene> LoadSceneByReferWithTimeout(string sceneAddress,
+			LoadSceneParameters parameters = new(),
 			AssetLoadStatusGroup loadStatus = null)
 		{
-			var timeStart = UnityEngine.Time.time;
+			var timeStart = Time.time;
 			var timeEnd = timeStart + _timeout;
 			var node = TimeoutMap.AddLast((timeEnd, sceneAddress));
 			try
 			{
+				CheckAddress(sceneAddress);
 				var ret = await Consumer.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 				if (!TimeoutMap.Remove(node))
 				{
-					var time2 = UnityEngine.Time.time;
+					var time2 = Time.time;
 					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {sceneAddress},TimeCost: {time2 - timeStart}");
 				}
 
@@ -534,6 +634,7 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task UnLoadAssetByRefer(string address)
 		{
+			CheckAddress(address);
 			return Consumer.UnLoadAssetByRefer(address);
 		}
 
@@ -545,6 +646,7 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task UnLoadSceneByRefer(string sceneAddress, UnloadSceneOptions options = UnloadSceneOptions.None)
 		{
+			CheckAddress(sceneAddress);
 			return Consumer.UnLoadSceneByRefer(sceneAddress, options);
 		}
 
@@ -566,12 +668,18 @@ namespace MiiAsset.Runtime
 
 		public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key, bool createStatus = false)
 		{
+			return InstantiateAsync(key, null, createStatus);
+		}
+
+		public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key, Transform parent,
+			bool createStatus = false)
+		{
 			var status = LoadAssetByReferWrapped<GameObject>(key, createStatus);
 
 			async Task<GameObject> Load()
 			{
 				var asset = await status.Task;
-				var obj = GameObject.Instantiate(asset);
+				var obj = Object.Instantiate(asset, parent);
 				return obj;
 			}
 
@@ -582,13 +690,13 @@ namespace MiiAsset.Runtime
 
 		public static bool ReleaseInstance(string key, GameObject gameObject)
 		{
-#if UNITY_EDITOR
+		#if UNITY_EDITOR
 			if (!Application.isPlaying)
 			{
 				GameObject.DestroyImmediate(gameObject);
 			}
 			else
-#endif
+		#endif
 			{
 				GameObject.Destroy(gameObject);
 			}
@@ -599,12 +707,18 @@ namespace MiiAsset.Runtime
 
 		public static bool ExistAddress(string address)
 		{
-#if UNITY_EDITOR
+		#if UNITY_EDITOR
 			if (!IsValid())
 			{
 				return false;
 			}
-#endif
+		#endif
+			CheckAddress(address);
+			if (string.IsNullOrEmpty(address))
+			{
+				return false;
+			}
+
 			return Consumer.ExistAddress(address);
 		}
 
@@ -612,12 +726,21 @@ namespace MiiAsset.Runtime
 		{
 			return Consumer != null;
 		}
-		
+
 		public static void RunDelayedTasks()
 		{
 			Consumer?.RunDelayedTasks();
 		}
 
+		public static bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return Consumer.TryGetExtraAddressInfo(address, out extraAddressInfo);
+		}
+		
+		public static bool ExistExtraAddressInfo(string address)
+		{
+			return Consumer.TryGetExtraAddressInfo(address, out var extraAddressInfo);
+		}
 		public static void CleanAllCache()
 		{
 			Consumer?.CleanAllCaches();

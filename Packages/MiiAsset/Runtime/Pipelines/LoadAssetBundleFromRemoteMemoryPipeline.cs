@@ -46,7 +46,7 @@ namespace MiiAsset.Runtime.Pipelines
 					{
 						IsOk = false,
 						Code = 0,
-						Msg = "invalid bundle data",
+						Msg = $"invalid bundle data: {RemoteUri}",
 						ErrorType = PipelineErrorType.DataIncorrect,
 					};
 				}
@@ -66,10 +66,12 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public PipelineProgress GetProgress()
 		{
-			return DownloadToMemoryPipeline.GetProgress().Combine(new PipelineProgress().SetDownloadedProgress(Result.IsOk));
+			return DownloadToMemoryPipeline.GetProgress()
+				.Combine(new PipelineProgress().SetDownloadedProgress(Result.IsOk));
 		}
 
 		public AssetBundle AssetBundle { get; set; }
+
 		public IDisposable GetDisposable()
 		{
 			return null;

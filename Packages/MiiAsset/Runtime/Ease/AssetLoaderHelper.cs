@@ -21,7 +21,7 @@ namespace MiiAsset.Runtime
 			while (true)
 			{
 				yield return null;
-				yield return null;
+				yield return new WaitForSeconds(15);
 				yield return new WaitForEndOfFrame();
 				AssetLoader.RunDelayedTasks();
 			}

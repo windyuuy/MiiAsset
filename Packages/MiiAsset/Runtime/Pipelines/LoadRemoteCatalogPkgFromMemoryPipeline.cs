@@ -32,7 +32,8 @@ namespace MiiAsset.Runtime.Pipelines
 
 			if (Result.IsOk)
 			{
-				using var loadPipeline = new LoadCatalogPkgFromMemoryPipeline().Init(downloadPipeline.Bytes);
+				using var loadPipeline =
+					new LoadCatalogPkgFromMemoryPipeline().Init(RemoteCatalogUri, downloadPipeline.Bytes);
 				Result = await loadPipeline.Run();
 				Text = loadPipeline.Text;
 

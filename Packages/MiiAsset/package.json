@@ -1,10 +1,11 @@
 ﻿{
-  "name": "windy.miiasset",
+  "name": "windy.miiasset.core",
   "displayName": "MiiAsset",
-  "version": "1.0.0",
+  "version": "1.0.7",
   "unity": "2019.4",
   "description": "Unity Resource and Code hot update",
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "1.21.24"
+    "com.unity.scriptablebuildpipeline": "1.21.24",
+    "windy.gamelibs.all": "1.0.5"
   }
 }

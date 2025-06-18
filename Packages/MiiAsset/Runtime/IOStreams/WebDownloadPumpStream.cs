@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
+using MonoExtLib.AsyncExt;
 using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime.IOStreams
@@ -89,7 +89,7 @@ namespace MiiAsset.Runtime.IOStreams
 						await op.GetTask();
 					}
 
-					var code = Uwr.responseCode;
+					var code = (int)Uwr.responseCode;
 					var msg = Uwr.error;
 
 					var evt = new StreamCtrlEvent()
@@ -103,7 +103,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 					// if (!evt.IsOk)
 					// {
-					// 	UnityEngine.MyLogger.LogError($"download-failed: {Uwr.responseCode}, {Uwr.error}");
+					// 	UnityEngine.MyLogger.LogError($"download-failed: {(int)Uwr.responseCode}, {Uwr.error}");
 					// }
 
 					Result.Code = (int)code;

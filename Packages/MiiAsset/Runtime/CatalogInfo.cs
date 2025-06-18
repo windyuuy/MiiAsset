@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using MiiAsset.Runtime.Adapter;
 
@@ -13,6 +12,7 @@ namespace MiiAsset.Runtime
 
 		public Dictionary<string, HashSet<string>> BundleFlatRelationMap = new();
 		public Dictionary<string, HashSet<string>> TagFlatBundlesMap = new();
+		public Dictionary<string, ExtraAddressInfo> ExtraAddressInfoMap = new();
 
 		/// <summary>
 		/// 合并后的bundle加载清单
@@ -22,7 +22,7 @@ namespace MiiAsset.Runtime
 		public Dictionary<string, IResourceLoadSource> InternalBundles = new();
 
 		// record bundles cleaned before update
-		public List<string> BundlesToClean = new();
+		public readonly List<string> BundlesToClean = new();
 
 		public void GetTagsDependBundles(IEnumerable<string> tags, HashSet<string> depBundles)
 		{
@@ -83,21 +83,31 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		void ParseDeps(AssetBundleInfo bundleInfo, HashSet<string> deps)
+		void ParseDeps(AssetBundleInfo bundleInfo, HashSet<string> deps, PipelineResult result)
 		{
 			var bundleInfoDeps = bundleInfo.deps;
-			foreach (var dep in bundleInfoDeps.Append(bundleInfo.fileName))
+			var bundleInfoDeps2 = bundleInfoDeps.Append(bundleInfo.fileName);
+			foreach (var dep in bundleInfoDeps2)
 			{
-				if (!deps.Contains(dep))
+				if (deps.Add(dep))
 				{
-					deps.Add(dep);
-					var depAssetBundleInfo = this.NameBundleMap[dep];
-					ParseDeps(depAssetBundleInfo, deps);
+					if (this.NameBundleMap.TryGetValue(dep, out var depAssetBundleInfo))
+					{
+						ParseDeps(depAssetBundleInfo, deps, result);
+					}
+					else
+					{
+						var exception = new KeyNotFoundException($"AssetBundle-Dependence-Missing: {dep}");
+						result.Exception ??= exception;
+						result.IsOk = false;
+						result.ErrorType = PipelineErrorType.CatalogIncorrect;
+						MyLogger.LogException(exception);
+					}
 				}
 			}
 		}
 
-		public void LoadCatalogInfo(CatalogConfig catalog)
+		public void LoadCatalogInfo(CatalogConfig catalog, PipelineResult result)
 		{
 			foreach (var bundleInfo in catalog.bundleInfos)
 			{
@@ -127,7 +137,7 @@ namespace MiiAsset.Runtime
 
 				if (bundleInfo.deps.Length > 0)
 				{
-					ParseDeps(bundleInfo, deps);
+					ParseDeps(bundleInfo, deps, result);
 				}
 			}
 
@@ -156,6 +166,20 @@ namespace MiiAsset.Runtime
 					}
 				}
 			}
+
+			foreach (var extraAddressInfo in catalog.extraAddressInfos)
+			{
+				ExtraAddressInfoMap.Add(extraAddressInfo.address, extraAddressInfo);
+				if (!string.IsNullOrEmpty(extraAddressInfo.guid))
+				{
+					GuidAddressMap.Add(extraAddressInfo.guid, extraAddressInfo.address);
+				}
+			}
+		}
+
+		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return ExtraAddressInfoMap.TryGetValue(address, out extraAddressInfo);
 		}
 
 		public AssetBundleInfo GetAssetBundleInfo(string bundleName)
@@ -166,7 +190,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogError($"invalid bundle not exist: {bundleName}");
+				MyLogger.LogError($"cannot GetAssetBundleInfo, invalid bundle, not exist: {bundleName}");
 				return null;
 			}
 		}
@@ -179,7 +203,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogError($"invalid bundle not exist: {bundleName}");
+				MyLogger.LogError($"cannot GetFileSize, invalid bundle, not exist: {bundleName}");
 				return -1;
 			}
 		}
@@ -203,8 +227,8 @@ namespace MiiAsset.Runtime
 		{
 			return this.AddressBundleMap.ContainsKey(address);
 		}
-		
-		
+
+
 		public bool ExistGuid(string address)
 		{
 			return this.GuidAddressMap.ContainsKey(address);

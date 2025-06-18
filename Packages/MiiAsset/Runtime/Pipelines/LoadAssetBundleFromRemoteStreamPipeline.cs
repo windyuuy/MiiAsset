@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using MiiAsset.Runtime.IOStreams;
 using UnityEngine;
 
 namespace MiiAsset.Runtime.Pipelines
@@ -8,7 +7,7 @@ namespace MiiAsset.Runtime.Pipelines
 	public class LoadAssetBundleFromRemoteStreamPipeline : ILoadAssetBundlePipeline
 	{
 		public IDownloadPipeline DownloadPipeline;
-		protected LoadAssetBundlePipeline LoadAssetBundlePipeline;
+		protected LoadAssetBundlePipelineFromLocalStream LoadAssetBundlePipeline;
 
 		protected string RemoteUri;
 		protected string LocalUri;
@@ -43,10 +42,11 @@ namespace MiiAsset.Runtime.Pipelines
 		public void Build()
 		{
 			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false);
-			LoadAssetBundlePipeline = new LoadAssetBundlePipeline().Init(LocalUri, Crc);
+			LoadAssetBundlePipeline = new LoadAssetBundlePipelineFromLocalStream().Init(LocalUri, Crc);
 		}
 
 		public AssetBundle AssetBundle => LoadAssetBundlePipeline.AssetBundle;
+
 		public IDisposable GetDisposable()
 		{
 			return LoadAssetBundlePipeline.GetDisposable();

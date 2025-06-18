@@ -40,8 +40,27 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 
 		public string Address => guid != null ? AssetLoader.GetAddressFromGuid(guid) : null;
 		public object RuntimeKey => Address ?? guid;
+		public string DisplayInfo => $"Address: {Address}, Guid: {AssetGUID}";
 
+	#if UNITY_EDITOR
+		public Object RawAsset
+		{
+			get
+			{
+				if (asset != null)
+				{
+					return asset;
+				}
+				else
+				{
+					asset = AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid));
+					return asset;
+				}
+			}
+		}
+	#else
 		public Object RawAsset => asset;
+	#endif
 
 		public bool RuntimeKeyIsValid()
 		{
@@ -51,14 +70,34 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		public bool IsValid()
 		{
 			return
-#if UNITY_EDITOR
+			#if UNITY_EDITOR
 				AssetLoader.IsValid() &&
-#endif
-				(RawAsset != null || AssetLoader.ExistAddress(Address));
+			#endif
+				(!string.IsNullOrEmpty(Address)) &&
+				(
+				#if UNITY_EDITOR
+					RawAsset != null &&
+				#endif
+					AssetLoader.ExistAddress(Address)
+				);
 		}
 
-#if UNITY_EDITOR
-		public Object EditorAsset => asset == null ? AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid)) : asset;
+		public bool IsValidOrExtra()
+		{
+			if (AssetLoader.ExistExtraAddressInfo(this.Address))
+			{
+				return true;
+			}
+			else
+			{
+				return this.IsValid();
+			}
+		}
+		
+	#if UNITY_EDITOR
+		public Object EditorAsset => asset == null
+			? AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid))
+			: asset;
 
 		public bool ValidateAsset(object o)
 		{
@@ -98,9 +137,9 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		{
 			return true;
 		}
-#endif
+	#endif
 
-#if !DISABLE_NOREFERCOUNT_API
+	#if !DISABLE_NOREFERCOUNT_API
 		public Task<T> Load<T>(AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			if (Address == null)
@@ -135,7 +174,7 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		{
 			return AssetLoader.UnLoadScene(Address, options);
 		}
-#endif
+	#endif
 	}
 
 	[Serializable]
@@ -152,12 +191,12 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 
 		public TObject Asset => asset as TObject;
 
-#if !DISABLE_NOREFERCOUNT_API
+	#if !DISABLE_NOREFERCOUNT_API
 		public Task<TObject> Load(AssetLoadStatusGroup loadStatus = null)
 		{
 			return AssetLoader.LoadAsset<TObject>(Address, loadStatus);
 		}
-#endif
+	#endif
 	}
 
 	[Serializable]

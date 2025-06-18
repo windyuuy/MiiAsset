@@ -5,14 +5,14 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
 using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
-using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
+using MonoExtLib.AsyncExt;
 
 #if UNITY_WEBGL && SUPPORT_WECHATGAME
+using Lang.Encoding;
 using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
@@ -46,6 +46,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
 #if UNITY_EDITOR
+
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 #else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
@@ -57,7 +58,8 @@ namespace MiiAsset.Runtime.IOManagers
 			this.CatalogName = options.CatalogName;
 			this.Timeout = options.Timeout;
 
-			MyLogger.Log($"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
+			MyLogger.Log(
+				$"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
 			FileSystemManager = WX.GetFileSystemManager();
 
@@ -160,6 +162,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				filePath = uri,
@@ -174,14 +177,18 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 
 		protected Dictionary<string, bool> BundleExistMap;
+		protected bool IsInitedBundleExistMap = false;
 
 		protected void InitBundleExistMap()
 		{
-			if (BundleExistMap == null)
+			if (!IsInitedBundleExistMap)
 			{
+				IsInitedBundleExistMap = true;
 				BundleExistMap = new();
 				var files1 = FileSystemManager.ReaddirSync(CacheDir);
-				var files2 = ExistsDir(InternalDir) ? FileSystemManager.ReaddirSync(InternalDir) : Array.Empty<string>();
+				var files2 = ExistsDir(InternalDir)
+					? FileSystemManager.ReaddirSync(InternalDir)
+					: Array.Empty<string>();
 				foreach (var file in files1.Concat(files2))
 				{
 					var fileName = Path.GetFileName(file);
@@ -198,6 +205,8 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public bool EnsureBundle(string bundleName)
 		{
+			InitBundleExistMap();
+			// Debug.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
 			if (BundleExistMap.TryGetValue(bundleName, out var exist))
 			{
 				return exist;
@@ -210,7 +219,7 @@ namespace MiiAsset.Runtime.IOManagers
 					BundleExistMap.Add(bundleName, true);
 				}
 
-				return exist;
+				return false;
 			}
 		}
 
@@ -242,6 +251,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				filePath = uri,
@@ -258,6 +268,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("write-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				data = bytes,
@@ -310,7 +321,12 @@ namespace MiiAsset.Runtime.IOManagers
 						}
 					}
 				},
-				fail = (resp) => { ts.SetException(new IOException(resp.GetExceptionDesc("read catalog failed"))); },
+				fail = (resp) =>
+				{
+					var ioException = new IOException(resp.GetExceptionDesc("read catalog failed"));
+					MyLogger.LogException(ioException);
+					ts.SetException(ioException);
+				},
 				entries = "all",
 				filePath = uri,
 				encoding = "utf-8",
@@ -328,7 +344,7 @@ namespace MiiAsset.Runtime.IOManagers
 			var isOk = uwr.result == UnityWebRequest.Result.Success;
 			if (!isOk)
 			{
-				MyLogger.Log($"EnsureStreamingAssets-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
+				MyLogger.Log($"EnsureStreamingAssets-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
 			}
 
 			var maxTimes = 100;
@@ -359,7 +375,7 @@ namespace MiiAsset.Runtime.IOManagers
 				var isOk = uwr.result == UnityWebRequest.Result.Success;
 				if (!isOk)
 				{
-					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {uwr.responseCode}, {uwr.error}");
+					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
 				}
 				else
 				{

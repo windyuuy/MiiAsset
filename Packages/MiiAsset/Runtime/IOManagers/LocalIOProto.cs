@@ -22,11 +22,11 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
-#if UNITY_EDITOR
+		#if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
-#else
-			this.InternalDir = Application.dataPath + "/" + options.InternalBaseUri;
-#endif
+		#else
+			this.InternalDir = Application.streamingAssetsPath + "/" + options.InternalBaseUri;
+		#endif
 			var persistentDataPath = Application.persistentDataPath;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = persistentDataPath + "/" + options.ExternalBaseUri;
@@ -94,7 +94,12 @@ namespace MiiAsset.Runtime.IOManagers
 			var entry = zipArchive.GetEntry("catalog.json");
 			Debug.Assert(entry != null, "entry!=null");
 			using var streamReader = new StreamReader(entry.Open());
+		#if UNITY_WEBGL
+			// ReSharper disable once MethodHasAsyncOverload
+			var text = streamReader.ReadToEnd();
+		#else
 			var text = await streamReader.ReadToEndAsync();
+		#endif
 			return text;
 		}
 
@@ -125,11 +130,11 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public bool ExistsBundle(string bundleName)
 		{
-#if UNITY_ANDROID
+		#if UNITY_ANDROID
 			return File.Exists(CacheDir + bundleName);
-#else
+		#else
 			return File.Exists(CacheDir + bundleName) || File.Exists(InternalDir + bundleName);
-#endif
+		#endif
 		}
 
 		public bool EnsureBundle(string bundleName)

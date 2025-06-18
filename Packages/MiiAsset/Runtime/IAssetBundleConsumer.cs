@@ -129,7 +129,8 @@ namespace MiiAsset.Runtime
 			return Provider.UnLoadAssetByRefer(address);
 		}
 
-		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters,
+			AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadScene(sceneAddress, parameters, loadStatus);
 		}
@@ -139,7 +140,8 @@ namespace MiiAsset.Runtime
 			return Provider.UnLoadScene(sceneAddress, options);
 		}
 
-		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters, AssetLoadStatusGroup loadStatus)
+		public Task<Scene> LoadSceneByRefer(string sceneAddress, LoadSceneParameters parameters,
+			AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadSceneByRefer(sceneAddress, parameters, loadStatus);
 		}
@@ -162,6 +164,11 @@ namespace MiiAsset.Runtime
 		public void RunDelayedTasks()
 		{
 			Provider.RunDelayedTasks();
+		}
+
+		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return Provider.TryGetExtraAddressInfo(address, out extraAddressInfo);
 		}
 
 		public void CleanAllCaches()

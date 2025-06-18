@@ -65,7 +65,7 @@ namespace MiiAsset.Runtime
         public static bool LoadInEditor(out AssetConsumerConfig config)
         {
             var configGuids =
-                UnityEditor.AssetDatabase.FindAssets("t:AssetConsumerConfig", new[] { "Assets", "Packages/windy.miiasset" });
+                UnityEditor.AssetDatabase.FindAssets("t:AssetConsumerConfig", new[] { "Assets", "Packages/windy.miiasset.core" });
             if (configGuids.Length > 0)
             {
                 var configGuid = configGuids[0];

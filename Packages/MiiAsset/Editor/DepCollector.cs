@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using MiiAsset.Runtime;
 using UnityEditor;
@@ -9,6 +10,17 @@ using UnityEngine.U2D;
 
 namespace MiiAsset.Editor.Build
 {
+	public static class AASingleFileItemExt
+	{
+		public static string GetGuid(this AASingleFileItem item)
+		{
+			return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(item.asset));
+		}
+		public static string GetLoadPath(this AASingleFileItem item)
+		{
+			return AssetDatabase.GetAssetPath(item.asset);
+		}
+	}
 	public class DepCollector
 	{
 		// collect tag bundles
@@ -16,6 +28,12 @@ namespace MiiAsset.Editor.Build
 		public readonly Dictionary<string, int> TagOrderMap = new();
 		public readonly Dictionary<string, TagBundle> GuidBundleMap = new();
 		public readonly Dictionary<string, TagBundle> TagsNameBundleMap = new();
+		/// <summary>
+		/// 零散文件
+		/// </summary>
+		public readonly Dictionary<string, ExtraAddressInfo> ExtraAddressInfoMap = new();
+		public readonly Dictionary<string, AASingleFileItem> SingleFileMap = new();
+		public readonly Dictionary<string, AASingleFileItem> InvalidSingleFileAddressMap = new();
 
 		protected int TagOrderAcc = 0;
 
@@ -35,10 +53,23 @@ namespace MiiAsset.Editor.Build
 			return tagKey;
 		}
 
-		public readonly Dictionary<string, bool> AddressExistMap = new();
+		public readonly Dictionary<string, string> AddressExistMap = new();
 
 		protected AAPathInfo PathInfo;
 		protected HashSet<string> FilterMap0 = new();
+
+		protected void AddExtraAddressInfo(string address, string atlasAddress)
+		{
+			var extraAddressInfo = new ExtraAddressInfo
+			{
+				loadType = AddressLoadType.AtlasSprite,
+				address = address,
+				guid = AssetDatabase.AssetPathToGUID(address),
+				sourceAddress = atlasAddress,
+				key = Path.GetFileNameWithoutExtension(address),
+			};
+			ExtraAddressInfoMap.Add(address, extraAddressInfo);
+		}
 
 		public void CollectValidAssets(AAPathInfo pathInfo)
 		{
@@ -56,56 +87,90 @@ namespace MiiAsset.Editor.Build
 			Reset();
 			// collect sprites in spriteatlas
 			FilterMap0.Clear();
-			CollectSpriteAtlas(FilterMap0);
+			CollectSpriteAtlas(FilterMap0, AddExtraAddressInfo);
+			var singleFileItems = pathInfo.SingleFileItems;
+			foreach (var (guid, value) in singleFileItems)
+			{
+				SingleFileMap.Add(value.key, value);
+				var address = value.GetLoadPath();
+				InvalidSingleFileAddressMap.Add(address, value);
+			}
 
 			PathInfo = pathInfo;
 		}
 
-		public bool IsValidAsset(string address)
+		public bool TryGetLoadUri(string address, out string loadUri)
 		{
-			if (AddressExistMap.TryGetValue(address, out var ret))
+			if (AddressExistMap.TryGetValue(address, out loadUri))
 			{
-				return ret;
+				return false == string.IsNullOrEmpty(loadUri);
 			}
 
-			var isValid = IsValidAssetInternal(address);
-			AddressExistMap.Add(address, isValid);
+			var isValid = TryGetLoadUriInternal(address, out loadUri);
+			if (isValid)
+			{
+				AddressExistMap.Add(address, loadUri);
+			}
+			else
+			{
+				AddressExistMap.Add(address, null);
+			}
 			return isValid;
 		}
 
-		protected bool IsValidAssetInternal(string address)
+		protected bool TryGetLoadUriInternal(string address, out string loadUri)
 		{
 			if (FilterMap0.Contains(address))
 			{
+				loadUri = null;
 				return false;
 			}
 
 			var pathInfo = PathInfo;
 			if (!AAPathInfo.IsValidAsset(pathInfo, address))
 			{
+				loadUri = null;
+				return false;
+			}
+
+			if (SingleFileMap.TryGetValue(address, out var singleFileItem))
+			{
+				loadUri = singleFileItem.GetLoadPath();
+				return true;
+			}
+
+			if (InvalidSingleFileAddressMap.TryGetValue(address, out var _))
+			{
+				loadUri = null;
 				return false;
 			}
 
 			var groupInfo = AAPathInfo.ParseGroupName(pathInfo, address, AssetDatabase.AssetPathToGUID(address));
 			if (groupInfo == null)
 			{
+				loadUri = null;
 				return false;
 			}
 
+			loadUri = address;
 			return true;
 		}
 
-		void CollectSpriteAtlas(HashSet<string> filterMap0)
+		void CollectSpriteAtlas(HashSet<string> filterMap0, Action<string, string> handle)
 		{
 			var guids = AssetDatabase.FindAssets("t:spriteatlas", new string[] { "Assets" });
 			foreach (var guid in guids)
 			{
+				var atlasAddress = AssetDatabase.GUIDToAssetPath(guid);
 				var spriteatlas =
-					AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AssetDatabase.GUIDToAssetPath(guid));
+					AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasAddress);
 				var objs = spriteatlas.GetPackables();
 				foreach (var o in objs)
 				{
-					filterMap0.Add(AssetDatabase.GetAssetPath(o));
+					var spriteAddress = AssetDatabase.GetAssetPath(o);
+					filterMap0.Add(spriteAddress);
+
+					handle(spriteAddress, atlasAddress);
 				}
 			}
 		}
@@ -115,8 +180,9 @@ namespace MiiAsset.Editor.Build
 			Reset();
 
 			// collect sprites in spriteatlas
+			var singleFileItems = pathInfo.SingleFileItems;
 			var filterMap = new HashSet<string>();
-			CollectSpriteAtlas(filterMap);
+			CollectSpriteAtlas(filterMap, AddExtraAddressInfo);
 
 			foreach (var scanInfo in pathInfo.GetScanRootInfos(true))
 			{
@@ -138,6 +204,10 @@ namespace MiiAsset.Editor.Build
 					.Where(item => item != null);
 				foreach (var groupNameInfo in validGroupNameInfo)
 				{
+					if (singleFileItems.ContainsKey(groupNameInfo.Guid))
+					{
+						continue;
+					}
 					if (GuidBundleMap.ContainsKey(groupNameInfo.Guid))
 					{
 						continue;
@@ -159,6 +229,7 @@ namespace MiiAsset.Editor.Build
 							Tags = groupNameInfo.Tags,
 							TagsAdditional = Array.Empty<string>(),
 							TagsUKey = tagsKey,
+							// SingleFileItems = pathInfo.SingleFileItems,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
@@ -175,6 +246,41 @@ namespace MiiAsset.Editor.Build
 				}
 			}
 
+
+			foreach (var group in singleFileItems.Values.GroupBy(item => item.GetGroupName()))
+			{
+				var groupName = group.Key;
+				var tags = new string[]{
+					groupName,
+				};
+				var tagsKey = ToTagsKey(tags);
+				var items = group.Where(item =>
+				{
+					return false == GuidBundleMap.ContainsKey(item.GetGuid());
+				}).ToArray();
+				if (items.Length > 0)
+				{
+					if (!TagBundleMap.TryGetValue(tagsKey, out var tagBundle))
+					{
+						tagBundle = new TagBundle()
+						{
+							Tags = tags,
+							TagsAdditional = Array.Empty<string>(),
+							TagsUKey = tagsKey,
+							// SingleFileItems = pathInfo.SingleFileItems,
+						};
+						TagBundleMap.Add(tagsKey, tagBundle);
+					}
+
+					foreach (var item in items)
+					{
+						tagBundle.Guids.Add(item.GetGuid());
+						tagBundle.AddressMap.Add(item.GetGuid(), item.key);
+						GuidBundleMap.Add(item.GetGuid(), tagBundle);
+					}
+				}
+			}
+
 			return;
 		}
 
@@ -185,6 +291,7 @@ namespace MiiAsset.Editor.Build
 			GuidBundleMap.Clear();
 			TagsNameBundleMap.Clear();
 			TagOrderAcc = 0;
+			ExtraAddressInfoMap.Clear();
 		}
 	}
 }

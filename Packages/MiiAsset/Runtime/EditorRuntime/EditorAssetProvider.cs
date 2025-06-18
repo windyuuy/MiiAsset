@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using lang.time;
 using MiiAsset.Editor.Build;
 using MiiAsset.Editor.Optimization;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Status;
+using MonoExtLib.AsyncExt;
 using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -77,14 +77,14 @@ namespace MiiAsset.Runtime
 			return true;
 		}
 
-		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
+		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
-			if (!CheckPathAndTags<T>(address))
+			if (!TryGetLoadUriWithKeyAndTags<T>(address, out var loadUri))
 			{
 				return Task.FromResult<T>(default);
 			}
 
-			var obj = AssetDatabase.LoadAssetAtPath(address, typeof(T));
+			var obj = AssetDatabase.LoadAssetAtPath(loadUri, typeof(T));
 			if (obj is T data)
 			{
 				loadStatus?.Add(new AssetDatabaseOpStatus(true));
@@ -97,17 +97,23 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		private bool CheckPathAndTags<T>(string address)
+		/// <summary>
+		/// 检查key和标签, 返回加载路径
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="address"></param>
+		/// <returns></returns>
+		private bool TryGetLoadUriWithKeyAndTags<T>(string address, out string loadUri)
 		{
 			// var groupInfo = AAPathInfo.ParseGroupName(PathInfo, address, AssetDatabase.AssetPathToGUID(address));
 			// if (groupInfo == null)
 			// {
 			// 	return false;
 			// }
-			var b1 = this.DepCollector.IsValidAsset(address);
+			var b1 = this.DepCollector.TryGetLoadUri(address, out loadUri);
 			if (!b1)
 			{
-				MyLogger.LogError($"asset not exist in any bundle1: {address}");
+				MyLogger.LogError($"asset key not exist in any bundle1: {address}");
 				return false;
 			}
 
@@ -119,7 +125,7 @@ namespace MiiAsset.Runtime
 			return Task.CompletedTask;
 		}
 
-		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
+		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
@@ -136,7 +142,15 @@ namespace MiiAsset.Runtime
 
 		public bool ExistAddress(string address)
 		{
-			return File.Exists(address);
+			if (TryGetLoadUriWithKeyAndTags<UnityEngine.Object>(address, out var loadUri))
+			{
+				var existFile = File.Exists(loadUri);
+				return existFile;
+			}
+			else
+			{
+				return false;
+			}
 		}
 
 		public bool ExistGuid(string guid)
@@ -146,12 +160,13 @@ namespace MiiAsset.Runtime
 			return exist;
 		}
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)where T : UnityEngine.Object
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
 
-		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
+		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus)
+			where T : UnityEngine.Object
 		{
 			return LoadAssetJust<T>(address, loadStatus);
 		}
@@ -164,15 +179,15 @@ namespace MiiAsset.Runtime
 		public async Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters,
 			AssetLoadStatusGroup loadStatus)
 		{
-			if (!CheckPathAndTags<Scene>(sceneAddress))
+			if (!TryGetLoadUriWithKeyAndTags<Scene>(sceneAddress, out var loadUri))
 			{
 				return default;
 			}
 
-			var op = EditorSceneManager.LoadSceneAsyncInPlayMode(sceneAddress, parameters);
+			var op = EditorSceneManager.LoadSceneAsyncInPlayMode(loadUri, parameters);
 			var subStatus = loadStatus?.AddAsyncOperationStatus(op);
 			await op.GetTask();
-			var scene = SceneManager.GetSceneByName(sceneAddress);
+			var scene = SceneManager.GetSceneByName(loadUri);
 			return scene;
 		}
 
@@ -209,7 +224,11 @@ namespace MiiAsset.Runtime
 
 		public void RunDelayedTasks()
 		{
-			
+		}
+
+		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return DepCollector.ExtraAddressInfoMap.TryGetValue(address, out extraAddressInfo);
 		}
 
 		public void CleanAllCaches()

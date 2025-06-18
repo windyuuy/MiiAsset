@@ -59,12 +59,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void Flush()
 		{
-			MyLogger.LogError("NotImplementException-Flush");
+			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(Flush)}()");
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)
 		{
-			MyLogger.LogError("NotImplementException-Read");
+			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(Read)}()");
 			var readLen = Math.Min(buffer.Length - offset, count);
 			var bytes = Fs.ReadFileSync(this.Uri, this.Position, readLen);
 			var readLen1 = bytes.Length;
@@ -96,12 +96,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void SetLength(long value)
 		{
-			MyLogger.LogError("WXWriteFileStream.SetLength not implement");
+			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(SetLength)}()");
 			this._length = value;
 			this.Position = Math.Min(this._length, this.Position);
 		}
 
-		const int WriteSeg = 1024*1024*4;//11525472;
+		const int WriteSeg = 1024 * 1024 * 4; //11525472;
 		static readonly byte[] TempBuffer = new byte[WriteSeg];
 
 		public override void Write(byte[] buffer, int offset, int count)
