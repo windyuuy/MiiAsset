@@ -231,9 +231,10 @@ namespace MiiAsset.Runtime
 			return DepCollector.ExtraAddressInfoMap.TryGetValue(address, out extraAddressInfo);
 		}
 
-		public void CleanAllCaches()
+		public Task<bool> CleanAllCaches()
 		{
 			Debug.Log("编辑器清理缓存");
+			return Task.FromResult(true);
 		}
 
 		public void Dispose()

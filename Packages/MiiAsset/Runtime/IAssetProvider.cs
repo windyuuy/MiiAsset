@@ -76,6 +76,6 @@ namespace MiiAsset.Runtime
 		/// <summary>
 		/// 清理所有缓存
 		/// </summary>
-		public void CleanAllCaches();
+		public Task<bool> CleanAllCaches();
 	}
 }

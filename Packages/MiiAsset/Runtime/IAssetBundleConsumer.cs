@@ -171,9 +171,9 @@ namespace MiiAsset.Runtime
 			return Provider.TryGetExtraAddressInfo(address, out extraAddressInfo);
 		}
 
-		public void CleanAllCaches()
+		public Task<bool> CleanAllCaches()
 		{
-			Provider.CleanAllCaches();
+			return Provider.CleanAllCaches();
 		}
 
 		public void Dispose()
