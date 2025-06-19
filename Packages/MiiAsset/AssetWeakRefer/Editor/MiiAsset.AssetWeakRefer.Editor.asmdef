@@ -1,18 +1,21 @@
 {
-    "name": "AssetWeakRefer",
+    "name": "MiiAsset.AssetWeakRefer.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:05986448812a44c4e93dbe70ba9b2de0",
-        "GUID:2327133a9cd59df45aac0ce0d43e61e8",
+        "GUID:40a117695f8636349a7a4a68b08b5418",
         "GUID:890b253146385e54b9b4cff5c8dea58b",
         "GUID:3335fd4912059ac44ade7352e91cad72",
         "GUID:454beedd5f58f5346b10a7985088861c",
+        "GUID:2327133a9cd59df45aac0ce0d43e61e8",
+        "GUID:05986448812a44c4e93dbe70ba9b2de0",
         "GUID:613373635edb2ba438b0c1fe4560ae2c",
         "GUID:6a5755abd07c03b43979d9a2f6b82cca",
         "GUID:343deaaf83e0cee4ca978e7df0b80d21",
         "GUID:2bafac87e7f4b9b418d9448d219b01ab"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
