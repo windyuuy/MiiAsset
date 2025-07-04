@@ -101,5 +101,6 @@ namespace MiiAsset.Runtime.IOManagers
 		public Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleName);
 		public void RegisterCertificateHandler(CertificateHandler certificateHandler);
 		public void SetUwr(UnityWebRequest uwr);
+		public Task<bool> CleanAllFileCaches();
 	}
 }

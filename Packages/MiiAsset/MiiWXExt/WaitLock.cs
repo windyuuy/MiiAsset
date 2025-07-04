@@ -1,6 +1,7 @@
 ﻿#if UNITY_WEBGL && SUPPORT_WECHATGAME
 using System.IO;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 
 namespace MiiAsset.Runtime.IOManagers
 {
@@ -46,7 +47,9 @@ namespace MiiAsset.Runtime.IOManagers
 				}
 				else
 				{
-					_tcs.SetException(new IOException(reason));
+					var ioException = new IOException(reason);
+					MyLogger.LogException(ioException);
+					_tcs.SetException(ioException);
 				}
 			}
 		}

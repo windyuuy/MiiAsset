@@ -23,6 +23,8 @@ namespace MiiAsset.Editor.Build
 {
 	public class AADepBuilder
 	{
+		public static string GetRemoteAssetBundlesPublishDir() => "AssetBundles";
+
 		public static BuildAssetBundlesResult BuildAssetBundles(AAPathInfo pathInfo,
 			ScriptCompilationSettings scriptCompilationSettings, ExtraBuildOptions options)
 		{
@@ -43,6 +45,11 @@ namespace MiiAsset.Editor.Build
 			var tagOrderMap = depCollector.TagOrderMap;
 			var guidBundleMap = depCollector.GuidBundleMap;
 			var tagsNameBundleMap = depCollector.TagsNameBundleMap;
+			var extraAddressInfoMap = depCollector.ExtraAddressInfoMap;
+
+			var extraAddressInfos = extraAddressInfoMap
+				.Select(item => item.Value)
+				.ToArray();
 
 			var tagBundles = tagBundleMap.Values.ToArray();
 			
@@ -65,16 +72,18 @@ namespace MiiAsset.Editor.Build
 			// build content
 			var bundleBuilds = tagBundles.Select(tagBundle =>
 			{
+				var addressableNames = tagBundle.GetAssetAddresses();
 				var build = new AssetBundleBuild
 				{
 					assetBundleName = tagBundle.GetBundleName(),
 					assetBundleVariant = "",
 					assetNames = tagBundle.GetAssetNames(),
-					addressableNames = tagBundle.GetAssetAddresses(),
+					addressableNames = addressableNames,
 				};
 				return build;
 			});
-			var folderPath = $"AssetBundles/{AssetHelper.GetBuildTarget(scriptCompilationSettings.target)}";
+			var folderPath =
+				$"{GetRemoteAssetBundlesPublishDir()}/{AssetHelper.GetBuildTarget(scriptCompilationSettings.target)}";
 			var outPath = "Temp/MiiAsset/AssetBundles";
 			var tmpPath = "Temp/MiiAsset/Temp";
 			if (Directory.Exists(outPath))
@@ -155,6 +164,11 @@ namespace MiiAsset.Editor.Build
 				tagBundles = tagBundleMap.Values.ToArray();
 				foreach (var tagBundle in tagBundles)
 				{
+					tagBundle.UpdateFileHashName();
+				}
+
+				foreach (var tagBundle in tagBundles)
+				{
 					tagsNameBundleMap[tagBundle.GetTagsKey()] = tagBundle;
 				}
 
@@ -216,12 +230,12 @@ namespace MiiAsset.Editor.Build
 				{
 					var resultValue = r.Value;
 					m_Linker.AddTypes(resultValue.includedTypes);
-				#if UNITY_2021_1_OR_NEWER
+#if UNITY_2021_1_OR_NEWER
 					m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
-				#else
+#else
                         if (resultValue.GetType().GetProperty("includedSerializeReferenceFQN") != null)
                             m_Linker.AddSerializedClass(resultValue.GetType().GetProperty("includedSerializeReferenceFQN").GetValue(resultValue) as System.Collections.Generic.IEnumerable<string>);
-				#endif
+#endif
 				}
 
 				m_Linker.AddTypes(typeof(AssetLoader));
@@ -254,7 +268,15 @@ namespace MiiAsset.Editor.Build
 						File.Delete(destPath);
 					}
 
-					File.Move(sourcePath, destPath);
+					try
+					{
+						File.Move(sourcePath, destPath);
+					}
+					catch (Exception)
+					{
+						Debug.LogError($"Move-Bundle-Failed: {sourcePath} -> {destPath}");
+						throw;
+					}
 					Debug.Assert(!File.Exists(sourcePath));
 					Debug.Assert(File.Exists(destPath));
 				}
@@ -283,16 +305,18 @@ namespace MiiAsset.Editor.Build
 						hash128 = resultsBundleInfo.Hash,
 						deps = tagBundle.Deps.ToArray(),
 						tags = tagBundle.Tags.Concat(tagBundle.TagsAdditional).ToArray(),
-						entries = tagBundle.GetAssetNames(),
+						entries = tagBundle.GetAssetAddresses(),
 						guids = options.BuildGuids ? tagBundle.Guids.ToArray() : null,
 						IsOffline = tagBundle.IsOffline,
 						size = tagBundle.FileSize,
 					};
 				}).ToArray();
 
+				// 远程
 				var catalog = new CatalogConfig
 				{
 					bundleInfos = catalogBundleInfos,
+					extraAddressInfos = extraAddressInfos,
 				};
 				var catalogFilePath =
 					$"{folderPath}/catalog_{options.UpdateTunnel}.{options.CatalogType}".Replace("_.", ".");
@@ -332,10 +356,12 @@ namespace MiiAsset.Editor.Build
 					return collectOfflineBundles;
 				}
 
+				// 包内
 				var internalCatalog = new CatalogConfig
 				{
 					bundleInfos = CollectOfflineBundles(catalogBundleInfos).ToArray(),
-					EntryBundleMap = null
+					extraAddressInfos = extraAddressInfos,
+					EntryBundleMap = null,
 				};
 				var internalCatalogFilePath = $"{internalBuildPath}{Path.GetRelativePath(folderPath, catalogFilePath)}";
 				SaveCatalog(internalCatalog, internalCatalogFilePath);

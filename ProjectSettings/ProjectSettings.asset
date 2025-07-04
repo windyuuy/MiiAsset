@@ -817,7 +817,7 @@ PlayerSettings:
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
   scriptingDefineSymbols:
-    WebGL: DISABLE_NOREFERCOUNT_API
+    WebGL: DISABLE_NOREFERCOUNT_API;SUPPORT_WECHATGAME
   additionalCompilerArguments:
     WebGL: []
   platformArchitecture: {}

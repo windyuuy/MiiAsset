@@ -51,8 +51,11 @@ namespace MiiAsset.Runtime
 		bool ExistAddress(string address);
 		bool ExistGuid(string guid);
 
-		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
-		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
+		public Task<T> LoadAssetByRefer<T>(string address, AssetLoadStatusGroup loadStatus)
+			where T : UnityEngine.Object;
+
+		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus)
+			where T : UnityEngine.Object;
 
 		public Task UnLoadAssetByRefer(string address);
 
@@ -68,5 +71,11 @@ namespace MiiAsset.Runtime
 		public Task<PipelineResult> CleanUpOldVersionFiles();
 		public bool IsAssetBundlesOfAssetLoaded(string address);
 		public void RunDelayedTasks();
+
+		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo);
+		/// <summary>
+		/// 清理所有缓存
+		/// </summary>
+		public Task<bool> CleanAllCaches();
 	}
 }

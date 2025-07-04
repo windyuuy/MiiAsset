@@ -27,6 +27,8 @@ namespace MiiAsset.Runtime
 		public bool IsShaderGroupOffline = true;
 		public bool IsMyBuiltinShaderGroupOffline = true;
 
+		public Dictionary<string, AASingleFileItem> SingleFileItems = new Dictionary<string, AASingleFileItem>();
+
 		public IEnumerable<GroupScanInfo> GetScanRootInfos(bool analyzeOnly)
 		{
 			return Paths.Select(p => p.GetScanRootInfo(analyzeOnly)).Distinct();
@@ -98,7 +100,7 @@ namespace MiiAsset.Runtime
 
 			if (groupNameInfo == null)
 			{
-				MyLogger.LogError($"loading asset not in bundle");
+				MyLogger.LogError($"loading asset not exist in any bundle: {assetPath}");
 			}
 
 			return groupNameInfo;

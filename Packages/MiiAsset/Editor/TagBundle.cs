@@ -4,6 +4,10 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.Build.Pipeline;
 using UnityEngine.Build.Pipeline;
+using System.Security.Cryptography;
+using System.IO;
+using System.Text;
+using MiiAsset.Runtime;
 
 namespace MiiAsset.Editor.Build
 {
@@ -12,6 +16,14 @@ namespace MiiAsset.Editor.Build
 		public string Msg;
 		public ReturnCode Code;
 		public BuildResult BuildResult;
+
+		public bool IsOk => Code switch
+		{
+			ReturnCode.Success => true,
+			ReturnCode.SuccessCached => true,
+			ReturnCode.SuccessNotRun => true,
+			_ => false
+		};
 	}
 
 	public class ExtraBuildOptions
@@ -37,13 +49,42 @@ namespace MiiAsset.Editor.Build
 		/// <summary>
 		/// for debug
 		/// </summary>
-		public string[] Addresses => Guids.Select(guid => AssetDatabase.GUIDToAssetPath((string)guid)).ToArray();
+		public string[] Addresses => GetAssetAddresses();
 
 		public string TagsUKey;
-		public string BundleFileName => $"{GetTagsKey()}_{BuildInfo.Hash}.bundle";
+		public string BundleFileName => $"{GetTagsKey()}_{BuildInfo.Hash}{BundleFileHash}.bundle";
 		public HashSet<string> DepTagNames = new();
 		public HashSet<string> Deps = new();
 		public BundleDetails BuildInfo;
+		public string BundleFileHash { get; private set; }
+		string GetHash(string path)
+		{
+			var hash = SHA1.Create();
+			var stream = new FileStream(path, FileMode.Open);
+			byte[] hashByte = hash.ComputeHash(stream);
+			stream.Close();
+			var fileHash = BitConverter.ToString(hashByte).Replace("-", "");
+			return fileHash;
+		}
+		string GetSHA1(string path)
+		{
+			FileStream file = new FileStream(path, FileMode.Open);
+			SHA1 sha1 = new SHA1CryptoServiceProvider();
+			byte[] retval = sha1.ComputeHash(file);
+			file.Close();
+
+			StringBuilder sc = new StringBuilder();
+			for (int i = 0; i < retval.Length; i++)
+			{
+				sc.Append(retval[i].ToString("x2"));
+			}
+			return sc.ToString();
+		}
+		public void UpdateFileHashName()
+		{
+			var fileHash = GetHash(BuildInfo.FileName).ToLower();
+			BundleFileHash = fileHash;
+		}
 		public bool IsOffline = false;
 		public bool IsEncrypt = false;
 
@@ -62,14 +103,41 @@ namespace MiiAsset.Editor.Build
 			return $"{GetTagsKey()}";
 		}
 
+		// public Dictionary<string, AASingleFileItem> SingleFileItems;
 		public string[] GetAssetNames()
 		{
-			return Guids.Select(guid => AssetDatabase.GUIDToAssetPath(guid)).ToArray();
+			return Guids.Select(guid => AssetDatabase.GUIDToAssetPath(guid))
+				.ToArray();
 		}
 
+		public readonly Dictionary<string, string> AddressMap = new();
 		public string[] GetAssetAddresses()
 		{
-			return GetAssetNames();
+			return Guids
+				.Select(guid =>
+				{
+					if (AddressMap.TryGetValue(guid, out var address))
+					{
+						return address;
+					}
+					else
+					{
+						return AssetDatabase.GUIDToAssetPath((string)guid);
+					}
+
+				})
+				.ToArray();
+			// return GetAssetNames()
+			// .Select((address) =>
+			// {
+			// 	if (SingleFileItems.TryGetValue(address, out var item))
+			// 	{
+			// 		return item.key;
+			// 	}
+			// 	return address;
+			// })
+			// .ToArray();
+			// ;
 		}
 
 		public string GetBundlePathWithHash(string dir)

@@ -92,17 +92,6 @@ namespace MiiAsset.Runtime
 		// 	Consumer.Init();
 		// }
 
-		public static Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
-		{
-			CheckUri(remoteBaseUri);
-			if (!remoteBaseUri.EndsWith("/"))
-			{
-				remoteBaseUri = $"{remoteBaseUri}/";
-			}
-
-			return Consumer.UpdateCatalog(remoteBaseUri);
-		}
-
 		private static void CheckUri(string remoteBaseUri)
 		{
 			if (remoteBaseUri.Contains(":/") && remoteBaseUri.Contains("://") == false)
@@ -111,9 +100,76 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public static Task<PipelineResult> LoadLocalCatalog()
+		private static TaskCompletionSource<bool> _loadCatalogTaskSource = new TaskCompletionSource<bool>();
+		private static readonly Task<bool> CompletedTask = Task.FromResult(true);
+
+		public static Task<bool> WaitLoadCatalogDone()
 		{
-			return Consumer.LoadLocalCatalog();
+			if (_loadCatalogTaskSource != null)
+			{
+				return _loadCatalogTaskSource.Task;
+			}
+
+			return CompletedTask;
+		}
+
+		public static async Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
+		{
+			CheckUri(remoteBaseUri);
+			if (!remoteBaseUri.EndsWith("/"))
+			{
+				remoteBaseUri = $"{remoteBaseUri}/";
+			}
+
+			try
+			{
+				var result = await Consumer.UpdateCatalog(remoteBaseUri);
+				try
+				{
+					_loadCatalogTaskSource?.SetResult(true);
+					_loadCatalogTaskSource = null;
+				}
+				catch (Exception exception2)
+				{
+					Debug.LogException(exception2);
+				}
+
+				return result;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+
+				_loadCatalogTaskSource?.SetResult(false);
+				_loadCatalogTaskSource = null;
+				throw;
+			}
+		}
+
+		public static async Task<PipelineResult> LoadLocalCatalog()
+		{
+			try
+			{
+				var result = await Consumer.LoadLocalCatalog();
+				try
+				{
+					_loadCatalogTaskSource?.SetResult(true);
+					_loadCatalogTaskSource = null;
+				}
+				catch (Exception exception2)
+				{
+					Debug.LogException(exception2);
+				}
+
+				return result;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+				_loadCatalogTaskSource?.SetResult(false);
+				_loadCatalogTaskSource = null;
+				throw;
+			}
 		}
 
 		/// <summary>
@@ -675,5 +731,20 @@ namespace MiiAsset.Runtime
 		{
 			Consumer?.RunDelayedTasks();
 		}
+
+		public static bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return Consumer.TryGetExtraAddressInfo(address, out extraAddressInfo);
+		}
+		
+		public static bool ExistExtraAddressInfo(string address)
+		{
+			return Consumer.TryGetExtraAddressInfo(address, out var extraAddressInfo);
+		}
+		public static Task<bool> CleanAllCaches()
+		{
+			return Consumer?.CleanAllCaches();
+		}
+
 	}
 }

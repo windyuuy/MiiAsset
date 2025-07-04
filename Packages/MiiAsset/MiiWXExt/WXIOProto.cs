@@ -45,12 +45,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
-		#if UNITY_EDITOR
+#if UNITY_EDITOR
 
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
-		#else
+#else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
-		#endif
+#endif
 			var persistentDataPath = WX.env.USER_DATA_PATH;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
@@ -162,6 +162,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				filePath = uri,
@@ -176,11 +177,13 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 
 		protected Dictionary<string, bool> BundleExistMap;
+		protected bool IsInitedBundleExistMap = false;
 
 		protected void InitBundleExistMap()
 		{
-			if (BundleExistMap == null)
+			if (!IsInitedBundleExistMap)
 			{
+				IsInitedBundleExistMap = true;
 				BundleExistMap = new();
 				var files1 = FileSystemManager.ReaddirSync(CacheDir);
 				var files2 = ExistsDir(InternalDir)
@@ -202,19 +205,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public bool EnsureBundle(string bundleName)
 		{
+			InitBundleExistMap();
 			// Debug.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
-		#if SUPPORT_WECHATGAME
-			// 修复微信小游戏崩溃
-			if (BundleExistMap.ContainsKey(bundleName))
-			{
-				return true;
-			}
-		#else
 			if (BundleExistMap.TryGetValue(bundleName, out var exist))
 			{
 				return exist;
 			}
-		#endif
 			else
 			{
 				var exists = Exists(CacheDir + bundleName) || Exists(InternalDir + bundleName);
@@ -255,6 +251,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				filePath = uri,
@@ -271,6 +268,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("write-file-failed"));
+					MyLogger.LogException(exception);
 					ts.SetException(exception);
 				},
 				data = bytes,
@@ -323,7 +321,12 @@ namespace MiiAsset.Runtime.IOManagers
 						}
 					}
 				},
-				fail = (resp) => { ts.SetException(new IOException(resp.GetExceptionDesc("read catalog failed"))); },
+				fail = (resp) =>
+				{
+					var ioException = new IOException(resp.GetExceptionDesc("read catalog failed"));
+					MyLogger.LogException(ioException);
+					ts.SetException(ioException);
+				},
 				entries = "all",
 				filePath = uri,
 				encoding = "utf-8",
@@ -415,6 +418,66 @@ namespace MiiAsset.Runtime.IOManagers
 				uwr.disposeCertificateHandlerOnDispose = false;
 				uwr.timeout = this.Timeout;
 			}
+		}
+
+		public Task<bool> CleanAllFileCaches()
+		{
+			var ts = new TaskCompletionSource<bool>();
+			try
+			{
+				Debug.Log("clean miiasset begin");
+				Debug.Log("read ExternalDir");
+				var externalFiles = Array.Empty<string>();
+				try
+				{
+					externalFiles = FileSystemManager.ReaddirSync(this.ExternalDir);
+				}
+				catch (Exception exception3)
+				{
+					Debug.LogException(exception3);
+					Debug.LogError($"ReaddirSync failed: {this.ExternalDir}");
+				}
+				Debug.Log("read CacheDir");
+				var cacheFiles = Array.Empty<string>();
+				try
+				{
+					cacheFiles = FileSystemManager.ReaddirSync(this.CacheDir);
+				}
+				catch (Exception exception4)
+				{
+					Debug.LogException(exception4);
+					Debug.LogError($"ReaddirSync failed: {this.CacheDir}");
+				}
+				void CleanFiles(string dir, string[] files)
+				{
+					foreach (var file in files)
+					{
+						try
+						{
+							var path = $"{dir}{file}";
+							Debug.Log($"delete file: {path}");
+							FileSystemManager.UnlinkSync(path);
+						}
+						catch (Exception exception2)
+						{
+							Debug.LogException(exception2);
+							Debug.LogError($"delete file failed: {file}");
+						}
+					}
+				}
+				Debug.Log("clean ExternalDir");
+				CleanFiles(this.ExternalDir, externalFiles);
+				Debug.Log("clean CacheDir");
+				CleanFiles(this.CacheDir, cacheFiles);
+				Debug.Log("clean miiasset done");
+			}
+			catch (Exception exception1)
+			{
+				Debug.LogError("read dirs failed");
+				Debug.LogException(exception1);
+			}
+			WX.CleanAllFileCache((ret) => { ts.SetResult(ret); });
+			return ts.Task;
 		}
 	}
 }

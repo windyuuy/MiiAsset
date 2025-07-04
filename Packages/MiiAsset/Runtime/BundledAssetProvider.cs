@@ -75,6 +75,11 @@ namespace MiiAsset.Runtime
 
 		protected CatalogInfo CatalogInfo = new();
 
+		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		{
+			return CatalogInfo.TryGetExtraAddressInfo(address, out extraAddressInfo);
+		}
+
 		private void HandleCatalog(CatalogConfig internalCatalog, CatalogConfig externalCatalog, string sourceUri)
 		{
 			var cacheDir = IOManager.LocalIOProto.CacheDir;
@@ -195,15 +200,16 @@ namespace MiiAsset.Runtime
 		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
 		{
 			var subStatus = loadStatus?.AllocAsyncOperationStatus();
-			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
-			if (bundleLoadStatus != null)
-			{
-				return bundleLoadStatus.LoadAssetJust<T>(address, subStatus);
-			}
-			else
-			{
-				return Task.FromResult<T>(default);
-			}
+			// var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
+			// if (bundleLoadStatus != null)
+			// {
+			// 	return bundleLoadStatus.LoadAssetJust<T>(address, subStatus);
+			// }
+			// else
+			// {
+			// 	return Task.FromResult<T>(default);
+			// }
+			return LoadAssetJust<T>(address, subStatus);
 		}
 
 		protected Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : UnityEngine.Object
@@ -543,6 +549,11 @@ namespace MiiAsset.Runtime
 		public void RunDelayedTasks()
 		{
 			this.CatalogStatus.RunDelayedTasks();
+		}
+
+		public Task<bool> CleanAllCaches()
+		{
+			return IOManager.LocalIOProto.CleanAllFileCaches();
 		}
 	}
 }
