@@ -152,22 +152,29 @@ namespace MiiAsset.Runtime.IOManagers
 			Debug.Assert(Equals(encoding, Encoding.UTF8) || Equals(encoding, EncodingExt.UTF8WithoutBom));
 
 			var ts = new TaskCompletionSource<string>();
-			FileSystemManager.ReadFile(new ReadFileParam
+			try
 			{
-				success = (resp) =>
+				FileSystemManager.ReadFile(new ReadFileParam
 				{
-					var data = resp.stringData;
-					ts.SetResult(data);
-				},
-				fail = (resp) =>
-				{
-					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
-					MyLogger.LogException(exception);
-					ts.SetException(exception);
-				},
-				filePath = uri,
-				encoding = "utf-8",
-			});
+					success = (resp) =>
+					{
+						var data = resp.stringData;
+						ts.SetResult(data);
+					},
+					fail = (resp) =>
+					{
+						var exception = new IOException(resp.GetExceptionDesc($"read-file-failed: {uri}"));
+						MyLogger.LogException(exception);
+						ts.SetException(exception);
+					},
+					filePath = uri,
+					encoding = "utf-8",
+				});
+			}
+			catch (Exception exception)
+			{
+				ts.SetException(exception);
+			}
 			return ts.Task;
 		}
 
