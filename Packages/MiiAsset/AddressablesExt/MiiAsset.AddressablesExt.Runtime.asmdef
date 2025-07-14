@@ -1,5 +1,5 @@
 {
-    "name": "AddressablesExt.Runtime",
+    "name": "MiiAsset.AddressablesExt.Runtime",
     "rootNamespace": "",
     "references": [
         "GUID:5efd170ecd8084500bed5692932fe14e",

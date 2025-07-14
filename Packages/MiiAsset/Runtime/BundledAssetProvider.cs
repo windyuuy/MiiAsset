@@ -550,5 +550,10 @@ namespace MiiAsset.Runtime
 		{
 			this.CatalogStatus.RunDelayedTasks();
 		}
+
+		public Task<bool> CleanAllCaches()
+		{
+			return IOManager.LocalIOProto.CleanAllFileCaches();
+		}
 	}
 }

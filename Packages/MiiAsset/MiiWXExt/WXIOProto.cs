@@ -45,7 +45,28 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
+			if (!WXSDKManagerHandler.InitSDKPrompt())
+			{
+				var ts = new TaskCompletionSource<bool>();
+				MyLogger.Log($"WX.InitSDK");
+				WX.InitSDK(async (code) =>
+				{
+					MyLogger.Log($"WX.InitSDK return code: {code}");
+					var ret = await InitInternal(options);
+					ts.SetResult(ret);
+				});
+				return ts.Task;
+			}
+			else
+			{
+				return InitInternal(options);
+			}
+		}
+
+		protected Task<bool> InitInternal(IIOProtoInitOptions options)
+		{
 		#if UNITY_EDITOR
+
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 		#else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
@@ -151,22 +172,30 @@ namespace MiiAsset.Runtime.IOManagers
 			Debug.Assert(Equals(encoding, Encoding.UTF8) || Equals(encoding, EncodingExt.UTF8WithoutBom));
 
 			var ts = new TaskCompletionSource<string>();
-			FileSystemManager.ReadFile(new ReadFileParam
+			try
 			{
-				success = (resp) =>
+				FileSystemManager.ReadFile(new ReadFileParam
 				{
-					var data = resp.stringData;
-					ts.SetResult(data);
-				},
-				fail = (resp) =>
-				{
-					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
-					MyLogger.LogException(exception);
-					ts.SetException(exception);
-				},
-				filePath = uri,
-				encoding = "utf-8",
-			});
+					success = (resp) =>
+					{
+						var data = resp.stringData;
+						ts.SetResult(data);
+					},
+					fail = (resp) =>
+					{
+						var exception = new IOException(resp.GetExceptionDesc($"read-file-failed: {uri}"));
+						MyLogger.LogException(exception);
+						ts.SetException(exception);
+					},
+					filePath = uri,
+					encoding = "utf-8",
+				});
+			}
+			catch (Exception exception)
+			{
+				ts.SetException(exception);
+			}
+
 			return ts.Task;
 		}
 
@@ -424,6 +453,70 @@ namespace MiiAsset.Runtime.IOManagers
 				uwr.disposeCertificateHandlerOnDispose = false;
 				uwr.timeout = this.Timeout;
 			}
+		}
+
+		public Task<bool> CleanAllFileCaches()
+		{
+			var ts = new TaskCompletionSource<bool>();
+			try
+			{
+				Debug.Log("clean miiasset begin");
+				Debug.Log("read ExternalDir");
+				var externalFiles = Array.Empty<string>();
+				try
+				{
+					externalFiles = FileSystemManager.ReaddirSync(this.ExternalDir);
+				}
+				catch (Exception exception3)
+				{
+					Debug.LogException(exception3);
+					Debug.LogError($"ReaddirSync failed: {this.ExternalDir}");
+				}
+
+				Debug.Log("read CacheDir");
+				var cacheFiles = Array.Empty<string>();
+				try
+				{
+					cacheFiles = FileSystemManager.ReaddirSync(this.CacheDir);
+				}
+				catch (Exception exception4)
+				{
+					Debug.LogException(exception4);
+					Debug.LogError($"ReaddirSync failed: {this.CacheDir}");
+				}
+
+				void CleanFiles(string dir, string[] files)
+				{
+					foreach (var file in files)
+					{
+						try
+						{
+							var path = $"{dir}{file}";
+							Debug.Log($"delete file: {path}");
+							FileSystemManager.UnlinkSync(path);
+						}
+						catch (Exception exception2)
+						{
+							Debug.LogException(exception2);
+							Debug.LogError($"delete file failed: {file}");
+						}
+					}
+				}
+
+				Debug.Log("clean ExternalDir");
+				CleanFiles(this.ExternalDir, externalFiles);
+				Debug.Log("clean CacheDir");
+				CleanFiles(this.CacheDir, cacheFiles);
+				Debug.Log("clean miiasset done");
+			}
+			catch (Exception exception1)
+			{
+				Debug.LogError("read dirs failed");
+				Debug.LogException(exception1);
+			}
+
+			WX.CleanAllFileCache((ret) => { ts.SetResult(ret); });
+			return ts.Task;
 		}
 	}
 }

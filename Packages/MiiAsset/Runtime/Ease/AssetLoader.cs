@@ -741,5 +741,10 @@ namespace MiiAsset.Runtime
 		{
 			return Consumer.TryGetExtraAddressInfo(address, out var extraAddressInfo);
 		}
+		public static Task<bool> CleanAllCaches()
+		{
+			return Consumer?.CleanAllCaches();
+		}
+
 	}
 }
