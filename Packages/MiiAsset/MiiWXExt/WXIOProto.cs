@@ -45,12 +45,11 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
-#if UNITY_EDITOR
-
+		#if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
-#else
+		#else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
-#endif
+		#endif
 			var persistentDataPath = WX.env.USER_DATA_PATH;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
@@ -225,7 +224,14 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public void Delete(string filePath)
 		{
-			FileSystemManager.UnlinkSync(filePath);
+			if (Exists(filePath))
+			{
+				FileSystemManager.UnlinkSync(filePath);
+			}
+			else
+			{
+				Debug.LogError($"file not exist: {filePath}");
+			}
 		}
 
 		public FilePathInfo[] ReadDir(string readDir)

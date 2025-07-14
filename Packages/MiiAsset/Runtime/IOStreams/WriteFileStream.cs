@@ -44,7 +44,7 @@ namespace MiiAsset.Runtime.IOStreams
 				Result.IsOk = evt.IsOk;
 				if (!evt.IsOk)
 				{
-					MyLogger.LogError($"Download-Exception: {Uri}, {evt.GetReason()}");
+					MyLogger.LogError($"Download-Failed: {Uri}, {evt.GetReason()}");
 					FileStream.Close();
 					try
 					{
