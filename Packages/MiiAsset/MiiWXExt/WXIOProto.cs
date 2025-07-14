@@ -45,12 +45,32 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<bool> Init(IIOProtoInitOptions options)
 		{
-#if UNITY_EDITOR
+			if (!WXSDKManagerHandler.InitSDKPrompt())
+			{
+				var ts = new TaskCompletionSource<bool>();
+				MyLogger.Log($"WX.InitSDK");
+				WX.InitSDK(async (code) =>
+				{
+					MyLogger.Log($"WX.InitSDK return code: {code}");
+					var ret = await InitInternal(options);
+					ts.SetResult(ret);
+				});
+				return ts.Task;
+			}
+			else
+			{
+				return InitInternal(options);
+			}
+		}
+
+		protected Task<bool> InitInternal(IIOProtoInitOptions options)
+		{
+		#if UNITY_EDITOR
 
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
-#else
+		#else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
-#endif
+		#endif
 			var persistentDataPath = WX.env.USER_DATA_PATH;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
@@ -175,6 +195,7 @@ namespace MiiAsset.Runtime.IOManagers
 			{
 				ts.SetException(exception);
 			}
+
 			return ts.Task;
 		}
 
@@ -444,6 +465,7 @@ namespace MiiAsset.Runtime.IOManagers
 					Debug.LogException(exception3);
 					Debug.LogError($"ReaddirSync failed: {this.ExternalDir}");
 				}
+
 				Debug.Log("read CacheDir");
 				var cacheFiles = Array.Empty<string>();
 				try
@@ -455,6 +477,7 @@ namespace MiiAsset.Runtime.IOManagers
 					Debug.LogException(exception4);
 					Debug.LogError($"ReaddirSync failed: {this.CacheDir}");
 				}
+
 				void CleanFiles(string dir, string[] files)
 				{
 					foreach (var file in files)
@@ -472,6 +495,7 @@ namespace MiiAsset.Runtime.IOManagers
 						}
 					}
 				}
+
 				Debug.Log("clean ExternalDir");
 				CleanFiles(this.ExternalDir, externalFiles);
 				Debug.Log("clean CacheDir");
@@ -483,6 +507,7 @@ namespace MiiAsset.Runtime.IOManagers
 				Debug.LogError("read dirs failed");
 				Debug.LogException(exception1);
 			}
+
 			WX.CleanAllFileCache((ret) => { ts.SetResult(ret); });
 			return ts.Task;
 		}
