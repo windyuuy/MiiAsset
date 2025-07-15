@@ -63,6 +63,15 @@ namespace MiiAsset.Runtime
 			this.ErrorType = PipelineErrorType.NetError;
 			this.Status = PipelineStatus.Done;
 		}
+
+		public void SetOk()
+		{
+			this.IsOk = true;
+			this.Exception = null;
+			this.Code = 0;
+			this.Msg = null;
+			this.Status = PipelineStatus.Done;
+		}
 	}
 
 	public enum PipelineErrorType

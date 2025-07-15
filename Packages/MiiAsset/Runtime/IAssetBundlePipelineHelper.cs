@@ -36,12 +36,12 @@ namespace MiiAsset.Runtime
 				}
 				else
 				{
-				#if UNITY_WEBGL
-					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
-				#else
+				// #if UNITY_WEBGL
+				// 	pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+				// #else
 					// pipeline = new LoadAssetBundleBytesPipeline().Init(remoteUri);
 					pipeline = new LoadAssetBundlePipelineFromLocalStream().Init(remoteUri, crc);
-				#endif
+				// #endif
 				}
 			}
 			else
@@ -58,11 +58,11 @@ namespace MiiAsset.Runtime
 				}
 				else
 				{
-				#if UNITY_WEBGL
-					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
-				#else
+				// #if UNITY_WEBGL
+				// 	pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+				// #else
 					pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri, crc);
-				#endif
+				// #endif
 				}
 			}
 

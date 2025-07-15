@@ -197,7 +197,15 @@ namespace MiiAsset.Runtime
 
 		protected async Task<PipelineResult> LoadInternal(CatalogInfo catalogInfo, bool autoLoad)
 		{
-			MyLogger.Log($"AssetBundle-Loading: {this.BundleName}");
+			if (autoLoad)
+			{
+				MyLogger.Log($"AssetBundle-Loading: {this.BundleName}");
+			}
+			else
+			{
+				MyLogger.Log($"AssetBundle-Downloading: {this.BundleName}");
+			}
+
 			UpdateFileSizeInfo(catalogInfo);
 
 			var unloadTask = UnloadTask;
@@ -206,11 +214,28 @@ namespace MiiAsset.Runtime
 				await unloadTask;
 			}
 
+			if (!autoLoad && IOManager.LocalIOProto.ExistsBundle(this.BundleName))
+			{
+				Debug.Log($"AssetBundle-ExistExternal: {BundleName}");
+				IsDownloaded = 1;
+				_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
+				Result.SetOk();
+				return Result;
+			}
+
 			var isInternalBundleExist = false;
 			if (IsInternalBundle)
 			{
 				var result = await IOManager.LocalIOProto.EnsureStreamingBundles(this.BundleName);
 				isInternalBundleExist = result == EnsureStreamingBundlesResult.Exist;
+				if (isInternalBundleExist && !autoLoad)
+				{
+					Debug.Log($"AssetBundle-ExistInternal: {BundleName}");
+					IsDownloaded = 2;
+					_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
+					Result.SetOk();
+					return Result;
+				}
 			}
 
 			ILoadAssetBundlePipeline loadAssetBundlePipeline;
