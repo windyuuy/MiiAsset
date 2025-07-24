@@ -187,7 +187,7 @@ namespace MiiAsset.Runtime
 			var op = EditorSceneManager.LoadSceneAsyncInPlayMode(loadUri, parameters);
 			var subStatus = loadStatus?.AddAsyncOperationStatus(op);
 			await op.GetTask();
-			var scene = SceneManager.GetSceneByName(loadUri);
+			var scene = SceneManager.GetSceneByPath(loadUri);
 			return scene;
 		}
 
