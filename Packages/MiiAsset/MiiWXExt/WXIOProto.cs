@@ -253,7 +253,14 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public void Delete(string filePath)
 		{
-			FileSystemManager.UnlinkSync(filePath);
+			if (Exists(filePath))
+			{
+				FileSystemManager.UnlinkSync(filePath);
+			}
+			else
+			{
+				Debug.LogError($"file not exist: {filePath}");
+			}
 		}
 
 		public FilePathInfo[] ReadDir(string readDir)
