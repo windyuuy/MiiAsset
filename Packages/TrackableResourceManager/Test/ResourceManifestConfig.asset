@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 331a7cf8eeab4436be165a557ec5641f, type: 3}
+  m_Name: ResourceManifestConfig
+  m_EditorClassIdentifier: 
+  isForCoder: 1
+  group: {fileID: 11400000, guid: 3fa02277329e6dd4f857fcd8c41e48ab, type: 2}
+  itemSets:
+  - setName: ew fge3r
+    enumItems:
+    - key: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+      resRefer:
+        m_AssetGUID: a3eb329d696dae1409e297c3522193df
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_EditorAssetChanged: 0
+    scanRules:
+    - title: scan cur
+      pathRegex: ./.*\.prefab
+      scanRoot: ./
+    items:
+    - key: ffffffffffffffffffffffffffffffff
+      resRefer:
+        m_AssetGUID: d5e504f4f1022e4438d13f5d32405c6d
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_EditorAssetChanged: 0
+    - key: NewPrefab1
+      resRefer:
+        m_AssetGUID: a3eb329d696dae1409e297c3522193df
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_EditorAssetChanged: 0
+    - key: NewPrefab2
+      resRefer:
+        m_AssetGUID: c01eac52e076d3246b83b4265ed75861
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_EditorAssetChanged: 0
+  - setName: 
+    enumItems:
+    - key: 
+      resRefer:
+        m_AssetGUID: d5e504f4f1022e4438d13f5d32405c6d
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_EditorAssetChanged: 0
+    scanRules: []
+    items:
+    - key: 
+      resRefer:
+        m_AssetGUID: d5e504f4f1022e4438d13f5d32405c6d
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_EditorAssetChanged: 0
