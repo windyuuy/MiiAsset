@@ -123,27 +123,6 @@ namespace MiiAsset.Runtime.IOManagers
 						offset = 0,
 						length = writeLen,
 					});
-					// WaitLock.AddWait();
-					// Fs.Write(new WriteOption
-					// {
-					// 	success = (resp) =>
-					// 	{
-					// 		MyLogger.Log($"Write-End: {Path.GetFileName(this.Uri)}, {Position}, {offset}, {count}");
-					// 		this.WaitLock.OkOnce();
-					// 	},
-					// 	fail = (resp) =>
-					// 	{
-					// 		var reason =
-					// 			$"WriteFile-Fail: {Path.GetFileName(Uri)}, code: {resp?.errCode}, errMsg: {resp?.errMsg}, offset: {offset}, count: {count}, len: {buffer.Length}, pos: {Position}, fd: {fd}";
-					// 		MyLogger.LogError(reason);
-					// 		this.WaitLock.FailOnce(reason);
-					// 	},
-					// 	fd = fd,
-					// 	position = Position,
-					// 	data = TempBuffer,
-					// 	offset = 0,
-					// 	length = writeLen,
-					// });
 					Position += writeLen;
 				}
 			}
