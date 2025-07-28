@@ -15,11 +15,11 @@ public class CaseSensitive
 		EditorApplication.quitting -= OnEditorQuit;
 		EditorApplication.quitting += OnEditorQuit;
 
-		if (!PlayerPrefs.HasKey(ProjectCUID))
+		if (!EditorPrefs.HasKey(ProjectCUID))
         {
             // 通过标记记录是否已经执行过该方法
             OnEditorStartUp();
-            PlayerPrefs.SetInt(ProjectCUID, 1);
+            EditorPrefs.SetInt(ProjectCUID, 1);
         }
     }
 	/// <summary>
@@ -27,7 +27,7 @@ public class CaseSensitive
 	/// </summary>
 	private static void OnEditorQuit()
 	{
-		PlayerPrefs.DeleteKey(ProjectCUID);
+		EditorPrefs.DeleteKey(ProjectCUID);
 	}
 
 	static void OnEditorStartUp() {
