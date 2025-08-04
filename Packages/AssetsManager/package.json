@@ -1,0 +1,9 @@
+{
+  "name": "windy.miiasset.assetsmanager.editor",
+  "displayName": "AssetsManager.Editor",
+  "version": "1.0.7",
+  "unity": "2019.4",
+  "description": "Unity Editor AssetsManager",
+  "dependencies": {
+  }
+}
