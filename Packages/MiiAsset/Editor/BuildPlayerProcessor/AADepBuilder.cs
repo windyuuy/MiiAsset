@@ -198,7 +198,7 @@ namespace MiiAsset.Editor.Build
 				{
 					typeof(AssetLoader).Assembly, typeof(IOManager).Assembly,
 				#if SUPPORT_WECHATGAME
-						typeof(WXAdapter).Assembly
+					typeof(WXAdapter).Assembly
 				#endif
 				});
 
@@ -206,12 +206,12 @@ namespace MiiAsset.Editor.Build
 				{
 					var resultValue = r.Value;
 					m_Linker.AddTypes(resultValue.includedTypes);
-#if UNITY_2021_1_OR_NEWER
+				#if UNITY_2021_1_OR_NEWER
 					m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
-#else
+				#else
                         if (resultValue.GetType().GetProperty("includedSerializeReferenceFQN") != null)
                             m_Linker.AddSerializedClass(resultValue.GetType().GetProperty("includedSerializeReferenceFQN").GetValue(resultValue) as System.Collections.Generic.IEnumerable<string>);
-#endif
+				#endif
 				}
 
 				m_Linker.AddTypes(typeof(AssetLoader));
@@ -253,6 +253,7 @@ namespace MiiAsset.Editor.Build
 						Debug.LogError($"Move-Bundle-Failed: {sourcePath} -> {destPath}");
 						throw;
 					}
+
 					Debug.Assert(!File.Exists(sourcePath));
 					Debug.Assert(File.Exists(destPath));
 				}
@@ -452,11 +453,10 @@ namespace MiiAsset.MiiAssetHint
 			var catalogContent = JsonUtility.ToJson(catalog);
 			var bytes = Encoding.UTF8.GetBytes(catalogContent);
 			using (var ms = new FileStream(catalogFilePath, FileMode.Create))
-			using (ZipArchive arch = new ZipArchive(ms, ZipArchiveMode.Create))
+			using (var arch = new BrotliStream(ms, CompressionMode.Compress))
 			{
-				var entry = arch.CreateEntry("catalog.json", CompressionLevel.Optimal);
-				var stream = entry.Open();
-				stream.Write(bytes);
+				arch.Write(bytes, 0, bytes.Length);
+				arch.Close();
 			}
 
 			return bytes;

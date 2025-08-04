@@ -8,6 +8,7 @@ using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 #if UNITY_WEBGL && SUPPORT_WECHATGAME
+using GDK;
 using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
@@ -15,7 +16,7 @@ namespace MiiAsset.Runtime.IOManagers
 	public class WXSafeOpener
 	{
 		protected static readonly Dictionary<string, string> FdMap = new(16);
-		protected readonly WXFileSystemManager Fs = WX.GetFileSystemManager();
+		protected readonly IFileSystemManager Fs = UserAPI.Instance.FileSystem.GetFileSystemManager();
 
 		public string Open(string path, string flag)
 		{
@@ -48,10 +49,10 @@ namespace MiiAsset.Runtime.IOManagers
 	public class WXWriteFileStream : Stream
 	{
 		protected static readonly WXSafeOpener Opener = new();
-		protected readonly WXFileSystemManager Fs;
+		protected readonly IFileSystemManager Fs;
 		protected readonly string Uri;
 
-		public WXWriteFileStream(WXFileSystemManager fs, string uri)
+		public WXWriteFileStream(IFileSystemManager fs, string uri)
 		{
 			Fs = fs;
 			Uri = uri;
@@ -66,7 +67,7 @@ namespace MiiAsset.Runtime.IOManagers
 		{
 			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(Read)}()");
 			var readLen = Math.Min(buffer.Length - offset, count);
-			var bytes = Fs.ReadFileSync(this.Uri, this.Position, readLen);
+			var bytes = Fs.ReadFileBytesSync(this.Uri, this.Position, readLen);
 			var readLen1 = bytes.Length;
 			Buffer.BlockCopy(bytes, 0, buffer, offset, readLen1);
 			this.Position += readLen1;
@@ -115,7 +116,7 @@ namespace MiiAsset.Runtime.IOManagers
 				{
 					var writeLen = Math.Min(WriteSeg, count - i);
 					Buffer.BlockCopy(buffer, offset + i, TempBuffer, 0, writeLen);
-					Fs.WriteSync(new WriteSyncOption
+					Fs.WriteSync(new ()
 					{
 						fd = fd,
 						position = Position,
@@ -128,7 +129,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 			else
 			{
-				Fs.WriteSync(new WriteSyncOption
+				Fs.WriteSync(new ()
 				{
 					fd = fd,
 					position = Position,
