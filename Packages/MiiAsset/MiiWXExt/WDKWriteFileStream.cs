@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
-#if UNITY_WEBGL && SUPPORT_WECHATGAME
+#if UNITY_WEBGL && SUPPORT_WDK
 using GDK;
-using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
 {
-	public class WXSafeOpener
+	public class WDKSafeOpener
 	{
 		protected static readonly Dictionary<string, string> FdMap = new(16);
 		protected readonly IFileSystemManager Fs = UserAPI.Instance.FileSystem.GetFileSystemManager();
@@ -46,13 +45,13 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 	}
 
-	public class WXWriteFileStream : Stream
+	public class WDKWriteFileStream : Stream
 	{
-		protected static readonly WXSafeOpener Opener = new();
+		protected static readonly WDKSafeOpener Opener = new();
 		protected readonly IFileSystemManager Fs;
 		protected readonly string Uri;
 
-		public WXWriteFileStream(IFileSystemManager fs, string uri)
+		public WDKWriteFileStream(IFileSystemManager fs, string uri)
 		{
 			Fs = fs;
 			Uri = uri;
@@ -60,12 +59,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void Flush()
 		{
-			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(Flush)}()");
+			MyLogger.LogError($"NotImplementException-{nameof(WDKWriteFileStream)}::{nameof(Flush)}()");
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)
 		{
-			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(Read)}()");
+			MyLogger.LogError($"NotImplementException-{nameof(WDKWriteFileStream)}::{nameof(Read)}()");
 			var readLen = Math.Min(buffer.Length - offset, count);
 			var bytes = Fs.ReadFileBytesSync(this.Uri, this.Position, readLen);
 			var readLen1 = bytes.Length;
@@ -97,7 +96,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void SetLength(long value)
 		{
-			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(SetLength)}()");
+			MyLogger.LogError($"NotImplementException-{nameof(WDKWriteFileStream)}::{nameof(SetLength)}()");
 			this._length = value;
 			this.Position = Math.Min(this._length, this.Position);
 		}

@@ -1,4 +1,4 @@
-﻿#if UNITY_WEBGL && SUPPORT_WECHATGAME
+﻿#if UNITY_WEBGL && SUPPORT_WDK
 using System.IO;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;

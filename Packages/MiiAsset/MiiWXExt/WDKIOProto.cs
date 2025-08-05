@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,19 +11,13 @@ using UnityEngine.Networking;
 using MiiAsset.Runtime.Adapter;
 using MonoExtLib.AsyncExt;
 
-#if UNITY_WEBGL && SUPPORT_WECHATGAME
+#if UNITY_WEBGL && SUPPORT_WDK
 using Lang.Encoding;
-using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
 {
-	public static class WXExt
+	public static class WDKExt
 	{
-		public static string GetExceptionDesc(this FileError resp, string desc)
-		{
-			return $"file-error: errCode: {resp.errCode}, errMsg: {resp.errMsg}, {desc}";
-		}
-
 		public static string GetExceptionDesc(this ReadFileResult resp, string desc)
 		{
 			return $"file-error: errCode: {resp.errCode}, errMsg: {resp.errMsg}, {desc}";
@@ -36,7 +29,7 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 	}
 
-	public class WXIOProto : IIOProto
+	public class WDKIOProto : IIOProto
 	{
 		public string CacheDir { get; set; }
 		public string InternalDir { get; set; }
@@ -53,10 +46,10 @@ namespace MiiAsset.Runtime.IOManagers
 		{
 			if (!SDKManager.Instance.IsInited())
 			{
-				MyLogger.Log($"WX.InitSDK");
+				MyLogger.Log($"MiiAsset.InitSDK");
 				var code = await SDKManager.Instance.Init();
 
-				MyLogger.Log($"WX.InitSDK return code: {code}");
+				MyLogger.Log($"MiiAsset.InitSDK return code: {code}");
 				var ret = await InitInternal(options);
 				return ret;
 			}
@@ -167,7 +160,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Stream OpenWrite(string filePath)
 		{
-			var writeFileStream = new WXWriteFileStream(FileSystemManager, filePath);
+			var writeFileStream = new WDKWriteFileStream(FileSystemManager, filePath);
 			return writeFileStream;
 		}
 
@@ -323,7 +316,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public bool IsWebUri(string uri)
 		{
-			return (!uri.StartsWith(WX.env.USER_DATA_PATH)) && uri.Contains("://");
+			return (!uri.StartsWith(UserAPI.Instance.GameInfo.UserDataPath)) && uri.Contains("://");
 		}
 
 		public Task<string> ReadCatalog(string uri)
@@ -481,7 +474,7 @@ namespace MiiAsset.Runtime.IOManagers
 				Debug.LogException(exception1);
 			}
 
-			WX.CleanAllFileCache((ret) => { ts.SetResult(ret); });
+			UserAPI.Instance.FileSystem.GetFileSystemManager().CleanAllFileCache((ret) => { ts.SetResult(ret); });
 			return ts.Task;
 		}
 	}

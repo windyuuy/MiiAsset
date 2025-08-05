@@ -1,9 +1,10 @@
 ﻿using System.Threading.Tasks;
+using GDK;
 
 namespace MiiAsset.Runtime.IOManagers
 {
 	public interface IWidget
 	{
-		public ValueTask<bool> ShowToast(string tip, float duration);
+		public Task<ShowWidgetResult> ShowToast(string tip, float duration);
 	}
 }

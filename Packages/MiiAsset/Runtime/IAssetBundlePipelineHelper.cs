@@ -27,7 +27,7 @@ namespace MiiAsset.Runtime
 				}
 				else if (Application.platform == RuntimePlatform.WebGLPlayer)
 				{
-				#if SUPPORT_WECHATGAME
+				#if SUPPORT_WDK
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
 					pipeline = new LoadAssetBundleFromLocalBytesPipeline().Init(remoteUri, crc);
 				#else
@@ -49,7 +49,7 @@ namespace MiiAsset.Runtime
 				// 从缓存或网络加载
 				if (Application.platform == RuntimePlatform.WebGLPlayer)
 				{
-				#if SUPPORT_WECHATGAME
+				#if SUPPORT_WDK
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
 					pipeline = new LoadAssetBundleFromRemoteBytesPipeline().Init(remoteUri, cacheUri, crc);
 				#else

@@ -197,8 +197,8 @@ namespace MiiAsset.Editor.Build
 				m_Linker.AddAssemblies(new[]
 				{
 					typeof(AssetLoader).Assembly, typeof(IOManager).Assembly,
-				#if SUPPORT_WECHATGAME
-					typeof(WXAdapter).Assembly
+				#if SUPPORT_WDK
+					typeof(WDKAdapter).Assembly
 				#endif
 				});
 
