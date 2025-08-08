@@ -341,7 +341,7 @@ namespace MiiAsset.Runtime.Pipelines
 			string hashFileName;
 			if (index >= 0)
 			{
-				hashFileName = internalCatalogUri[0..index] + ".hash";
+				hashFileName = internalCatalogUri[0..(index - 1)] + ".hash";
 			}
 			else
 			{
