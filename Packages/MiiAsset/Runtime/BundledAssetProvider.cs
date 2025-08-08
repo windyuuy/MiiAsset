@@ -16,6 +16,7 @@ namespace MiiAsset.Runtime
 	public class BundledAssetProvider : IAssetProvider
 	{
 		public string CatalogName;
+		public string CatalogExt;
 		public string InternalBaseUri;
 		public string ExternalBaseUri;
 		public string RemoteBaseUri;
@@ -29,6 +30,7 @@ namespace MiiAsset.Runtime
 			this.InternalBaseUri = IOManager.LocalIOProto.InternalDir;
 			this.ExternalBaseUri = IOManager.LocalIOProto.ExternalDir;
 			this.CatalogName = IOManager.LocalIOProto.CatalogName;
+			this.CatalogExt = options.CatalogExt;
 
 			BundleWebSemaphore.Init(options.InitDownloadCoCount, options.MaxDownloadCoCount);
 
@@ -45,7 +47,8 @@ namespace MiiAsset.Runtime
 
 				async Task<PipelineResult> LoadCatalogInternal()
 				{
-					using var pipeline = new UpdateCatalogPipeline().Init(CatalogName, InternalBaseUri, ExternalBaseUri,
+					using var pipeline = new UpdateCatalogPipeline().Init(CatalogName, CatalogExt, InternalBaseUri,
+						ExternalBaseUri,
 						RemoteBaseUri);
 					Result = await pipeline.Run();
 					if (Result.IsOk)

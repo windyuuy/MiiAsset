@@ -11,6 +11,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public string ExternalBaseUri { get; }
 		public string BundleCacheDir { get; }
 		public string CatalogName { get; }
+		public string CatalogExt { get; }
 		public int Timeout { get; }
 	}
 

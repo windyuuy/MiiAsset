@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
@@ -14,11 +15,14 @@ namespace MiiAsset.Runtime.Pipelines
 		public string InternalBaseUri;
 		public string ExternalBaseUri;
 		public string RemoteBaseUri;
+		public string CatalogExt;
 
-		public UpdateCatalogPipeline Init(string catalogName, string internalBaseUri, string externalBaseUri,
+		public UpdateCatalogPipeline Init(string catalogName, string catalogExt, string internalBaseUri,
+			string externalBaseUri,
 			string remoteBaseUri)
 		{
 			CatalogName = catalogName;
+			CatalogExt = catalogExt;
 			InternalBaseUri = internalBaseUri;
 			ExternalBaseUri = externalBaseUri;
 			RemoteBaseUri = remoteBaseUri;
@@ -331,9 +335,19 @@ namespace MiiAsset.Runtime.Pipelines
 			return LoadCatalogTask;
 		}
 
-		private static string ToHashFileName(string internalCatalogUri)
+		private string ToHashFileName(string internalCatalogUri)
 		{
-			var hashFileName = internalCatalogUri.Replace(".json", ".hash").Replace(".zip", ".hash");
+			var index = internalCatalogUri.LastIndexOf(CatalogExt, StringComparison.Ordinal);
+			string hashFileName;
+			if (index >= 0)
+			{
+				hashFileName = internalCatalogUri[0..index] + ".hash";
+			}
+			else
+			{
+				hashFileName = internalCatalogUri + ".hash";
+			}
+
 			MyLogger.Log($"ToHashFileName: {internalCatalogUri}->{hashFileName}");
 			return hashFileName;
 		}

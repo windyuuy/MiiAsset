@@ -35,7 +35,7 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 			try
 			{
-				MyLogger.Log($"load catalog.zip: {Bytes.Length}, {RemoteCatalogUri}");
+				MyLogger.Log($"load catalog file: {Bytes.Length}, {RemoteCatalogUri}");
 				try
 				{
 					try
@@ -49,7 +49,7 @@ namespace MiiAsset.Runtime.Pipelines
 						var text = await streamReader.ReadToEndAsync();
 					#endif
 						Text = text;
-						MyLogger.Log($"load catalog.zip done: {RemoteCatalogUri}");
+						MyLogger.Log($"load catalog file done: {RemoteCatalogUri}");
 					}
 					catch (Exception exception)
 					{
