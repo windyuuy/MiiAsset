@@ -22,7 +22,7 @@ namespace TrackableResourceManager.Runtime
 
 			_isDisposed = true;
 
-#if !DISABLE_NOREFERCOUNT_API
+		#if !DISABLE_NOREFERCOUNT_API
 			foreach (var item in Cached)
 			{
 				if (item.Key.T == typeof(Scene))
@@ -34,7 +34,7 @@ namespace TrackableResourceManager.Runtime
 					AssetLoader.UnLoadAsset(item.Key.Key);
 				}
 			}
-#endif
+		#endif
 		}
 
 		~ResourceSet()
@@ -70,17 +70,17 @@ namespace TrackableResourceManager.Runtime
 
 		public Task<T> Load<T>(ResourceKey resKey) where T : UnityEngine.Object
 		{
-#if !DISABLE_NOREFERCOUNT_API
+		#if !DISABLE_NOREFERCOUNT_API
 			var resUri = resKey.Key;
 			return Load<T>(resUri);
-#else
+		#else
 			throw new NotImplementedException();
-#endif
+		#endif
 		}
 
-#if !DISABLE_NOREFERCOUNT_API
 		public Task<T> Load<T>(string resUri) where T : UnityEngine.Object
 		{
+		#if !DISABLE_NOREFERCOUNT_API
 			var key = new CacheKey(resUri, typeof(T));
 			if (!Cached.TryGetValue(key, out var op))
 			{
@@ -103,22 +103,24 @@ namespace TrackableResourceManager.Runtime
 			var loadAsyncOp = ((LoadAsyncOp<T>)op);
 			loadAsyncOp.ReferCount++;
 			return loadAsyncOp.Task;
+		#else
+			throw new NotImplementedException();
+		#endif
 		}
-#endif
 
 		public Task UnLoad<T>(ResourceKey resKey) where T : UnityEngine.Object
 		{
-#if !DISABLE_NOREFERCOUNT_API
+		#if !DISABLE_NOREFERCOUNT_API
 			var resUri = resKey.Key;
 			return UnLoad<T>(resUri);
-#else
+		#else
 			throw new NotImplementedException();
-#endif
+		#endif
 		}
 
-#if !DISABLE_NOREFERCOUNT_API
 		public Task UnLoad<T>(string resUri) where T : UnityEngine.Object
 		{
+		#if !DISABLE_NOREFERCOUNT_API
 			var key = new CacheKey(resUri, typeof(T));
 			if (Cached.TryGetValue(key, out var op))
 			{
@@ -132,12 +134,15 @@ namespace TrackableResourceManager.Runtime
 			}
 
 			return Task.FromResult<T>(default);
+		#else
+			throw new NotImplementedException();
+		#endif
 		}
-#endif
 
-		public Task<Scene> LoadScene(ResourceKey resKey, LoadSceneMode loadMode, bool activateOnLoad = true, int priority = 100)
+		public Task<Scene> LoadScene(ResourceKey resKey, LoadSceneMode loadMode, bool activateOnLoad = true,
+			int priority = 100)
 		{
-#if !DISABLE_NOREFERCOUNT_API
+		#if !DISABLE_NOREFERCOUNT_API
 			var resUri = resKey.Key;
 			var key = new CacheKey(resUri, typeof(Scene));
 			if (!Cached.TryGetValue(key, out var op))
@@ -150,14 +155,14 @@ namespace TrackableResourceManager.Runtime
 			var loadAsyncOp = ((LoadAsyncOp<Scene>)op);
 			loadAsyncOp.ReferCount++;
 			return loadAsyncOp.Task;
-#else
+		#else
 			throw new NotImplementedException();
-#endif
+		#endif
 		}
 
 		public Task UnloadScene(ResourceKey resKey)
 		{
-#if !DISABLE_NOREFERCOUNT_API
+		#if !DISABLE_NOREFERCOUNT_API
 			var resUri = resKey.Key;
 			var key = new CacheKey(resUri, typeof(Scene));
 			if (Cached.TryGetValue(key, out var op))
@@ -172,9 +177,9 @@ namespace TrackableResourceManager.Runtime
 			}
 
 			return Task.CompletedTask;
-#else
+		#else
 			throw new NotImplementedException();
-#endif
+		#endif
 		}
 
 		public bool IsAllLoaded()
@@ -188,6 +193,7 @@ namespace TrackableResourceManager.Runtime
 					break;
 				}
 			}
+
 			// var isAllLoaded = Cached.Values.All(item => item.IsLoaded());
 			return isAllLoaded;
 		}
