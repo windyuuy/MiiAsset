@@ -117,7 +117,7 @@ namespace TrackableResourceManager.Runtime
 		}
 
 #if !DISABLE_NOREFERCOUNT_API
-		private Task UnLoad<T>(string resUri) where T : UnityEngine.Object
+		public Task UnLoad<T>(string resUri) where T : UnityEngine.Object
 		{
 			var key = new CacheKey(resUri, typeof(T));
 			if (Cached.TryGetValue(key, out var op))
