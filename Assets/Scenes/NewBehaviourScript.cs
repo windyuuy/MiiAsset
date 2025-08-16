@@ -24,16 +24,40 @@ public class NewBehaviourScript : MonoBehaviour
         TaskScheduler.UnobservedTaskException += (s, e) => { Debug.LogException(e.Exception); };
         AppDomain.CurrentDomain.UnhandledException += (s, args) => { Debug.LogError((Exception)args.ExceptionObject); };
         LoomMG.Init();
-        // await UniAsyncUtils.WaitForFrames(1);
-        // var dt1 = Date.Now();
-        // await TestProgress();
-        // var dt2 = Date.Now();
-        // Debug.Log($"test-timecost: {dt2 - dt1}");
-        
-        await AssetLoader.Init();
-        await AssetLoader.LoadLocalCatalog();
+        StartCoroutine(DelayRecycle());
+        await UniAsyncUtils.WaitForFrames(1);
+        var dt1 = Date.Now();
+        await Test_LoadFromLocal();
+        var dt2 = Date.Now();
+        Debug.Log($"test-timecost: {dt2 - dt1}");
+    }
 
-        Test5();
+    IEnumerator DelayRecycle()
+    {
+        while (true)
+        {
+            // 调用此函数延迟卸载资源
+            AssetLoader.RunDelayedTasks();
+            yield return new WaitForSeconds(1);
+        }
+    }
+
+    private static async Task Test_LoadFromLocal()
+    {
+        await AssetLoader.Init();
+        var result = await AssetLoader.LoadLocalCatalog();
+        if (result.IsOk)
+        {
+            var address = "Assets/Bundles/BB/Capsule.prefab";
+            var capsulePrefab = await AssetLoader.LoadAssetByRefer<GameObject>(address);
+            var capsule = GameObject.Instantiate(capsulePrefab);
+            await AssetLoader.UnLoadAssetByRefer(address);
+            Debug.Log("done");
+        }
+        else
+        {
+            result.PrintError();
+        }
     }
 
     private static async Task Test1_1()
@@ -57,7 +81,7 @@ public class NewBehaviourScript : MonoBehaviour
         }
         else
         {
-            result.Print();
+            result.PrintError();
         }
     }
 
@@ -84,7 +108,7 @@ public class NewBehaviourScript : MonoBehaviour
         }
         else
         {
-            result.Print();
+            result.PrintError();
         }
     }
 
@@ -109,7 +133,7 @@ public class NewBehaviourScript : MonoBehaviour
         }
         else
         {
-            result.Print();
+            result.PrintError();
         }
     }
 
@@ -136,7 +160,7 @@ public class NewBehaviourScript : MonoBehaviour
         }
         else
         {
-            result.Print();
+            result.PrintError();
         }
     }
 
@@ -166,7 +190,7 @@ public class NewBehaviourScript : MonoBehaviour
         }
         else
         {
-            result.Print();
+            result.PrintError();
         }
     }
 
@@ -259,10 +283,10 @@ public class NewBehaviourScript : MonoBehaviour
         }
         else
         {
-            result.Print();
+            result.PrintError();
         }
     }
-
+    
     private async void Test5()
     {
         var test = await AssetLoader.LoadAssetByRefer<TextAsset>("Assets/Bundles/AA/ActivityTable-ActivityDayFireTable.json");
