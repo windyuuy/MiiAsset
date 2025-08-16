@@ -345,7 +345,7 @@ namespace MiiAsset.Runtime.Status
         {
             foreach (var result in this.Results)
             {
-                result.Print();
+                result.PrintError();
             }
         }
     }

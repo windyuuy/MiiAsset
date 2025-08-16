@@ -152,20 +152,20 @@ namespace MiiAsset.Runtime
 			return true;
 		}
 
-		public async Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public async Task<PipelineResultGroup> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			AllowTags(tags);
 			var results = await CatalogStatus.LoadTags(tags, CatalogInfo, loadStatus);
-			var isOk = results.All(result => result.IsOk);
-			return isOk;
+			var resultGroup = new PipelineResultGroup(results);
+			return resultGroup;
 		}
 
-		public async Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public async Task<PipelineResultGroup> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			var task = CatalogStatus.DownloadTags(tags, CatalogInfo, loadStatus);
 			var results = await task;
-			var isOk = results.All(result => result.IsOk);
-			return isOk;
+			var resultGroup = new PipelineResultGroup(results);
+			return resultGroup;
 		}
 
 		public Task UnLoadTags(string[] tags)
@@ -244,7 +244,7 @@ namespace MiiAsset.Runtime
 				{
 					if (!result.IsOk)
 					{
-						result.Print();
+						result.PrintError();
 					}
 				}
 
@@ -294,7 +294,7 @@ namespace MiiAsset.Runtime
 				{
 					if (!result.IsOk)
 					{
-						result.Print();
+						result.PrintError();
 					}
 				}
 

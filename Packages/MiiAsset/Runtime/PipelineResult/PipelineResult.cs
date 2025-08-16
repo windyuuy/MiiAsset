@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
@@ -9,6 +10,36 @@ namespace MiiAsset.Runtime
 		Init,
 		Running,
 		Done,
+	}
+
+	public class PipelineResultGroup
+	{
+		public PipelineResult[] Results;
+
+		private PipelineResultGroup()
+		{
+			Results = Array.Empty<PipelineResult>();
+		}
+
+		public static readonly PipelineResultGroup Succeed = new();
+
+		public PipelineResultGroup(PipelineResult[] results)
+		{
+			Results = results;
+		}
+
+		public virtual bool IsOk => Results.All(result => result.IsOk);
+
+		public void PrintError()
+		{
+			foreach (var result in Results)
+			{
+				if (!result.IsOk)
+				{
+					result.PrintError();
+				}
+			}
+		}
 	}
 
 	public class PipelineResult
@@ -26,7 +57,7 @@ namespace MiiAsset.Runtime
 		public PipelineErrorType ErrorType;
 		public PipelineStatus Status = PipelineStatus.Init;
 
-		public void Print()
+		public void PrintError()
 		{
 			if (!this.IsOk)
 			{

@@ -49,12 +49,12 @@ namespace MiiAsset.Runtime
 			return Provider.AllowTags(tags);
 		}
 
-		public Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResultGroup> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.LoadTags(tags, loadStatus);
 		}
 
-		public Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResultGroup> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			return Provider.DownloadTags(tags, loadStatus);
 		}

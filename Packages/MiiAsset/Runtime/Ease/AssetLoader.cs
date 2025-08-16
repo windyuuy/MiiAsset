@@ -139,7 +139,7 @@ namespace MiiAsset.Runtime
 			return Consumer.AllowTags(tags);
 		}
 
-		public static Task<bool> LoadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
+		public static Task<PipelineResultGroup> LoadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
 		{
 			if (tags is not string[] tags1)
 			{
@@ -149,12 +149,12 @@ namespace MiiAsset.Runtime
 			return Consumer.LoadTags(tags1, loadStatus);
 		}
 
-		public static Task<bool> LoadTags(params string[] tags)
+		public static Task<PipelineResultGroup> LoadTags(params string[] tags)
 		{
 			return Consumer.LoadTags(tags, null);
 		}
 
-		public static Task<bool> DownloadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
+		public static Task<PipelineResultGroup> DownloadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
 		{
 			if (tags is not string[] tags1)
 			{
@@ -164,17 +164,17 @@ namespace MiiAsset.Runtime
 			return Consumer.DownloadTags(tags1, loadStatus);
 		}
 
-		public static Task<bool> DownloadBatch(int batch, AssetLoadStatusGroup loadStatus = null)
+		public static Task<PipelineResultGroup> DownloadBatch(int batch, AssetLoadStatusGroup loadStatus = null)
 		{
 			return Consumer.DownloadTags(new string[] { $"batch{batch}" }, loadStatus);
 		}
 
-		public static Task<bool> DownloadAll(AssetLoadStatusGroup loadStatus = null)
+		public static Task<PipelineResultGroup> DownloadAll(AssetLoadStatusGroup loadStatus = null)
 		{
 			return Consumer.DownloadTags(new string[] { "all" }, loadStatus);
 		}
 
-		public static Task<bool> DownloadAllLeft(AssetLoadStatusGroup loadStatus = null)
+		public static Task<PipelineResultGroup> DownloadAllLeft(AssetLoadStatusGroup loadStatus = null)
 		{
 			return DownloadAll(loadStatus);
 		}
@@ -184,7 +184,7 @@ namespace MiiAsset.Runtime
 			return Consumer.GetDownloadSize(new string[] { $"batch{batch}" });
 		}
 
-		public static Task<bool> DownloadTags(params string[] tags)
+		public static Task<PipelineResultGroup> DownloadTags(params string[] tags)
 		{
 			return Consumer.DownloadTags(tags, null);
 		}

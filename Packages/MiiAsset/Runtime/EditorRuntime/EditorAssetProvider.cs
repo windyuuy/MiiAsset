@@ -47,14 +47,14 @@ namespace MiiAsset.Runtime
 			return true;
 		}
 
-		public Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResultGroup> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
-			return Task.FromResult(true);
+			return Task.FromResult(PipelineResultGroup.Succeed);
 		}
 
-		public Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResultGroup> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
-			return Task.FromResult(true);
+			return Task.FromResult(PipelineResultGroup.Succeed);
 		}
 
 		public Task UnLoadTags(string[] tags)

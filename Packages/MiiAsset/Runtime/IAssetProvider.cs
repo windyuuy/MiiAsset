@@ -27,8 +27,8 @@ namespace MiiAsset.Runtime
 
 		public bool AllowTags(string[] tags);
 
-		public Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus);
-		public Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus);
+		public Task<PipelineResultGroup> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus);
+		public Task<PipelineResultGroup> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus);
 
 		public Task UnLoadTags(string[] tags);
 
