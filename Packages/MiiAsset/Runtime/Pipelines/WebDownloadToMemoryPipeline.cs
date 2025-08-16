@@ -41,6 +41,7 @@ namespace MiiAsset.Runtime.IOStreams
 					await op.GetTask();
 					var code = (int)uwr.responseCode;
 					var msg = uwr.error;
+					var uwrResult = uwr.result;
 
 					Bytes = uwr.downloadHandler.data;
 
@@ -48,7 +49,7 @@ namespace MiiAsset.Runtime.IOStreams
 					uwr = null;
 
 					Result.Code = (int)code;
-					Result.IsOk = code == 200;
+					Result.IsOk = uwrResult == UnityWebRequest.Result.Success;
 					Result.Msg = msg;
 					if (!Result.IsOk)
 					{
