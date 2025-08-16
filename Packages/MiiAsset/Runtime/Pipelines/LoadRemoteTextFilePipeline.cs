@@ -59,6 +59,7 @@ namespace MiiAsset.Runtime.Pipelines
 						await op.GetTask();
 						var code = (int)Uwr.responseCode;
 						var msg = Uwr.error;
+						var uwrResult = Uwr.result;
 						Text = DownloadHandler.text;
 
 						DownloadHandler.Dispose();
@@ -68,7 +69,7 @@ namespace MiiAsset.Runtime.Pipelines
 						Uwr = null;
 
 						Result.Code = (int)code;
-						Result.IsOk = code == 200;
+						Result.IsOk = uwrResult == UnityWebRequest.Result.Success;
 						Result.Msg = msg;
 
 						MyLogger.Log($"download-done: {Uri}, {Result.IsOk}, {Result.Code}, {Result.Msg}");

@@ -91,13 +91,14 @@ namespace MiiAsset.Runtime.IOStreams
 
 					var code = (int)Uwr.responseCode;
 					var msg = Uwr.error;
+					var uwrResult = Uwr.result;
 
 					var evt = new StreamCtrlEvent()
 					{
 						Event = StreamEvent.End,
 						Code = code,
 						Msg = msg,
-						IsOk = code == 200,
+						IsOk = uwrResult == UnityWebRequest.Result.Success,
 						SourceUri = this.Uri,
 					};
 
