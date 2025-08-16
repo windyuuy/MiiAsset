@@ -347,6 +347,9 @@ namespace MiiAsset.Runtime.IOManagers
 				MyLogger.Log($"EnsureStreamingAssets-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
 			}
 
+			uwr.Dispose();
+			uwr = null;
+
 			var maxTimes = 100;
 			// 有可能还是旧的，但是不是新的没关系, 在就行
 			await UniAsyncUtils.WaitUntil(() =>
@@ -373,9 +376,13 @@ namespace MiiAsset.Runtime.IOManagers
 				var op = uwr.SendWebRequest();
 				await op.GetTask();
 				var isOk = uwr.result == UnityWebRequest.Result.Success;
+				var uwrResponseCode = uwr.responseCode;
+				var uwrError = uwr.error;
+				uwr.Dispose();
+				uwr = null;
 				if (!isOk)
 				{
-					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
+					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {(int)uwrResponseCode}, {uwrError}");
 				}
 				else
 				{

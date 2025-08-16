@@ -320,7 +320,7 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri, string catalogName)
 		{
-			if (LoadCatalogTask == null)
+			if (LoadCatalogTask == null || (LoadCatalogTask.IsCompleted && !Result.IsOk))
 			{
 				this.RemoteBaseUri = remoteBaseUri;
 				this.CatalogName = catalogName;
