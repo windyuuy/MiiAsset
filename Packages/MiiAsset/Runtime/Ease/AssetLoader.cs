@@ -623,19 +623,19 @@ namespace MiiAsset.Runtime
 			Consumer?.RunDelayedTasks();
 		}
 
-		public static bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
-		{
-			return Consumer.TryGetExtraAddressInfo(address, out extraAddressInfo);
-		}
-
-		public static bool ExistExtraAddressInfo(string address)
-		{
-			return Consumer.TryGetExtraAddressInfo(address, out var extraAddressInfo);
-		}
-
-		public static Task<bool> CleanAllCaches()
-		{
-			return Consumer?.CleanAllCaches();
-		}
+		// public static bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
+		// {
+		// 	return Consumer.TryGetExtraAddressInfo(address, out extraAddressInfo);
+		// }
+		//
+		// public static bool ExistExtraAddressInfo(string address)
+		// {
+		// 	return Consumer.TryGetExtraAddressInfo(address, out var extraAddressInfo);
+		// }
+		//
+		// public static Task<bool> CleanAllCaches()
+		// {
+		// 	return Consumer?.CleanAllCaches();
+		// }
 	}
 }
