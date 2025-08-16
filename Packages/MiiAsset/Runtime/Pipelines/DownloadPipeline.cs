@@ -50,8 +50,9 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public async Task<PipelineResult> Run()
 		{
-			if (Result is not { Status: PipelineStatus.Done })
+			if (Result is not { Status: PipelineStatus.Done } || !Result.IsOk)
 			{
+				WriteStream.Start();
 				var result = await DownloadStream.Start();
 				if (result.IsOk)
 				{
@@ -90,7 +91,8 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 			if (DownloadStream != null && WriteStream != null)
 			{
-				return DownloadStream.GetProgress().Combine(new PipelineProgress().SetDownloadedProgress(Result?.IsOk ?? false));
+				return DownloadStream.GetProgress()
+					.Combine(new PipelineProgress().SetDownloadedProgress(Result?.IsOk ?? false));
 			}
 			else
 			{

@@ -83,6 +83,7 @@ namespace MiiAsset.Runtime
 		public void OnCtrl(StreamCtrlEvent evt);
 		public Task<PipelineResult> WaitDone();
 		public PipelineProgress GetProgress();
+		public void Start();
 	}
 
 	public interface IRandomReadStream : ISeekableStream, ICacheableStream

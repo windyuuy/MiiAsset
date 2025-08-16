@@ -57,18 +57,34 @@ namespace MiiAsset.Runtime.IOStreams
 		public WebDownloadPumpStream Init(string uri)
 		{
 			Uri = uri;
-			DownloadHandler = new();
-			DownloadHandler.Uri = uri;
 			Result = new();
 			return this;
 		}
 
 		public Task<PipelineResult> Start()
 		{
-			if (Ts == null)
+			if (Ts == null || (Ts.Task.IsCompleted && !Result.IsOk))
 			{
 				async Task ReadInternal()
 				{
+					if (Uwr != null)
+					{
+						if (DownloadHandler != null)
+						{
+							DownloadHandler.Dispose();
+							DownloadHandler = null;
+						}
+
+						Uwr.Dispose();
+						Uwr = null;
+					}
+
+					{
+						DownloadHandler = new();
+						DownloadHandler.Uri = Uri;
+						DownloadHandler.OnCtrl = OnCtrl;
+						DownloadHandler.OnReceivedData = OnReceivedData;
+					}
 					Result.Status = PipelineStatus.Running;
 					Ts = new();
 
@@ -100,6 +116,7 @@ namespace MiiAsset.Runtime.IOStreams
 						Msg = msg,
 						IsOk = uwrResult == UnityWebRequest.Result.Success,
 						SourceUri = this.Uri,
+						Capability = (int)DownloadHandler.TotalBytes,
 					};
 
 					// if (!evt.IsOk)
@@ -136,17 +153,9 @@ namespace MiiAsset.Runtime.IOStreams
 			}
 		}
 
-		public Func<byte[], int, int, int> OnReceivedData
-		{
-			get { return DownloadHandler.OnReceivedData; }
-			set { DownloadHandler.OnReceivedData = value; }
-		}
+		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 
-		public Action<StreamCtrlEvent> OnCtrl
-		{
-			get { return DownloadHandler.OnCtrl; }
-			set { DownloadHandler.OnCtrl = value; }
-		}
+		public Action<StreamCtrlEvent> OnCtrl { get; set; }
 
 		protected PipelineProgress Progress = new PipelineProgress();
 
@@ -181,7 +190,7 @@ namespace MiiAsset.Runtime.IOStreams
 		{
 			Progress = new()
 			{
-				Total = DownloadHandler.TotalBytes,
+				Total = DownloadHandler != null ? DownloadHandler.TotalBytes : 0,
 				Count = Uwr?.downloadedBytes ?? 0,
 			};
 		}
@@ -190,15 +199,20 @@ namespace MiiAsset.Runtime.IOStreams
 		{
 			if (this.DownloadHandler != null)
 			{
-				this.DownloadHandler.Dispose();
 				this.DownloadHandler.OnReceivedData = null;
 				this.DownloadHandler.OnCtrl = null;
+				this.DownloadHandler.Dispose();
+				this.DownloadHandler = null;
 			}
 
 			if (this.Uwr != null)
 			{
 				this.Uwr.Dispose();
+				this.Uwr = null;
 			}
+
+			this.OnCtrl = null;
+			this.OnReceivedData = null;
 
 			Ts = null;
 		}

@@ -25,6 +25,8 @@ namespace MiiAsset.Runtime
 
 		private static bool _isInited = false;
 
+		public static AssetConsumerConfig.LoadType LoadType { get; private set; }
+
 		public static async Task<bool> Init()
 		{
 			if (_isInited)
@@ -36,6 +38,7 @@ namespace MiiAsset.Runtime
 			RegisterCertificateHandler(new AcceptAllCertificate());
 
 			var config = AssetConsumerConfig.Load();
+			LoadType = config.loadType;
 			var result = await Init(config);
 			Resources.UnloadAsset(config);
 
@@ -210,7 +213,8 @@ namespace MiiAsset.Runtime
 			return Consumer.AllowTags(tags);
 		}
 
-		public static Task<PipelineResultGroup> LoadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
+		public static Task<PipelineResultGroup> LoadTags(IEnumerable<string> tags,
+			AssetLoadStatusGroup loadStatus = null)
 		{
 			if (tags is not string[] tags1)
 			{
@@ -225,7 +229,8 @@ namespace MiiAsset.Runtime
 			return Consumer.LoadTags(tags, null);
 		}
 
-		public static Task<PipelineResultGroup> DownloadTags(IEnumerable<string> tags, AssetLoadStatusGroup loadStatus = null)
+		public static Task<PipelineResultGroup> DownloadTags(IEnumerable<string> tags,
+			AssetLoadStatusGroup loadStatus = null)
 		{
 			if (tags is not string[] tags1)
 			{
@@ -736,15 +741,15 @@ namespace MiiAsset.Runtime
 		{
 			return Consumer.TryGetExtraAddressInfo(address, out extraAddressInfo);
 		}
-		
+
 		public static bool ExistExtraAddressInfo(string address)
 		{
 			return Consumer.TryGetExtraAddressInfo(address, out var extraAddressInfo);
 		}
+
 		public static Task<bool> CleanAllCaches()
 		{
 			return Consumer?.CleanAllCaches();
 		}
-
 	}
 }
