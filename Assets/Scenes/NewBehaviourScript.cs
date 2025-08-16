@@ -57,7 +57,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 		else
 		{
-			result.Print();
+			result.PrintError();
 		}
 	}
 
@@ -82,7 +82,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 		else
 		{
-			result.Print();
+			result.PrintError();
 		}
 	}
 
@@ -109,7 +109,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 		else
 		{
-			result.Print();
+			result.PrintError();
 		}
 	}
 
@@ -134,7 +134,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 		else
 		{
-			result.Print();
+			result.PrintError();
 		}
 	}
 
@@ -161,7 +161,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 		else
 		{
-			result.Print();
+			result.PrintError();
 		}
 	}
 
@@ -191,7 +191,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 		else
 		{
-			result.Print();
+			result.PrintError();
 		}
 	}
 
@@ -286,7 +286,7 @@ public class NewBehaviourScript : MonoBehaviour
 		}
 		else
 		{
-			result.Print();
+			result.PrintError();
 		}
 	}
 }
