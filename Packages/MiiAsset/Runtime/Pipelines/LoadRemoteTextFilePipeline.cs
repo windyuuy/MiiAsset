@@ -2,10 +2,10 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using GameLib.MonoUtils;
 using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
+using MonoExtLib.AsyncExt;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -47,27 +47,40 @@ namespace MiiAsset.Runtime.Pipelines
 			{
 				async Task ReadInternal()
 				{
-					Result.Status = PipelineStatus.Running;
-					Ts = new();
-					MyLogger.Log($"download: {Uri}");
-					Uwr = UnityWebRequest.Get(this.Uri);
-					DownloadHandler = Uwr.downloadHandler;
-					IOManager.LocalIOProto.SetUwr(Uwr);
-					var op = Uwr.SendWebRequest();
-					await op.GetTask();
-					var code = Uwr.responseCode;
-					var msg = Uwr.error;
-					Text = DownloadHandler.text;
+					try
+					{
+						Result.Status = PipelineStatus.Running;
+						Ts = new();
+						MyLogger.Log($"download: {Uri}");
+						Uwr = UnityWebRequest.Get(this.Uri);
+						DownloadHandler = Uwr.downloadHandler;
+						IOManager.LocalIOProto.SetUwr(Uwr);
+						var op = Uwr.SendWebRequest();
+						await op.GetTask();
+						var code = (int)Uwr.responseCode;
+						var msg = Uwr.error;
+						var uwrResult = Uwr.result;
+						Text = DownloadHandler.text;
 
-					DownloadHandler.Dispose();
-					DownloadHandler = null;
+						DownloadHandler.Dispose();
+						DownloadHandler = null;
 
-					Uwr.Dispose();
-					Uwr = null;
+						Uwr.Dispose();
+						Uwr = null;
 
-					Result.Code = (int)code;
-					Result.IsOk = code == 200;
-					Result.Msg = msg;
+						Result.Code = (int)code;
+						Result.IsOk = uwrResult == UnityWebRequest.Result.Success;
+						Result.Msg = msg;
+
+						MyLogger.Log($"download-done: {Uri}, {Result.IsOk}, {Result.Code}, {Result.Msg}");
+					}
+					catch (Exception exception)
+					{
+						Result.Exception = exception;
+						MyLogger.LogError($"download-failed: {Uri}");
+						MyLogger.LogException(exception);
+					}
+
 					if (!Result.IsOk)
 					{
 						Result.ErrorType = PipelineErrorType.NetError;
@@ -121,7 +134,8 @@ namespace MiiAsset.Runtime.Pipelines
 				ulong waitDoneAddition = 100;
 				Progress = new()
 				{
-					Total = Math.Max(uwrDownloadedBytes, (ulong)(uwrDownloadedBytes / Uwr.downloadProgress)) + waitDoneAddition,
+					Total = Math.Max(uwrDownloadedBytes, (ulong)(uwrDownloadedBytes / Uwr.downloadProgress)) +
+					        waitDoneAddition,
 					Count = uwrDownloadedBytes,
 				};
 			}
