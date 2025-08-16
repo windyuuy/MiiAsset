@@ -38,7 +38,7 @@ namespace MiiAsset.Runtime
 
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
-			if (LoadCatalogTask == null)
+			if (LoadCatalogTask == null || (LoadCatalogTask.IsCompleted && !Result.IsOk))
 			{
 				this.RemoteBaseUri = remoteBaseUri;
 
