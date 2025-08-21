@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using MiiAsset.Runtime;
+using UnityEngine;
+using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
 
 namespace TrackableResourceManager.Runtime
@@ -22,19 +22,37 @@ namespace TrackableResourceManager.Runtime
 
 			_isDisposed = true;
 
-#if !DISABLE_NOREFERCOUNT_API
+		#if !DISABLE_NOREFERCOUNT_API
+			foreach (var (cacheKey, _) in Cached)
+			{
+				if (!SharedCached.TryGetValue(cacheKey, out var op) || (1 != op.ReferCount && 0 == --op.ReferCount))
+				{
+					if (cacheKey.T == typeof(Scene))
+					{
+						AssetLoader.UnLoadScene(cacheKey.Key);
+					}
+					else
+					{
+						AssetLoader.UnLoadAsset(cacheKey.Key);
+					}
+				}
+			}
+		#else
 			foreach (var item in Cached)
 			{
 				if (item.Key.T == typeof(Scene))
 				{
-					AssetLoader.UnLoadScene(item.Key.Key);
+					AssetLoader.UnLoadSceneByRefer(item.Key.Key);
 				}
 				else
 				{
-					AssetLoader.UnLoadAsset(item.Key.Key);
+					AssetLoader.UnLoadAssetByRefer(item.Key.Key);
 				}
 			}
-#endif
+		#endif
+
+			Cached.Clear();
+			DictionaryPool<CacheKey, ILoadAsyncOp>.Release(Cached);
 		}
 
 		~ResourceSet()
@@ -66,115 +84,136 @@ namespace TrackableResourceManager.Runtime
 			}
 		}
 
-		protected readonly Dictionary<CacheKey, ILoadAsyncOp> Cached = new();
+		protected readonly Dictionary<CacheKey, ILoadAsyncOp> Cached = DictionaryPool<CacheKey, ILoadAsyncOp>.Get();
+		protected static readonly Dictionary<CacheKey, ILoadAsyncOp> SharedCached = new();
 
-		public Task<T> Load<T>(ResourceKey resKey) where T : UnityEngine.Object
+		public Task<T> LoadAsset<T>(ResourceKey resKey) where T : UnityEngine.Object
 		{
-#if !DISABLE_NOREFERCOUNT_API
 			var resUri = resKey.Key;
-			return Load<T>(resUri);
-#else
-			throw new NotImplementedException();
-#endif
+			return LoadAsset<T>(resUri);
 		}
 
-#if !DISABLE_NOREFERCOUNT_API
-		public Task<T> Load<T>(string resUri) where T : UnityEngine.Object
+		public Task<T> LoadAsset<T>(string resUri) where T : UnityEngine.Object
 		{
 			var key = new CacheKey(resUri, typeof(T));
 			if (!Cached.TryGetValue(key, out var op))
 			{
-#if UNITY_EDITOR
-				if (!AssetLoader.IsValid())
+			#if !DISABLE_NOREFERCOUNT_API
+				if (!SharedCached.TryGetValue(key, out op))
 				{
-					var task = Task.FromResult<T>(default);
-					op = new LoadAsyncOp<T>(task);
-					Cached.Add(key, op);
+				#if UNITY_EDITOR
+					if (!AssetLoader.IsValid())
+					{
+						var task = Task.FromResult<T>(default);
+						op = new LoadAsyncOp<T>(task);
+						SharedCached.Add(key, op);
+					}
+					else
+				#endif
+					{
+						var task = AssetLoader.LoadAsset<T>(resUri);
+						op = new LoadAsyncOp<T>(task);
+						SharedCached.Add(key, op);
+					}
 				}
-				else
-#endif
-				{
-					var task = AssetLoader.LoadAsset<T>(resUri);
-					op = new LoadAsyncOp<T>(task);
-					Cached.Add(key, op);
-				}
+			#else
+				var task = AssetLoader.LoadAssetByRefer<T>(resUri);
+				op = new LoadAsyncOp<T>(task);
+			#endif
+
+				++op.ReferCount;
+
+				Cached.Add(key, op);
 			}
 
-			var loadAsyncOp = ((LoadAsyncOp<T>)op);
-			loadAsyncOp.ReferCount++;
-			return loadAsyncOp.Task;
+			return (Task<T>)op.Task;
 		}
-#endif
 
-		public Task UnLoad<T>(ResourceKey resKey) where T : UnityEngine.Object
+		public Task UnLoadAsset<T>(ResourceKey resKey) where T : UnityEngine.Object
 		{
-#if !DISABLE_NOREFERCOUNT_API
 			var resUri = resKey.Key;
-			return UnLoad<T>(resUri);
-#else
-			throw new NotImplementedException();
-#endif
+			return UnLoadAsset<T>(resUri);
 		}
 
-#if !DISABLE_NOREFERCOUNT_API
-		private Task UnLoad<T>(string resUri) where T : UnityEngine.Object
+		private Task UnLoadAsset<T>(string resUri) where T : UnityEngine.Object
 		{
 			var key = new CacheKey(resUri, typeof(T));
-			if (Cached.TryGetValue(key, out var op))
+			if (Cached.Remove(key))
 			{
-				var loadAsyncOp = ((LoadAsyncOp<T>)op);
-				loadAsyncOp.ReferCount--;
-
-				if (loadAsyncOp.ReferCount == 0)
+			#if !DISABLE_NOREFERCOUNT_API
+				if (SharedCached.TryGetValue(key, out var op) && op.ReferCount == 1)
 				{
+					op.ReferCount--;
 					return AssetLoader.UnLoadAsset(resUri);
 				}
+				else
+				{
+					Debug.LogError($"resource not in set0: {resUri}");
+				}
+			#else
+				return AssetLoader.UnLoadAssetByRefer(resUri);
+			#endif
+			}
+			else
+			{
+				Debug.LogError($"resource not in set1: {resUri}");
 			}
 
 			return Task.FromResult<T>(default);
 		}
-#endif
 
-		public Task<Scene> LoadScene(ResourceKey resKey, LoadSceneMode loadMode, bool activateOnLoad = true, int priority = 100)
+		public Task<Scene> LoadScene(ResourceKey resKey, LoadSceneMode loadMode, bool activateOnLoad = true,
+			int priority = 100)
 		{
-#if !DISABLE_NOREFERCOUNT_API
 			var resUri = resKey.Key;
 			var key = new CacheKey(resUri, typeof(Scene));
 			if (!Cached.TryGetValue(key, out var op))
 			{
-				var task = AssetLoader.LoadScene(resUri);
+			#if !DISABLE_NOREFERCOUNT_API
+				if (!SharedCached.TryGetValue(key, out op))
+				{
+					var task = AssetLoader.LoadScene(resUri);
+					op = new LoadAsyncOp<Scene>(task);
+					SharedCached.Add(key, op);
+				}
+			#else
+				var task = AssetLoader.LoadSceneByRefer(resUri);
 				op = new LoadAsyncOp<Scene>(task);
+			#endif
+
+				op.ReferCount++;
 				Cached.Add(key, op);
 			}
 
-			var loadAsyncOp = ((LoadAsyncOp<Scene>)op);
-			loadAsyncOp.ReferCount++;
-			return loadAsyncOp.Task;
-#else
-			throw new NotImplementedException();
-#endif
+			return (Task<Scene>)op.Task;
 		}
 
 		public Task UnloadScene(ResourceKey resKey)
 		{
-#if !DISABLE_NOREFERCOUNT_API
 			var resUri = resKey.Key;
 			var key = new CacheKey(resUri, typeof(Scene));
-			if (Cached.TryGetValue(key, out var op))
+			if (Cached.Remove(key))
 			{
-				var loadAsyncOp = ((LoadAsyncOp<Scene>)op);
-				loadAsyncOp.ReferCount--;
-
-				if (loadAsyncOp.ReferCount == 0)
+			#if !DISABLE_NOREFERCOUNT_API
+				if (SharedCached.TryGetValue(key, out var op) && op.ReferCount == 1)
 				{
+					--op.ReferCount;
 					return AssetLoader.UnLoadScene(resUri);
 				}
+				else
+				{
+					Debug.LogError($"resource not in set0: {resUri}");
+				}
+			#else
+				return AssetLoader.UnLoadSceneByRefer(resUri);
+			#endif
+			}
+			else
+			{
+				Debug.LogError($"resource not in set1: {resUri}");
 			}
 
 			return Task.CompletedTask;
-#else
-			throw new NotImplementedException();
-#endif
 		}
 
 		public bool IsAllLoaded()
@@ -188,6 +227,7 @@ namespace TrackableResourceManager.Runtime
 					break;
 				}
 			}
+
 			// var isAllLoaded = Cached.Values.All(item => item.IsLoaded());
 			return isAllLoaded;
 		}

@@ -36,12 +36,14 @@ namespace TrackableResourceManager.Runtime
 
 	public interface ILoadAsyncOp
 	{
+		public int ReferCount { get; set; }
 		public bool IsLoaded();
+		public Task Task { get; }
 	}
 
 	public class LoadAsyncOp<T> : ILoadAsyncOp
 	{
-		public int ReferCount;
+		public int ReferCount { get; set; }
 
 		public LoadAsyncOp(Task<T> task)
 		{
@@ -49,6 +51,7 @@ namespace TrackableResourceManager.Runtime
 			Task = task;
 		}
 
+		Task ILoadAsyncOp.Task => Task;
 		public Task<T> Task { get; internal set; }
 
 		public bool IsLoaded()
