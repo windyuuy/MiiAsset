@@ -16,6 +16,7 @@ namespace MiiAsset.Runtime
 	public class BundledAssetProvider : IAssetProvider
 	{
 		public string CatalogName;
+		public string CatalogExt;
 		public string InternalBaseUri;
 		public string ExternalBaseUri;
 		public string RemoteBaseUri;
@@ -29,6 +30,7 @@ namespace MiiAsset.Runtime
 			this.InternalBaseUri = IOManager.LocalIOProto.InternalDir;
 			this.ExternalBaseUri = IOManager.LocalIOProto.ExternalDir;
 			this.CatalogName = IOManager.LocalIOProto.CatalogName;
+			this.CatalogExt = options.CatalogExt;
 
 			BundleWebSemaphore.Init(options.InitDownloadCoCount, options.MaxDownloadCoCount);
 
@@ -39,13 +41,14 @@ namespace MiiAsset.Runtime
 
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
-			if (LoadCatalogTask == null)
+			if (LoadCatalogTask == null || (LoadCatalogTask.IsCompleted && !Result.IsOk))
 			{
 				this.RemoteBaseUri = remoteBaseUri;
 
 				async Task<PipelineResult> LoadCatalogInternal()
 				{
-					using var pipeline = new UpdateCatalogPipeline().Init(CatalogName, InternalBaseUri, ExternalBaseUri,
+					using var pipeline = new UpdateCatalogPipeline().Init(CatalogName, CatalogExt, InternalBaseUri,
+						ExternalBaseUri,
 						RemoteBaseUri);
 					Result = await pipeline.Run();
 					if (Result.IsOk)
@@ -161,20 +164,20 @@ namespace MiiAsset.Runtime
 			return true;
 		}
 
-		public async Task<bool> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public async Task<PipelineResultGroup> LoadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			AllowTags(tags);
 			var results = await CatalogStatus.LoadTags(tags, CatalogInfo, loadStatus);
-			var isOk = results.All(result => result.IsOk);
-			return isOk;
+			var resultGroup = new PipelineResultGroup(results);
+			return resultGroup;
 		}
 
-		public async Task<bool> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
+		public async Task<PipelineResultGroup> DownloadTags(string[] tags, AssetLoadStatusGroup loadStatus)
 		{
 			var task = CatalogStatus.DownloadTags(tags, CatalogInfo, loadStatus);
 			var results = await task;
-			var isOk = results.All(result => result.IsOk);
-			return isOk;
+			var resultGroup = new PipelineResultGroup(results);
+			return resultGroup;
 		}
 
 		public Task UnLoadTags(string[] tags)
@@ -254,7 +257,7 @@ namespace MiiAsset.Runtime
 				{
 					if (!result.IsOk)
 					{
-						result.Print();
+						result.PrintError();
 					}
 				}
 
@@ -304,7 +307,7 @@ namespace MiiAsset.Runtime
 				{
 					if (!result.IsOk)
 					{
-						result.Print();
+						result.PrintError();
 					}
 				}
 

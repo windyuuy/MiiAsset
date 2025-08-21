@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
-#if UNITY_WEBGL && SUPPORT_WECHATGAME
-using WeChatWASM;
+#if UNITY_WEBGL && SUPPORT_WDK
+using GDK;
 
 namespace MiiAsset.Runtime.IOManagers
 {
-	public class WXSafeOpener
+	public class WDKSafeOpener
 	{
 		protected static readonly Dictionary<string, string> FdMap = new(16);
-		protected readonly WXFileSystemManager Fs = WX.GetFileSystemManager();
+		protected readonly IFileSystemManager Fs = UserAPI.Instance.FileSystem.GetFileSystemManager();
 
 		public string Open(string path, string flag)
 		{
@@ -45,13 +45,13 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 	}
 
-	public class WXWriteFileStream : Stream
+	public class WDKWriteFileStream : Stream
 	{
-		protected static readonly WXSafeOpener Opener = new();
-		protected readonly WXFileSystemManager Fs;
+		protected static readonly WDKSafeOpener Opener = new();
+		protected readonly IFileSystemManager Fs;
 		protected readonly string Uri;
 
-		public WXWriteFileStream(WXFileSystemManager fs, string uri)
+		public WDKWriteFileStream(IFileSystemManager fs, string uri)
 		{
 			Fs = fs;
 			Uri = uri;
@@ -59,14 +59,14 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void Flush()
 		{
-			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(Flush)}()");
+			MyLogger.LogError($"NotImplementException-{nameof(WDKWriteFileStream)}::{nameof(Flush)}()");
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)
 		{
-			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(Read)}()");
+			MyLogger.LogError($"NotImplementException-{nameof(WDKWriteFileStream)}::{nameof(Read)}()");
 			var readLen = Math.Min(buffer.Length - offset, count);
-			var bytes = Fs.ReadFileSync(this.Uri, this.Position, readLen);
+			var bytes = Fs.ReadFileBytesSync(this.Uri, this.Position, readLen);
 			var readLen1 = bytes.Length;
 			Buffer.BlockCopy(bytes, 0, buffer, offset, readLen1);
 			this.Position += readLen1;
@@ -96,7 +96,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public override void SetLength(long value)
 		{
-			MyLogger.LogError($"NotImplementException-{nameof(WXWriteFileStream)}::{nameof(SetLength)}()");
+			MyLogger.LogError($"NotImplementException-{nameof(WDKWriteFileStream)}::{nameof(SetLength)}()");
 			this._length = value;
 			this.Position = Math.Min(this._length, this.Position);
 		}
@@ -115,7 +115,7 @@ namespace MiiAsset.Runtime.IOManagers
 				{
 					var writeLen = Math.Min(WriteSeg, count - i);
 					Buffer.BlockCopy(buffer, offset + i, TempBuffer, 0, writeLen);
-					Fs.WriteSync(new WriteSyncOption
+					Fs.WriteSync(new()
 					{
 						fd = fd,
 						position = Position,
@@ -123,33 +123,12 @@ namespace MiiAsset.Runtime.IOManagers
 						offset = 0,
 						length = writeLen,
 					});
-					// WaitLock.AddWait();
-					// Fs.Write(new WriteOption
-					// {
-					// 	success = (resp) =>
-					// 	{
-					// 		MyLogger.Log($"Write-End: {Path.GetFileName(this.Uri)}, {Position}, {offset}, {count}");
-					// 		this.WaitLock.OkOnce();
-					// 	},
-					// 	fail = (resp) =>
-					// 	{
-					// 		var reason =
-					// 			$"WriteFile-Fail: {Path.GetFileName(Uri)}, code: {resp?.errCode}, errMsg: {resp?.errMsg}, offset: {offset}, count: {count}, len: {buffer.Length}, pos: {Position}, fd: {fd}";
-					// 		MyLogger.LogError(reason);
-					// 		this.WaitLock.FailOnce(reason);
-					// 	},
-					// 	fd = fd,
-					// 	position = Position,
-					// 	data = TempBuffer,
-					// 	offset = 0,
-					// 	length = writeLen,
-					// });
 					Position += writeLen;
 				}
 			}
 			else
 			{
-				Fs.WriteSync(new WriteSyncOption
+				Fs.WriteSync(new()
 				{
 					fd = fd,
 					position = Position,

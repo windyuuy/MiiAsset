@@ -1,36 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GDK;
 using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
 using MiiAsset.Runtime.Adapter;
 using MonoExtLib.AsyncExt;
 
-#if UNITY_WEBGL && SUPPORT_WECHATGAME
+#if UNITY_WEBGL && SUPPORT_WDK
 using Lang.Encoding;
-using WeChatWASM;
 
 namespace MiiAsset.Runtime.IOManagers
 {
-	public static class WXExt
+	public static class WDKExt
 	{
-		public static string GetExceptionDesc(this FileError resp, string desc)
+		public static string GetExceptionDesc(this ReadFileResult resp, string desc)
 		{
 			return $"file-error: errCode: {resp.errCode}, errMsg: {resp.errMsg}, {desc}";
 		}
 
-		public static string GetExceptionDesc(this WXTextResponse resp, string desc)
+		public static string GetExceptionDesc(this BaseResponse resp, string desc)
 		{
-			return $"file-error: errCode: {resp.errCode}, errMsg: {resp.errMsg}, {desc}";
+			return $"file-error: errCode: {resp.ErrCode}, errMsg: {resp.ErrMsg}, {desc}";
 		}
 	}
 
-	public class WXIOProto : IIOProto
+	public class WDKIOProto : IIOProto
 	{
 		public string CacheDir { get; set; }
 		public string InternalDir { get; set; }
@@ -38,40 +37,38 @@ namespace MiiAsset.Runtime.IOManagers
 		public string CatalogName { get; set; }
 		public int Timeout { get; set; }
 		public bool IsInternalDirUpdating => true;
-		public static string StreamingCacheAssetPath = $"{WX.env.USER_DATA_PATH}/__GAME_FILE_CACHE/StreamingAssets/";
+		public static string StreamingCacheAssetPath;
 		public static string StreamingRemoteAssetPath;
 
-		protected WXFileSystemManager FileSystemManager;
+		protected IFileSystemManager FileSystemManager;
 
-		public Task<bool> Init(IIOProtoInitOptions options)
+		public async Task<bool> Init(IIOProtoInitOptions options)
 		{
-			if (!WXSDKManagerHandler.InitSDKPrompt())
+			if (!SDKManager.Instance.IsInited())
 			{
-				var ts = new TaskCompletionSource<bool>();
-				MyLogger.Log($"WX.InitSDK");
-				WX.InitSDK(async (code) =>
-				{
-					MyLogger.Log($"WX.InitSDK return code: {code}");
-					var ret = await InitInternal(options);
-					ts.SetResult(ret);
-				});
-				return ts.Task;
+				MyLogger.Log($"MiiAsset.InitSDK");
+				var code = await SDKManager.Instance.Init();
+
+				MyLogger.Log($"MiiAsset.InitSDK return code: {code}");
+				var ret = await InitInternal(options);
+				return ret;
 			}
 			else
 			{
-				return InitInternal(options);
+				return await InitInternal(options);
 			}
 		}
 
 		protected Task<bool> InitInternal(IIOProtoInitOptions options)
 		{
-		#if UNITY_EDITOR
+			StreamingCacheAssetPath = $"{UserAPI.Instance.GameInfo.UserDataPath}/__GAME_FILE_CACHE/StreamingAssets/";
 
+		#if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 		#else
 			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
 		#endif
-			var persistentDataPath = WX.env.USER_DATA_PATH;
+			var persistentDataPath = UserAPI.Instance.GameInfo.UserDataPath;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
 			StreamingRemoteAssetPath = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
@@ -81,7 +78,7 @@ namespace MiiAsset.Runtime.IOManagers
 			MyLogger.Log(
 				$"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
-			FileSystemManager = WX.GetFileSystemManager();
+			FileSystemManager = UserAPI.Instance.FileSystem.GetFileSystemManager();
 
 			// var catalogHashName = this.CatalogName
 			// 	.Replace(".json", ".hash")
@@ -116,7 +113,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public bool Exists(string uri)
 		{
-			return FileSystemManager.AccessSync(uri) == "access:ok";
+			return FileSystemManager.AccessSync(uri).Exist;
 		}
 
 		public bool ExistsDir(string dir)
@@ -143,7 +140,7 @@ namespace MiiAsset.Runtime.IOManagers
 		{
 			Debug.Assert(Equals(encoding, Encoding.UTF8) || Equals(encoding, EncodingExt.UTF8WithoutBom));
 			var ts = new TaskCompletionSource<bool>();
-			FileSystemManager.WriteFile(new WriteFileStringParam
+			FileSystemManager.WriteFileText(new()
 			{
 				success = (resp) => { ts.SetResult(true); },
 				fail = (resp) => { ts.SetResult(false); },
@@ -156,14 +153,14 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Stream OpenRead(string uri)
 		{
-			var content = FileSystemManager.ReadFileSync(uri);
+			var content = FileSystemManager.ReadFileBytesSync(uri);
 			var memoryStream = new MemoryStream(content);
 			return memoryStream;
 		}
 
 		public Stream OpenWrite(string filePath)
 		{
-			var writeFileStream = new WXWriteFileStream(FileSystemManager, filePath);
+			var writeFileStream = new WDKWriteFileStream(FileSystemManager, filePath);
 			return writeFileStream;
 		}
 
@@ -174,7 +171,7 @@ namespace MiiAsset.Runtime.IOManagers
 			var ts = new TaskCompletionSource<string>();
 			try
 			{
-				FileSystemManager.ReadFile(new ReadFileParam
+				FileSystemManager.ReadFileAllText(new()
 				{
 					success = (resp) =>
 					{
@@ -280,7 +277,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public Task<byte[]> ReadAllBytesAsync(string uri)
 		{
 			var ts = new TaskCompletionSource<byte[]>();
-			FileSystemManager.ReadFile(new()
+			FileSystemManager.ReadFileBytes(new()
 			{
 				success = (resp) => { ts.SetResult(resp.binData); },
 				fail = (resp) =>
@@ -297,7 +294,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public Task WriteAllBytesAsync(string uri, byte[] bytes)
 		{
 			var ts = new TaskCompletionSource<bool>();
-			FileSystemManager.WriteFile(new WriteFileParam
+			FileSystemManager.WriteFileBytes(new()
 			{
 				success = (resp) => { ts.SetResult(true); },
 				fail = (resp) =>
@@ -314,59 +311,21 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public void WriteAllBytes(string uri, byte[] bytes)
 		{
-			FileSystemManager.WriteFileSync(uri, bytes);
+			FileSystemManager.WriteFileBytesSync(uri, bytes);
 		}
 
 		public bool IsWebUri(string uri)
 		{
-			return (!uri.StartsWith(WX.env.USER_DATA_PATH)) && uri.Contains("://");
+			return (!uri.StartsWith(UserAPI.Instance.GameInfo.UserDataPath)) && uri.Contains("://");
 		}
 
 		public Task<string> ReadCatalog(string uri)
 		{
-			var entryKey = "catalog.json";
-			var ts = new TaskCompletionSource<string>();
-			FileSystemManager.ReadZipEntry(new ReadZipEntryOptionString()
+			var text = FileSystemManager.ReadCompressedFileTextSync(new GDK.ReadCompressedFileSyncOption
 			{
-				success = (resp) =>
-				{
-					// MyLogger.LogError($"catalog.zip-keys:{resp.entries.Count}, {String.Join(",", resp.entries.Keys)}");
-					if (resp.entries.TryGetValue(entryKey, out var entry))
-					{
-						ts.SetResult(entry.data);
-					}
-					else
-					{
-						try
-						{
-							using var stream = this.OpenRead(uri);
-							using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
-							var entry2 = zipArchive.GetEntry(entryKey);
-							Debug.Assert(entry2 != null, $"entry2!=null, {uri}");
-							using var streamReader = new StreamReader(entry2.Open());
-							var text = streamReader.ReadToEnd();
-							ts.SetResult(text);
-						}
-						catch (Exception exception)
-						{
-							MyLogger.LogException(exception);
-							var err = new IOException($"handle zip file with exception: {uri}");
-							MyLogger.LogException(err);
-							ts.SetException(err);
-						}
-					}
-				},
-				fail = (resp) =>
-				{
-					var ioException = new IOException(resp.GetExceptionDesc("read catalog failed"));
-					MyLogger.LogException(ioException);
-					ts.SetException(ioException);
-				},
-				entries = "all",
 				filePath = uri,
-				encoding = "utf-8",
 			});
-			return ts.Task;
+			return Task.FromResult(text);
 		}
 
 		private async Task<bool> EnsureStreamingAssets(string fileName)
@@ -381,6 +340,9 @@ namespace MiiAsset.Runtime.IOManagers
 			{
 				MyLogger.Log($"EnsureStreamingAssets-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
 			}
+
+			uwr.Dispose();
+			uwr = null;
 
 			var maxTimes = 100;
 			// 有可能还是旧的，但是不是新的没关系, 在就行
@@ -408,9 +370,13 @@ namespace MiiAsset.Runtime.IOManagers
 				var op = uwr.SendWebRequest();
 				await op.GetTask();
 				var isOk = uwr.result == UnityWebRequest.Result.Success;
+				var uwrResponseCode = uwr.responseCode;
+				var uwrError = uwr.error;
+				uwr.Dispose();
+				uwr = null;
 				if (!isOk)
 				{
-					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
+					MyLogger.Log($"EnsureStreamingBundles-failed: {uri2}, {(int)uwrResponseCode}, {uwrError}");
 				}
 				else
 				{
@@ -515,7 +481,7 @@ namespace MiiAsset.Runtime.IOManagers
 				Debug.LogException(exception1);
 			}
 
-			WX.CleanAllFileCache((ret) => { ts.SetResult(ret); });
+			UserAPI.Instance.FileSystem.GetFileSystemManager().CleanAllFileCache((ret) => { ts.SetResult(ret); });
 			return ts.Task;
 		}
 	}

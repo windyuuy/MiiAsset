@@ -14,9 +14,9 @@ namespace MiiAsset.Runtime.Adapter
 			}
 
 			IsAdaptDefaultDone = true;
-		#if UNITY_WEBGL && SUPPORT_WECHATGAME && !UNITY_EDITOR
-			this.Adapt(new WXAdapter());
-		#elif UNITY_WEBGL && !SUPPORT_WECHATGAME && !UNITY_EDITOR
+		#if UNITY_WEBGL && SUPPORT_WDK && !UNITY_EDITOR
+			this.Adapt(new WDKAdapter());
+		#elif UNITY_WEBGL && !SUPPORT_WDK && !UNITY_EDITOR
 			// MyLogger.LogError($"cur webgl platform not support: {Application.platform}");
 		#endif
 		}
@@ -26,12 +26,14 @@ namespace MiiAsset.Runtime.Adapter
 			var localIOProto = adapter.GetIOProto();
 			if (localIOProto != null)
 			{
+				MyLogger.Log($"use {adapter.Name}.LocalIOProto");
 				IOManager.LocalIOProto = localIOProto;
 			}
 
 			var widget = adapter.GetWidget();
 			if (widget != null)
 			{
+				MyLogger.Log($"use {adapter.Name}.Widget");
 				IOManager.Widget = widget;
 			}
 		}

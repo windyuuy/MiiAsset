@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
+using UnityEngine;
 
 namespace MiiAsset.Runtime.IOStreams
 {
@@ -16,7 +17,6 @@ namespace MiiAsset.Runtime.IOStreams
 		{
 			this.Uri = uri;
 			this.Result = new();
-			this.Ts = new();
 			return this;
 		}
 
@@ -41,11 +41,17 @@ namespace MiiAsset.Runtime.IOStreams
 		{
 			if (evt.Event == StreamEvent.End)
 			{
-				Result.IsOk = evt.IsOk;
+				Result.IsOk = evt.IsOk && evt.Capability == FileStream.Length;
 				if (!evt.IsOk)
 				{
+					if (evt.Capability != FileStream.Length)
+					{
+						Result.ErrorType = PipelineErrorType.FileSystemError;
+					}
+
 					MyLogger.LogError($"Download-Failed: {Uri}, {evt.GetReason()}");
 					FileStream.Close();
+					FileStream = null;
 					try
 					{
 						IOManager.LocalIOProto.Delete(ToTempPath(Uri));
@@ -60,14 +66,15 @@ namespace MiiAsset.Runtime.IOStreams
 				{
 					try
 					{
-#if false
+					#if false
 						var bytes = new byte[FileStream.Length];
 						FileStream.Seek(0, SeekOrigin.Begin);
 						var count = FileStream.Read(bytes, 0, bytes.Length);
 						await IOManager.LocalIOProto.WriteAllBytesAsync(ToTempPath(Uri),bytes);
-#endif
+					#endif
 						// await FileStream.FlushAsync();
 						FileStream.Close();
+						FileStream = null;
 						IOManager.LocalIOProto.Move(ToTempPath(Uri), Uri);
 					}
 					catch (Exception exception)
@@ -88,11 +95,17 @@ namespace MiiAsset.Runtime.IOStreams
 				try
 				{
 					// IOManager.LocalIOProto.EnsureFileDirectory(Uri);
-#if true
+					if (FileStream != null)
+					{
+						FileStream.Close();
+						FileStream.Dispose();
+					}
+
+				#if true
 					FileStream = IOManager.LocalIOProto.OpenWrite(ToTempPath(Uri));
-#else
+				#else
 					FileStream = new MemoryStream();
-#endif
+				#endif
 				}
 				catch (Exception exception)
 				{
@@ -122,12 +135,32 @@ namespace MiiAsset.Runtime.IOStreams
 			return new PipelineProgress().Set01Progress(Result.IsOk);
 		}
 
+		public void Start()
+		{
+			if (Ts != null && !Ts.Task.IsCompleted)
+			{
+				Debug.LogError($"WriteFileStream is Running Already, will be overwritten");
+			}
+
+			Ts = new();
+		}
+
 		public void Dispose()
 		{
 			if (FileStream != null)
 			{
 				FileStream.Dispose();
 				FileStream = null;
+			}
+
+			if (Ts != null)
+			{
+				if (!Ts.Task.IsCompleted)
+				{
+					Ts.SetException(new OperationCanceledException("WriteFileStream is disposed before await return"));
+				}
+
+				Ts = null;
 			}
 		}
 

@@ -1,74 +1,74 @@
-﻿#if UNITY_WEBGL && SUPPORT_WECHATGAME
-using System.IO;
-using System.Threading.Tasks;
-using MiiAsset.Runtime.Adapter;
+﻿#if UNITY_WEBGL && SUPPORT_WDK
+	using System.IO;
+	using System.Threading.Tasks;
+	using MiiAsset.Runtime.Adapter;
 
-namespace MiiAsset.Runtime.IOManagers
-{
-	public struct WaitLock
+	namespace MiiAsset.Runtime.IOManagers
 	{
-		private int _waitCount;
-		private int _doneCount;
-		private bool _isReady;
-		private bool _anyError;
-		private bool _dontThrow;
-
-		private readonly TaskCompletionSource<bool> _tcs;
-
-		public WaitLock(bool dontThrow)
+		public struct WaitLock
 		{
-			_dontThrow = dontThrow;
-			_waitCount = 0;
-			_doneCount = 0;
-			_anyError = false;
-			_isReady = false;
-			_tcs = new TaskCompletionSource<bool>();
-		}
+			private int _waitCount;
+			private int _doneCount;
+			private bool _isReady;
+			private bool _anyError;
+			private bool _dontThrow;
 
-		public void FailOnce(string reason)
-		{
-			DoneOnce(false, reason);
-		}
+			private readonly TaskCompletionSource<bool> _tcs;
 
-		public void OkOnce()
-		{
-			DoneOnce(true, "");
-		}
-
-		private void DoneOnce(bool ok, string reason)
-		{
-			_anyError = _anyError || (!ok);
-			_doneCount++;
-			if (_isReady && _waitCount == _doneCount)
+			public WaitLock(bool dontThrow)
 			{
-				if (_dontThrow || ok)
-				{
-					_tcs.SetResult(_anyError);
-				}
-				else
-				{
-					var ioException = new IOException(reason);
-					MyLogger.LogException(ioException);
-					_tcs.SetException(ioException);
-				}
-			}
-		}
-
-		public void AddWait()
-		{
-			_waitCount++;
-		}
-
-		public Task Wait()
-		{
-			_isReady = true;
-			if (_isReady && _waitCount == _doneCount && _tcs.Task.IsCompleted == false)
-			{
-				_tcs.SetResult(!_anyError);
+				_dontThrow = dontThrow;
+				_waitCount = 0;
+				_doneCount = 0;
+				_anyError = false;
+				_isReady = false;
+				_tcs = new TaskCompletionSource<bool>();
 			}
 
-			return _tcs.Task;
+			public void FailOnce(string reason)
+			{
+				DoneOnce(false, reason);
+			}
+
+			public void OkOnce()
+			{
+				DoneOnce(true, "");
+			}
+
+			private void DoneOnce(bool ok, string reason)
+			{
+				_anyError = _anyError || (!ok);
+				_doneCount++;
+				if (_isReady && _waitCount == _doneCount)
+				{
+					if (_dontThrow || ok)
+					{
+						_tcs.SetResult(_anyError);
+					}
+					else
+					{
+						var ioException = new IOException(reason);
+						MyLogger.LogException(ioException);
+						_tcs.SetException(ioException);
+					}
+				}
+			}
+
+			public void AddWait()
+			{
+				_waitCount++;
+			}
+
+			public Task Wait()
+			{
+				_isReady = true;
+				if (_isReady && _waitCount == _doneCount && _tcs.Task.IsCompleted == false)
+				{
+					_tcs.SetResult(!_anyError);
+				}
+
+				return _tcs.Task;
+			}
 		}
 	}
-}
 #endif

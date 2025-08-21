@@ -89,17 +89,10 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public async Task<string> ReadCatalog(string uri)
 		{
-			await using var stream = File.OpenRead(uri);
-			using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
-			var entry = zipArchive.GetEntry("catalog.json");
-			Debug.Assert(entry != null, "entry!=null");
-			using var streamReader = new StreamReader(entry.Open());
-		#if UNITY_WEBGL
-			// ReSharper disable once MethodHasAsyncOverload
-			var text = streamReader.ReadToEnd();
-		#else
-			var text = await streamReader.ReadToEndAsync();
-		#endif
+			await using var fileStream = File.OpenRead(uri);
+			using var reader = new StreamReader(
+				new BrotliStream(fileStream, CompressionMode.Decompress));
+			var text = await reader.ReadToEndAsync();
 			return text;
 		}
 

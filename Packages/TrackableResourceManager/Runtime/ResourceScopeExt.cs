@@ -19,7 +19,17 @@ namespace TrackableResourceManager.Runtime
 			return wrap.Token.LoadAsset<T>(resKey);
 		}
 
+		public static Task<T> LoadAsync<T>(this IResourceScope wrap, string resKey) where T : UnityEngine.Object
+		{
+			return wrap.Token.LoadAsset<T>(resKey);
+		}
+
 		public static Task UnLoad<T>(this IResourceScope wrap, ResourceKey resKey) where T : UnityEngine.Object
+		{
+			return wrap.Token.UnLoadAsset<T>(resKey);
+		}
+
+		public static Task UnLoad<T>(this IResourceScope wrap, string resKey) where T : UnityEngine.Object
 		{
 			return wrap.Token.UnLoadAsset<T>(resKey);
 		}

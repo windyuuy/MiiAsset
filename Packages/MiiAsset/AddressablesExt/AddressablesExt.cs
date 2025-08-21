@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using GDK;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
@@ -10,13 +11,13 @@ namespace MiiAsset.AddressablesExt
 	{
 		public static Task<bool> CleanUpAddressablesCache()
 		{
-#if UNITY_WEBGL && SUPPORT_WECHATGAME && !UNITY_EDITOR
+		#if UNITY_WEBGL && SUPPORT_WDK && !UNITY_EDITOR
 			var ts = new TaskCompletionSource<bool>();
-			var wxfs = WeChatWASM.WX.GetFileSystemManager();
-			var dir = $"{WeChatWASM.WX.env.USER_DATA_PATH}/__GAME_FILE_CACHE/hotres/";
-			if (wxfs.AccessSync(dir) == "access:ok")
+			var fs = UserAPI.Instance.FileSystem.GetFileSystemManager();
+			var dir = $"{UserAPI.Instance.GameInfo.UserDataPath}/__GAME_FILE_CACHE/hotres/";
+			if (fs.AccessSync(dir).Exist)
 			{
-				wxfs.Rmdir(new WeChatWASM.RmdirParam
+				fs.Rmdir(new()
 				{
 					success = (resp) =>
 					{
@@ -25,7 +26,7 @@ namespace MiiAsset.AddressablesExt
 					},
 					fail = (resp) =>
 					{
-						Debug.LogError($"remove aa-cache failed, errCode: {resp.errCode}, errMsg: {resp.errMsg}");
+						Debug.LogError($"remove aa-cache failed, errCode: {resp.ErrCode}, errMsg: {resp.ErrMsg}");
 						ts.SetResult(false);
 					},
 					dirPath = dir,
@@ -47,7 +48,7 @@ namespace MiiAsset.AddressablesExt
 			}
 
 			return ts.Task;
-#else
+		#else
 			var cacheDir = $"{Application.persistentDataPath}/com.unity.addressables/";
 			if (Directory.Exists(cacheDir))
 			{
@@ -60,7 +61,7 @@ namespace MiiAsset.AddressablesExt
 					Debug.LogException(exception);
 				}
 
-#if !UNITY_WEBGL || UNITY_EDITOR
+			#if !UNITY_WEBGL || UNITY_EDITOR
 				try
 				{
 					Caching.ClearCache();
@@ -71,15 +72,15 @@ namespace MiiAsset.AddressablesExt
 					Debug.LogException(exception);
 					return Task.FromResult(false);
 				}
-#else
+			#else
 				return Task.FromResult(true);
-#endif
+			#endif
 			}
 			else
 			{
 				return Task.FromResult(true);
 			}
-#endif
+		#endif
 		}
 	}
 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
+using MiiAsset.Runtime.AssetUtils;
 
 namespace MiiAsset.Runtime.Pipelines
 {
@@ -34,16 +35,13 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 			try
 			{
-				MyLogger.Log($"load catalog.zip: {Bytes.Length}, {RemoteCatalogUri}");
+				MyLogger.Log($"load catalog file: {Bytes.Length}, {RemoteCatalogUri}");
 				try
 				{
 					try
 					{
 						var stream = new MemoryStream(Bytes);
-						using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read);
-						var entry = zipArchive.GetEntry("catalog.json");
-						MyLogger.Assert(entry != null, "entry!=null");
-						using var streamReader = new StreamReader(entry.Open());
+						using var streamReader = new StreamReader(new BrotliStream(stream, CompressionMode.Decompress));
 					#if UNITY_WEBGL
 						// ReSharper disable once MethodHasAsyncOverload
 						var text = streamReader.ReadToEnd();
@@ -51,7 +49,7 @@ namespace MiiAsset.Runtime.Pipelines
 						var text = await streamReader.ReadToEndAsync();
 					#endif
 						Text = text;
-						MyLogger.Log($"load catalog.zip done: {RemoteCatalogUri}");
+						MyLogger.Log($"load catalog file done: {RemoteCatalogUri}");
 					}
 					catch (Exception exception)
 					{

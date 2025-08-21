@@ -135,7 +135,7 @@ namespace TrackableResourceManager.Runtime
 			return UnLoadAsset<T>(resUri);
 		}
 
-		private Task UnLoadAsset<T>(string resUri) where T : UnityEngine.Object
+		public Task UnLoadAsset<T>(string resUri) where T : UnityEngine.Object
 		{
 			var key = new CacheKey(resUri, typeof(T));
 			if (Cached.Remove(key))
