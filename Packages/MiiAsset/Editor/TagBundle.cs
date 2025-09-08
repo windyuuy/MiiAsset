@@ -86,6 +86,7 @@ namespace MiiAsset.Editor.Build
 			BundleFileHash = fileHash;
 		}
 		public bool IsOffline = false;
+		public bool IsEncrypt = false;
 
 		/// <summary>
 		/// 多少byte

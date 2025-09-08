@@ -10,6 +10,7 @@ using MiiAsset.Runtime.AssetUtils;
 using MiiAsset.Runtime.IOManagers;
 using Lang.Encoding;
 using MiiAsset.Editor.Optimization;
+using MiiAsset.Runtime.Encrypt;
 using MiiAsset.Runtime.Optimization;
 using UnityEditor;
 using UnityEditor.Build.Pipeline;
@@ -132,6 +133,7 @@ namespace MiiAsset.Editor.Build
 							DepTagNames = new(),
 							BuildInfo = item.Value,
 							FileSize = fileSize,
+							IsEncrypt = false,
 						};
 						tagBundleMap.Add(builtinBundleInfo.TagsUKey, builtinBundleInfo);
 					}
@@ -156,6 +158,18 @@ namespace MiiAsset.Editor.Build
 						var depTagBundle = tagsNameBundleMap[dep];
 						var depFileName = depTagBundle.BundleFileName;
 						tagBundle.Deps.Add(depFileName);
+					}
+				}
+
+				// encrypt bundles
+				foreach (var item in bundleInfos)
+				{
+					var tagBundle = tagBundles.FirstOrDefault(tagBundle => tagBundle.GetBundleName() == item.Key);
+					if (tagBundle.IsEncrypt)
+					{
+						var bundleDetails = item.Value;
+						var sourcePath = bundleDetails.FileName;
+						SharedEncrypt.Encryptor.EncryptFile(sourcePath);
 					}
 				}
 
@@ -284,6 +298,7 @@ namespace MiiAsset.Editor.Build
 						tags = tagBundle.Tags.Concat(tagBundle.TagsAdditional).ToArray(),
 						entries = tagBundle.GetAssetAddresses(),
 						guids = options.BuildGuids ? tagBundle.Guids.ToArray() : null,
+						isEncrypt = tagBundle.IsEncrypt,
 						IsOffline = tagBundle.IsOffline,
 						size = tagBundle.FileSize,
 					};

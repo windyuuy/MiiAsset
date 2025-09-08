@@ -230,13 +230,15 @@ namespace MiiAsset.Editor.Build
 							TagsAdditional = Array.Empty<string>(),
 							TagsUKey = tagsKey,
 							// SingleFileItems = pathInfo.SingleFileItems,
+							IsEncrypt = groupNameInfo.IsEncrypt,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
 
 					if (GuidBundleMap.TryAdd(groupNameInfo.Guid, tagBundle))
 					{
-						tagBundle.IsOffline |= !groupNameInfo.IsRemote;
+						tagBundle.IsOffline = tagBundle.IsOffline || !groupNameInfo.IsRemote;
+						tagBundle.IsEncrypt = tagBundle.IsEncrypt || groupNameInfo.IsEncrypt;
 						tagBundle.Guids.Add(groupNameInfo.Guid);
 
 						// Debug.LogError($"conflict item: {groupNameInfo.AssetPath}");

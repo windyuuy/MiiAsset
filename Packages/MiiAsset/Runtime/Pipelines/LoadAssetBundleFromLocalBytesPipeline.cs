@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
+using MiiAsset.Runtime.Encrypt;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
 
@@ -10,11 +11,13 @@ namespace MiiAsset.Runtime.Pipelines
 	{
 		protected string Uri;
 		protected uint Crc;
+		protected bool IsEncrypt;
 
-		public LoadAssetBundleFromLocalBytesPipeline Init(string uri, uint crc)
+		public LoadAssetBundleFromLocalBytesPipeline Init(string uri, uint crc, bool isEncrypt)
 		{
 			Uri = uri;
 			Crc = crc;
+			IsEncrypt = isEncrypt;
 			Result = new();
 			this.Build();
 			return this;
@@ -47,6 +50,11 @@ namespace MiiAsset.Runtime.Pipelines
 			if (AssetBundle == null)
 			{
 				var bytes = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
+				if (IsEncrypt)
+				{
+					SharedEncrypt.Encryptor.Encrypt(bytes, 0, 0, bytes.Length);
+				}
+
 				AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
 				// AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
 				if (AssetBundle == null)

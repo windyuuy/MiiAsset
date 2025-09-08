@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Encrypt;
 using MiiAsset.Runtime.IOStreams;
 using UnityEngine;
 
@@ -11,11 +12,13 @@ namespace MiiAsset.Runtime.Pipelines
 		protected string RemoteUri;
 		protected WebDownloadToMemoryPipeline DownloadToMemoryPipeline;
 		protected uint Crc;
+		protected bool IsEncrypt;
 
-		public LoadAssetBundleFromRemoteMemoryPipeline Init(string remoteUri, uint crc)
+		public LoadAssetBundleFromRemoteMemoryPipeline Init(string remoteUri, uint crc, bool isEncrypt)
 		{
 			RemoteUri = remoteUri;
 			this.Crc = crc;
+			IsEncrypt = isEncrypt;
 			this.Build();
 			return this;
 		}
@@ -38,6 +41,7 @@ namespace MiiAsset.Runtime.Pipelines
 			if (Result.IsOk)
 			{
 				var bytes = DownloadToMemoryPipeline.Bytes;
+				SharedEncrypt.Encryptor.Encrypt(bytes, 0, 0, bytes.Length);
 				this.AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
 
 				if (this.AssetBundle == null)

@@ -72,6 +72,7 @@ namespace MiiAsset.Editor.Build
 							}
 
 							groupInfo.IsRemote = !config.isOffline;
+							groupInfo.IsEncrypt = groupInfo.IsEncrypt || config.isEncrypt;
 						}
 						catch (Exception e)
 						{

@@ -18,8 +18,8 @@ namespace MiiAsset.Editor.Optimization
 			pathInfo.Paths.AddRange(paths);
 			pathInfo.ExcludePaths.AddRange(aaPathConfig.excludePaths);
 			pathInfo.ExcludeExtensions.AddRange(aaPathConfig.excludeExtensions);
-			pathInfo.IsShaderGroupOffline |= aaPathConfig.isShaderGroupOffline;
-			pathInfo.IsMyBuiltinShaderGroupOffline |= aaPathConfig.isMyBuiltinShaderGroupOffline;
+			pathInfo.IsShaderGroupOffline = pathInfo.IsShaderGroupOffline || aaPathConfig.isShaderGroupOffline;
+			pathInfo.IsMyBuiltinShaderGroupOffline = pathInfo.IsMyBuiltinShaderGroupOffline|| aaPathConfig.isMyBuiltinShaderGroupOffline;
 			foreach (var singleFile in aaPathConfig.singleFiles)
 			{
 				var path = AssetDatabase.GetAssetPath(singleFile.asset);

@@ -19,6 +19,7 @@ MonoBehaviour:
     groupRoot: '{0}*'
     scanRoot: Assets/Bundles/AA
     tags: 
+    isEncrypt: 1
     isOffline: 0
   - title: BB
     path: Assets/Bundles/BB/
@@ -26,6 +27,7 @@ MonoBehaviour:
     groupRoot: '{0}*'
     scanRoot: Assets/Bundles/BB
     tags: 
+    isEncrypt: 1
     isOffline: 1
   - title: CC
     path: Assets/Bundles/CC/
@@ -33,8 +35,10 @@ MonoBehaviour:
     groupRoot: '{0}*'
     scanRoot: Assets/Bundles/CC
     tags: 
+    isEncrypt: 1
     isOffline: 0
   excludeExtensions: []
   excludePaths: []
   isShaderGroupOffline: 1
   isMyBuiltinShaderGroupOffline: 1
+  singleFiles: []

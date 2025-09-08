@@ -11,6 +11,7 @@ namespace MiiAsset.Runtime
 		public string bundleName;
 		public string fileName;
 		public uint crc;
+		public bool isEncrypt;
 
 		/// <summary>
 		/// 文件大小, 多少byte

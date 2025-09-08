@@ -14,11 +14,13 @@ namespace MiiAsset.Runtime.Pipelines
 
 		protected string Uri;
 		protected uint Crc;
+		protected bool IsEncrypt;
 
-		public LoadAssetBundlePipelineFromLocalStream Init(string uri, uint crc)
+		public LoadAssetBundlePipelineFromLocalStream Init(string uri, uint crc, bool isEncrypt)
 		{
 			Uri = uri;
 			Crc = crc;
+			IsEncrypt = isEncrypt;
 			Result = new();
 			this.Build();
 			return this;
@@ -52,7 +54,15 @@ namespace MiiAsset.Runtime.Pipelines
 		public void Build()
 		{
 			LoadStream = new LoadAssetBundleStream().Init(Uri);
-			ReadStream = new ReadFileStream().Init(Uri);
+			if (IsEncrypt)
+			{
+				ReadStream = new ReadFileStreamEncrypted().Init(Uri);
+			}
+			else
+			{
+				ReadStream = new ReadFileStream().Init(Uri);
+			}
+
 			LoadStream.BindWriteStream(ReadStream);
 		}
 

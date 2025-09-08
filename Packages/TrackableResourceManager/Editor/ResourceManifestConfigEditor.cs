@@ -15,7 +15,7 @@ namespace TrackableResourceManager.Editor
 			{
 				var click=GUILayout.Button("生成代码");
 				base.OnInspectorGUI();
-				click|=GUILayout.Button("生成代码");
+				click = click || GUILayout.Button("生成代码");
 
 				if (click)
 				{

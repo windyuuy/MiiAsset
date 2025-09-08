@@ -28,6 +28,8 @@ namespace MiiAsset.Runtime
 		// split with ;
 		public string tags;
 
+		public bool isEncrypt = false;
+		
 		/// <summary>
 		/// 是否打进包内
 		/// </summary>
@@ -116,6 +118,7 @@ namespace MiiAsset.Runtime
 		public bool IsFolder = false;
 		public string GroupRootRename;
 		public string[] Tags;
+		public bool IsEncrypt;
 		public bool IsRemote;
 		public string Guid;
 		public string AssetPath;
