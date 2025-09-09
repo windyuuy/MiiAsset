@@ -7,14 +7,14 @@ public class JKLJWF : MonoBehaviour
 	public Canvas canvas;
 
 	// Start is called before the first frame update
-	async void Start()
+	public async void Display()
 	{
 		try
 		{
 			await AssetLoader.Init();
 			Debug.Log("AssetLoader.Init");
 			// await AssetLoader.LoadLocalCatalog();
-			await AssetLoader.UpdateCatalog("http://127.0.0.1:8081/bundles/");
+			await AssetLoader.UpdateCatalog("http://192.168.137.3:8081/");
 			Debug.Log("AssetLoader.LoadLocalCatalog");
 			var obj = await AssetLoader.InstantiateAsync("Assets/Bundles/BB/TestLoad.prefab", canvas.transform).Task;
 			Debug.Log("AssetLoader.InstantiateAsync");
