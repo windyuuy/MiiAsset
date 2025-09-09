@@ -10,6 +10,8 @@ namespace MiiAsset.Runtime
 {
 	public class AAPathInfo
 	{
+		public bool IsEncryptAll = false;
+		public bool IsEncryptBuiltin = false;
 		public List<AAPathConfigItem> Paths = new();
 
 		/// <summary>
@@ -91,7 +93,7 @@ namespace MiiAsset.Runtime
 			GroupNameInfo groupNameInfo = null;
 			foreach (var item in pathInfo.Paths)
 			{
-				groupNameInfo = ParseGroupName(item, assetPath, guid);
+				groupNameInfo = ParseGroupName(item, assetPath, guid, pathInfo.IsEncryptAll);
 				if (groupNameInfo != null)
 				{
 					break;
@@ -111,8 +113,11 @@ namespace MiiAsset.Runtime
 		/// </summary>
 		/// <param name="config"></param>
 		/// <param name="assetPath"></param>
+		/// <param name="guid"></param>
+		/// <param name="pathInfoIsEncryptAll"></param>
 		/// <returns></returns>
-		public static GroupNameInfo ParseGroupName(AAPathConfigItem config, string assetPath, string guid)
+		public static GroupNameInfo ParseGroupName(AAPathConfigItem config, string assetPath, string guid,
+			bool isEncryptAll)
 		{
 			if (string.IsNullOrEmpty(config.path))
 			{
@@ -169,7 +174,7 @@ namespace MiiAsset.Runtime
 					groupInfo.Tags = groupInfo.Tags.Prepend(groupInfo.GroupName).ToArray();
 
 					groupInfo.IsRemote = !config.isOffline;
-					groupInfo.IsEncrypt = groupInfo.IsEncrypt || config.isEncrypt;
+					groupInfo.IsEncrypt = isEncryptAll || config.isEncrypt;
 					return groupInfo;
 				}
 				catch (Exception e)

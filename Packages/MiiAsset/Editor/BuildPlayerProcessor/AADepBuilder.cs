@@ -18,7 +18,6 @@ using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Player;
 using UnityEngine;
 using AssetBundleInfo = MiiAsset.Runtime.AssetBundleInfo;
-using CompressionLevel = System.IO.Compression.CompressionLevel;
 
 namespace MiiAsset.Editor.Build
 {
@@ -133,12 +132,25 @@ namespace MiiAsset.Editor.Build
 							DepTagNames = new(),
 							BuildInfo = item.Value,
 							FileSize = fileSize,
-							IsEncrypt = false,
+							IsEncrypt = pathInfo.IsEncryptBuiltin,
 						};
 						tagBundleMap.Add(builtinBundleInfo.TagsUKey, builtinBundleInfo);
 					}
 				}
 
+				// encrypt bundles
+				foreach (var (key, tagBundle) in tagBundleMap)
+				{
+					// var tagBundle = tagBundles.FirstOrDefault(tagBundle => tagBundle.GetBundleName() == item.Key);
+					if (tagBundle.IsEncrypt)
+					{
+						var bundleDetails = tagBundle.BuildInfo;
+						var sourcePath = bundleDetails.FileName;
+						SharedEncrypt.Encryptor.EncryptFile(sourcePath);
+					}
+				}
+
+				// 更新加强文件hash
 				tagBundles = tagBundleMap.Values.ToArray();
 				foreach (var tagBundle in tagBundles)
 				{
@@ -158,18 +170,6 @@ namespace MiiAsset.Editor.Build
 						var depTagBundle = tagsNameBundleMap[dep];
 						var depFileName = depTagBundle.BundleFileName;
 						tagBundle.Deps.Add(depFileName);
-					}
-				}
-
-				// encrypt bundles
-				foreach (var item in bundleInfos)
-				{
-					var tagBundle = tagBundles.FirstOrDefault(tagBundle => tagBundle.GetBundleName() == item.Key);
-					if (tagBundle.IsEncrypt)
-					{
-						var bundleDetails = item.Value;
-						var sourcePath = bundleDetails.FileName;
-						SharedEncrypt.Encryptor.EncryptFile(sourcePath);
 					}
 				}
 

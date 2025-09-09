@@ -15,17 +15,21 @@ namespace MiiAsset.Editor.Optimization
 			paths.Sort((p1, p2) => p2.scanRoot.Length - p1.scanRoot.Length);
 			paths.ForEach((item) => { item.pathRegex = new Regex(item.path); });
 
+			pathInfo.IsEncryptAll = pathInfo.IsEncryptAll || aaPathConfig.isEncryptAll;
+			pathInfo.IsEncryptBuiltin = pathInfo.IsEncryptBuiltin || aaPathConfig.isEncryptBuiltin;
 			pathInfo.Paths.AddRange(paths);
 			pathInfo.ExcludePaths.AddRange(aaPathConfig.excludePaths);
 			pathInfo.ExcludeExtensions.AddRange(aaPathConfig.excludeExtensions);
 			pathInfo.IsShaderGroupOffline = pathInfo.IsShaderGroupOffline || aaPathConfig.isShaderGroupOffline;
-			pathInfo.IsMyBuiltinShaderGroupOffline = pathInfo.IsMyBuiltinShaderGroupOffline|| aaPathConfig.isMyBuiltinShaderGroupOffline;
+			pathInfo.IsMyBuiltinShaderGroupOffline =
+				pathInfo.IsMyBuiltinShaderGroupOffline || aaPathConfig.isMyBuiltinShaderGroupOffline;
 			foreach (var singleFile in aaPathConfig.singleFiles)
 			{
 				var path = AssetDatabase.GetAssetPath(singleFile.asset);
 				var guid = AssetDatabase.AssetPathToGUID(path);
 				pathInfo.SingleFileItems.Add(guid, singleFile);
 			}
+
 			return pathInfo;
 		}
 
@@ -73,6 +77,7 @@ namespace MiiAsset.Editor.Optimization
 			{
 				LoadConfig(pathInfo, assetPath);
 			}
+
 			return pathInfo;
 		}
 	}

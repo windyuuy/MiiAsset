@@ -308,6 +308,7 @@ namespace TrackableResourceManager.Runtime
 							group = groupName,
 							key = key,
 							asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(AssetDatabase.GUIDToAssetPath(resourceItem.ResUri)),
+							isEncrypt = pathConfig.isEncryptAll,
 						};
 						pathConfig.singleFiles.Add(item);
 						// var entry = aaSettings.CreateOrMoveEntry(resourceItem.ResUri, group, true);

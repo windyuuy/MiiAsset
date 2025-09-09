@@ -16,11 +16,13 @@ namespace MiiAsset.Editor.Build
 		{
 			return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(item.asset));
 		}
+
 		public static string GetLoadPath(this AASingleFileItem item)
 		{
 			return AssetDatabase.GetAssetPath(item.asset);
 		}
 	}
+
 	public class DepCollector
 	{
 		// collect tag bundles
@@ -28,10 +30,12 @@ namespace MiiAsset.Editor.Build
 		public readonly Dictionary<string, int> TagOrderMap = new();
 		public readonly Dictionary<string, TagBundle> GuidBundleMap = new();
 		public readonly Dictionary<string, TagBundle> TagsNameBundleMap = new();
+
 		/// <summary>
 		/// 零散文件
 		/// </summary>
 		public readonly Dictionary<string, ExtraAddressInfo> ExtraAddressInfoMap = new();
+
 		public readonly Dictionary<string, AASingleFileItem> SingleFileMap = new();
 		public readonly Dictionary<string, AASingleFileItem> InvalidSingleFileAddressMap = new();
 
@@ -115,6 +119,7 @@ namespace MiiAsset.Editor.Build
 			{
 				AddressExistMap.Add(address, null);
 			}
+
 			return isValid;
 		}
 
@@ -195,7 +200,8 @@ namespace MiiAsset.Editor.Build
 					{
 						if (string.IsNullOrEmpty(scanInfo.ScanRoot) || item.assetPath.StartsWith(scanInfo.ScanRoot))
 						{
-							var groupNameInfo = AAPathInfo.ParseGroupName(scanInfo.Item, item.assetPath, item.guid);
+							var groupNameInfo = AAPathInfo.ParseGroupName(scanInfo.Item, item.assetPath, item.guid,
+								pathInfo.IsEncryptAll);
 							return groupNameInfo;
 						}
 
@@ -208,6 +214,7 @@ namespace MiiAsset.Editor.Build
 					{
 						continue;
 					}
+
 					if (GuidBundleMap.ContainsKey(groupNameInfo.Guid))
 					{
 						continue;
@@ -230,7 +237,7 @@ namespace MiiAsset.Editor.Build
 							TagsAdditional = Array.Empty<string>(),
 							TagsUKey = tagsKey,
 							// SingleFileItems = pathInfo.SingleFileItems,
-							IsEncrypt = groupNameInfo.IsEncrypt,
+							IsEncrypt = pathInfo.IsEncryptAll || groupNameInfo.IsEncrypt,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
@@ -238,7 +245,7 @@ namespace MiiAsset.Editor.Build
 					if (GuidBundleMap.TryAdd(groupNameInfo.Guid, tagBundle))
 					{
 						tagBundle.IsOffline = tagBundle.IsOffline || !groupNameInfo.IsRemote;
-						tagBundle.IsEncrypt = tagBundle.IsEncrypt || groupNameInfo.IsEncrypt;
+						tagBundle.IsEncrypt = pathInfo.IsEncryptAll || tagBundle.IsEncrypt || groupNameInfo.IsEncrypt;
 						tagBundle.Guids.Add(groupNameInfo.Guid);
 
 						// Debug.LogError($"conflict item: {groupNameInfo.AssetPath}");
@@ -252,14 +259,13 @@ namespace MiiAsset.Editor.Build
 			foreach (var group in singleFileItems.Values.GroupBy(item => item.GetGroupName()))
 			{
 				var groupName = group.Key;
-				var tags = new string[]{
+				var tags = new string[]
+				{
 					groupName,
 				};
 				var tagsKey = ToTagsKey(tags);
-				var items = group.Where(item =>
-				{
-					return false == GuidBundleMap.ContainsKey(item.GetGuid());
-				}).ToArray();
+				var items = group.Where(item => { return false == GuidBundleMap.ContainsKey(item.GetGuid()); })
+					.ToArray();
 				if (items.Length > 0)
 				{
 					if (!TagBundleMap.TryGetValue(tagsKey, out var tagBundle))
@@ -270,6 +276,7 @@ namespace MiiAsset.Editor.Build
 							TagsAdditional = Array.Empty<string>(),
 							TagsUKey = tagsKey,
 							// SingleFileItems = pathInfo.SingleFileItems,
+							IsEncrypt = pathInfo.IsEncryptAll,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
@@ -278,6 +285,7 @@ namespace MiiAsset.Editor.Build
 					{
 						tagBundle.Guids.Add(item.GetGuid());
 						tagBundle.AddressMap.Add(item.GetGuid(), item.key);
+						tagBundle.IsEncrypt = tagBundle.IsEncrypt || item.isEncrypt;
 						GuidBundleMap.Add(item.GetGuid(), tagBundle);
 					}
 				}

@@ -29,7 +29,7 @@ namespace MiiAsset.Runtime
 		public string tags;
 
 		public bool isEncrypt = false;
-		
+
 		/// <summary>
 		/// 是否打进包内
 		/// </summary>
@@ -76,13 +76,14 @@ namespace MiiAsset.Runtime
 		public string group;
 		public string key;
 		public UnityEngine.Object asset;
+		public bool isEncrypt = false;
 
-		
+
 		public string GetGroupName()
 		{
 			return group.Replace("/", "_").ToLower();
 		}
-    }
+	}
 
 	[CreateAssetMenu(fileName = "AAPathConfig", menuName = "AppConfig/AAPathConfig", order = 0)]
 	public class AAPathConfig : ScriptableObject
@@ -109,6 +110,12 @@ namespace MiiAsset.Runtime
 		public bool isMyBuiltinShaderGroupOffline = true;
 
 		public List<AASingleFileItem> singleFiles = new List<AASingleFileItem>();
+
+		/// <summary>
+		/// 加密所有文件
+		/// </summary>
+		public bool isEncryptAll = false;
+		public bool isEncryptBuiltin = false;
 	}
 
 	public class GroupNameInfo
