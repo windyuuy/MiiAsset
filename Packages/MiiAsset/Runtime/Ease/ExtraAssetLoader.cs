@@ -7,7 +7,8 @@ namespace MiiAsset.Runtime
 {
 	public static class ExtraAssetLoader
 	{
-		public static Task<T> LoadAsset<T>(string address, Func<string, Task<T>> assetLoader)
+		public static Task<T> LoadAsset<T>(string address, Func<string, Task<T>> assetLoader,
+			Func<string, Task<SpriteAtlas>> atlasLoader)
 			where T : UnityEngine.Object
 		{
 			if (AssetLoader.TryGetExtraAddressInfo(address, out var extraAddressInfo))
@@ -17,7 +18,7 @@ namespace MiiAsset.Runtime
 					case AddressLoadType.Common:
 						return assetLoader(extraAddressInfo.address);
 					case AddressLoadType.AtlasSprite:
-						return LoadAtlasSprite<T>(extraAddressInfo);
+						return LoadAtlasSprite<T>(extraAddressInfo, atlasLoader);
 					default:
 						throw new NotImplementedException($"invalid extra asset loadType: {extraAddressInfo.loadType}");
 				}
@@ -28,9 +29,10 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public static async Task<T> LoadAtlasSprite<T>(ExtraAddressInfo extraAddressInfo) where T : Object
+		public static async Task<T> LoadAtlasSprite<T>(ExtraAddressInfo extraAddressInfo,
+			Func<string, Task<SpriteAtlas>> atlasLoader) where T : Object
 		{
-			var spriteAtlas = await AssetLoader.LoadAssetByRefer<SpriteAtlas>(extraAddressInfo.sourceAddress);
+			var spriteAtlas = await atlasLoader(extraAddressInfo.sourceAddress);
 			if (spriteAtlas != null)
 			{
 				var sprite = spriteAtlas.GetSprite(extraAddressInfo.key);
