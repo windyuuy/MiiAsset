@@ -12,7 +12,7 @@ namespace MiiAsset.Runtime
 {
 	public class LoadOneAssetStatus
 	{
-		public Task<object> Task => Op.GetTask();
+		public Task<UnityEngine.Object> Task => Op.GetTask();
 		public int RefCount;
 		public string Address;
 		public AssetBundleRequest Op;
@@ -243,7 +243,8 @@ namespace MiiAsset.Runtime
 			{
 				var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
 				var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
-				loadAssetBundlePipeline = bundleInfo.GetLoadAssetBundlePipeline(loadSource, Crc, Hash128, bundleInfo.isEncrypt);
+				loadAssetBundlePipeline =
+					bundleInfo.GetLoadAssetBundlePipeline(loadSource, Crc, Hash128, bundleInfo.isEncrypt);
 				var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
 				downloadPipeline?.PresetDownloadSize(FileSize);
 				this.LoadPipeline = loadAssetBundlePipeline;
@@ -393,6 +394,9 @@ namespace MiiAsset.Runtime
 
 			if (AssetBundle != null)
 			{
+				LoadedAssetMap.Clear();
+				LoadingAssetMap.Clear();
+
 				UnloadTask ??= this.AssetBundle.UnloadAsync(true).GetTask();
 				if (Disposable != null)
 				{
@@ -423,6 +427,11 @@ namespace MiiAsset.Runtime
 				}
 			}
 		}
+
+		protected readonly Dictionary<string, UnityEngine.Object> LoadedAssetMap = new();
+
+		protected readonly Dictionary<string, (AssetBundleRequest op, Task<UnityEngine.Object> task)> LoadingAssetMap =
+			new();
 
 		public async Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : Object
 		{
@@ -461,14 +470,40 @@ namespace MiiAsset.Runtime
 
 			// var t1 = Date.Now();
 			// var fc1 = Time.frameCount;
-			var op = AssetBundle.LoadAssetAsync<T>(address);
-			loadStatus?.Set(op);
-			var task = op.GetTask();
-			await task;
-			// var t2 = Date.Now();
-			// var fc2 = Time.frameCount;
-			// Debug.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
-			if (op.asset is T asset)
+			if (LoadedAssetMap.TryGetValue(address, out var assetObj))
+			{
+				loadStatus?.SetCompleted(true);
+			}
+			else
+			{
+				if (!LoadingAssetMap.TryGetValue(address, out var item))
+				{
+					var op0 = AssetBundle.LoadAssetAsync<T>(address);
+					var task0 = op0.GetTask();
+					item = (op0, task0);
+					LoadingAssetMap.Add(address, item);
+				}
+
+				if (loadStatus != null)
+				{
+					loadStatus.Set(item.op);
+				}
+
+				assetObj = await item.task;
+				// 如果 address unloaded, 那么 LoadingAssetMap 不存在 address, 无需在 LoadedAssetMap add address
+				if (LoadingAssetMap.Remove(address))
+				{
+					if (!LoadedAssetMap.TryAdd(address, assetObj))
+					{
+						Debug.LogError($"duplicate asset: {address}");
+					}
+				}
+				// var t2 = Date.Now();
+				// var fc2 = Time.frameCount;
+				// Debug.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
+			}
+
+			if (assetObj is T asset)
 			{
 				return asset;
 			}
@@ -521,7 +556,17 @@ namespace MiiAsset.Runtime
 
 			// var t1 = Date.Now();
 			// var fc1 = Time.frameCount;
-			var asset = AssetBundle.LoadAsset<T>(address);
+			T asset;
+			if (LoadedAssetMap.TryGetValue(address, out var assetObj))
+			{
+				asset = assetObj as T;
+			}
+			else
+			{
+				asset = AssetBundle.LoadAsset<T>(address);
+				LoadedAssetMap.Add(address, asset);
+			}
+
 			loadStatus?.Set(asset);
 			// var t2 = Date.Now();
 			// var fc2 = Time.frameCount;
@@ -544,6 +589,8 @@ namespace MiiAsset.Runtime
 
 		public Task UnLoadAssetJust(string address)
 		{
+			LoadedAssetMap.Remove(address);
+			LoadingAssetMap.Remove(address);
 			return System.Threading.Tasks.Task.CompletedTask;
 		}
 

@@ -175,6 +175,7 @@ namespace MiiAsset.Runtime.Status
 
 	public class AsyncOperationStatus : IAssetLoadStatus
 	{
+		protected bool IsCompleted = false;
 		protected AsyncOperation Op;
 		public Exception Exception;
 
@@ -184,10 +185,21 @@ namespace MiiAsset.Runtime.Status
 			return this;
 		}
 
+		public AsyncOperationStatus SetCompleted(bool isCompleted)
+		{
+			IsCompleted = isCompleted;
+			return this;
+		}
+
 		public PipelineProgress Progress
 		{
 			get
 			{
+				if (IsCompleted)
+				{
+					return PipelineProgress.Completed;
+				}
+
 				var progress = new PipelineProgress().Set01Progress(false);
 				if (Op != null)
 				{
@@ -211,15 +223,24 @@ namespace MiiAsset.Runtime.Status
 		{
 			get
 			{
-				yield return new PipelineResult
+				if (IsCompleted)
 				{
-					IsOk = Op.isDone,
-					Exception = Exception,
-					Code = 0,
-					Msg = Op.isDone ? "" : "native-error",
-					ErrorType = PipelineErrorType.FileSystemError,
-					Status = PipelineStatus.Done,
-				};
+					var pipelineResult = new PipelineResult();
+					pipelineResult.SetOk();
+					yield return pipelineResult;
+				}
+				else
+				{
+					yield return new PipelineResult
+					{
+						IsOk = Op.isDone,
+						Exception = Exception,
+						Code = 0,
+						Msg = Op.isDone ? "" : "native-error",
+						ErrorType = PipelineErrorType.FileSystemError,
+						Status = PipelineStatus.Done,
+					};
+				}
 			}
 		}
 	}

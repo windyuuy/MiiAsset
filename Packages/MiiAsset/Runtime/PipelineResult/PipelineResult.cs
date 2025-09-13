@@ -54,7 +54,7 @@ namespace MiiAsset.Runtime
 
 		public long Code;
 		public string Msg;
-		public PipelineErrorType ErrorType;
+		public PipelineErrorType ErrorType = PipelineErrorType.NoErrorYet;
 		public PipelineStatus Status = PipelineStatus.Init;
 
 		public void PrintError()
@@ -107,6 +107,7 @@ namespace MiiAsset.Runtime
 
 	public enum PipelineErrorType
 	{
+		NoErrorYet = 0,
 		NetError = 1,
 		FileSystemError = 2,
 		DataIncorrect = 4,
