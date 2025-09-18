@@ -38,7 +38,7 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		// ReSharper disable once InconsistentNaming
 		public string AssetGUID => guid;
 
-		public string Address => guid != null ? AssetLoader.GetAddressFromGuid(guid) : null;
+		public string Address => !string.IsNullOrEmpty(guid) ? AssetLoader.GetAddressFromGuid(guid) : null;
 		public object RuntimeKey => Address ?? guid;
 		public string DisplayInfo => $"Address: {Address}, Guid: {AssetGUID}";
 
@@ -51,10 +51,14 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 				{
 					return asset;
 				}
-				else
+				else if (!string.IsNullOrEmpty(guid))
 				{
 					asset = AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid));
 					return asset;
+				}
+				else
+				{
+					return null;
 				}
 			}
 		}
@@ -93,7 +97,7 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 				return this.IsValid();
 			}
 		}
-		
+
 	#if UNITY_EDITOR
 		public Object EditorAsset => asset == null
 			? AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid))
