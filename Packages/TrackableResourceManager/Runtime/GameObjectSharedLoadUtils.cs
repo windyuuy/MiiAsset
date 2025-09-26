@@ -38,6 +38,12 @@ namespace TrackableResourceManager.Runtime
 			{
 				if (LoadSharedTaskMap.TryGetValue(resUri, out var loadStatus))
 				{
+					--loadStatus.ReferCount;
+					if (loadStatus.GameObject != null)
+					{
+						loadStatus.GameObject.SetActive(loadStatus.ReferCount > 0);
+					}
+
 					--loadStatus.ResReferCount;
 					if (loadStatus.ResReferCount == 0 && immediately)
 					{
