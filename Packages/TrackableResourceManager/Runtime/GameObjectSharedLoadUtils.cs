@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using TrackableResourceManager.Runtime;
 using UnityEngine;
 
-namespace Bundles.UI.Layers.Home.异象
+namespace TrackableResourceManager.Runtime
 {
 	public class GameObjectSharedLoadUtils
 	{
