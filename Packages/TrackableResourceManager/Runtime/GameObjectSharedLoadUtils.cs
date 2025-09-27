@@ -32,9 +32,14 @@ namespace TrackableResourceManager.Runtime
 
 		private static readonly Dictionary<string, LoadStatus> LoadSharedTaskMap = new();
 
+		public bool IsValidUrl(string uri)
+		{
+			return !string.IsNullOrEmpty(uri);
+		}
+
 		public void UnLoad(string resUri, bool immediately = false)
 		{
-			if (!string.IsNullOrEmpty(resUri))
+			if (IsValidUrl(resUri))
 			{
 				if (LoadSharedTaskMap.TryGetValue(resUri, out var loadStatus))
 				{
@@ -68,7 +73,7 @@ namespace TrackableResourceManager.Runtime
 
 		public void UnRefer(string resUri)
 		{
-			if (!string.IsNullOrEmpty(resUri))
+			if (IsValidUrl(resUri))
 			{
 				if (LoadSharedTaskMap.TryGetValue(resUri, out var loadStatus))
 				{
@@ -86,7 +91,7 @@ namespace TrackableResourceManager.Runtime
 
 		public void Refer(string resUri)
 		{
-			if (!string.IsNullOrEmpty(resUri))
+			if (IsValidUrl(resUri))
 			{
 				if (LoadSharedTaskMap.TryGetValue(resUri, out var loadStatus))
 				{
@@ -102,7 +107,7 @@ namespace TrackableResourceManager.Runtime
 		public async Task<GameObject> Load(string resUri,
 			UObjectResourceScope scope, Transform parent, Action<GameObject> onLoadFunc = null)
 		{
-			if (!string.IsNullOrEmpty(resUri))
+			if (IsValidUrl(resUri))
 			{
 				if (!LoadSharedTaskMap.TryGetValue(resUri, out var loadStatus))
 				{
