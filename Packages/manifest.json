@@ -1,9 +1,9 @@
 {
   "dependencies": {
-    "com.qq.weixin.minigame": "https://github.com/wechat-miniprogram/minigame-tuanjie-transform-sdk.git",
-    "windy.sdkadapter.core": "https://github.com/windyuuy/UnitySDKAdapter.git?path=Packages/SDKAdapter#0de16ef138c50895f22abd62a14e6c0b14eb8f2e",
-    "windy.gamelibs.all": "https://github.com/windyuuy/UnityGameLibs.git?path=Packages/GameLibs#3b4ea945f487e014d7f48c85e454f2be2b69abf9",
-    "windy.gamelibs.mathlib": "https://github.com/windyuuy/UnityGameLibs.git?path=Packages/MathLib#3b4ea945f487e014d7f48c85e454f2be2b69abf9",
+    "com.qq.weixin.minigame": "https://gitee.com/windyuuy/minigame-tuanjie-transform-sdk.git#45e7581c92543239ae221a274fa5b96339301168",
+    "windy.sdkadapter.core": "https://gitee.com/windyuuy/UnitySDKAdapter.git?path=Packages/SDKAdapter#a0f59cbb6ac26357f8db39d38ab090abdcf0c42d",
+    "windy.gamelibs.all": "https://gitee.com/windyuuy/UnityGameLibs.git?path=Packages/GameLibs#263fb025d38cea0c1b297ae297b2c95086159cc4",
+    "windy.gamelibs.mathlib": "https://gitee.com/windyuuy/UnityGameLibs.git?path=Packages/MathLib#263fb025d38cea0c1b297ae297b2c95086159cc4",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ide.rider": "3.0.34",
     "com.unity.ide.visualstudio": "2.0.22",
