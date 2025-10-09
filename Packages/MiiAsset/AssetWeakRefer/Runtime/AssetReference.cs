@@ -299,4 +299,10 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		{
 		}
 	}
+	
+	[Serializable]
+	public class SceneAssetReference : AssetReference
+	{
+		
+	}
 }
