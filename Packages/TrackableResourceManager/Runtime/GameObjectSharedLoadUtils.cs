@@ -145,19 +145,26 @@ namespace TrackableResourceManager.Runtime
 		private async Task<GameObject> LoadGameObjectTask(string resUri, UObjectResourceScope scope, Transform parent,
 			LoadStatus loadStatus)
 		{
-			var effect = await scope.LoadAsync<GameObject>(resUri);
-			var obj = GameObject.Instantiate(effect, parent);
-			obj.SetActive(loadStatus.ReferCount > 0);
-			loadStatus.GameObject = obj;
-			loadStatus.OnLoadFunc?.Invoke(obj);
-			return obj;
+			var effectPrefab = await scope.LoadAsync<GameObject>(resUri);
+			if (effectPrefab != null)
+			{
+				var obj = GameObject.Instantiate(effectPrefab, parent);
+				obj.SetActive(loadStatus.ReferCount > 0);
+				loadStatus.GameObject = obj;
+				loadStatus.OnLoadFunc?.Invoke(obj);
+				return obj;
+			}
+			else
+			{
+				return null;
+			}
 		}
 
 		public async Task<T[]> LoadComponents<T>(string resUri,
 			UObjectResourceScope scope, Transform parent, Action<GameObject> onLoadFunc = null)
 		{
 			var obj = await Load(resUri, scope, parent, onLoadFunc);
-			var rt2Dt = obj.GetComponents<T>();
+			var rt2Dt = obj != null ? obj.GetComponents<T>() : Array.Empty<T>();
 			return rt2Dt;
 		}
 	}
