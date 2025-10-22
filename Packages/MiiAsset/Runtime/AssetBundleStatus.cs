@@ -392,11 +392,11 @@ namespace MiiAsset.Runtime
 				await Task;
 			}
 
+			LoadedAssetMap.Clear();
+			LoadingAssetMap.Clear();
+
 			if (AssetBundle != null)
 			{
-				LoadedAssetMap.Clear();
-				LoadingAssetMap.Clear();
-
 				UnloadTask ??= this.AssetBundle.UnloadAsync(true).GetTask();
 				if (Disposable != null)
 				{
@@ -624,6 +624,8 @@ namespace MiiAsset.Runtime
 				this.Disposable = null;
 			}
 
+			LoadedAssetMap.Clear();
+			LoadingAssetMap.Clear();
 			if (this.AssetBundle != null)
 			{
 				this.AssetBundle.UnloadAsync(true);
