@@ -35,6 +35,9 @@ namespace MiiAsset.Runtime.IOManagers
 		public string InternalDir { get; set; }
 		public string ExternalDir { get; set; }
 		public string CatalogName { get; set; }
+		/// <summary>
+		/// 秒
+		/// </summary>
 		public int Timeout { get; set; }
 		public bool IsInternalDirUpdating => true;
 		public static string StreamingCacheAssetPath;
