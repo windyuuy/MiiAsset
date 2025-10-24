@@ -96,7 +96,15 @@ namespace MiiAsset.Runtime.Pipelines
 						MyLogger.Log($"retry reload assetbundle to resolve: {Uri}");
 						if (assetBundle != null)
 						{
-							assetBundle.Unload(false);
+							try
+							{
+								assetBundle.Unload(false);
+							}
+							catch (Exception exception)
+							{
+								Debug.LogError("assetBundle.Unload(false)-failed");
+								Debug.LogException(exception);
+							}
 						}
 
 						LoadStream.Seek(0, SeekOrigin.Begin);
