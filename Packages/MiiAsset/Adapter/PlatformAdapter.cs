@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Adapter
+namespace MiiAsset.Runtime.Adapter
 {
 	/// <summary>
 	/// Options for the MiiAsset build platform.
