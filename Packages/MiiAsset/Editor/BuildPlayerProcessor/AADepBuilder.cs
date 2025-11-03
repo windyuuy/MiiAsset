@@ -10,6 +10,7 @@ using MiiAsset.Runtime.AssetUtils;
 using MiiAsset.Runtime.IOManagers;
 using Lang.Encoding;
 using MiiAsset.Editor.Optimization;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Encrypt;
 using MiiAsset.Runtime.Optimization;
 using UnityEditor;
@@ -23,7 +24,11 @@ namespace MiiAsset.Editor.Build
 {
 	public class AADepBuilder
 	{
-		public static string GetRemoteAssetBundlesPublishDir() => "AssetBundles";
+		public static string GetRemoteAssetBundlesPublishDir() =>
+			$"AssetBundles/{PlatformAdapter.GetPlatformPathSubFolder()}";
+
+		public static string GetRemoteAssetBundlesPublishDir(BuildTarget target) =>
+			$"AssetBundles/{PlatformAdapter.GetBuildTargetSubFolder(target)}";
 
 		public static BuildAssetBundlesResult BuildAssetBundles(AAPathInfo pathInfo,
 			ScriptCompilationSettings scriptCompilationSettings, ExtraBuildOptions options)
@@ -66,8 +71,7 @@ namespace MiiAsset.Editor.Build
 				};
 				return build;
 			});
-			var folderPath =
-				$"{GetRemoteAssetBundlesPublishDir()}/{AssetHelper.GetBuildTarget(scriptCompilationSettings.target)}";
+			var folderPath = GetRemoteAssetBundlesPublishDir(scriptCompilationSettings.target);
 			var outPath = "Temp/MiiAsset/AssetBundles";
 			var tmpPath = "Temp/MiiAsset/Temp";
 			if (Directory.Exists(outPath))

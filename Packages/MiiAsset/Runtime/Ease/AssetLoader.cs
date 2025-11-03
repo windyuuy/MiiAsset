@@ -671,11 +671,26 @@ namespace MiiAsset.Runtime
 			return tagsBundleSet;
 		}
 
+		public static Task<GameObject> Instantiate(string key, AssetLoadStatusGroup loadStatus = null)
+		{
+			return Instantiate(key, null, loadStatus);
+		}
+
+		public static async Task<GameObject> Instantiate(string key, Transform parent,
+			AssetLoadStatusGroup loadStatus = null)
+		{
+			var asset = await LoadAssetByRefer<GameObject>(key, loadStatus);
+			var obj = GameObject.Instantiate(asset, parent);
+			return obj;
+		}
+
+		[Obsolete("use Instantiate instead")]
 		public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key, bool createStatus = false)
 		{
 			return InstantiateAsync(key, null, createStatus);
 		}
 
+		[Obsolete("use Instantiate instead")]
 		public static AsyncLoadingStatus<GameObject> InstantiateAsync(string key, Transform parent,
 			bool createStatus = false)
 		{

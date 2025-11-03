@@ -145,7 +145,7 @@ namespace TrackableResourceManager.Runtime
 		private async Task<GameObject> LoadGameObjectTask(string resUri, UObjectResourceScope scope, Transform parent,
 			LoadStatus loadStatus)
 		{
-			var effectPrefab = await scope.LoadAsync<GameObject>(resUri);
+			var effectPrefab = await scope.LoadAsset<GameObject>(resUri);
 			if (effectPrefab != null)
 			{
 				var obj = GameObject.Instantiate(effectPrefab, parent);
