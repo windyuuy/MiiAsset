@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using MiiAsset.Runtime;
@@ -23,11 +24,15 @@ namespace MiiAsset.Editor.Optimization
 			pathInfo.IsShaderGroupOffline = pathInfo.IsShaderGroupOffline || aaPathConfig.isShaderGroupOffline;
 			pathInfo.IsMyBuiltinShaderGroupOffline =
 				pathInfo.IsMyBuiltinShaderGroupOffline || aaPathConfig.isMyBuiltinShaderGroupOffline;
+			var singleFileItems = pathInfo.SingleFileItems;
 			foreach (var singleFile in aaPathConfig.singleFiles)
 			{
 				var path = AssetDatabase.GetAssetPath(singleFile.asset);
 				var guid = AssetDatabase.AssetPathToGUID(path);
-				pathInfo.SingleFileItems.Add(guid, singleFile);
+				if (!singleFileItems.TryAdd(guid, singleFile))
+				{
+					throw new Exception($"重复的资源: {path}, {guid}");
+				}
 			}
 
 			return pathInfo;

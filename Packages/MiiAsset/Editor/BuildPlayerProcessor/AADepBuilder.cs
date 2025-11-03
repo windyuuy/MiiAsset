@@ -138,7 +138,10 @@ namespace MiiAsset.Editor.Build
 							FileSize = fileSize,
 							IsEncrypt = pathInfo.IsEncryptBuiltin,
 						};
-						tagBundleMap.Add(builtinBundleInfo.TagsUKey, builtinBundleInfo);
+						if (!tagBundleMap.TryAdd(builtinBundleInfo.TagsUKey, builtinBundleInfo))
+						{
+							throw new Exception($"重复的TagsUKey: {builtinBundleInfo.TagsUKey}");
+						}
 					}
 				}
 

@@ -72,7 +72,10 @@ namespace MiiAsset.Editor.Build
 				sourceAddress = atlasAddress,
 				key = Path.GetFileNameWithoutExtension(address),
 			};
-			ExtraAddressInfoMap.Add(address, extraAddressInfo);
+			if (!ExtraAddressInfoMap.TryAdd(address, extraAddressInfo))
+			{
+				throw new Exception($"重复的资源: {address}");
+			}
 		}
 
 		public void CollectValidAssets(AAPathInfo pathInfo)
@@ -95,7 +98,11 @@ namespace MiiAsset.Editor.Build
 			var singleFileItems = pathInfo.SingleFileItems;
 			foreach (var (guid, value) in singleFileItems)
 			{
-				SingleFileMap.Add(value.key, value);
+				if (!SingleFileMap.TryAdd(value.key, value))
+				{
+					throw new Exception($"重复的资源: {value.key}");
+				}
+
 				var address = value.GetLoadPath();
 				InvalidSingleFileAddressMap.Add(address, value);
 			}
