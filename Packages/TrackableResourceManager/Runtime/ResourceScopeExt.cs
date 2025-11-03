@@ -14,12 +14,12 @@ namespace TrackableResourceManager.Runtime
 
 	public static class ResourceScopeExt
 	{
-		public static Task<T> LoadAsync<T>(this IResourceScope wrap, ResourceKey resKey) where T : UnityEngine.Object
+		public static Task<T> Load<T>(this IResourceScope wrap, ResourceKey resKey) where T : UnityEngine.Object
 		{
 			return wrap.Token.LoadAsset<T>(resKey);
 		}
 
-		public static Task<T> LoadAsync<T>(this IResourceScope wrap, string resKey) where T : UnityEngine.Object
+		public static Task<T> Load<T>(this IResourceScope wrap, string resKey) where T : UnityEngine.Object
 		{
 			return wrap.Token.LoadAsset<T>(resKey);
 		}
