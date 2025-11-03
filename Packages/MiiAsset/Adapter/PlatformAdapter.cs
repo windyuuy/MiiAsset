@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 namespace MiiAsset.Runtime.Adapter
@@ -68,20 +67,20 @@ namespace MiiAsset.Runtime.Adapter
 	public static class PlatformAdapter
 	{
 	#if UNITY_EDITOR
-		internal static readonly Dictionary<BuildTarget, MiiAssetPlatform> s_BuildTargetMapping =
-			new Dictionary<BuildTarget, MiiAssetPlatform>()
+		internal static readonly Dictionary<UnityEditor.BuildTarget, MiiAssetPlatform> s_BuildTargetMapping =
+			new Dictionary<UnityEditor.BuildTarget, MiiAssetPlatform>()
 			{
-				{ BuildTarget.XboxOne, MiiAssetPlatform.XboxOne },
-				{ BuildTarget.Switch, MiiAssetPlatform.Switch },
-				{ BuildTarget.PS4, MiiAssetPlatform.PS4 },
-				{ BuildTarget.iOS, MiiAssetPlatform.iOS },
-				{ BuildTarget.Android, MiiAssetPlatform.Android },
-				{ BuildTarget.WebGL, MiiAssetPlatform.WebGL },
-				{ BuildTarget.StandaloneWindows, MiiAssetPlatform.Windows },
-				{ BuildTarget.StandaloneWindows64, MiiAssetPlatform.Windows },
-				{ BuildTarget.StandaloneOSX, MiiAssetPlatform.OSX },
-				{ BuildTarget.StandaloneLinux64, MiiAssetPlatform.Linux },
-				{ BuildTarget.WSAPlayer, MiiAssetPlatform.WindowsUniversal },
+				{ UnityEditor.BuildTarget.XboxOne, MiiAssetPlatform.XboxOne },
+				{ UnityEditor.BuildTarget.Switch, MiiAssetPlatform.Switch },
+				{ UnityEditor.BuildTarget.PS4, MiiAssetPlatform.PS4 },
+				{ UnityEditor.BuildTarget.iOS, MiiAssetPlatform.iOS },
+				{ UnityEditor.BuildTarget.Android, MiiAssetPlatform.Android },
+				{ UnityEditor.BuildTarget.WebGL, MiiAssetPlatform.WebGL },
+				{ UnityEditor.BuildTarget.StandaloneWindows, MiiAssetPlatform.Windows },
+				{ UnityEditor.BuildTarget.StandaloneWindows64, MiiAssetPlatform.Windows },
+				{ UnityEditor.BuildTarget.StandaloneOSX, MiiAssetPlatform.OSX },
+				{ UnityEditor.BuildTarget.StandaloneLinux64, MiiAssetPlatform.Linux },
+				{ UnityEditor.BuildTarget.WSAPlayer, MiiAssetPlatform.WindowsUniversal },
 			};
 	#endif
 		internal static readonly Dictionary<RuntimePlatform, MiiAssetPlatform> s_RuntimeTargetMapping =
@@ -105,21 +104,21 @@ namespace MiiAsset.Runtime.Adapter
 			};
 
 	#if UNITY_EDITOR
-		internal static MiiAssetPlatform MiiAssetPlatformInternal(BuildTarget target)
+		internal static MiiAssetPlatform MiiAssetPlatformInternal(UnityEditor.BuildTarget target)
 		{
 			if (s_BuildTargetMapping.ContainsKey(target))
 				return s_BuildTargetMapping[target];
 			return MiiAssetPlatform.Unknown;
 		}
 
-		internal static string MiiAssetPlatformPathInternal(BuildTarget target)
+		internal static string MiiAssetPlatformPathInternal(UnityEditor.BuildTarget target)
 		{
 			if (s_BuildTargetMapping.ContainsKey(target))
 				return s_BuildTargetMapping[target].ToString();
 			return target.ToString();
 		}
-
 	#endif
+		
 		internal static MiiAssetPlatform MiiAssetPlatformInternal(RuntimePlatform platform)
 		{
 			if (s_RuntimeTargetMapping.ContainsKey(platform))
@@ -134,10 +133,12 @@ namespace MiiAsset.Runtime.Adapter
 			return platform.ToString();
 		}
 
-		public static string GetBuildTargetSubFolder(BuildTarget target)
+	#if UNITY_EDITOR
+		public static string GetBuildTargetSubFolder(UnityEditor.BuildTarget target)
 		{
-			return MiiAssetPlatformPathInternal(EditorUserBuildSettings.activeBuildTarget);
+			return MiiAssetPlatformPathInternal(UnityEditor.EditorUserBuildSettings.activeBuildTarget);
 		}
+	#endif
 
 		public static string GetRuntimeSubFolder()
 		{
@@ -147,7 +148,7 @@ namespace MiiAsset.Runtime.Adapter
 		public static string GetPlatformPathSubFolder()
 		{
 		#if UNITY_EDITOR
-			return MiiAssetPlatformPathInternal(EditorUserBuildSettings.activeBuildTarget);
+			return MiiAssetPlatformPathInternal(UnityEditor.EditorUserBuildSettings.activeBuildTarget);
 		#else
             return MiiAssetPlatformPathInternal(Application.platform);
 		#endif
