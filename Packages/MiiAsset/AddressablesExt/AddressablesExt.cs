@@ -13,38 +13,47 @@ namespace MiiAsset.AddressablesExt
 		{
 		#if UNITY_WEBGL && SUPPORT_WDK && !UNITY_EDITOR
 			var ts = new TaskCompletionSource<bool>();
-			var fs = UserAPI.Instance.FileSystem.GetFileSystemManager();
-			var dir = $"{UserAPI.Instance.GameInfo.UserDataPath}/__GAME_FILE_CACHE/hotres/";
-			if (fs.AccessSync(dir).Exist)
+			try
 			{
-				fs.Rmdir(new()
+				var fs = UserAPI.Instance.FileSystem.GetFileSystemManager();
+				var dir = $"{UserAPI.Instance.GameInfo.UserDataPath}/__GAME_FILE_CACHE/hotres/";
+				if (fs.AccessSync(dir).Exist)
 				{
-					success = (resp) =>
+					fs.Rmdir(new()
 					{
-						Debug.Log("清理AA缓存成功");
-						ts.SetResult(true);
-					},
-					fail = (resp) =>
-					{
-						Debug.LogError($"remove aa-cache failed, errCode: {resp.ErrCode}, errMsg: {resp.ErrMsg}");
-						ts.SetResult(false);
-					},
-					dirPath = dir,
-					recursive = true,
-				});
-				//
-				// try
-				// {
-				// 	Caching.ClearCache();
-				// }
-				// catch (Exception exception)
-				// {
-				// 	Debug.LogException(exception);
-				// }
+						success = (resp) =>
+						{
+							Debug.Log("清理AA缓存成功");
+							ts.SetResult(true);
+						},
+						fail = (resp) =>
+						{
+							Debug.LogError($"remove aa-cache failed, errCode: {resp.ErrCode}, errMsg: {resp.ErrMsg}");
+							ts.SetResult(false);
+						},
+						dirPath = dir,
+						recursive = true,
+					});
+					//
+					// try
+					// {
+					// 	Caching.ClearCache();
+					// }
+					// catch (Exception exception)
+					// {
+					// 	Debug.LogException(exception);
+					// }
+				}
+				else
+				{
+					MyLogger.Log("本地存储为空");
+					ts.SetResult(true);
+				}
 			}
-			else
+			catch (Exception exception)
 			{
-				MyLogger.Log("本地存储为空");
+				Debug.LogException(exception);
+				ts.SetResult(false);
 			}
 
 			return ts.Task;
