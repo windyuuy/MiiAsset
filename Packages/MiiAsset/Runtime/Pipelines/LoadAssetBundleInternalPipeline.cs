@@ -71,6 +71,7 @@ namespace MiiAsset.Runtime.Pipelines
 				Msg = "",
 				ErrorType = PipelineErrorType.NetError,
 				Status = PipelineStatus.Init,
+				Uri = RemoteUri,
 			};
 		}
 

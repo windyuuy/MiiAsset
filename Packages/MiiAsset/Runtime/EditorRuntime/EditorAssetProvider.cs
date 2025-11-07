@@ -34,6 +34,7 @@ namespace MiiAsset.Runtime
 			{
 				IsOk = true,
 				Status = PipelineStatus.Done,
+				Uri = remoteBaseUri,
 			});
 		}
 

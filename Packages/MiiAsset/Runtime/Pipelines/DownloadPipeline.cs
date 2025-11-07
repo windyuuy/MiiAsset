@@ -44,6 +44,7 @@ namespace MiiAsset.Runtime.Pipelines
 				{
 					IsOk = true,
 					Status = PipelineStatus.Done,
+					Uri = Uri,
 				};
 			}
 		}

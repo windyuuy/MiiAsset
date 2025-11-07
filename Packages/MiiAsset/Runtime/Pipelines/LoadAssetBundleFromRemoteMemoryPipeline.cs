@@ -52,6 +52,7 @@ namespace MiiAsset.Runtime.Pipelines
 						Code = 0,
 						Msg = $"invalid bundle data: {RemoteUri}",
 						ErrorType = PipelineErrorType.DataIncorrect,
+						Uri = RemoteUri,
 					};
 				}
 				// else
