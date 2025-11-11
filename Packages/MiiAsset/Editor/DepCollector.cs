@@ -245,6 +245,7 @@ namespace MiiAsset.Editor.Build
 							TagsUKey = tagsKey,
 							// SingleFileItems = pathInfo.SingleFileItems,
 							IsEncrypt = pathInfo.IsEncryptAll || groupNameInfo.IsEncrypt,
+							IsKeepInMemory = pathInfo.IsKeepInMemory,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
@@ -253,6 +254,7 @@ namespace MiiAsset.Editor.Build
 					{
 						tagBundle.IsOffline = tagBundle.IsOffline || !groupNameInfo.IsRemote;
 						tagBundle.IsEncrypt = pathInfo.IsEncryptAll || tagBundle.IsEncrypt || groupNameInfo.IsEncrypt;
+						tagBundle.IsKeepInMemory = pathInfo.IsKeepInMemory;
 						tagBundle.Guids.Add(groupNameInfo.Guid);
 
 						// Debug.LogError($"conflict item: {groupNameInfo.AssetPath}");
@@ -284,6 +286,7 @@ namespace MiiAsset.Editor.Build
 							TagsUKey = tagsKey,
 							// SingleFileItems = pathInfo.SingleFileItems,
 							IsEncrypt = pathInfo.IsEncryptAll,
+							IsKeepInMemory = pathInfo.IsKeepInMemory,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
@@ -293,6 +296,7 @@ namespace MiiAsset.Editor.Build
 						tagBundle.Guids.Add(item.GetGuid());
 						tagBundle.AddressMap.Add(item.GetGuid(), item.key);
 						tagBundle.IsEncrypt = tagBundle.IsEncrypt || item.isEncrypt;
+						tagBundle.IsKeepInMemory = tagBundle.IsKeepInMemory;
 						GuidBundleMap.Add(item.GetGuid(), tagBundle);
 					}
 				}

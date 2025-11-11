@@ -50,6 +50,7 @@ namespace MiiAsset.Runtime
 		}
 
 		public long FileSize = -1;
+		public bool IsKeepInMemory = false;
 		public string BundleInternalName = null;
 		public uint Crc;
 		public Hash128 Hash128;
@@ -183,6 +184,8 @@ namespace MiiAsset.Runtime
 				Hash128 = bundleInfo.hash128;
 				IsInternalBundle = catalogInfo.IsInternalBundle(BundleName);
 				BundleInternalName = bundleInfo.bundleName;
+
+				IsKeepInMemory = bundleInfo.IsKeepInMemory;
 			}
 		}
 
@@ -226,6 +229,7 @@ namespace MiiAsset.Runtime
 			var isInternalBundleExist = false;
 			if (IsInternalBundle)
 			{
+				// try load from internal
 				var result = await IOManager.LocalIOProto.EnsureStreamingBundles(this.BundleName);
 				isInternalBundleExist = result == EnsureStreamingBundlesResult.Exist;
 				if (isInternalBundleExist && !autoLoad)
@@ -369,6 +373,12 @@ namespace MiiAsset.Runtime
 				#if UNITY_EDITOR
 					BundleStatusNotify.OnBundleDownLoad?.Invoke(this);
 				#endif
+				}
+
+				if (!IsKeepInMemory)
+				{
+					this.LoadPipeline = null;
+					loadAssetBundlePipeline.Dispose();
 				}
 
 				return downloadResult;

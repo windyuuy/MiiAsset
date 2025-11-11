@@ -111,6 +111,8 @@ namespace MiiAsset.Editor.Build
 		}
 
 		public readonly Dictionary<string, string> AddressMap = new();
+		public bool IsKeepInMemory;
+
 		public string[] GetAssetAddresses()
 		{
 			return Guids

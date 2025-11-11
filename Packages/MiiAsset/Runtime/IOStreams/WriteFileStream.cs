@@ -139,7 +139,7 @@ namespace MiiAsset.Runtime.IOStreams
 		{
 			if (Ts != null && !Ts.Task.IsCompleted)
 			{
-				Debug.LogError($"WriteFileStream is Running Already, will be overwritten");
+				Debug.LogError($"{nameof(WriteFileStream)} is Running Already, will be overwritten");
 			}
 
 			Ts = new();
@@ -157,7 +157,7 @@ namespace MiiAsset.Runtime.IOStreams
 			{
 				if (!Ts.Task.IsCompleted)
 				{
-					Ts.SetException(new OperationCanceledException("WriteFileStream is disposed before await return"));
+					Ts.SetException(new OperationCanceledException($"{nameof(WriteFileStream)} is disposed before await return"));
 				}
 
 				Ts = null;

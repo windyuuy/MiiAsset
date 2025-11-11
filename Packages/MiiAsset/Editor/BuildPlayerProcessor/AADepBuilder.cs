@@ -137,6 +137,7 @@ namespace MiiAsset.Editor.Build
 							BuildInfo = item.Value,
 							FileSize = fileSize,
 							IsEncrypt = pathInfo.IsEncryptBuiltin,
+							IsKeepInMemory = pathInfo.IsKeepInMemory,
 						};
 						if (!tagBundleMap.TryAdd(builtinBundleInfo.TagsUKey, builtinBundleInfo))
 						{
@@ -306,6 +307,7 @@ namespace MiiAsset.Editor.Build
 						entries = tagBundle.GetAssetAddresses(),
 						guids = options.BuildGuids ? tagBundle.Guids.ToArray() : null,
 						isEncrypt = tagBundle.IsEncrypt,
+						IsKeepInMemory = tagBundle.IsKeepInMemory,
 						IsOffline = tagBundle.IsOffline,
 						size = tagBundle.FileSize,
 					};

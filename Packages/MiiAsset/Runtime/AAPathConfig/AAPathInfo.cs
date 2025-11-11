@@ -12,6 +12,7 @@ namespace MiiAsset.Runtime
 	{
 		public bool IsEncryptAll = false;
 		public bool IsEncryptBuiltin = false;
+		public bool IsKeepInMemory = false;
 		public List<AAPathConfigItem> Paths = new();
 
 		/// <summary>

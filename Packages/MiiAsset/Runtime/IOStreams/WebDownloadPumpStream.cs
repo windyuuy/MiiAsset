@@ -214,7 +214,15 @@ namespace MiiAsset.Runtime.IOStreams
 			this.OnCtrl = null;
 			this.OnReceivedData = null;
 
-			Ts = null;
+			if (Ts != null)
+			{
+				if (!Ts.Task.IsCompleted)
+				{
+					Ts.SetException(new OperationCanceledException($"{nameof(WriteFileStream)} is disposed before await return"));
+				}
+
+				Ts = null;
+			}
 		}
 	}
 }

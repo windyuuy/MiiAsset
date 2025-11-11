@@ -13,6 +13,8 @@ namespace MiiAsset.Runtime
 		public uint crc;
 		public bool isEncrypt;
 
+		public bool IsKeepInMemory = false;
+		
 		/// <summary>
 		/// 文件大小, 多少byte
 		/// </summary>
