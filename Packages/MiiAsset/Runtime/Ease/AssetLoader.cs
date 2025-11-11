@@ -69,7 +69,7 @@ namespace MiiAsset.Runtime
 
 		public static async Task<bool> Init(AssetConsumerConfig config)
 		{
-			Debug.Assert(config != null, "config != null");
+			MyLogger.Assert(config != null, "config != null");
 			SetLoadAssetTimeout(config.LoadTimeout / 1000.0f, config.checkLoadTimeout, config.displayLoadTimeout);
 		#if UNITY_EDITOR
 			if (config.loadType == AssetConsumerConfig.LoadType.LoadFromBundle)
@@ -99,7 +99,7 @@ namespace MiiAsset.Runtime
 		{
 			if (remoteBaseUri.Contains(":/") && remoteBaseUri.Contains("://") == false)
 			{
-				Debug.LogError($"Uri格式错误: {remoteBaseUri}");
+				MyLogger.LogError($"Uri格式错误: {remoteBaseUri}");
 			}
 		}
 
@@ -134,14 +134,14 @@ namespace MiiAsset.Runtime
 				}
 				catch (Exception exception2)
 				{
-					Debug.LogException(exception2);
+					MyLogger.LogException(exception2);
 				}
 
 				return result;
 			}
 			catch (Exception exception)
 			{
-				Debug.LogException(exception);
+				MyLogger.LogException(exception);
 
 				_loadCatalogTaskSource?.SetResult(false);
 				_loadCatalogTaskSource = null;
@@ -161,14 +161,14 @@ namespace MiiAsset.Runtime
 				}
 				catch (Exception exception2)
 				{
-					Debug.LogException(exception2);
+					MyLogger.LogException(exception2);
 				}
 
 				return result;
 			}
 			catch (Exception exception)
 			{
-				Debug.LogException(exception);
+				MyLogger.LogException(exception);
 				_loadCatalogTaskSource?.SetResult(false);
 				_loadCatalogTaskSource = null;
 				throw;
@@ -399,7 +399,7 @@ namespace MiiAsset.Runtime
 		{
 			if (timeout <= 0)
 			{
-				Debug.LogError("资源加载超时时长 timeout<=0, 重置为默认值");
+				MyLogger.LogError("资源加载超时时长 timeout<=0, 重置为默认值");
 				timeout = 5000;
 			}
 

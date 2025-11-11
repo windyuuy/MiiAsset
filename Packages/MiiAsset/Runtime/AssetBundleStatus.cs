@@ -219,7 +219,7 @@ namespace MiiAsset.Runtime
 
 			if (!autoLoad && IOManager.LocalIOProto.ExistsBundle(this.BundleName))
 			{
-				Debug.Log($"AssetBundle-ExistExternal: {BundleName}");
+				MyLogger.Log($"AssetBundle-ExistExternal: {BundleName}");
 				IsDownloaded = 1;
 				_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
 				Result.SetOk();
@@ -234,7 +234,7 @@ namespace MiiAsset.Runtime
 				isInternalBundleExist = result == EnsureStreamingBundlesResult.Exist;
 				if (isInternalBundleExist && !autoLoad)
 				{
-					Debug.Log($"AssetBundle-ExistInternal: {BundleName}");
+					MyLogger.Log($"AssetBundle-ExistInternal: {BundleName}");
 					IsDownloaded = 2;
 					_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
 					Result.SetOk();
@@ -506,12 +506,12 @@ namespace MiiAsset.Runtime
 				{
 					if (!LoadedAssetMap.TryAdd(address, assetObj))
 					{
-						Debug.LogError($"duplicate asset: {address}");
+						MyLogger.LogError($"duplicate asset: {address}");
 					}
 				}
 				// var t2 = Date.Now();
 				// var fc2 = Time.frameCount;
-				// Debug.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
+				// MyLogger.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
 			}
 
 			if (assetObj is T asset)
@@ -581,7 +581,7 @@ namespace MiiAsset.Runtime
 			loadStatus?.Set(asset);
 			// var t2 = Date.Now();
 			// var fc2 = Time.frameCount;
-			// Debug.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
+			// MyLogger.Log($"LoadAssetAsync: {t2 - t1}, {fc2 - fc1}, from: {fc1}");
 			if (asset != null)
 			{
 				return System.Threading.Tasks.Task.FromResult(asset);

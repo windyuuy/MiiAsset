@@ -102,8 +102,8 @@ namespace MiiAsset.Runtime.Pipelines
 							}
 							catch (Exception exception)
 							{
-								Debug.LogError("assetBundle.Unload(false)-failed");
-								Debug.LogException(exception);
+								MyLogger.LogError("assetBundle.Unload(false)-failed");
+								MyLogger.LogException(exception);
 							}
 						}
 

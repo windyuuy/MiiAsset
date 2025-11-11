@@ -234,7 +234,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public bool EnsureBundle(string bundleName)
 		{
 			InitBundleExistMap();
-			// Debug.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
+			// MyLogger.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
 			if (BundleExistMap.TryGetValue(bundleName, out var exist))
 			{
 				return exist;
@@ -259,7 +259,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 			else
 			{
-				Debug.LogError($"file not exist: {filePath}");
+				MyLogger.LogError($"file not exist: {filePath}");
 			}
 		}
 
@@ -429,8 +429,8 @@ namespace MiiAsset.Runtime.IOManagers
 			var ts = new TaskCompletionSource<bool>();
 			try
 			{
-				Debug.Log("clean miiasset begin");
-				Debug.Log("read ExternalDir");
+				MyLogger.Log("clean miiasset begin");
+				MyLogger.Log("read ExternalDir");
 				var externalFiles = Array.Empty<string>();
 				try
 				{
@@ -438,11 +438,11 @@ namespace MiiAsset.Runtime.IOManagers
 				}
 				catch (Exception exception3)
 				{
-					Debug.LogException(exception3);
-					Debug.LogError($"ReaddirSync failed: {this.ExternalDir}");
+					MyLogger.LogException(exception3);
+					MyLogger.LogError($"ReaddirSync failed: {this.ExternalDir}");
 				}
 
-				Debug.Log("read CacheDir");
+				MyLogger.Log("read CacheDir");
 				var cacheFiles = Array.Empty<string>();
 				try
 				{
@@ -450,8 +450,8 @@ namespace MiiAsset.Runtime.IOManagers
 				}
 				catch (Exception exception4)
 				{
-					Debug.LogException(exception4);
-					Debug.LogError($"ReaddirSync failed: {this.CacheDir}");
+					MyLogger.LogException(exception4);
+					MyLogger.LogError($"ReaddirSync failed: {this.CacheDir}");
 				}
 
 				void CleanFiles(string dir, string[] files)
@@ -461,27 +461,27 @@ namespace MiiAsset.Runtime.IOManagers
 						try
 						{
 							var path = $"{dir}{file}";
-							Debug.Log($"delete file: {path}");
+							MyLogger.Log($"delete file: {path}");
 							FileSystemManager.UnlinkSync(path);
 						}
 						catch (Exception exception2)
 						{
-							Debug.LogException(exception2);
-							Debug.LogError($"delete file failed: {file}");
+							MyLogger.LogException(exception2);
+							MyLogger.LogError($"delete file failed: {file}");
 						}
 					}
 				}
 
-				Debug.Log("clean ExternalDir");
+				MyLogger.Log("clean ExternalDir");
 				CleanFiles(this.ExternalDir, externalFiles);
-				Debug.Log("clean CacheDir");
+				MyLogger.Log("clean CacheDir");
 				CleanFiles(this.CacheDir, cacheFiles);
-				Debug.Log("clean miiasset done");
+				MyLogger.Log("clean miiasset done");
 			}
 			catch (Exception exception1)
 			{
-				Debug.LogError("read dirs failed");
-				Debug.LogException(exception1);
+				MyLogger.LogError("read dirs failed");
+				MyLogger.LogException(exception1);
 			}
 
 			UserAPI.Instance.FileSystem.GetFileSystemManager().CleanAllFileCache((ret) => { ts.SetResult(ret); });

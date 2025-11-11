@@ -266,7 +266,7 @@ namespace MiiAsset.Runtime
 				}
 				catch (Exception exception)
 				{
-					Debug.LogException(exception);
+					MyLogger.LogException(exception);
 				}
 			}
 
