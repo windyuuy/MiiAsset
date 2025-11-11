@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Web;
 using Lang.Time;
@@ -36,6 +37,7 @@ namespace YueCloudCdnAdapter
 		}
 
 		[MenuItem("Tools/TestHashUrl")]
+		[Conditional("UNITY_EDITOR")]
 		static void Test()
 		{
 			var url = ToHashedUri("http://test.com/", "/", "test.jpg", "m85elvswafo1zbdygdtmqru2mdgsv7e4",
