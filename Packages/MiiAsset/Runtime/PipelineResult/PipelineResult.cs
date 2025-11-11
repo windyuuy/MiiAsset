@@ -54,6 +54,7 @@ namespace MiiAsset.Runtime
 
 		public long Code;
 		public string Msg;
+		public string Uri;
 		public PipelineErrorType ErrorType = PipelineErrorType.NoErrorYet;
 		public PipelineStatus Status = PipelineStatus.Init;
 
@@ -61,7 +62,7 @@ namespace MiiAsset.Runtime
 		{
 			if (!this.IsOk)
 			{
-				MyLogger.LogError($"Pipeline-Error: ErrorType: {ErrorType}, Code: {Code}, Msg: {Msg}");
+				MyLogger.LogError($"Pipeline-Error: ErrorType: {ErrorType}, Code: {Code}, Msg: {Msg}, Uri: {Uri}");
 
 				if (this.Exception != null)
 				{

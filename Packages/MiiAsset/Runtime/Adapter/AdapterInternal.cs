@@ -14,10 +14,12 @@ namespace MiiAsset.Runtime.Adapter
 			}
 
 			IsAdaptDefaultDone = true;
-		#if UNITY_WEBGL && SUPPORT_WDK && !UNITY_EDITOR
+		#if UNITY_WEBGL && !UNITY_EDITOR
+			#if SUPPORT_WDK
 			this.Adapt(new WDKAdapter());
-		#elif UNITY_WEBGL && !SUPPORT_WDK && !UNITY_EDITOR
-			// MyLogger.LogError($"cur webgl platform not support: {Application.platform}");
+			#else
+			MyLogger.LogError($"not sdk adapter for webgl platform: {UnityEngine.Application.platform}");
+			#endif
 		#endif
 		}
 

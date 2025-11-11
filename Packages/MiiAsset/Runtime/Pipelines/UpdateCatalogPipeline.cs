@@ -269,6 +269,7 @@ namespace MiiAsset.Runtime.Pipelines
 						Exception = exception,
 						Msg = errMsg,
 						ErrorType = PipelineErrorType.DataIncorrect,
+						Uri = internalCatalogUri,
 					};
 					return Result;
 				}
@@ -295,6 +296,7 @@ namespace MiiAsset.Runtime.Pipelines
 						Exception = exception,
 						Msg = errMsg,
 						ErrorType = PipelineErrorType.DataIncorrect,
+						Uri = $"{remoteCatalogUri}->{externalCatalogUri}",
 					};
 					return Result;
 				}

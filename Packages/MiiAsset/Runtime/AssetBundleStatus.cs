@@ -342,6 +342,7 @@ namespace MiiAsset.Runtime
 						Code = 0,
 						Msg = null,
 						Status = PipelineStatus.Done,
+						Uri = BundleName,
 					};
 				}
 				else
