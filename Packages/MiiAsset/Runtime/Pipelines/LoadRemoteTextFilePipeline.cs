@@ -1,12 +1,10 @@
 ﻿using System;
-using System.IO;
-using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MonoExtLib.AsyncExt;
-using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime.Pipelines
@@ -18,6 +16,7 @@ namespace MiiAsset.Runtime.Pipelines
 		protected TaskCompletionSource<PipelineResult> Ts;
 
 		protected string Uri;
+		protected string UnescapeUri => HttpUtility.UrlDecode(Uri);
 		protected string CacheUri;
 
 		public LoadRemoteTextFilePipeline Init(string uri, string cacheUri)
@@ -51,7 +50,7 @@ namespace MiiAsset.Runtime.Pipelines
 					{
 						Result.Status = PipelineStatus.Running;
 						Ts = new();
-						MyLogger.Log($"download: {Uri}");
+						MyLogger.Log($"download: {UnescapeUri}");
 						Uwr = UnityWebRequest.Get(this.Uri);
 						DownloadHandler = Uwr.downloadHandler;
 						IOManager.LocalIOProto.SetUwr(Uwr);
@@ -74,18 +73,18 @@ namespace MiiAsset.Runtime.Pipelines
 
 						if (Result.IsOk)
 						{
-							MyLogger.Log($"download-done: {Uri}, {Result.IsOk}, {Result.Code}, {Result.Msg}");
+							MyLogger.Log($"download-done: {UnescapeUri}, {Result.IsOk}, {Result.Code}, {Result.Msg}");
 						}
 						else
 						{
 							MyLogger.LogError(
-								$"download-failed: {Uri}, {Result.IsOk}, {Result.Code}, {Result.Msg}, {Text}");
+								$"download-failed: {UnescapeUri}, {Result.IsOk}, {Result.Code}, {Result.Msg}, {Text}");
 						}
 					}
 					catch (Exception exception)
 					{
 						Result.Exception = exception;
-						MyLogger.LogError($"download-failed: {Uri}");
+						MyLogger.LogError($"download-failed: {UnescapeUri}");
 						MyLogger.LogException(exception);
 					}
 

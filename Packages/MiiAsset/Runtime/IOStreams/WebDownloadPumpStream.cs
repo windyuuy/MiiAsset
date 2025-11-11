@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Web;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MonoExtLib.AsyncExt;
@@ -12,6 +13,7 @@ namespace MiiAsset.Runtime.IOStreams
 		public ulong TotalBytes = 0;
 		protected bool IsTotalBytesUnkown = true;
 		public string Uri;
+		protected string UnescapeUri => HttpUtility.UrlDecode(Uri);
 
 		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 
@@ -52,6 +54,7 @@ namespace MiiAsset.Runtime.IOStreams
 		protected TaskCompletionSource<PipelineResult> Ts;
 
 		protected string Uri;
+		protected string UnescapeUri => HttpUtility.UrlDecode(Uri);
 		public PipelineResult Result;
 
 		public WebDownloadPumpStream Init(string uri)
@@ -146,7 +149,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public void Abort()
 		{
-			MyLogger.LogError($"Abort-Uwr: {Uri}");
+			MyLogger.LogError($"Abort-Uwr: {UnescapeUri}");
 			if (Uwr != null)
 			{
 				Uwr.Abort();
@@ -218,7 +221,8 @@ namespace MiiAsset.Runtime.IOStreams
 			{
 				if (!Ts.Task.IsCompleted)
 				{
-					Ts.SetException(new OperationCanceledException($"{nameof(WriteFileStream)} is disposed before await return"));
+					Ts.SetException(
+						new OperationCanceledException($"{nameof(WriteFileStream)} is disposed before await return"));
 				}
 
 				Ts = null;
