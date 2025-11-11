@@ -89,11 +89,18 @@ namespace MiiAsset.Runtime
 		{
 			var isOk = uwr.result == UnityWebRequest.Result.Success;
 			this.IsOk = isOk;
-			this.Exception = isOk ? null : new Exception(uwr.error);
-			this.Code = (int)uwr.responseCode;
-			this.Msg = uwr.error;
+			var uwrError = uwr.error;
+			var code = (int)uwr.responseCode;
+			this.Exception = isOk ? null : new Exception(uwrError);
+			this.Code = code;
+			this.Msg = uwrError;
 			this.ErrorType = PipelineErrorType.NetError;
 			this.Status = PipelineStatus.Done;
+
+			if (!isOk)
+			{
+				MyLogger.LogError($"download-failed: {code}, {uwrError}");
+			}
 		}
 
 		public void SetOk()

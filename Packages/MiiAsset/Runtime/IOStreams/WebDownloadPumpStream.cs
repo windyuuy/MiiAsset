@@ -109,30 +109,26 @@ namespace MiiAsset.Runtime.IOStreams
 					}
 
 					var code = (int)Uwr.responseCode;
-					var msg = Uwr.error;
+					var uwrError = Uwr.error;
 					var uwrResult = Uwr.result;
 
 					var evt = new StreamCtrlEvent()
 					{
 						Event = StreamEvent.End,
 						Code = code,
-						Msg = msg,
+						Msg = uwrError,
 						IsOk = uwrResult == UnityWebRequest.Result.Success,
 						SourceUri = this.Uri,
 						Capability = (int)DownloadHandler.TotalBytes,
 					};
 
-					// if (!evt.IsOk)
-					// {
-					// 	UnityEngine.MyLogger.LogError($"download-failed: {(int)Uwr.responseCode}, {Uwr.error}");
-					// }
-
 					Result.Code = (int)code;
-					Result.Msg = msg;
+					Result.Msg = uwrError;
 					Result.IsOk = evt.IsOk;
 					if (!Result.IsOk)
 					{
 						Result.ErrorType = PipelineErrorType.NetError;
+						MyLogger.LogError($"download-failed: {code}, {uwrError}");
 					}
 
 					Result.Status = PipelineStatus.Done;

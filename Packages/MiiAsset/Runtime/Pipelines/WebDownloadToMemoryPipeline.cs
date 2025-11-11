@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MonoExtLib.AsyncExt;
 using UnityEngine.Networking;
@@ -40,7 +41,7 @@ namespace MiiAsset.Runtime.IOStreams
 					var op = uwr.SendWebRequest();
 					await op.GetTask();
 					var code = (int)uwr.responseCode;
-					var msg = uwr.error;
+					var uwrError = uwr.error;
 					var uwrResult = uwr.result;
 
 					Bytes = uwr.downloadHandler.data;
@@ -50,10 +51,11 @@ namespace MiiAsset.Runtime.IOStreams
 
 					Result.Code = (int)code;
 					Result.IsOk = uwrResult == UnityWebRequest.Result.Success;
-					Result.Msg = msg;
+					Result.Msg = uwrError;
 					if (!Result.IsOk)
 					{
 						Result.ErrorType = PipelineErrorType.NetError;
+						MyLogger.LogError($"download-failed: {code}, {uwrError}");
 					}
 
 					Result.Status = PipelineStatus.Done;
