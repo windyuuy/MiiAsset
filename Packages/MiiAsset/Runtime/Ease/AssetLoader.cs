@@ -766,5 +766,16 @@ namespace MiiAsset.Runtime
 		{
 			return Consumer?.CleanAllCaches();
 		}
+
+		public static void SetRemoteSourceAdapter(IRemoteSourceAdapter remoteSourceAdapter)
+		{
+			RemoteUriConvertor = remoteSourceAdapter.ConvertRemoteUri;
+		}
+
+		internal static Func<string, string, string> RemoteUriConvertor
+		{
+			set => RemoteUriHandler.RemoteUriConvertor = value;
+			get => RemoteUriHandler.RemoteUriConvertor;
+		}
 	}
 }

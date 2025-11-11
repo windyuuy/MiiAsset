@@ -31,7 +31,8 @@ namespace MiiAsset.Runtime
 				return null;
 			}
 
-			return SourceBaseUri + bundleName;
+			// return SourceBaseUri + bundleName;
+			return RemoteUriHandler.ConvertRemoteUri(SourceBaseUri, bundleName);
 		}
 
 		public string CacheBaseUri;
@@ -110,7 +111,8 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public Task<PipelineResult[]> DownloadTags(IEnumerable<string> tags, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResult[]> DownloadTags(IEnumerable<string> tags, CatalogInfo catalogInfo,
+			AssetLoadStatusGroup loadStatus)
 		{
 			var bundleNames = new HashSet<string>();
 			catalogInfo.GetTagsDependBundles(tags, bundleNames);
@@ -132,7 +134,8 @@ namespace MiiAsset.Runtime
 			return downloadTask;
 		}
 
-		public Task<PipelineResult[]> LoadTags(IEnumerable<string> tags, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResult[]> LoadTags(IEnumerable<string> tags, CatalogInfo catalogInfo,
+			AssetLoadStatusGroup loadStatus)
 		{
 			var bundleNames = new HashSet<string>();
 			catalogInfo.GetTagsDependBundles(tags, bundleNames);
@@ -296,7 +299,8 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public Task<PipelineResult[]> LoadBundles(HashSet<string> deps, CatalogInfo catalogInfo, AssetLoadStatusGroup loadStatus)
+		public Task<PipelineResult[]> LoadBundles(HashSet<string> deps, CatalogInfo catalogInfo,
+			AssetLoadStatusGroup loadStatus)
 		{
 			if (deps != null)
 			{

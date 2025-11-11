@@ -72,7 +72,15 @@ namespace MiiAsset.Runtime.Pipelines
 						Result.IsOk = uwrResult == UnityWebRequest.Result.Success;
 						Result.Msg = msg;
 
-						MyLogger.Log($"download-done: {Uri}, {Result.IsOk}, {Result.Code}, {Result.Msg}");
+						if (Result.IsOk)
+						{
+							MyLogger.Log($"download-done: {Uri}, {Result.IsOk}, {Result.Code}, {Result.Msg}");
+						}
+						else
+						{
+							MyLogger.LogError(
+								$"download-failed: {Uri}, {Result.IsOk}, {Result.Code}, {Result.Msg}, {Text}");
+						}
 					}
 					catch (Exception exception)
 					{

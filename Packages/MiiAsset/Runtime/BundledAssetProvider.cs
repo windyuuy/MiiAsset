@@ -47,9 +47,8 @@ namespace MiiAsset.Runtime
 
 				async Task<PipelineResult> LoadCatalogInternal()
 				{
-					using var pipeline = new UpdateCatalogPipeline().Init(CatalogName, CatalogExt, InternalBaseUri,
-						ExternalBaseUri,
-						RemoteBaseUri);
+					using var pipeline = new UpdateCatalogPipeline()
+						.Init(CatalogName, CatalogExt, InternalBaseUri, ExternalBaseUri, RemoteBaseUri);
 					Result = await pipeline.Run();
 					if (Result.IsOk)
 					{
