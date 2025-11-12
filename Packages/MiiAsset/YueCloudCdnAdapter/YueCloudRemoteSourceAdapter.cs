@@ -36,7 +36,7 @@ namespace YueCloudCdnAdapter
 			}
 		}
 
-		[MenuItem("Tools/TestHashUrl")]
+		// [MenuItem("Tools/Test/TestHashUrl")]
 		[Conditional("UNITY_EDITOR")]
 		static void Test()
 		{
