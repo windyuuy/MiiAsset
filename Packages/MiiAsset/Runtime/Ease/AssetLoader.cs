@@ -782,7 +782,7 @@ namespace MiiAsset.Runtime
 		/// <summary>
 		/// 设置日志级别
 		/// </summary>
-		public static MyLogger.LogLevel Level
+		public static MyLogger.LogLevel LogLevel
 		{
 			get => MyLogger.Level;
 			set => MyLogger.Level = value;
