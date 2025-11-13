@@ -71,7 +71,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.Log($"Pipeline-Done");
+				MyLogger.LogInfo($"Pipeline-Done");
 			}
 		}
 

@@ -58,7 +58,7 @@ namespace MiiAsset.Runtime.Pipelines
 			var isInternalAsWebUri = IOManager.LocalIOProto.IsWebUri(internalCatalogUri);
 			// 暂时仅判断catalog文件是否存在来判定, 已经足够
 			var isInternalCatalogExist = isInternalAsWebUri || IOManager.LocalIOProto.Exists(internalCatalogUri);
-			MyLogger.Log($"isInternalCatalogExist: {isInternalCatalogExist}, {isInternalAsWebUri}");
+			MyLogger.LogInfo($"isInternalCatalogExist: {isInternalCatalogExist}, {isInternalAsWebUri}");
 			var internalCatalogHashUri = ToHashFileName(internalCatalogUri);
 			using ILoadTextAssetPipeline loadInternalHashPipeline = isInternalCatalogExist
 				? (isInternalAsWebUri
@@ -83,7 +83,7 @@ namespace MiiAsset.Runtime.Pipelines
 			var existExternalCatalog = IOManager.LocalIOProto.Exists(externalCatalogHashUri) &&
 			                           IOManager.LocalIOProto.Exists(externalCatalogUri);
 
-			MyLogger.Log(
+			MyLogger.LogInfo(
 				$"LoadCatalogOptions: internalCatalogUri:{internalCatalogUri}, remoteCatalogUri:{remoteCatalogUri}, externalCatalogUri:{externalCatalogUri}," +
 				$" isInternalCatalogExist:{isInternalCatalogExist}, existExternalCatalog:{existExternalCatalog}, isInternalAsWebUri:{isInternalAsWebUri}");
 
@@ -232,7 +232,7 @@ namespace MiiAsset.Runtime.Pipelines
 			else
 			{
 				var message = "no valid catalog to load";
-				MyLogger.Log(message);
+				MyLogger.LogError(message);
 				Result = new PipelineResult
 				{
 					IsOk = false,
@@ -358,7 +358,7 @@ namespace MiiAsset.Runtime.Pipelines
 				hashFileName = internalCatalogUri + ".hash";
 			}
 
-			MyLogger.Log($"ToHashFileName: {internalCatalogUri}->{hashFileName}");
+			MyLogger.LogInfo($"ToHashFileName: {internalCatalogUri}->{hashFileName}");
 			return hashFileName;
 		}
 
@@ -367,7 +367,7 @@ namespace MiiAsset.Runtime.Pipelines
 			if (!MyLogger.Assert(internalCatalog != null || externalCatalog != null,
 				    "internalCatalog!=null||externalCatalog!=null"))
 			{
-				MyLogger.Log(
+				MyLogger.LogInfo(
 					$"internalCatalog != null:{internalCatalog != null}, externalCatalog != null: {externalCatalog != null}");
 			}
 

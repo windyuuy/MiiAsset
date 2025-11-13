@@ -93,7 +93,7 @@ namespace MiiAsset.Runtime.Pipelines
 					MyLogger.LogError($"assetbundle is null: {Uri}");
 					if (AssetBundleUtils.GetLoadedBundleByPath(Uri, out AssetBundle assetBundle))
 					{
-						MyLogger.Log($"retry reload assetbundle to resolve: {Uri}");
+						MyLogger.LogInfo($"retry reload assetbundle to resolve: {Uri}");
 						if (assetBundle != null)
 						{
 							try

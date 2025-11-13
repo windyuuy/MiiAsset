@@ -443,7 +443,7 @@ namespace MiiAsset.Runtime
 
 						try
 						{
-							MyLogger.Log($"delete1 {filePath}");
+							MyLogger.LogInfo($"delete1 {filePath}");
 							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)
@@ -458,7 +458,7 @@ namespace MiiAsset.Runtime
 
 						try
 						{
-							MyLogger.Log($"delete2 {filePath}");
+							MyLogger.LogInfo($"delete2 {filePath}");
 							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)
@@ -491,7 +491,7 @@ namespace MiiAsset.Runtime
 						{
 							CatalogInfo.BundlesToClean.Add(fileName);
 
-							MyLogger.Log($"delete3 {filePath}");
+							MyLogger.LogInfo($"delete3 {filePath}");
 							IOManager.LocalIOProto.Delete(filePath);
 						}
 						catch (Exception exception)

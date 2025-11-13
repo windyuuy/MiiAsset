@@ -309,7 +309,7 @@ namespace MiiAsset.Runtime
 		{
 			if (string.IsNullOrEmpty(address))
 			{
-				MyLogger.Log($"address is null or empty(可能catalog为空,或者检查是否isremote选项不正确)");
+				MyLogger.LogError($"address is null or empty(可能catalog为空,或者检查是否isremote选项不正确)");
 			}
 		}
 
@@ -496,7 +496,7 @@ namespace MiiAsset.Runtime
 				if (!TimeoutMap.Remove(node))
 				{
 					var time2 = Time.time;
-					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {address},TimeCost: {time2 - timeStart}");
+					MyLogger.LogInfo($"ldab-ATimeout, but Loaded finally: {address},TimeCost: {time2 - timeStart}");
 				}
 
 				return ret;
@@ -578,7 +578,8 @@ namespace MiiAsset.Runtime
 				if (!TimeoutMap.Remove(node))
 				{
 					var time2 = Time.time;
-					MyLogger.Log($"ldab-ATimeout, but Loaded finally: {sceneAddress},TimeCost: {time2 - timeStart}");
+					MyLogger.LogInfo(
+						$"ldab-ATimeout, but Loaded finally: {sceneAddress},TimeCost: {time2 - timeStart}");
 				}
 
 				return ret;
@@ -776,6 +777,15 @@ namespace MiiAsset.Runtime
 		{
 			set => RemoteUriHandler.RemoteUriConvertor = value;
 			get => RemoteUriHandler.RemoteUriConvertor;
+		}
+
+		/// <summary>
+		/// 设置日志级别
+		/// </summary>
+		public static MyLogger.LogLevel Level
+		{
+			get => MyLogger.Level;
+			set => MyLogger.Level = value;
 		}
 	}
 }

@@ -28,14 +28,14 @@ namespace MiiAsset.Runtime.Adapter
 			var localIOProto = adapter.GetIOProto();
 			if (localIOProto != null)
 			{
-				MyLogger.Log($"use {adapter.Name}.LocalIOProto");
+				MyLogger.LogInfo($"use {adapter.Name}.LocalIOProto");
 				IOManager.LocalIOProto = localIOProto;
 			}
 
 			var widget = adapter.GetWidget();
 			if (widget != null)
 			{
-				MyLogger.Log($"use {adapter.Name}.Widget");
+				MyLogger.LogInfo($"use {adapter.Name}.Widget");
 				IOManager.Widget = widget;
 			}
 		}

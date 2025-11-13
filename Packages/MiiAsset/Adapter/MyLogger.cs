@@ -10,24 +10,53 @@ namespace MiiAsset.Runtime.Adapter
 		// public static Action<object> LogError = Debug.LogError;
 		// public static Action<Exception> LogException = Debug.LogException;
 
+		public enum LogLevel
+		{
+			Error,
+			Info,
+			Debug,
+		}
+
+		public static LogLevel Level = LogLevel.Debug;
+
 		public static void Log(object message)
 		{
-			Debug.Log($"-[mii]{message}");
+			if (Level >= LogLevel.Debug)
+			{
+				Debug.Log($"-[mii]{message}");
+			}
+		}
+
+		public static void LogInfo(object message)
+		{
+			if (Level >= LogLevel.Info)
+			{
+				Debug.Log($"-[mii]{message}");
+			}
 		}
 
 		public static void LogWarning(object message)
 		{
-			Debug.LogWarning($"-[mii]{message}");
+			if (Level >= LogLevel.Error)
+			{
+				Debug.LogWarning($"-[mii]{message}");
+			}
 		}
 
 		public static void LogError(object message)
 		{
-			Debug.LogError($"-[mii]{message}");
+			if (Level >= LogLevel.Error)
+			{
+				Debug.LogError($"-[mii]{message}");
+			}
 		}
 
 		public static void LogException(Exception exception)
 		{
-			Debug.LogException(exception);
+			if (Level >= LogLevel.Error)
+			{
+				Debug.LogException(exception);
+			}
 		}
 
 		public static bool Assert(bool b, string s)

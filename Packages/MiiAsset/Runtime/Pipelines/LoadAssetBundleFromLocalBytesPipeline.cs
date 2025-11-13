@@ -61,7 +61,7 @@ namespace MiiAsset.Runtime.Pipelines
 				{
 					if (AssetBundleUtils.GetLoadedBundleByPath(Uri, out AssetBundle assetBundle))
 					{
-						MyLogger.Log($"retry reload assetbundle to resolve: {Uri}");
+						MyLogger.LogInfo($"retry reload assetbundle to resolve: {Uri}");
 						if (assetBundle != null)
 						{
 							assetBundle.Unload(false);
