@@ -17,7 +17,7 @@ namespace MiiAsset.Runtime.Adapter
 			Debug,
 		}
 
-		public static LogLevel Level = LogLevel.Debug;
+		public static LogLevel Level = LogLevel.Info;
 
 		public static void Log(object message)
 		{
