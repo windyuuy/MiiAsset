@@ -375,12 +375,12 @@ namespace MiiAsset.Runtime
 				#if UNITY_EDITOR
 					BundleStatusNotify.OnBundleDownLoad?.Invoke(this);
 				#endif
-				}
-
-				if (!IsKeepInMemory)
-				{
-					this.LoadPipeline = null;
-					loadAssetBundlePipeline.Dispose();
+					
+					if (!IsKeepInMemory)
+					{
+						this.LoadPipeline = null;
+						loadAssetBundlePipeline.Dispose();
+					}
 				}
 
 				return downloadResult;
