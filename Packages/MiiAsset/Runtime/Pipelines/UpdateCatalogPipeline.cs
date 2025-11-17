@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
@@ -151,7 +152,7 @@ namespace MiiAsset.Runtime.Pipelines
 			if (loadInternalHashPipeline == null && loadExternalHashPipeline == null)
 			{
 				loadExternalCatalogPipeline = supportRemoteCatalog
-					? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true)
+					? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true, 0)
 					: null;
 			}
 			else
@@ -193,9 +194,25 @@ namespace MiiAsset.Runtime.Pipelines
 			{
 				// load from remote
 				needUpdateCatalog = true;
+				var parseHashRegex = new Regex(@"\w+,(\d+)");
+				var m = parseHashRegex.Match(remoteHash);
+				ulong predictFileSize;
+				if (m.Success)
+				{
+					if (!ulong.TryParse(m.Groups[1].Value, out predictFileSize))
+					{
+						predictFileSize = 0;
+					}
+				}
+				else
+				{
+					predictFileSize = 0;
+				}
+
 				// ReSharper disable once ConditionIsAlwaysTrueOrFalse
 				loadExternalCatalogPipeline ??= supportRemoteCatalog
-					? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true)
+					? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true,
+						predictFileSize)
 					: null;
 			}
 			else if (loadExternalHashPipeline != null

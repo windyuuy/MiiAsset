@@ -248,7 +248,8 @@ namespace MiiAsset.Runtime
 				var bundleInfo = catalogInfo.GetAssetBundleInfo(BundleName);
 				var loadSource = catalogInfo.BundleLoadSourceMap[BundleName];
 				loadAssetBundlePipeline =
-					bundleInfo.GetLoadAssetBundlePipeline(loadSource, Crc, Hash128, bundleInfo.isEncrypt);
+					bundleInfo.GetLoadAssetBundlePipeline(loadSource, Crc, Hash128, bundleInfo.isEncrypt,
+						(ulong)FileSize);
 				var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
 				downloadPipeline?.PresetDownloadSize(FileSize);
 				this.LoadPipeline = loadAssetBundlePipeline;

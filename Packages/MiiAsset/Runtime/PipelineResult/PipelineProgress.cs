@@ -160,5 +160,10 @@ namespace MiiAsset.Runtime
 
 			return this;
 		}
+
+		public void SetTotal(ulong predictFileSize)
+		{
+			Total = predictFileSize;
+		}
 	}
 }

@@ -787,5 +787,15 @@ namespace MiiAsset.Runtime
 			get => MyLogger.Level;
 			set => MyLogger.Level = value;
 		}
+
+		public static CatalogInfo GetBundledCatalogInfo()
+		{
+			if (Consumer is BundledAssetProvider bundledAssetProvider)
+			{
+				return bundledAssetProvider.CatalogInfo;
+			}
+
+			return null;
+		}
 	}
 }

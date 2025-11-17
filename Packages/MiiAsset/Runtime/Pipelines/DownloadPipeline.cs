@@ -16,13 +16,15 @@ namespace MiiAsset.Runtime.Pipelines
 		public bool Overwrite;
 
 		protected bool UseCache = false;
+		protected ulong PredictFileSize;
 
-		public DownloadPipeline Init(string uri, string writeUri, bool overwrite)
+		public DownloadPipeline Init(string uri, string writeUri, bool overwrite, ulong predictFileSize)
 		{
 			Debug.Assert(writeUri != null, "writeUri!=null");
 			Uri = uri;
 			WriteUri = writeUri;
 			Overwrite = overwrite;
+			PredictFileSize = predictFileSize;
 			this.Build();
 			return this;
 		}
@@ -33,7 +35,7 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 			if (Overwrite || !IOManager.LocalIOProto.Exists(WriteUri))
 			{
-				DownloadStream = new WebDownloadPumpStream().Init(Uri);
+				DownloadStream = new WebDownloadPumpStream().Init(Uri, PredictFileSize);
 				WriteStream = new WriteFileStream().Init(WriteUri);
 				DownloadStream.BindReadStream(WriteStream);
 			}

@@ -13,13 +13,16 @@ namespace MiiAsset.Runtime.Pipelines
 		protected string LocalUri;
 		protected uint Crc;
 		protected bool IsEncrypt;
+		protected ulong PredictFileSize;
 
-		public LoadAssetBundleFromRemoteStreamPipeline Init(string remoteUri, string localUri, uint crc, bool isEncrypt)
+		public LoadAssetBundleFromRemoteStreamPipeline Init(string remoteUri, string localUri, uint crc, bool isEncrypt,
+			ulong predictFileSize)
 		{
 			RemoteUri = remoteUri;
 			LocalUri = localUri;
 			IsEncrypt = isEncrypt;
-			this.Crc = crc;
+			Crc = crc;
+			PredictFileSize = predictFileSize;
 			this.Build();
 			return this;
 		}
@@ -43,7 +46,7 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Build()
 		{
-			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false);
+			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false, PredictFileSize);
 			LoadAssetBundlePipeline = new LoadAssetBundlePipelineFromLocalStream().Init(LocalUri, Crc, IsEncrypt);
 		}
 

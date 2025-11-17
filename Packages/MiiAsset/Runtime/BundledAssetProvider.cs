@@ -75,7 +75,7 @@ namespace MiiAsset.Runtime
 		// 	return results.All(r => r);
 		// }
 
-		protected CatalogInfo CatalogInfo = new();
+		public CatalogInfo CatalogInfo = new();
 
 		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
 		{

@@ -56,10 +56,12 @@ namespace MiiAsset.Runtime.IOStreams
 		protected string Uri;
 		protected string UnescapeUri => HttpUtility.UrlDecode(Uri);
 		public PipelineResult Result;
+		protected ulong PredictFileSize;
 
-		public WebDownloadPumpStream Init(string uri)
+		public WebDownloadPumpStream Init(string uri, ulong predictFileSize)
 		{
 			Uri = uri;
+			PredictFileSize = predictFileSize;
 			Result = new();
 			return this;
 		}
@@ -162,7 +164,8 @@ namespace MiiAsset.Runtime.IOStreams
 		{
 			if (Result.Status == PipelineStatus.Init)
 			{
-				Progress.Set01Progress(false);
+				Progress.SetTotal(PredictFileSize);
+				Progress.SetProgress(0);
 			}
 			else if (Result.Status == PipelineStatus.Done)
 			{
@@ -187,9 +190,15 @@ namespace MiiAsset.Runtime.IOStreams
 
 		private void UpdateProgress()
 		{
+			var total = DownloadHandler != null ? DownloadHandler.TotalBytes : 0;
+			if (total <= 0)
+			{
+				total = PredictFileSize;
+			}
+
 			Progress = new()
 			{
-				Total = DownloadHandler != null ? DownloadHandler.TotalBytes : 0,
+				Total = total,
 				Count = Uwr?.downloadedBytes ?? 0,
 			};
 		}

@@ -7,7 +7,7 @@ namespace MiiAsset.Runtime
 	public static class AssetBundlePipelineHelper
 	{
 		public static ILoadAssetBundlePipeline GetLoadAssetBundlePipeline(this AssetBundleInfo assetBundleInfo,
-			IResourceLoadSource loadSource, uint crc, Hash128 hash128, bool isEncrypt)
+			IResourceLoadSource loadSource, uint crc, Hash128 hash128, bool isEncrypt, ulong predictFileSize)
 		{
 			ILoadAssetBundlePipeline pipeline;
 
@@ -47,7 +47,8 @@ namespace MiiAsset.Runtime
 				{
 				#if SUPPORT_WDK
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
-					pipeline = new LoadAssetBundleFromRemoteBytesPipeline().Init(remoteUri, cacheUri, crc, isEncrypt);
+					pipeline =
+ new LoadAssetBundleFromRemoteBytesPipeline().Init(remoteUri, cacheUri, crc, isEncrypt, predictFileSize);
 				#else
 					// 正常webgl从包内加载, 直接使用内置方式, 暂不支持加密
 					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
@@ -55,7 +56,8 @@ namespace MiiAsset.Runtime
 				}
 				else
 				{
-					pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri, crc, isEncrypt);
+					pipeline = new LoadAssetBundleFromRemoteStreamPipeline().Init(remoteUri, cacheUri, crc, isEncrypt,
+						predictFileSize);
 				}
 			}
 

@@ -11,13 +11,16 @@ namespace MiiAsset.Runtime.Pipelines
 		protected string RemoteUri;
 		protected string LocalUri;
 		protected uint Crc;
+		protected ulong PredictFileSize;
 		public PipelineResult Result { get; set; }
 
-		public LoadAssetBundleFromRemoteFilePipeline Init(string remoteUri, string localUri, uint crc)
+		public LoadAssetBundleFromRemoteFilePipeline Init(string remoteUri, string localUri, uint crc,
+			ulong predictFileSize)
 		{
 			RemoteUri = remoteUri;
 			LocalUri = localUri;
 			Crc = crc;
+			PredictFileSize = predictFileSize;
 			this.Build();
 			return this;
 		}
@@ -32,7 +35,7 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Build()
 		{
-			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false);
+			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false, PredictFileSize);
 			LoadAssetBundlePipeline = new LoadAssetBundleFromFilePipeline().Init(LocalUri, Crc);
 		}
 
