@@ -24,11 +24,21 @@ namespace MiiAsset.Runtime
 			return Task.FromResult(true);
 		}
 
+		protected bool IsLoaded = false;
+
 		public Task<PipelineResult> UpdateCatalog(string remoteBaseUri)
 		{
-			PathInfo ??= AAPathConfigLoader.LoadDefaultConfigs();
+			if (!IsLoaded)
+			{
+				PathInfo ??= AAPathConfigLoader.LoadDefaultConfigs();
 
-			DepCollector.CollectValidAssets(PathInfo);
+				DepCollector.CollectValidAssets(PathInfo);
+				IsLoaded = true;
+			}
+			else
+			{
+				Debug.Log("EditorAssetProvider Catalog Loaded Already");
+			}
 
 			return Task.FromResult(new PipelineResult
 			{

@@ -100,7 +100,15 @@ namespace MiiAsset.Editor.Build
 			{
 				if (!SingleFileMap.TryAdd(value.key, value))
 				{
-					throw new Exception($"重复的资源: {value.key}");
+					var exception = new Exception($"重复的资源: {value.key}");
+					if (Application.isPlaying)
+					{
+						throw exception;
+					}
+					else
+					{
+						Debug.LogException(exception);
+					}
 				}
 
 				var address = value.GetLoadPath();
