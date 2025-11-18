@@ -13,7 +13,7 @@ namespace MiiAsset.Runtime
 		public int ReferCount = 0;
 	}
 
-	public class CatalogAddressStatus
+	public class AddressReferStatus
 	{
 		public Dictionary<string, LoadAddressStatus> AddressLoadMap = new();
 
@@ -61,7 +61,7 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public async Task UnRegisterAsset(string address)
+		public async Task<bool> UnRegisterAsset(string address)
 		{
 			if (AddressLoadMap.TryGetValue(address, out var status))
 			{
@@ -72,11 +72,13 @@ namespace MiiAsset.Runtime
 					if (status.ReferCount <= 0)
 					{
 						Debug.Assert(status.ReferCount == 0, "status.ReferCount==0");
-						AddressLoadMap.Remove(address);
+						return AddressLoadMap.Remove(address);
 					}
 					// var asset = status.Asset;
 				}
 			}
+
+			return false;
 		}
 	}
 }

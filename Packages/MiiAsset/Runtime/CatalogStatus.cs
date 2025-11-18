@@ -362,16 +362,16 @@ namespace MiiAsset.Runtime
 			{
 				var task = Task.WhenAll(deps.Select(dep =>
 				{
-					var status = GetOrCreateStatus(dep);
-					++status.RefCount;
-					return status.Load(catalogInfo);
+					var bundleStatus = GetOrCreateStatus(dep);
+					++bundleStatus.RefCount;
+					return bundleStatus.Load(catalogInfo);
 				}));
 
 				if (loadStatus != null)
 				{
-					foreach (var status in deps.Select(GetOrCreateStatus))
+					foreach (var bundleStatus in deps.Select(GetOrCreateStatus))
 					{
-						loadStatus.Add(status);
+						loadStatus.Add(bundleStatus);
 					}
 				}
 
