@@ -484,7 +484,16 @@ namespace MiiAsset.Runtime.IOManagers
 				MyLogger.LogException(exception1);
 			}
 
-			UserAPI.Instance.FileSystem.GetFileSystemManager().CleanAllFileCache((ret) => { ts.SetResult(ret); });
+			try
+			{
+				UserAPI.Instance.FileSystem.GetFileSystemManager().CleanAllFileCache((ret) => { ts.TrySetResult(ret); });
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+				ts.TrySetResult(false);
+			}
+			
 			return ts.Task;
 		}
 	}
