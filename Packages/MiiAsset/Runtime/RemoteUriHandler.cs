@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace MiiAsset.Runtime
 {
@@ -26,7 +27,7 @@ namespace MiiAsset.Runtime
 
 		public static Func<string, Task<bool>> WaitChooseReloadAssetFunc = DefaultChooseReloadAssetFunc;
 
-		private static Task<bool> DefaultChooseReloadAssetFunc(string s)
+		public static Task<bool> DefaultChooseReloadAssetFunc(string s)
 		{
 			return Task.FromResult(false);
 		}
@@ -43,11 +44,19 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public static Action<Exception> ExceptionHandler;
+		public static Action<Exception> ExceptionHandler = DefaultExceptionHandler;
 
 		public static void EmitException(Exception exception)
 		{
-			ExceptionHandler?.Invoke(exception);
+			if (ExceptionHandler != null)
+			{
+				ExceptionHandler(exception);
+			}
+		}
+
+		public static void DefaultExceptionHandler(Exception exception)
+		{
+			Debug.LogException(exception);
 		}
 	}
 }
