@@ -9,6 +9,8 @@ namespace MiiAsset.Runtime.Pipelines
 	{
 		// protected IPumpStream ReadStream;
 		protected string Uri;
+
+		// readonly
 		protected byte[] Bytes;
 		protected Task<PipelineResult> Task;
 
@@ -22,14 +24,12 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
-			
 		}
 
 		public PipelineResult Result { get; set; }
 
 		public void Build()
 		{
-			
 		}
 
 		public Task<PipelineResult> Run()
@@ -67,6 +67,15 @@ namespace MiiAsset.Runtime.Pipelines
 		public PipelineProgress GetProgress()
 		{
 			return new PipelineProgress().SetDownloadedProgress(Result.IsOk);
+		}
+
+		public void Invalidate()
+		{
+			var exist = IOManager.LocalIOProto.Exists(Uri);
+			if (exist)
+			{
+				IOManager.LocalIOProto.Delete(Uri);
+			}
 		}
 	}
 }

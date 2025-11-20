@@ -35,8 +35,14 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 			if (Overwrite || !IOManager.LocalIOProto.Exists(WriteUri))
 			{
+				Result = new PipelineResult
+				{
+					IsOk = false,
+					Status = PipelineStatus.Init,
+					Uri = Uri,
+				};
 				DownloadStream = new WebDownloadPumpStream().Init(Uri, PredictFileSize);
-				WriteStream = new WriteFileStream().Init(WriteUri);
+				WriteStream = new WriteFileStream().Init(WriteUri, PredictFileSize);
 				DownloadStream.BindReadStream(WriteStream);
 			}
 			else
@@ -56,7 +62,26 @@ namespace MiiAsset.Runtime.Pipelines
 			if (Result is not { Status: PipelineStatus.Done } || !Result.IsOk)
 			{
 				WriteStream.Start();
-				var result = await DownloadStream.Start();
+				PipelineResult result;
+				try
+				{
+					result = await DownloadStream.Start();
+				}
+				catch (OperationCanceledException cancelException)
+				{
+					Debug.LogException(cancelException);
+					result = new PipelineResult
+					{
+						IsOk = false,
+						Exception = cancelException,
+						Code = -1,
+						Msg = "operation-cancelled",
+						Uri = Uri,
+						ErrorType = PipelineErrorType.OperationCancelled,
+						Status = PipelineStatus.Done,
+					};
+				}
+
 				if (result.IsOk)
 				{
 					if (Result is not { Status: PipelineStatus.Done })
@@ -111,8 +136,22 @@ namespace MiiAsset.Runtime.Pipelines
 			}
 		}
 
+		public void Invalidate()
+		{
+			this.Reset();
+			AssetBundlePipelineHelper.InvalidateLocalFile(WriteUri);
+			this.Build();
+		}
+
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
+			UseCache = false;
+
 			if (DownloadStream != null)
 			{
 				this.DownloadStream.UnBindReadStream(WriteStream);

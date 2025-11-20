@@ -1,4 +1,6 @@
-﻿using MiiAsset.Runtime.Pipelines;
+﻿using System;
+using MiiAsset.Runtime.IOManagers;
+using MiiAsset.Runtime.Pipelines;
 using UnityEngine;
 using Application = UnityEngine.Device.Application;
 
@@ -47,8 +49,8 @@ namespace MiiAsset.Runtime
 				{
 				#if SUPPORT_WDK
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
-					pipeline =
- new LoadAssetBundleFromRemoteBytesPipeline().Init(remoteUri, cacheUri, crc, isEncrypt, predictFileSize);
+					pipeline = new LoadAssetBundleFromRemoteBytesPipeline()
+						.Init(remoteUri, cacheUri, crc, isEncrypt, predictFileSize);
 				#else
 					// 正常webgl从包内加载, 直接使用内置方式, 暂不支持加密
 					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
@@ -64,6 +66,24 @@ namespace MiiAsset.Runtime
 			// MyLogger.Log($"userpipeline {pipeline.GetType().Name} for {assetBundleInfo.fileName}");
 
 			return pipeline;
+		}
+
+		public static void InvalidateLocalFile(string localUri)
+		{
+			var exist = IOManager.LocalIOProto.Exists(localUri);
+			if (exist)
+			{
+				Debug.LogError($"delete invalid assetbundle {localUri}");
+				try
+				{
+					IOManager.LocalIOProto.Delete(localUri);
+				}
+				catch (Exception exception)
+				{
+					Debug.LogError($"cannot remove invalid assetbundle file: {localUri}");
+					RemoteUriHandler.EmitException(exception);
+				}
+			}
 		}
 	}
 }

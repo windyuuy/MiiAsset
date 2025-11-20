@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
-using MiiAsset.Runtime.IOStreams;
 using UnityEngine;
 
 namespace MiiAsset.Runtime.Pipelines
 {
 	public class LoadAssetBundleFromRemoteBytesPipeline : ILoadAssetBundlePipeline
 	{
-		public IDownloadPipeline DownloadPipeline;
+		public DownloadPipeline DownloadPipeline;
 		protected LoadAssetBundleFromLocalBytesPipeline LoadAssetBundlePipeline;
 
 		protected string RemoteUri;
@@ -61,6 +60,19 @@ namespace MiiAsset.Runtime.Pipelines
 		public IDownloadPipeline GetDownloadPipeline()
 		{
 			return DownloadPipeline;
+		}
+
+		public void Invalidate()
+		{
+			if (LoadAssetBundlePipeline != null)
+			{
+				LoadAssetBundlePipeline.Invalidate();
+			}
+
+			if (DownloadPipeline != null)
+			{
+				DownloadPipeline.Invalidate();
+			}
 		}
 
 		public async Task<PipelineResult> Run()

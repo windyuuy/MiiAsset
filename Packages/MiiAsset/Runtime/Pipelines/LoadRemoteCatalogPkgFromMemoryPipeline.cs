@@ -17,6 +17,12 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
+			Text = null;
 		}
 
 		public PipelineResult Result { get; set; }
@@ -55,6 +61,12 @@ namespace MiiAsset.Runtime.Pipelines
 		public PipelineProgress GetProgress()
 		{
 			return new PipelineProgress().Set01Progress(Result.IsOk);
+		}
+
+		public void Invalidate()
+		{
+			Reset();
+			Build();
 		}
 
 		public string Text { get; set; }

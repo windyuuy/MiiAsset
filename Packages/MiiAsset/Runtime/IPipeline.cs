@@ -16,6 +16,8 @@ namespace MiiAsset.Runtime
 		// void Abort();
 
 		public PipelineProgress GetProgress();
+
+		void Invalidate();
 	}
 
 	public interface IDownloadPipeline : IPipeline

@@ -148,18 +148,6 @@ namespace MiiAsset.Runtime.Pipelines
 			LoadInternalCatalogPipeline = loadInternalCatalogPipeline;
 			var loadInternalCatalogTask = loadInternalCatalogPipeline?.Run();
 
-			ILoadTextAssetPipeline loadExternalCatalogPipeline;
-			if (loadInternalHashPipeline == null && loadExternalHashPipeline == null)
-			{
-				loadExternalCatalogPipeline = supportRemoteCatalog
-					? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true, 0)
-					: null;
-			}
-			else
-			{
-				loadExternalCatalogPipeline = null;
-			}
-
 			await loadHashPipelinesTask;
 
 			IsHashLoaded = true;
@@ -185,32 +173,20 @@ namespace MiiAsset.Runtime.Pipelines
 				return Result;
 			}
 
+			ILoadTextAssetPipeline loadExternalCatalogPipeline;
+			var internalHash = loadInternalHashPipeline?.Text;
 			var remoteHash = loadRemoteHashPipeline?.Text;
 			var needUpdateCatalog = false;
-			var internalHash = loadInternalHashPipeline?.Text;
 			if (remoteHash != null && ((loadExternalHashPipeline == null && internalHash != remoteHash) ||
 			                           (loadExternalHashPipeline != null &&
 			                            loadExternalHashPipeline.Text != remoteHash)))
 			{
 				// load from remote
 				needUpdateCatalog = true;
-				var parseHashRegex = new Regex(@"\w+,(\d+)");
-				var m = parseHashRegex.Match(remoteHash);
-				ulong predictFileSize;
-				if (m.Success)
-				{
-					if (!ulong.TryParse(m.Groups[1].Value, out predictFileSize))
-					{
-						predictFileSize = 0;
-					}
-				}
-				else
-				{
-					predictFileSize = 0;
-				}
+				var predictFileSize = ParsePredictFileSizeFromHash(remoteHash);
 
 				// ReSharper disable once ConditionIsAlwaysTrueOrFalse
-				loadExternalCatalogPipeline ??= supportRemoteCatalog
+				loadExternalCatalogPipeline = supportRemoteCatalog
 					? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true,
 						predictFileSize)
 					: null;
@@ -348,6 +324,27 @@ namespace MiiAsset.Runtime.Pipelines
 			return Result;
 		}
 
+		private static readonly Regex ParseHashRegex = new Regex(@"\w+,(\d+)");
+
+		private static ulong ParsePredictFileSizeFromHash(string remoteHash)
+		{
+			ulong predictFileSize;
+			var m = ParseHashRegex.Match(remoteHash);
+			if (m.Success)
+			{
+				if (!ulong.TryParse(m.Groups[1].Value, out predictFileSize))
+				{
+					predictFileSize = 0;
+				}
+			}
+			else
+			{
+				predictFileSize = 0;
+			}
+
+			return predictFileSize;
+		}
+
 		public Task<PipelineResult> RunUpdateCatalog(string remoteBaseUri, string catalogName)
 		{
 			if (LoadCatalogTask == null || (LoadCatalogTask.IsCompleted && !Result.IsOk))
@@ -395,6 +392,19 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
+			if (LoadInternalCatalogPipeline != null)
+			{
+				LoadInternalCatalogPipeline.Dispose();
+				LoadInternalCatalogPipeline = null;
+			}
+
+			if (LoadExternalCatalogPipeline != null)
+			{
+				LoadExternalCatalogPipeline.Dispose();
+				LoadExternalCatalogPipeline = null;
+			}
+
+			LoadCatalogTask = null;
 		}
 
 		public PipelineResult Result { get; set; }
@@ -429,6 +439,21 @@ namespace MiiAsset.Runtime.Pipelines
 			else
 			{
 				return LoadInternalCatalogPipeline.CombineProgress(LoadExternalCatalogPipeline);
+			}
+		}
+
+		public void Invalidate()
+		{
+			LoadCatalogTask = null;
+
+			if (LoadInternalCatalogPipeline != null)
+			{
+				LoadInternalCatalogPipeline.Invalidate();
+			}
+
+			if (LoadExternalCatalogPipeline != null)
+			{
+				LoadExternalCatalogPipeline.Invalidate();
 			}
 		}
 	}

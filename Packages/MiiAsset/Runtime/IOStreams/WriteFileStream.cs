@@ -12,11 +12,13 @@ namespace MiiAsset.Runtime.IOStreams
 		// protected IPumpStream ReadStream;
 		protected string Uri;
 		public PipelineResult Result;
+		protected long PredictFileSize;
 
-		public WriteFileStream Init(string uri)
+		public WriteFileStream Init(string uri, ulong predictFileSize)
 		{
 			this.Uri = uri;
 			this.Result = new();
+			this.PredictFileSize = (long)predictFileSize;
 			return this;
 		}
 
@@ -41,15 +43,19 @@ namespace MiiAsset.Runtime.IOStreams
 		{
 			if (evt.Event == StreamEvent.End)
 			{
-				Result.IsOk = evt.IsOk && evt.Capability == FileStream.Length;
-				if (!evt.IsOk)
+				var fileStreamLength = FileStream.Length;
+				var resultIsOk = evt.IsOk && fileStreamLength == evt.Capability &&
+				                 (PredictFileSize == 0 || fileStreamLength == PredictFileSize);
+				Result.IsOk = resultIsOk;
+				if (!resultIsOk)
 				{
-					if (evt.Capability != FileStream.Length)
+					if (evt.Capability != fileStreamLength)
 					{
 						Result.ErrorType = PipelineErrorType.FileSystemError;
 					}
 
-					MyLogger.LogError($"Download-Failed: {Uri}, {evt.GetReason()}");
+					MyLogger.LogError(
+						$"Download-Failed: {Uri}, {evt.GetReason()}, size:({fileStreamLength}, {evt.Capability}, {PredictFileSize})");
 					FileStream.Close();
 					FileStream = null;
 					try

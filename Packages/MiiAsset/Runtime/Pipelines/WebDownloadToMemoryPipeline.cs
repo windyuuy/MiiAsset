@@ -71,7 +71,18 @@ namespace MiiAsset.Runtime.IOStreams
 
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
+			Ts = null;
 			Bytes = null;
+			if (Uwr != null)
+			{
+				Uwr.Dispose();
+				Uwr = null;
+			}
 		}
 
 		public PipelineResult Result { get; set; }
@@ -124,6 +135,12 @@ namespace MiiAsset.Runtime.IOStreams
 		public void PresetDownloadSize(long fileSize)
 		{
 			PresetSize = fileSize;
+		}
+
+		public void Invalidate()
+		{
+			Reset();
+			Build();
 		}
 	}
 }

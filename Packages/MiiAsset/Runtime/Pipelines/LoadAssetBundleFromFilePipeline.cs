@@ -25,8 +25,11 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
-			AssetBundle.Unload(true);
-			AssetBundle = null;
+			Reset();
+		}
+
+		private void Reset()
+		{
 		}
 
 		public void Build()
@@ -79,6 +82,18 @@ namespace MiiAsset.Runtime.Pipelines
 		public PipelineProgress GetProgress()
 		{
 			return new PipelineProgress().Set01Progress(Result.IsOk);
+		}
+
+		public void Invalidate()
+		{
+			if (AssetBundle != null)
+			{
+				AssetBundle.Unload(true);
+				AssetBundle = null;
+			}
+
+			Reset();
+			Build();
 		}
 	}
 }

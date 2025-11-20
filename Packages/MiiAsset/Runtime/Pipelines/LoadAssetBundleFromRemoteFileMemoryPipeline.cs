@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MiiAsset.Runtime.Pipelines
 {
-	public class LoadAssetBundleFromRemoteFileMemoryPipeline: ILoadAssetBundlePipeline
+	public class LoadAssetBundleFromRemoteFileMemoryPipeline : ILoadAssetBundlePipeline
 	{
 		public IDownloadPipeline DownloadPipeline;
 		protected ILoadAssetBundlePipeline LoadAssetBundlePipeline;
@@ -24,10 +24,10 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
-			
 		}
 
 		public PipelineResult Result { get; }
+
 		public void Build()
 		{
 			throw new NotImplementedException();
@@ -49,12 +49,18 @@ namespace MiiAsset.Runtime.Pipelines
 		}
 
 		public AssetBundle AssetBundle { get; }
+
 		public IDisposable GetDisposable()
 		{
 			return null;
 		}
 
 		public IDownloadPipeline GetDownloadPipeline()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Invalidate()
 		{
 			throw new NotImplementedException();
 		}

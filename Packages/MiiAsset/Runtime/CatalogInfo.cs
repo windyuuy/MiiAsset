@@ -60,7 +60,14 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogError($"asset not exist in any bundle1: {address}");
+				if (ExtraAddressInfoMap.ContainsKey(address))
+				{
+					MyLogger.LogError($"cannot load asset with extra-address1: {address}");
+				}
+				else
+				{
+					MyLogger.LogError($"asset not exist in any bundle1: {address}");
+				}
 			}
 
 			deps = null;

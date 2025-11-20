@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace MiiAsset.Runtime
 {
@@ -21,6 +22,32 @@ namespace MiiAsset.Runtime
 		public static string DefaultRemoteUriConvertor(string remoteBaseUri, string catalogName)
 		{
 			return remoteBaseUri + catalogName;
+		}
+
+		public static Func<string, Task<bool>> WaitChooseReloadAssetFunc = DefaultChooseReloadAssetFunc;
+
+		private static Task<bool> DefaultChooseReloadAssetFunc(string s)
+		{
+			return Task.FromResult(false);
+		}
+
+		public static Task<bool> WaitChooseReloadAsset(string Uri)
+		{
+			if (WaitChooseReloadAssetFunc != null)
+			{
+				return WaitChooseReloadAssetFunc(Uri);
+			}
+			else
+			{
+				return Task.FromResult(false);
+			}
+		}
+
+		public static Action<Exception> ExceptionHandler;
+
+		public static void EmitException(Exception exception)
+		{
+			ExceptionHandler?.Invoke(exception);
 		}
 	}
 }

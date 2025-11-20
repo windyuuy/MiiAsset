@@ -120,5 +120,6 @@ namespace MiiAsset.Runtime
 		FileSystemError = 2,
 		DataIncorrect = 4,
 		CatalogIncorrect = 5,
+		OperationCancelled = 6,
 	}
 }

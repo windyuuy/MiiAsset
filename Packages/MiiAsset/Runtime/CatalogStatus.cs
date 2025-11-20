@@ -164,7 +164,14 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogError($"asset not exist in any bundle2: {address}");
+				if (catalogInfo.ExtraAddressInfoMap.ContainsKey(address))
+				{
+					MyLogger.LogError($"cannot load asset with extra-address2: {address}");
+				}
+				else
+				{
+					MyLogger.LogError($"asset not exist in any bundle2: {address}");
+				}
 			}
 
 			return false;
@@ -421,7 +428,15 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogError($"asset not exist in any bundle3: {address}");
+				if (catalogInfo.ExtraAddressInfoMap.ContainsKey(address))
+				{
+					MyLogger.LogError($"cannot load asset with extra-address3: {address}");
+				}
+				else
+				{
+					MyLogger.LogError($"asset not exist in any bundle3: {address}");
+				}
+
 				return null;
 			}
 		}

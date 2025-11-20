@@ -56,8 +56,20 @@ namespace MiiAsset.Runtime.Pipelines
 			return new PipelineProgress().Set01Progress(Result.IsOk);
 		}
 
+		public void Invalidate()
+		{
+			Reset();
+			Build();
+		}
+
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
+			Text = null;
 		}
 	}
 }

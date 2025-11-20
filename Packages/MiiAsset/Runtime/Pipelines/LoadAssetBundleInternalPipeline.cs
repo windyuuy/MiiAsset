@@ -35,6 +35,11 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
 			if (DownloadHandler != null)
 			{
 				DownloadHandler.Dispose();
@@ -48,12 +53,6 @@ namespace MiiAsset.Runtime.Pipelines
 			}
 
 			LoadTask = null;
-
-			// if (DownloadPipeline != null)
-			// {
-			// 	DownloadPipeline.Dispose();
-			// 	DownloadPipeline = null;
-			// }
 		}
 
 		public PipelineResult Result { get; set; }
@@ -147,6 +146,12 @@ namespace MiiAsset.Runtime.Pipelines
 			}
 
 			return Progress;
+		}
+
+		public void Invalidate()
+		{
+			Reset();
+			Build();
 		}
 
 		public void PresetDownloadSize(long fileSize)

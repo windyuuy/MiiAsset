@@ -3,7 +3,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
-using MiiAsset.Runtime.AssetUtils;
 
 namespace MiiAsset.Runtime.Pipelines
 {
@@ -23,6 +22,12 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
+			Text = null;
 		}
 
 		public PipelineResult Result { get; set; }
@@ -88,6 +93,12 @@ namespace MiiAsset.Runtime.Pipelines
 		public PipelineProgress GetProgress()
 		{
 			return new PipelineProgress().Set01Progress(Result.IsOk);
+		}
+
+		public void Invalidate()
+		{
+			Reset();
+			Build();
 		}
 
 		public string Text { get; set; }

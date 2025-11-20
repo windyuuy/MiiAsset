@@ -62,6 +62,19 @@ namespace MiiAsset.Runtime.Pipelines
 			return DownloadPipeline;
 		}
 
+		public void Invalidate()
+		{
+			if (LoadAssetBundlePipeline != null)
+			{
+				LoadAssetBundlePipeline.Invalidate();
+			}
+
+			if (DownloadPipeline != null)
+			{
+				DownloadPipeline.Invalidate();
+			}
+		}
+
 		public async Task<PipelineResult> Run()
 		{
 			Result = await DownloadPipeline.Run();

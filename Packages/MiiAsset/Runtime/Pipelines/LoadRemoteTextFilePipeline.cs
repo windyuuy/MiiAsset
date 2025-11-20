@@ -30,6 +30,24 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
+			Text = null;
+			Ts = null;
+			if (DownloadHandler != null)
+			{
+				DownloadHandler.Dispose();
+				DownloadHandler = null;
+			}
+
+			if (Uwr != null)
+			{
+				Uwr.Dispose();
+				Uwr = null;
+			}
 		}
 
 		public PipelineResult Result { get; set; }
@@ -148,6 +166,12 @@ namespace MiiAsset.Runtime.Pipelines
 			}
 
 			return Progress;
+		}
+
+		public void Invalidate()
+		{
+			Reset();
+			Build();
 		}
 	}
 }

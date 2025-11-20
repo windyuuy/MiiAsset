@@ -45,6 +45,15 @@ namespace MiiAsset.Runtime.Pipelines
 			return null;
 		}
 
+		public void Invalidate()
+		{
+			if (AssetBundle != null)
+			{
+				AssetBundle.Unload(true);
+				AssetBundle = null;
+			}
+		}
+
 		public async Task<PipelineResult> Run()
 		{
 			if (AssetBundle == null)
@@ -59,6 +68,10 @@ namespace MiiAsset.Runtime.Pipelines
 				// AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
 				if (AssetBundle == null)
 				{
+					var bytes2 = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
+					var exist = IOManager.LocalIOProto.Exists(Uri);
+					Debug.LogError(
+						$"Failed to Load AssetBundle firstTime: {Uri}, {exist}, {bytes.Length},{bytes2.Length}, [{string.Join(",", bytes2)}]");
 					if (AssetBundleUtils.GetLoadedBundleByPath(Uri, out AssetBundle assetBundle))
 					{
 						MyLogger.LogInfo($"retry reload assetbundle to resolve: {Uri}");

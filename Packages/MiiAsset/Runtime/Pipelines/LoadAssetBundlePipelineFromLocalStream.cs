@@ -28,6 +28,11 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
 			// if (LoadStream != null && ReadStream != null)
 			// {
 			// 	LoadStream.UnBindWriteStream(ReadStream);
@@ -76,6 +81,30 @@ namespace MiiAsset.Runtime.Pipelines
 		public IDownloadPipeline GetDownloadPipeline()
 		{
 			return null;
+		}
+
+		public void Invalidate()
+		{
+			if (AssetBundle != null)
+			{
+				AssetBundle.Unload(true);
+				AssetBundle = null;
+			}
+
+			if (LoadStream != null)
+			{
+				LoadStream.Dispose();
+				LoadStream = null;
+			}
+
+			if (ReadStream != null)
+			{
+				ReadStream.Dispose();
+				ReadStream = null;
+			}
+
+			Reset();
+			Build();
 		}
 
 		public Task<PipelineResult> Run()

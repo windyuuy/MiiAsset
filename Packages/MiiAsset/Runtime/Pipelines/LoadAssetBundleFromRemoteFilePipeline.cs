@@ -27,6 +27,11 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
+			Reset();
+		}
+
+		private void Reset()
+		{
 			DownloadPipeline.Dispose();
 			LoadAssetBundlePipeline.Dispose();
 			DownloadPipeline = null;
@@ -60,6 +65,12 @@ namespace MiiAsset.Runtime.Pipelines
 		public PipelineProgress GetProgress()
 		{
 			return DownloadPipeline.CombineProgress(LoadAssetBundlePipeline);
+		}
+
+		public void Invalidate()
+		{
+			Reset();
+			Build();
 		}
 	}
 }

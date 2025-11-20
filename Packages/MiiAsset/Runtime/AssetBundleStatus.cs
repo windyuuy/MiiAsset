@@ -263,67 +263,114 @@ namespace MiiAsset.Runtime
 			if (autoLoad)
 			{
 				// download with loading assetbundle
-
-				var result = await loadAssetBundlePipeline.Run();
-				_progress = loadAssetBundlePipeline.GetProgress();
-				var assetBundle = loadAssetBundlePipeline.AssetBundle;
-				Debug.Assert(this.AssetBundle == null, $"this.AssetBundle==null, {this.BundleName}");
-				this.AssetBundle = assetBundle;
-			#if UNITY_EDITOR
-				BundleStatusNotify.OnBundleLoad?.Invoke(this);
-			#endif
-				Result.Merge(result);
-
-				if (IsInternalBundle)
+				var retryTimes = 0;
+				while (true)
 				{
-					if (isInternalBundleExist)
+					PipelineResult result;
+					try
 					{
-						_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
-						// MyLogger.Log($"downloadprogress1: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						result = await loadAssetBundlePipeline.Run();
+						_progress = loadAssetBundlePipeline.GetProgress();
+					}
+					catch (Exception exception)
+					{
+						Debug.LogException(exception);
+						result = new PipelineResult
+						{
+							IsOk = false,
+							Exception = exception,
+							Code = -1,
+							Msg = "资源加载异常",
+							Uri = BundleName,
+							ErrorType = PipelineErrorType.FileSystemError,
+							Status = PipelineStatus.Done,
+						};
+					}
+
+					var assetBundle = loadAssetBundlePipeline.AssetBundle;
+					Debug.Assert(this.AssetBundle == null, $"this.AssetBundle==null, {this.BundleName}");
+					this.AssetBundle = assetBundle;
+				#if UNITY_EDITOR
+					BundleStatusNotify.OnBundleLoad?.Invoke(this);
+				#endif
+					Result.Merge(result);
+
+					if (IsInternalBundle)
+					{
+						if (isInternalBundleExist)
+						{
+							_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
+							// MyLogger.Log($"downloadprogress1: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						}
+						else
+						{
+							_downloadProgress = new PipelineProgress((ulong)FileSize, 0).Complete(Result.IsOk);
+							// MyLogger.Log($"downloadprogress2: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						}
+
+						IsDownloaded = 2;
+					}
+					else if (Result.IsOk)
+					{
+						var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
+						if (downloadPipeline != null)
+						{
+							IsDownloaded = downloadPipeline.Result.IsOk ? 1 : 0;
+							_downloadProgress = downloadPipeline.GetProgress();
+							// MyLogger.Log($"downloadprogress3: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						}
+						else
+						{
+							IsDownloaded = 1;
+							_downloadProgress = new PipelineProgress().SetDownloadedProgress(true);
+							// MyLogger.Log($"downloadprogress4: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						}
+					}
+
+					if (this.AssetBundle == null)
+					{
+						MyLogger.LogError($"invalid AssetBundle: {BundleName}");
+						var existBundle = IsLoadDuplicated();
+						if (existBundle)
+						{
+							var errTip = $"error: cannot load bundle twice: {BundleName}";
+							MyLogger.LogError(errTip);
+							_ = IOManager.Widget.ShowToast(errTip, 5);
+						}
+						else
+						{
+							// need retry
+							loadAssetBundlePipeline.Invalidate();
+							++retryTimes;
+							if (retryTimes == 1)
+							{
+								Debug.Log($"AutoTryReloadAsset: {BundleName}");
+								continue;
+							}
+							else
+							{
+								var retry = await RemoteUriHandler.WaitChooseReloadAsset(BundleName);
+								if (retry)
+								{
+									continue;
+								}
+								else
+								{
+									Debug.LogError($"无视资源异常, 继续流程: {BundleName}");
+								}
+							}
+						}
 					}
 					else
 					{
-						_downloadProgress = new PipelineProgress((ulong)FileSize, 0).Complete(Result.IsOk);
-						// MyLogger.Log($"downloadprogress2: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
+						MyLogger.Log($"AssetBundle-Loaded: {this.BundleName}");
+						IOManager.LocalIOProto.EnsureBundle(this.BundleName);
 					}
 
-					IsDownloaded = 2;
-				}
-				else if (Result.IsOk)
-				{
-					var downloadPipeline = loadAssetBundlePipeline.GetDownloadPipeline();
-					if (downloadPipeline != null)
-					{
-						IsDownloaded = downloadPipeline.Result.IsOk ? 1 : 0;
-						_downloadProgress = downloadPipeline.GetProgress();
-						// MyLogger.Log($"downloadprogress3: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
-					}
-					else
-					{
-						IsDownloaded = 1;
-						_downloadProgress = new PipelineProgress().SetDownloadedProgress(true);
-						// MyLogger.Log($"downloadprogress4: {BundleName}, {_downloadProgress.Total}, {loadAssetBundlePipeline.GetType()?.Name}, {FileSize}");
-					}
+					break;
 				}
 
 				this.LoadPipeline = null;
-
-				if (this.AssetBundle == null)
-				{
-					MyLogger.LogError($"invalid AssetBundle: {BundleName}");
-					var existBundle = IsLoadDuplicated();
-					if (existBundle)
-					{
-						var errTip = $"error: cannot load bundle twice: {BundleName}";
-						MyLogger.LogError(errTip);
-						_ = IOManager.Widget.ShowToast(errTip, 5);
-					}
-				}
-				else
-				{
-					MyLogger.Log($"AssetBundle-Loaded: {this.BundleName}");
-					IOManager.LocalIOProto.EnsureBundle(this.BundleName);
-				}
 
 				loadAssetBundlePipeline.Dispose();
 			}
@@ -375,7 +422,7 @@ namespace MiiAsset.Runtime
 				#if UNITY_EDITOR
 					BundleStatusNotify.OnBundleDownLoad?.Invoke(this);
 				#endif
-					
+
 					if (!IsKeepInMemory)
 					{
 						this.LoadPipeline = null;

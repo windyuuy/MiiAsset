@@ -779,6 +779,18 @@ namespace MiiAsset.Runtime
 			get => RemoteUriHandler.RemoteUriConvertor;
 		}
 
+		public static Func<string, Task<bool>> WaitChooseReloadAssetFunc
+		{
+			set => RemoteUriHandler.WaitChooseReloadAssetFunc = value;
+			get => RemoteUriHandler.WaitChooseReloadAssetFunc;
+		}
+
+		public static Action<Exception> ExceptionHandler
+		{
+			set => RemoteUriHandler.ExceptionHandler = value;
+			get => RemoteUriHandler.ExceptionHandler;
+		}
+
 		/// <summary>
 		/// 设置日志级别
 		/// </summary>

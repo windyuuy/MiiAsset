@@ -25,7 +25,11 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public void Dispose()
 		{
-			DownloadToMemoryPipeline.Dispose();
+			if (DownloadToMemoryPipeline != null)
+			{
+				DownloadToMemoryPipeline.Dispose();
+				DownloadToMemoryPipeline = null;
+			}
 		}
 
 		public PipelineResult Result { get; set; }
@@ -85,6 +89,20 @@ namespace MiiAsset.Runtime.Pipelines
 		public IDownloadPipeline GetDownloadPipeline()
 		{
 			return DownloadToMemoryPipeline;
+		}
+
+		public void Invalidate()
+		{
+			if (AssetBundle != null)
+			{
+				AssetBundle.Unload(true);
+				AssetBundle = null;
+			}
+
+			if (DownloadToMemoryPipeline != null)
+			{
+				DownloadToMemoryPipeline.Invalidate();
+			}
 		}
 	}
 }
