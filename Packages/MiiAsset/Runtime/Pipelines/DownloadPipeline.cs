@@ -8,8 +8,8 @@ namespace MiiAsset.Runtime.Pipelines
 {
 	public class DownloadPipeline : IDownloadPipeline
 	{
-		protected IPumpStream DownloadStream;
-		protected IWriteStream WriteStream;
+		protected WebDownloadPumpStream DownloadStream;
+		protected WriteFileStream WriteStream;
 
 		protected string Uri;
 		protected string WriteUri;

@@ -47,7 +47,7 @@ namespace MiiAsset.Runtime.Pipelines
 			return RemoteUriHandler.ConvertRemoteUri(remoteBaseUri, catalogName);
 		}
 
-		async Task<PipelineResult> LoadCatalogTaskInternal()
+		private async Task<PipelineResult> LoadCatalogTaskInternal()
 		{
 			var catalogName = CatalogName;
 			var internalCatalogUri = InternalBaseUri + catalogName;
@@ -63,31 +63,33 @@ namespace MiiAsset.Runtime.Pipelines
 			var internalCatalogHashUri = ToHashFileName(internalCatalogUri);
 			using ILoadTextAssetPipeline loadInternalHashPipeline = isInternalCatalogExist
 				? (isInternalAsWebUri
-					? new LoadRemoteTextFilePipeline().Init(internalCatalogHashUri, null)
-					: new LoadTextFilePipeline().Init(internalCatalogHashUri))
+					? new LoadRemoteTextFilePipeline().Init(internalCatalogHashUri, null) // jar://hash
+					: new LoadTextFilePipeline().Init(internalCatalogHashUri)) // 包内文件hash
 				: null;
 
 			var remoteCatalogHashUri =
 				Convert2RemoteUri(remoteBaseUri, ToHashFileName(catalogName)); //ToHashFileName(remoteCatalogUri);
 			using var loadRemoteHashPipeline = supportRemoteCatalog
-				? new LoadRemoteTextFilePipeline().Init(remoteCatalogHashUri, null)
+				? new LoadRemoteTextFilePipeline().Init(remoteCatalogHashUri, null) // https://hash
 				: null;
 
 			using ILoadTextAssetPipeline loadInternalCatalogPipeline = isInternalCatalogExist
 				? (isInternalAsWebUri
-					? new LoadRemoteCatalogPkgFromMemoryPipeline().Init(internalCatalogUri)
-					: new LoadCatalogPkgPipeline().Init(internalCatalogUri))
+					? new LoadRemoteCatalogPkgFromMemoryPipeline().Init(internalCatalogUri) // jar://catalog
+					: new LoadCatalogPkgPipeline().Init(internalCatalogUri, null)) // 包内文件catalog
 				: null;
 
-			LoadTextFilePipeline loadExternalHashPipeline = null;
-			Task loadHashPipelinesTask;
+			// 存在外部catalog文件缓存
 			var existExternalCatalog = IOManager.LocalIOProto.Exists(externalCatalogHashUri) &&
 			                           IOManager.LocalIOProto.Exists(externalCatalogUri);
+			using LoadTextFilePipeline loadExternalHashPipeline =
+				existExternalCatalog ? new LoadTextFilePipeline().Init(externalCatalogHashUri) : null;
 
 			MyLogger.LogInfo(
 				$"LoadCatalogOptions: internalCatalogUri:{internalCatalogUri}, remoteCatalogUri:{remoteCatalogUri}, externalCatalogUri:{externalCatalogUri}," +
 				$" isInternalCatalogExist:{isInternalCatalogExist}, existExternalCatalog:{existExternalCatalog}, isInternalAsWebUri:{isInternalAsWebUri}");
 
+			/// 加载三重hash值
 			IEnumerable<Task<PipelineResult>> CollectValidPipelinesResult()
 			{
 				if (loadRemoteHashPipeline != null)
@@ -95,9 +97,8 @@ namespace MiiAsset.Runtime.Pipelines
 					yield return loadRemoteHashPipeline.Run();
 				}
 
-				if (existExternalCatalog)
+				if (loadExternalHashPipeline != null)
 				{
-					loadExternalHashPipeline = new LoadTextFilePipeline().Init(externalCatalogHashUri);
 					yield return loadExternalHashPipeline.Run();
 				}
 
@@ -107,43 +108,7 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 			}
 
-			loadHashPipelinesTask = Task.WhenAll(CollectValidPipelinesResult());
-			//
-			// if (existExternalCatalog)
-			// {
-			// 	loadExternalHashPipeline = new LoadTextFilePipeline().Init(externalHashUri);
-			// 	if (loadInternalHashPipeline != null)
-			// 	{
-			// 		loadHashPipelinesTask = Task.WhenAll(
-			// 			loadInternalHashPipeline.Run(),
-			// 			loadExternalHashPipeline.Run(),
-			// 			loadRemoteHashPipeline.Run()
-			// 		);
-			// 	}
-			// 	else
-			// 	{
-			// 		loadHashPipelinesTask = Task.WhenAll(
-			// 			loadExternalHashPipeline.Run(),
-			// 			loadRemoteHashPipeline.Run()
-			// 		);
-			// 	}
-			// }
-			// else
-			// {
-			// 	if (loadInternalHashPipeline != null)
-			// 	{
-			// 		loadHashPipelinesTask = Task.WhenAll(
-			// 			loadInternalHashPipeline.Run(),
-			// 			loadRemoteHashPipeline.Run()
-			// 		);
-			// 	}
-			// 	else
-			// 	{
-			// 		loadHashPipelinesTask = Task.WhenAll(
-			// 			loadRemoteHashPipeline.Run()
-			// 		);
-			// 	}
-			// }
+			Task loadHashPipelinesTask = Task.WhenAll(CollectValidPipelinesResult());
 
 			LoadInternalCatalogPipeline = loadInternalCatalogPipeline;
 			var loadInternalCatalogTask = loadInternalCatalogPipeline?.Run();
@@ -173,35 +138,50 @@ namespace MiiAsset.Runtime.Pipelines
 				return Result;
 			}
 
-			ILoadTextAssetPipeline loadExternalCatalogPipeline;
 			var internalHash = loadInternalHashPipeline?.Text;
 			var remoteHash = loadRemoteHashPipeline?.Text;
+			var externalHash = loadExternalHashPipeline?.Text;
+			Debug.Log(
+				$"UpdateCatalog: internalHash:{internalHash}, remoteHash:{remoteHash}, externalHash:{externalHash}");
 			var needUpdateCatalog = false;
-			if (remoteHash != null && ((loadExternalHashPipeline == null && internalHash != remoteHash) ||
-			                           (loadExternalHashPipeline != null &&
-			                            loadExternalHashPipeline.Text != remoteHash)))
-			{
-				// load from remote
-				needUpdateCatalog = true;
-				var predictFileSize = ParsePredictFileSizeFromHash(remoteHash);
 
-				// ReSharper disable once ConditionIsAlwaysTrueOrFalse
-				loadExternalCatalogPipeline = supportRemoteCatalog
-					? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, true,
-						predictFileSize)
-					: null;
-			}
-			else if (loadExternalHashPipeline != null
-			         && loadExternalHashPipeline.Text == remoteHash && loadExternalHashPipeline.Text != internalHash)
+			ILoadTextAssetPipeline DetermineLoadExternalHashPipeline()
 			{
-				// load from cache
-				loadExternalCatalogPipeline = new LoadCatalogPkgPipeline().Init(externalCatalogUri);
+				ILoadTextAssetPipeline loadExternalCatalogPipeline;
+				if (remoteHash != null && ((loadExternalHashPipeline == null && internalHash != remoteHash) ||
+				                           (loadExternalHashPipeline != null &&
+				                            externalHash != remoteHash)))
+				{
+					// load from remote
+					needUpdateCatalog = true;
+					TryParseHashInfo(remoteHash, out var predictFileSize, out var remoteHashStr);
+
+					// ReSharper disable once ConditionIsAlwaysTrueOrFalse
+					loadExternalCatalogPipeline = supportRemoteCatalog
+						? new LoadRemoteCatalogPkgPipeline().Init(remoteCatalogUri, externalCatalogUri, remoteHashStr,
+							true,
+							predictFileSize)
+						: null;
+				}
+				else if (loadExternalHashPipeline != null
+				         && externalHash == remoteHash && externalHash != internalHash)
+				{
+					// load from cache
+					TryParseHashInfo(remoteHash, out var predictFileSize, out var externalHashStr);
+					loadExternalCatalogPipeline =
+						new LoadCatalogPkgPipeline().Init(externalCatalogUri, externalHashStr);
+				}
+				else
+				{
+					// load from internal
+					loadExternalCatalogPipeline = null;
+				}
+
+				return loadExternalCatalogPipeline;
 			}
-			else
-			{
-				// load from internal
-				loadExternalCatalogPipeline = null;
-			}
+
+
+			using var loadExternalCatalogPipeline = DetermineLoadExternalHashPipeline();
 
 			LoadExternalCatalogPipeline = loadExternalCatalogPipeline;
 
@@ -265,6 +245,7 @@ namespace MiiAsset.Runtime.Pipelines
 					MyLogger.LogException(exception);
 					Result = new()
 					{
+						IsOk = false,
 						Exception = exception,
 						Msg = errMsg,
 						ErrorType = PipelineErrorType.DataIncorrect,
@@ -279,11 +260,12 @@ namespace MiiAsset.Runtime.Pipelines
 			}
 
 			CatalogConfig externalCatalog;
+			var externalCatalogText = loadExternalCatalogPipeline?.Text;
 			if (loadExternalCatalogPipeline != null)
 			{
 				try
 				{
-					externalCatalog = JsonUtility.FromJson<CatalogConfig>(loadExternalCatalogPipeline.Text);
+					externalCatalog = JsonUtility.FromJson<CatalogConfig>(externalCatalogText);
 				}
 				catch (Exception exception)
 				{
@@ -292,6 +274,7 @@ namespace MiiAsset.Runtime.Pipelines
 					MyLogger.LogException(exception);
 					Result = new()
 					{
+						IsOk = false,
 						Exception = exception,
 						Msg = errMsg,
 						ErrorType = PipelineErrorType.DataIncorrect,
@@ -314,8 +297,8 @@ namespace MiiAsset.Runtime.Pipelines
 
 			this.HandleCatalog(internalCatalog, externalCatalog, remoteBaseUri);
 
-			loadExternalHashPipeline?.Dispose();
-			loadExternalCatalogPipeline?.Dispose();
+			// loadExternalHashPipeline?.Dispose();
+			// loadExternalCatalogPipeline?.Dispose();
 
 			Result = new()
 			{
@@ -324,25 +307,38 @@ namespace MiiAsset.Runtime.Pipelines
 			return Result;
 		}
 
-		private static readonly Regex ParseHashRegex = new Regex(@"\w+,(\d+)");
+		private static readonly Regex ParseHashRegex = new Regex(@"(\w+),(\d+)");
 
-		private static ulong ParsePredictFileSizeFromHash(string remoteHash)
+		private static bool TryParseHashInfo(string remoteHash, out ulong predictFileSize, out string hashStr)
 		{
-			ulong predictFileSize;
+			if (remoteHash == null)
+			{
+				predictFileSize = 0;
+				hashStr = null;
+				return false;
+			}
+
 			var m = ParseHashRegex.Match(remoteHash);
 			if (m.Success)
 			{
-				if (!ulong.TryParse(m.Groups[1].Value, out predictFileSize))
+				if (ulong.TryParse(m.Groups[2].Value, out predictFileSize))
+				{
+					hashStr = m.Groups[1].Value;
+					return true;
+				}
+				else
 				{
 					predictFileSize = 0;
+					hashStr = null;
 				}
 			}
 			else
 			{
 				predictFileSize = 0;
+				hashStr = null;
 			}
 
-			return predictFileSize;
+			return false;
 		}
 
 		public Task<PipelineResult> RunUpdateCatalog(string remoteBaseUri, string catalogName)

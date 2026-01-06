@@ -11,14 +11,17 @@ namespace MiiAsset.Runtime.Pipelines
 		public string ExternalCatalogUri;
 		public bool Overwrite;
 		protected ulong PredictFileSize;
+		protected string RemoteCatalogHash;
 
-		public LoadRemoteCatalogPkgPipeline Init(string remoteCatalogUri, string externalCatalogUri, bool overwrite,
+		public LoadRemoteCatalogPkgPipeline Init(string remoteCatalogUri, string externalCatalogUri, string remoteHash,
+			bool overwrite,
 			ulong predictFileSize)
 		{
 			this.RemoteCatalogUri = remoteCatalogUri;
 			this.ExternalCatalogUri = externalCatalogUri;
+			this.RemoteCatalogHash = remoteHash;
 			this.Overwrite = overwrite;
-			PredictFileSize = predictFileSize;
+			this.PredictFileSize = predictFileSize;
 			this.Result = new();
 			this.Build();
 			return this;
@@ -53,7 +56,7 @@ namespace MiiAsset.Runtime.Pipelines
 
 			if (isCached || Result.IsOk)
 			{
-				using var loadPipeline = new LoadCatalogPkgPipeline().Init(ExternalCatalogUri);
+				using var loadPipeline = new LoadCatalogPkgPipeline().Init(ExternalCatalogUri, RemoteCatalogHash);
 				Result = await loadPipeline.Run();
 				Text = loadPipeline.Text;
 

@@ -43,6 +43,20 @@ namespace MiiAsset.Runtime.IOManagers
 			// MyLogger.Log($"OpenSync2: {path}, {fd}");
 			return fd;
 		}
+
+		public void Close(string path)
+		{
+			if (FdMap.TryGetValue(path, out var fd))
+			{
+				Fs.CloseSync(new()
+				{
+					fd = fd,
+				});
+				FdMap.Remove(path);
+				// MyLogger.Log($"CloseSync: {path}, {fd}, opc:{FdMap.Count}");
+				// MyLogger.Log($"wdk-fopc: {FdMap.Count}");
+			}
+		}
 	}
 
 	public class WDKWriteFileStream : Stream
@@ -99,6 +113,12 @@ namespace MiiAsset.Runtime.IOManagers
 			MyLogger.LogError($"NotImplementException-{nameof(WDKWriteFileStream)}::{nameof(SetLength)}()");
 			this._length = value;
 			this.Position = Math.Min(this._length, this.Position);
+		}
+
+		public override void Close()
+		{
+			Opener.Close(Uri);
+			base.Close();
 		}
 
 		const int WriteSeg = 1024 * 1024 * 4; //11525472;

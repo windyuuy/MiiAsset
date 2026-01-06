@@ -171,7 +171,17 @@ namespace MiiAsset.Runtime.Pipelines
 		public void Invalidate()
 		{
 			Reset();
+			DeleteCachedFile();
 			Build();
+		}
+
+		private void DeleteCachedFile()
+		{
+			var exist = IOManager.LocalIOProto.Exists(CacheUri);
+			if (exist)
+			{
+				IOManager.LocalIOProto.Delete(CacheUri);
+			}
 		}
 	}
 }

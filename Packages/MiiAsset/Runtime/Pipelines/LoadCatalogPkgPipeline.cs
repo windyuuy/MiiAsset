@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
@@ -11,10 +12,12 @@ namespace MiiAsset.Runtime.Pipelines
 	public class LoadCatalogPkgPipeline : ILoadTextAssetPipeline
 	{
 		protected string CatalogUri;
+		protected string ExternalHash;
 
-		public LoadCatalogPkgPipeline Init(string catalogUri)
+		public LoadCatalogPkgPipeline Init(string catalogUri, string externalHash)
 		{
 			this.CatalogUri = catalogUri;
+			this.ExternalHash = externalHash;
 			Result = new();
 			this.Build();
 			return this;
@@ -36,22 +39,57 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 		}
 
+		private static bool CheckBytesContentHash(byte[] bytes, string hash128Str0)
+		{
+			var hash = SHA256.Create();
+			byte[] hashByte = hash.ComputeHash(bytes);
+			var hash128Str = BitConverter.ToString(hashByte).Replace("-", "").ToLower();
+			var isMatched = hash128Str == hash128Str0;
+			return isMatched;
+		}
+
 		public async Task<PipelineResult> Run()
 		{
 			if (IOManager.LocalIOProto.Exists(CatalogUri))
 			{
 				try
 				{
-					var text = await IOManager.LocalIOProto.ReadCatalog(CatalogUri);
-					Text = text;
-
-					if (string.IsNullOrWhiteSpace(text))
+					// 校验hash
+					bool isMatched;
+					if (ExternalHash != null)
 					{
-						Result.ErrorType = PipelineErrorType.DataIncorrect;
+						var bytes = await IOManager.LocalIOProto.ReadAllBytesAsync(CatalogUri);
+						isMatched = CheckBytesContentHash(bytes, ExternalHash);
+						if (!isMatched)
+						{
+							MyLogger.LogError($"File hash not matched, auto Invalidate: {CatalogUri}, {ExternalHash}");
+							this.Invalidate();
+						}
 					}
 					else
 					{
-						Result.IsOk = true;
+						isMatched = true;
+					}
+
+					if (isMatched)
+					{
+						var text = await IOManager.LocalIOProto.ReadCatalog(CatalogUri);
+						Text = text;
+
+						if (string.IsNullOrWhiteSpace(text))
+						{
+							Result.ErrorType = PipelineErrorType.DataIncorrect;
+							Result.Msg = $"file empty: {CatalogUri}, [{text}]";
+						}
+						else
+						{
+							Result.IsOk = true;
+						}
+					}
+					else
+					{
+						Result.ErrorType = PipelineErrorType.DataIncorrect;
+						Result.Msg = $"file hash not matched: {CatalogUri}, {ExternalHash}";
 					}
 				}
 				catch (Exception ex)
@@ -83,7 +121,17 @@ namespace MiiAsset.Runtime.Pipelines
 		public void Invalidate()
 		{
 			Reset();
+			DeleteCachedFile();
 			Build();
+		}
+
+		private void DeleteCachedFile()
+		{
+			var exist = IOManager.LocalIOProto.Exists(CatalogUri);
+			if (exist)
+			{
+				IOManager.LocalIOProto.Delete(CatalogUri);
+			}
 		}
 
 		public string Text { get; set; }
