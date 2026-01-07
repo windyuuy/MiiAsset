@@ -77,6 +77,7 @@ namespace MiiAsset.Runtime
 		public string key;
 		public UnityEngine.Object asset;
 		public bool isEncrypt = false;
+		public bool isOffline = false;
 
 
 		public string GetGroupName()
@@ -115,6 +116,7 @@ namespace MiiAsset.Runtime
 		/// 加密所有文件
 		/// </summary>
 		public bool isEncryptAll = false;
+
 		public bool isEncryptBuiltin = false;
 	}
 

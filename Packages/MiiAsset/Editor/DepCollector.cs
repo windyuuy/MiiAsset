@@ -304,6 +304,7 @@ namespace MiiAsset.Editor.Build
 						tagBundle.Guids.Add(item.GetGuid());
 						tagBundle.AddressMap.Add(item.GetGuid(), item.key);
 						tagBundle.IsEncrypt = tagBundle.IsEncrypt || item.isEncrypt;
+						tagBundle.IsOffline = tagBundle.IsOffline || item.isOffline;
 						tagBundle.IsKeepInMemory = tagBundle.IsKeepInMemory;
 						GuidBundleMap.Add(item.GetGuid(), tagBundle);
 					}

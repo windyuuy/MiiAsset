@@ -15,19 +15,19 @@ namespace TrackableResourceManager.Runtime
 		[Header("分组名前缀")] public string groupPrefix;
 
 		[Header("分组名")] public string groupName;
+
 		public string GetGroupName()
 		{
 			return $"{groupPrefix}{groupName}";
 		}
+
 		public string GetGroupFileName()
 		{
 			return groupName.Replace("/", "_").ToLower();
 		}
 
 		// split with ;
-		[Header("附加标签")]
-		[Tooltip("split with ;")]
-		[SerializeField]
+		[Header("附加标签")] [Tooltip("split with ;")] [SerializeField]
 		protected string tags;
 
 		public string[] Tags => tags.Split(";");
@@ -40,8 +40,7 @@ namespace TrackableResourceManager.Runtime
 		/// <summary>
 		/// 帮助缩减搜索范围，加快搜索速度
 		/// </summary>
-		[Header("资源清单搜索路径")]
-		[Tooltip("帮助缩减搜索范围，加快搜索速度")]
+		[Header("资源清单搜索路径")] [Tooltip("帮助缩减搜索范围，加快搜索速度")]
 		public string scanPath = "Assets";
 
 		/// <summary>
@@ -94,10 +93,12 @@ namespace TrackableResourceManager.Runtime
 
 		protected bool IsLoaded = false;
 
-		public IEnumerable<(ResourceManifestConfig.ResourceItemSet itemSet, ResourceManifestConfig.ResourceItem item)> LoadAllManifestItems()
+		public IEnumerable<(ResourceManifestConfig.ResourceItemSet itemSet, ResourceManifestConfig.ResourceItem item)>
+			LoadAllManifestItems()
 		{
 			var assets = FindResourceManifestConfigs();
-			var items = assets.MergeGroup(resourceManifestConfig => resourceManifestConfig.CollectResourceItemsWithSetName());
+			var items = assets.MergeGroup(resourceManifestConfig =>
+				resourceManifestConfig.CollectResourceItemsWithSetName());
 			return items;
 		}
 
@@ -141,8 +142,10 @@ namespace TrackableResourceManager.Runtime
 				{
 					scanPath1 += '/';
 				}
+
 				scanPath0 = scanPath1;
 			}
+
 			var assets = AssetDatabase
 				.FindAssets("t:ResourceManifestConfig", new[] { scanPath0 })
 				.Select(AssetDatabase.GUIDToAssetPath)
@@ -170,6 +173,7 @@ namespace TrackableResourceManager.Runtime
 							break;
 						}
 					}
+
 					Debug.Assert(item != null, "item!=null");
 					conflictKey = item.key;
 					return false;
@@ -263,9 +267,11 @@ namespace TrackableResourceManager.Runtime
 			return configs;
 		}
 
-		public string GetEntryUKey(ResourceManifestConfig.ResourceItemSet itemSet, ResourceManifestConfig.ResourceItem item)
+		public string GetEntryUKey(ResourceManifestConfig.ResourceItemSet itemSet,
+			ResourceManifestConfig.ResourceItem item)
 		{
-			var uKey = ResourceManifestConfig.ToAddress(this.groupName, itemSet.setName, item.key, this.joinKey, itemSet.joinKey);
+			var uKey = ResourceManifestConfig.ToAddress(this.groupName, itemSet.setName, item.key, this.joinKey,
+				itemSet.joinKey);
 			return uKey;
 		}
 
@@ -274,7 +280,8 @@ namespace TrackableResourceManager.Runtime
 			var asset = this;
 
 			// AAUriMapConfig
-			var uriMapConfigPath = $"Assets/Bundles/GameConfigs/Editor/AAConfig/umcs/{asset.GetGroupFileName()}_aaumc.asset";
+			var uriMapConfigPath =
+				$"Assets/Bundles/GameConfigs/Editor/AAConfig/umcs/{asset.GetGroupFileName()}_aaumc.asset";
 			var dir = Path.GetDirectoryName(uriMapConfigPath);
 			if (!Directory.Exists(dir))
 			{
@@ -307,8 +314,10 @@ namespace TrackableResourceManager.Runtime
 						{
 							group = groupName,
 							key = key,
-							asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(AssetDatabase.GUIDToAssetPath(resourceItem.ResUri)),
+							asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(
+								AssetDatabase.GUIDToAssetPath(resourceItem.ResUri)),
 							isEncrypt = pathConfig.isEncryptAll,
+							isOffline = this.isOffline,
 						};
 						pathConfig.singleFiles.Add(item);
 						// var entry = aaSettings.CreateOrMoveEntry(resourceItem.ResUri, group, true);
@@ -320,6 +329,7 @@ namespace TrackableResourceManager.Runtime
 						// 	entry.SetLabel(assetTag, true, true);
 						// }
 					}
+
 					EditorUtility.SetDirty(pathConfig);
 					AssetDatabase.SaveAssetIfDirty(pathConfig);
 				}
@@ -340,6 +350,7 @@ namespace TrackableResourceManager.Runtime
 		{
 			InjectAllToAAGroups();
 		}
+
 		public static void AllToAAGroups()
 		{
 			var assets = FindGroupConfigs();
