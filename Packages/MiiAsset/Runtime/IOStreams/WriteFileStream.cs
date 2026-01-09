@@ -35,6 +35,7 @@ namespace MiiAsset.Runtime.IOStreams
 			}
 			else
 			{
+				MyLogger.LogError($"错误的下载时序: {Uri}, {offset}, {len}");
 				return 0;
 			}
 		}
