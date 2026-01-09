@@ -15,12 +15,14 @@ namespace MiiAsset.Runtime.Pipelines
 		protected string Uri;
 		protected uint Crc;
 		protected bool IsEncrypt;
-
-		public LoadAssetBundlePipelineFromLocalStream Init(string uri, uint crc, bool isEncrypt)
+		protected ulong PredictFileSize;
+		
+		public LoadAssetBundlePipelineFromLocalStream Init(string uri, uint crc, bool isEncrypt, ulong predictFileSize)
 		{
 			Uri = uri;
 			Crc = crc;
 			IsEncrypt = isEncrypt;
+			PredictFileSize = predictFileSize;
 			Result = new();
 			this.Build();
 			return this;

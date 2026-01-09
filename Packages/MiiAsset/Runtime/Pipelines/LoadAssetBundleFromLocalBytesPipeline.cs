@@ -12,12 +12,14 @@ namespace MiiAsset.Runtime.Pipelines
 		protected string Uri;
 		protected uint Crc;
 		protected bool IsEncrypt;
+		protected ulong PredictFileSize;
 
-		public LoadAssetBundleFromLocalBytesPipeline Init(string uri, uint crc, bool isEncrypt)
+		public LoadAssetBundleFromLocalBytesPipeline Init(string uri, uint crc, bool isEncrypt, ulong predictFileSize)
 		{
 			Uri = uri;
 			Crc = crc;
 			IsEncrypt = isEncrypt;
+			PredictFileSize = predictFileSize;
 			Result = new();
 			this.Build();
 			return this;
@@ -59,40 +61,48 @@ namespace MiiAsset.Runtime.Pipelines
 			if (AssetBundle == null)
 			{
 				var bytes = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
-				if (IsEncrypt)
+				if (bytes.Length != (int)PredictFileSize)
 				{
-					SharedEncrypt.Encryptor.Encrypt(bytes, 0, 0, bytes.Length);
-				}
-
-				AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
-				// AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
-				if (AssetBundle == null)
-				{
-					var bytes2 = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
-					var exist = IOManager.LocalIOProto.Exists(Uri);
-					Debug.LogError(
-						$"Failed to Load AssetBundle firstTime: {Uri}, {exist}, {bytes.Length},{bytes2.Length}, [{string.Join(",", bytes2)}]");
-					if (AssetBundleUtils.GetLoadedBundleByPath(Uri, out AssetBundle assetBundle))
-					{
-						MyLogger.LogInfo($"retry reload assetbundle to resolve: {Uri}");
-						if (assetBundle != null)
-						{
-							assetBundle.Unload(false);
-						}
-
-						AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
-					}
-				}
-
-				if (AssetBundle != null)
-				{
-					AssetBundleUtils.AddLiveBundle(AssetBundle);
-					Result.IsOk = true;
+					Result.ErrorType = PipelineErrorType.DataIncorrect;
+					Result.Msg = $"File Length unmatched: {bytes.Length}!={PredictFileSize}";
 				}
 				else
 				{
-					Result.ErrorType = PipelineErrorType.DataIncorrect;
-					Result.Msg = "Failed to load AssetBundle";
+					if (IsEncrypt)
+					{
+						SharedEncrypt.Encryptor.Encrypt(bytes, 0, 0, bytes.Length);
+					}
+
+					AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
+					// AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
+					if (AssetBundle == null)
+					{
+						var bytes2 = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
+						var exist = IOManager.LocalIOProto.Exists(Uri);
+						Debug.LogError(
+							$"Failed to Load AssetBundle firstTime: {Uri}, {exist}, {bytes.Length},{bytes2.Length}, [{string.Join(",", bytes2)}]");
+						if (AssetBundleUtils.GetLoadedBundleByPath(Uri, out AssetBundle assetBundle))
+						{
+							MyLogger.LogInfo($"retry reload assetbundle to resolve: {Uri}");
+							if (assetBundle != null)
+							{
+								assetBundle.Unload(false);
+							}
+
+							AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
+						}
+					}
+
+					if (AssetBundle != null)
+					{
+						AssetBundleUtils.AddLiveBundle(AssetBundle);
+						Result.IsOk = true;
+					}
+					else
+					{
+						Result.ErrorType = PipelineErrorType.DataIncorrect;
+						Result.Msg = "Failed to load AssetBundle";
+					}
 				}
 			}
 			else

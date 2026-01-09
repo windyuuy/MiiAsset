@@ -47,7 +47,7 @@ namespace MiiAsset.Runtime.Pipelines
 		public void Build()
 		{
 			DownloadPipeline = new DownloadPipeline().Init(RemoteUri, LocalUri, false, PredictFileSize);
-			LoadAssetBundlePipeline = new LoadAssetBundleFromLocalBytesPipeline().Init(LocalUri, Crc, IsEncrypt);
+			LoadAssetBundlePipeline = new LoadAssetBundleFromLocalBytesPipeline().Init(LocalUri, Crc, IsEncrypt, PredictFileSize);
 		}
 
 		public AssetBundle AssetBundle => LoadAssetBundlePipeline.AssetBundle;
