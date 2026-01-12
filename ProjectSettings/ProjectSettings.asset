@@ -817,6 +817,7 @@ PlayerSettings:
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
   scriptingDefineSymbols:
+    Android: SUPPORT_WDK
     WebGL: DISABLE_NOREFERCOUNT_API;SUPPORT_WDK
   additionalCompilerArguments:
     WebGL: []
