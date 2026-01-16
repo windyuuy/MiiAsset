@@ -2,7 +2,7 @@
   "dependencies": {
     "com.qq.weixin.minigame": "https://gitee.com/windyuuy/minigame-tuanjie-transform-sdk.git#45e7581c92543239ae221a274fa5b96339301168",
     "com.bytedance.starksdk": "https://gitee.com/windyuuy/com.bytedance.all.git?path=com.bytedance.starksdk#4c1dc34c712514cdaeb3ff8922481d43e23e396b",
-    "windy.sdkadapter.core": "https://gitee.com/windyuuy/UnitySDKAdapter.git?path=Packages/SDKAdapter#c3f6b68a63c4d34f3786dcc363434670bd4fde2b",
+    "windy.sdkadapter.core": "https://gitee.com/windyuuy/UnitySDKAdapter.git?path=Packages/SDKAdapter#aa708274ab83393a83584ec3c10f994bbad26b9d",
     "windy.gamelibs.all": "https://gitee.com/windyuuy/UnityGameLibs.git?path=Packages/GameLibs#0dd4195b9474850dbf3d06bc25a9d0f3ca71cff9",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ide.rider": "3.0.34",

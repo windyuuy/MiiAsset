@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using GDK;
+using WDK;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 

@@ -1,12 +1,12 @@
 ﻿#if UNITY_WEBGL && SUPPORT_WDK
 	using System.Threading.Tasks;
-	using GDK;
+	using WDK;
 
 	namespace MiiAsset.Runtime.IOManagers
 	{
 		public class WDKWidget : IWidget
 		{
-			public Task<GDK.ShowWidgetResult> ShowToast(string tip, float duration)
+			public Task<WDK.ShowWidgetResult> ShowToast(string tip, float duration)
 			{
 				return UserAPI.Instance.Widgets.ShowToast(new()
 				{

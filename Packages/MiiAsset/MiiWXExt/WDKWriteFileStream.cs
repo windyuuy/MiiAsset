@@ -8,7 +8,7 @@ using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 #if UNITY_WEBGL && SUPPORT_WDK
-using GDK;
+using WDK;
 
 namespace MiiAsset.Runtime.IOManagers
 {

@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using GDK;
+using WDK;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 

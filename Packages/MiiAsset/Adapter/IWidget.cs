@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using GDK;
+using WDK;
 
 namespace MiiAsset.Runtime.IOManagers
 {

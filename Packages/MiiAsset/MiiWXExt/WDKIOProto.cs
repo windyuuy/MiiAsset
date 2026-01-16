@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GDK;
+using WDK;
 using MiiAsset.Runtime.AssetUtils;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -324,7 +324,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<string> ReadCatalog(string uri)
 		{
-			var text = FileSystemManager.ReadCompressedFileTextSync(new GDK.ReadCompressedFileSyncOption
+			var text = FileSystemManager.ReadCompressedFileTextSync(new WDK.ReadCompressedFileSyncOption
 			{
 				filePath = uri,
 			});
