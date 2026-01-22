@@ -78,7 +78,7 @@ namespace MiiAsset.Runtime
 		{
 			if (BundleLoadStatus.TryGetValue(bundleName, out var bundleStatus))
 			{
-				return bundleStatus.IsLoaded();
+				return bundleStatus.IsLoaded;
 			}
 
 			return false;

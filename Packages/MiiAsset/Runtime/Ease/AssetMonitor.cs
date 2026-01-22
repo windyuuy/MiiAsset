@@ -27,10 +27,15 @@ namespace MiiAsset.Runtime
 		}
 
 		/// <summary>
-		/// 所有asset加载状态
+		/// 获取所有AssetBundle加载状态(包括已卸载的)
 		/// </summary>
+		/// <returns></returns>
 		public BundledAssetProvider BundledAssetProvider => GetBundledAssetProvider();
 
+		/// <summary>
+		/// 获取所有AssetBundle加载状态(包括已卸载的)
+		/// </summary>
+		/// <returns></returns>
 		public Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatus()
 		{
 			var provider = GetBundledAssetProvider();
@@ -40,6 +45,30 @@ namespace MiiAsset.Runtime
 			}
 
 			return null;
+		}
+
+		/// <summary>
+		/// 正在使用中的AssetBundle加载状态
+		/// </summary>
+		/// <value></value>
+		public Dictionary<string, IAssetBundleStatus> UsingBundleLoadStatus => GetUsingBundleLoadStatus();
+
+		/// <summary>
+		/// 正在使用中的AssetBundle加载状态
+		/// </summary>
+		/// <value></value>
+		private Dictionary<string, IAssetBundleStatus> GetUsingBundleLoadStatus()
+		{
+			var dictionary = new Dictionary<string, IAssetBundleStatus>();
+			foreach (var (key, value) in GetAllBundleLoadStatus())
+			{
+				if (value.IsUsing)
+				{
+					dictionary.Add(key, value);
+				}
+			}
+
+			return dictionary;
 		}
 
 		/// <summary>
