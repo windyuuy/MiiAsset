@@ -75,11 +75,26 @@ namespace MiiAsset.Runtime
 		// 	return results.All(r => r);
 		// }
 
-		public CatalogInfo CatalogInfo = new();
+		public readonly CatalogInfo CatalogInfo = new();
 
 		public bool TryGetExtraAddressInfo(string address, out ExtraAddressInfo extraAddressInfo)
 		{
 			return CatalogInfo.TryGetExtraAddressInfo(address, out extraAddressInfo);
+		}
+
+		public string[] GetAllBundleNames()
+		{
+			return CatalogInfo.GetAllBundleNames();
+		}
+
+		public string[] GetAllBundleFileNames()
+		{
+			return CatalogInfo.GetAllBundleFileNames();
+		}
+
+		public AssetBundleInfo[] GetAllAssetBundleInfos()
+		{
+			return CatalogInfo.GetAllAssetBundleInfos();
 		}
 
 		private void HandleCatalog(CatalogConfig internalCatalog, CatalogConfig externalCatalog, string sourceUri)
@@ -269,6 +284,8 @@ namespace MiiAsset.Runtime
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
 			await CatalogStatus.GetLoadingBundlesTasks(deps, CatalogInfo);
 			await UnloadAssetJust(address);
+			// await CatalogStatus.UnLoadBundles(deps);
+			// TODO: 确定是否释放资源
 		}
 
 		public string GetAddressFromGuid(string guid)
