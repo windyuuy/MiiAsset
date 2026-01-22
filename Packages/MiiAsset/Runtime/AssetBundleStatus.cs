@@ -30,7 +30,21 @@ namespace MiiAsset.Runtime
 		Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : Object;
 		Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : Object;
 		Task UnLoadAssetJust(string address);
-		bool IsLoaded();
+
+		/// <summary>
+		/// 未卸载的Bundle
+		/// </summary>
+		bool IsLoaded { get; }
+
+		/// <summary>
+		/// 引用计数>0
+		/// </summary>
+		bool IsRefered { get; }
+
+		/// <summary>
+		/// 正在使用的(未卸载或引用计数>0)
+		/// </summary>
+		bool IsUsing { get; }
 	}
 
 	public static class BundleStatusNotify
@@ -653,10 +667,10 @@ namespace MiiAsset.Runtime
 			return System.Threading.Tasks.Task.CompletedTask;
 		}
 
-		public bool IsLoaded()
-		{
-			return this.AssetBundle != null;
-		}
+		public bool IsLoaded => this.AssetBundle != null;
+
+		public bool IsRefered => this.RefCount > 0;
+		public bool IsUsing => IsLoaded || IsRefered;
 
 		protected Dictionary<string, LoadOneAssetStatus> AssetStatusMap = new();
 		private IAssetBundleStatus _assetBundleStatusImplementation;
