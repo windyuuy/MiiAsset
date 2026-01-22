@@ -22,7 +22,7 @@ namespace MiiAsset.Runtime
 			this.CacheBaseUri = cacheBaseUri;
 		}
 
-		public string SourceBaseUri;
+		public readonly string SourceBaseUri;
 
 		public string GetSourceUri(string bundleName)
 		{
@@ -35,7 +35,7 @@ namespace MiiAsset.Runtime
 			return RemoteUriHandler.ConvertRemoteUri(SourceBaseUri, bundleName);
 		}
 
-		public string CacheBaseUri;
+		public readonly string CacheBaseUri;
 
 		public string GetCacheUri(string bundleName)
 		{
@@ -50,8 +50,8 @@ namespace MiiAsset.Runtime
 
 	public class CatalogStatus : IDisposable
 	{
-		public Dictionary<string, int> AllowedTags = new();
-		public Dictionary<string, IAssetBundleStatus> BundleLoadStatus = new();
+		public readonly Dictionary<string, int> AllowedTags = new();
+		public readonly Dictionary<string, IAssetBundleStatus> BundleLoadStatus = new();
 
 		public IAssetBundleStatus GetOrCreateStatus(string bundleName)
 		{

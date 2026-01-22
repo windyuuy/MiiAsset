@@ -6,23 +6,38 @@ namespace MiiAsset.Runtime
 {
 	public class CatalogInfo
 	{
-		public Dictionary<string, AssetBundleInfo> NameBundleMap = new();
-		public Dictionary<string, string> AddressBundleMap = new();
-		public Dictionary<string, string> GuidAddressMap = new();
+		public readonly Dictionary<string, AssetBundleInfo> NameBundleMap = new();
+		public readonly Dictionary<string, string> AddressBundleMap = new();
+		public readonly Dictionary<string, string> GuidAddressMap = new();
 
-		public Dictionary<string, HashSet<string>> BundleFlatRelationMap = new();
-		public Dictionary<string, HashSet<string>> TagFlatBundlesMap = new();
-		public Dictionary<string, ExtraAddressInfo> ExtraAddressInfoMap = new();
+		public readonly Dictionary<string, HashSet<string>> BundleFlatRelationMap = new();
+		public readonly Dictionary<string, HashSet<string>> TagFlatBundlesMap = new();
+		public readonly Dictionary<string, ExtraAddressInfo> ExtraAddressInfoMap = new();
 
 		/// <summary>
 		/// 合并后的bundle加载清单
 		/// </summary>
-		public Dictionary<string, IResourceLoadSource> BundleLoadSourceMap = new();
+		public readonly Dictionary<string, IResourceLoadSource> BundleLoadSourceMap = new();
 
-		public Dictionary<string, IResourceLoadSource> InternalBundles = new();
+		public readonly Dictionary<string, IResourceLoadSource> InternalBundles = new();
 
 		// record bundles cleaned before update
 		public readonly List<string> BundlesToClean = new();
+
+		public string[] GetAllBundleFileNames()
+		{
+			return NameBundleMap.Keys.ToArray();
+		}
+
+		public string[] GetAllBundleNames()
+		{
+			return NameBundleMap.Values.Select(v => v.bundleName).ToArray();
+		}
+
+		public AssetBundleInfo[] GetAllAssetBundleInfos()
+		{
+			return NameBundleMap.Values.ToArray();
+		}
 
 		public void GetTagsDependBundles(IEnumerable<string> tags, HashSet<string> depBundles)
 		{

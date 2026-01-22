@@ -26,6 +26,30 @@ namespace MiiAsset.Runtime
 			}
 		}
 
+		public string[] GetAllBundleNames()
+		{
+			var provider = GetBundledAssetProvider();
+			if (provider != null)
+			{
+				return provider.GetAllBundleNames();
+			}
+			else
+			{
+				return null;
+			}
+		}
+
+		public AssetBundleInfo[] GetAllAssetBundleInfos()
+		{
+			var provider = GetBundledAssetProvider();
+			if (provider != null)
+			{
+				return provider.GetAllAssetBundleInfos();
+			}
+
+			return null;
+		}
+
 		/// <summary>
 		/// 获取所有AssetBundle加载状态(包括已卸载的)
 		/// </summary>

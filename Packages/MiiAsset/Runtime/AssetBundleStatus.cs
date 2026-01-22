@@ -159,7 +159,6 @@ namespace MiiAsset.Runtime
 
 		public Task<PipelineResult> Load(CatalogInfo catalogInfo)
 		{
-			Debug.Assert(RefCount > 0, $"Bundle is not allowed: {this.BundleName}");
 			if (AssetBundle == null)
 			{
 				if (Task == null || (Task.IsCompleted &&
@@ -483,7 +482,7 @@ namespace MiiAsset.Runtime
 
 				await UnloadTask;
 				UnloadTask = null;
-				MyLogger.Log($"AssetBundle-unloaded: {this.BundleName}");
+				MyLogger.Log($"AssetBundle-UnLoaded: {this.BundleName}");
 
 			#if UNITY_EDITOR
 				BundleStatusNotify.OnBundleUnLoad?.Invoke(this);

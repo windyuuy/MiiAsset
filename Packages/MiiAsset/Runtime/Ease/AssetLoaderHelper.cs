@@ -5,23 +5,23 @@ namespace MiiAsset.Runtime
 {
 	public static class AssetLoaderHelper
 	{
-		static IEnumerator CheckLoadTimeout()
+		static IEnumerator CheckLoadTimeout(float checkTimeoutInterval)
 		{
 			while (true)
 			{
-				yield return new WaitForSeconds(2f);
+				yield return new WaitForSeconds(checkTimeoutInterval);
 				AssetLoader.CheckTimeout();
 			}
 		}
 
 		private static Coroutine CheckLoadTimeoutCo;
 
-		static IEnumerator RunDelayTask()
+		static IEnumerator RunDelayTask(float delayInterval)
 		{
 			while (true)
 			{
 				yield return null;
-				yield return new WaitForSeconds(15);
+				yield return new WaitForSeconds(delayInterval);
 				yield return new WaitForEndOfFrame();
 				AssetLoader.RunDelayedTasks();
 			}
@@ -29,7 +29,9 @@ namespace MiiAsset.Runtime
 
 		private static Coroutine RunDelayTaskCo;
 
-		public static void StartDefaultBackgroundTasks(MonoBehaviour loom)
+		public static void StartDefaultBackgroundTasks(MonoBehaviour loom,
+			float delayInterval = 2f,
+			float checkTimeoutInterval = 2f)
 		{
 			if (CheckLoadTimeoutCo != null)
 			{
@@ -37,7 +39,7 @@ namespace MiiAsset.Runtime
 				CheckLoadTimeoutCo = null;
 			}
 
-			CheckLoadTimeoutCo = loom.StartCoroutine(CheckLoadTimeout());
+			CheckLoadTimeoutCo = loom.StartCoroutine(CheckLoadTimeout(checkTimeoutInterval));
 
 			if (RunDelayTaskCo != null)
 			{
@@ -45,7 +47,7 @@ namespace MiiAsset.Runtime
 				RunDelayTaskCo = null;
 			}
 
-			RunDelayTaskCo = loom.StartCoroutine(RunDelayTask());
+			RunDelayTaskCo = loom.StartCoroutine(RunDelayTask(delayInterval));
 		}
 	}
 }
