@@ -84,30 +84,67 @@ namespace MiiAsset.Runtime
 			return false;
 		}
 
+		private void AllowTagOnly(string tag)
+		{
+			if (!AllowedTags.TryGetValue(tag, out var referCount))
+			{
+				referCount = 1;
+			}
+			else
+			{
+				referCount++;
+			}
+
+			AllowedTags[tag] = referCount;
+		}
+
+		private void DisllowTagOnly(string tag)
+		{
+			if (AllowedTags.TryGetValue(tag, out var referCount))
+			{
+				if (referCount > 0)
+				{
+					referCount--;
+					AllowedTags[tag] = referCount;
+				}
+				else
+				{
+					MyLogger.LogError($"tag referCount invalid: {tag}");
+				}
+			}
+		}
+
 		public void AllowTags(IEnumerable<string> tags, CatalogInfo catalogInfo)
 		{
 			foreach (var tag in tags)
 			{
-				if (!AllowedTags.TryGetValue(tag, out var referCount))
-				{
-					referCount = 1;
+				AllowTagOnly(tag);
 
-					var bundleNames = catalogInfo.GetTagDependBundles(tag);
-					if (bundleNames != null)
+				var bundleNames = catalogInfo.GetTagDependBundles(tag);
+				if (bundleNames != null)
+				{
+					foreach (var bundleName in bundleNames)
 					{
-						foreach (var bundleName in bundleNames)
-						{
-							var loadStatus = GetOrCreateStatus(bundleName);
-							++loadStatus.RefCount;
-						}
+						AllowTagOnly(bundleName);
 					}
 				}
-				else
-				{
-					referCount++;
-				}
+			}
+		}
 
-				AllowedTags[tag] = referCount;
+		public void DisallowTags(IEnumerable<string> tags, CatalogInfo catalogInfo)
+		{
+			foreach (var tag in tags)
+			{
+				DisllowTagOnly(tag);
+
+				var bundleNames = catalogInfo.GetTagDependBundles(tag);
+				if (bundleNames != null)
+				{
+					foreach (var bundleName in bundleNames)
+					{
+						DisllowTagOnly(bundleName);
+					}
+				}
 			}
 		}
 
@@ -134,16 +171,28 @@ namespace MiiAsset.Runtime
 			return downloadTask;
 		}
 
+		private void CheckAllowed(string bundleName)
+		{
+			var isAllowed = AllowedTags.TryGetValue(bundleName, out var refCount) && refCount > 0;
+			if (!isAllowed)
+			{
+				Debug.LogError($"Bundle is not allowed: {bundleName}");
+			}
+		}
+
 		public Task<PipelineResult[]> LoadTags(IEnumerable<string> tags, CatalogInfo catalogInfo,
 			AssetLoadStatusGroup loadStatus)
 		{
 			var bundleNames = new HashSet<string>();
 			catalogInfo.GetTagsDependBundles(tags, bundleNames);
-			var tasks = bundleNames.Select(bundleName =>
-			{
-				var status = GetOrCreateStatus(bundleName);
-				return status.Load(catalogInfo);
-			});
+			var tasks = bundleNames
+				.Select(bundleName =>
+				{
+					CheckAllowed(bundleName);
+					var loadStatus = GetOrCreateStatus(bundleName);
+					++loadStatus.RefCount;
+					return loadStatus.Load(catalogInfo);
+				});
 
 			if (loadStatus != null)
 			{
@@ -194,38 +243,25 @@ namespace MiiAsset.Runtime
 			var tasks = new List<Task>();
 			foreach (var tag in tags)
 			{
-				if (AllowedTags.TryGetValue(tag, out var referCount))
+				var bundleNames = catalogInfo.GetTagDependBundles(tag);
+				if (bundleNames != null)
 				{
-					if (referCount > 0)
+					foreach (var bundleName in bundleNames)
 					{
-						referCount--;
-						AllowedTags[tag] = referCount;
-					}
-					else
-					{
-						MyLogger.LogError($"tag referCount invalid: {tag}");
-					}
-
-					if (referCount == 0)
-					{
-						var bundleNames = catalogInfo.GetTagDependBundles(tag);
-						foreach (var bundleName in bundleNames)
+						var loadStatus = GetOrCreateStatus(bundleName);
+						if (loadStatus.RefCount > 0)
 						{
-							var loadStatus = GetOrCreateStatus(bundleName);
-							if (loadStatus.RefCount > 0)
-							{
-								--loadStatus.RefCount;
-							}
-							else
-							{
-								MyLogger.LogError($"bundle referCount invalid: {bundleName}");
-							}
+							--loadStatus.RefCount;
+						}
+						else
+						{
+							MyLogger.LogError($"bundle referCount invalid: {bundleName}");
+						}
 
-							if (loadStatus.RefCount == 0)
-							{
-								var task = TryDelayUnload(loadStatus);
-								tasks.Add(task);
-							}
+						if (loadStatus.RefCount == 0)
+						{
+							var task = TryDelayUnload(loadStatus);
+							tasks.Add(task);
 						}
 					}
 				}
@@ -256,6 +292,12 @@ namespace MiiAsset.Runtime
 					else if (loadStatus.RefCount == 0)
 					{
 						loadStatus.UnLoad();
+
+						if (loadStatus.AssetBundle == null)
+						{
+							TempList1.Add(loadStatus);
+							TempList2.Add(tsc);
+						}
 					}
 				}
 			}
@@ -307,21 +349,24 @@ namespace MiiAsset.Runtime
 		}
 
 		public Task<PipelineResult[]> LoadBundles(HashSet<string> deps, CatalogInfo catalogInfo,
-			AssetLoadStatusGroup loadStatus)
+			AssetLoadStatusGroup loadStatus0)
 		{
 			if (deps != null)
 			{
-				var task = Task.WhenAll(deps.Select(dep =>
-				{
-					var status = GetOrCreateStatus(dep);
-					return status.Load(catalogInfo);
-				}));
+				var task = Task.WhenAll(deps
+					.Select(dep =>
+					{
+						CheckAllowed(dep);
+						var loadStatus = GetOrCreateStatus(dep);
+						++loadStatus.RefCount;
+						return loadStatus.Load(catalogInfo);
+					}));
 
-				if (loadStatus != null)
+				if (loadStatus0 != null)
 				{
 					foreach (var status in deps.Select(GetOrCreateStatus))
 					{
-						loadStatus.Add(status);
+						loadStatus0.Add(status);
 					}
 				}
 
@@ -329,6 +374,29 @@ namespace MiiAsset.Runtime
 			}
 
 			return Task.FromResult(Array.Empty<PipelineResult>());
+		}
+
+		public Task UnLoadBundles(HashSet<string> deps)
+		{
+			if (deps != null)
+			{
+				var tasks = new List<Task>();
+				foreach (var dep in deps)
+				{
+					var loadStatus = GetOrCreateStatus(dep);
+					--loadStatus.RefCount;
+					if (loadStatus.RefCount == 0)
+					{
+						tasks.Add(TryDelayUnload(loadStatus));
+					}
+				}
+
+				return Task.WhenAll(tasks);
+			}
+			else
+			{
+				return Task.CompletedTask;
+			}
 		}
 
 		public Task<PipelineResult[]> GetLoadingBundlesTasks(HashSet<string> deps, CatalogInfo catalogInfo)
@@ -367,12 +435,14 @@ namespace MiiAsset.Runtime
 		{
 			if (deps != null)
 			{
-				var task = Task.WhenAll(deps.Select(dep =>
-				{
-					var bundleStatus = GetOrCreateStatus(dep);
-					++bundleStatus.RefCount;
-					return bundleStatus.Load(catalogInfo);
-				}));
+				var task = Task.WhenAll(deps
+					.Select(dep =>
+					{
+						CheckAllowed(dep);
+						var loadStatus = GetOrCreateStatus(dep);
+						++loadStatus.RefCount;
+						return loadStatus.Load(catalogInfo);
+					}));
 
 				if (loadStatus != null)
 				{
