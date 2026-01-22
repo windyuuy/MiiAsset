@@ -4,6 +4,7 @@ using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Encrypt;
 using MiiAsset.Runtime.IOManagers;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace MiiAsset.Runtime.Pipelines
 {
@@ -74,7 +75,6 @@ namespace MiiAsset.Runtime.Pipelines
 					}
 
 					AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
-					// AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
 					if (AssetBundle == null)
 					{
 						var bytes2 = await IOManager.LocalIOProto.ReadAllBytesAsync(Uri);
