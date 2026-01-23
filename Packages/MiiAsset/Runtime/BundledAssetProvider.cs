@@ -82,11 +82,19 @@ namespace MiiAsset.Runtime
 			return CatalogInfo.TryGetExtraAddressInfo(address, out extraAddressInfo);
 		}
 
+		/// <summary>
+		/// 获取所有bundle名
+		/// </summary>
+		/// <returns></returns>
 		public string[] GetAllBundleNames()
 		{
 			return CatalogInfo.GetAllBundleNames();
 		}
 
+		/// <summary>
+		/// 获取所有bundle文件名
+		/// </summary>
+		/// <returns></returns>
 		public string[] GetAllBundleFileNames()
 		{
 			return CatalogInfo.GetAllBundleFileNames();

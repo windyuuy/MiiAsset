@@ -26,12 +26,33 @@ namespace MiiAsset.Runtime
 			}
 		}
 
+		/// <summary>
+		/// 获取所有bundle名
+		/// </summary>
+		/// <returns></returns>
 		public string[] GetAllBundleNames()
 		{
 			var provider = GetBundledAssetProvider();
 			if (provider != null)
 			{
 				return provider.GetAllBundleNames();
+			}
+			else
+			{
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// 获取所有bundle文件名
+		/// </summary>
+		/// <returns></returns>
+		public string[] GetAllBundleFileNames()
+		{
+			var provider = GetBundledAssetProvider();
+			if (provider != null)
+			{
+				return provider.GetAllBundleFileNames();
 			}
 			else
 			{
