@@ -92,7 +92,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				referCount++;
+				++referCount;
 			}
 
 			AllowedTags[tag] = referCount;
@@ -104,7 +104,7 @@ namespace MiiAsset.Runtime
 			{
 				if (referCount > 0)
 				{
-					referCount--;
+					--referCount;
 					AllowedTags[tag] = referCount;
 				}
 				else
@@ -465,7 +465,7 @@ namespace MiiAsset.Runtime
 					}
 					else
 					{
-						MyLogger.LogError($"bundle referCount invalid: [{dep}], caused with unloading[{address}]");
+						MyLogger.LogError($"bundle referCount invalid: [{dep}], caused by unloading[{address}]");
 					}
 
 					if (loadStatus.RefCount == 0)
@@ -529,9 +529,9 @@ namespace MiiAsset.Runtime
 
 		public void Dispose()
 		{
-			foreach (var bundleLoadStatus in this.BundleLoadStatus)
+			foreach (var (_, bundleLoadStatus) in this.BundleLoadStatus)
 			{
-				bundleLoadStatus.Value.Dispose();
+				bundleLoadStatus.Dispose();
 			}
 
 			this.BundleLoadStatus.Clear();

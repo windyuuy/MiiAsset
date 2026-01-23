@@ -549,11 +549,6 @@ namespace MiiAsset.Runtime
 			return isAllLoaded;
 		}
 
-		public void Dispose()
-		{
-			this.CatalogStatus.Dispose();
-		}
-
 		public IAssetBundleStatus GetBundleStatus(string bundleName)
 		{
 			return this.CatalogStatus.GetStatus(bundleName);
@@ -583,6 +578,16 @@ namespace MiiAsset.Runtime
 		public Task<bool> CleanAllCaches()
 		{
 			return IOManager.LocalIOProto.CleanAllFileCaches();
+		}
+
+		public void Dispose()
+		{
+			UniAsyncUtils.SetTimeout(DelayDispose);
+		}
+
+		private void DelayDispose(float _)
+		{
+			CatalogStatus.Dispose();
 		}
 	}
 }
