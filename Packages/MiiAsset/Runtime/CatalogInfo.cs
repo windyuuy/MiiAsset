@@ -65,24 +65,31 @@ namespace MiiAsset.Runtime
 
 		public void GetAssetDependBundles(string address, out HashSet<string> deps)
 		{
-			if (AddressBundleMap.TryGetValue(address, out var bundle))
+			if (address != null)
 			{
-				if (BundleFlatRelationMap.TryGetValue(bundle, out var deps1))
+				if (AddressBundleMap.TryGetValue(address, out var bundle))
 				{
-					deps = deps1;
-					return;
+					if (BundleFlatRelationMap.TryGetValue(bundle, out var deps1))
+					{
+						deps = deps1;
+						return;
+					}
+				}
+				else
+				{
+					if (ExtraAddressInfoMap.ContainsKey(address))
+					{
+						MyLogger.LogError($"cannot load asset with extra-address1: {address}");
+					}
+					else
+					{
+						MyLogger.LogError($"asset not exist in any bundle1: {address}");
+					}
 				}
 			}
 			else
 			{
-				if (ExtraAddressInfoMap.ContainsKey(address))
-				{
-					MyLogger.LogError($"cannot load asset with extra-address1: {address}");
-				}
-				else
-				{
-					MyLogger.LogError($"asset not exist in any bundle1: {address}");
-				}
+				// MyLogger.LogError($"address is null-1: {address}");
 			}
 
 			deps = null;
