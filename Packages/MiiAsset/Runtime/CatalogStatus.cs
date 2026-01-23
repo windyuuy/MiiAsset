@@ -284,7 +284,7 @@ namespace MiiAsset.Runtime
 			{
 				if (tsc != null)
 				{
-					if (loadStatus.AssetBundle == null)
+					if (loadStatus.AssetBundle == null && loadStatus.IsUnLoaded)
 					{
 						TempList1.Add(loadStatus);
 						TempList2.Add(tsc);
@@ -292,12 +292,6 @@ namespace MiiAsset.Runtime
 					else if (loadStatus.RefCount == 0)
 					{
 						loadStatus.UnLoad();
-
-						if (loadStatus.AssetBundle == null)
-						{
-							TempList1.Add(loadStatus);
-							TempList2.Add(tsc);
-						}
 					}
 				}
 			}

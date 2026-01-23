@@ -18,6 +18,17 @@ namespace MiiAsset.Runtime
 		public AssetBundleRequest Op;
 	}
 
+	public enum AssetBundleLoadState
+	{
+		None = 0,
+		Donwloading,
+		Downloaded,
+		Loading,
+		Loaded,
+		Unloading,
+		Unloaded,
+	}
+
 	public interface IAssetBundleStatus : IAssetLoadStatus, IDisposable
 	{
 		public Task<PipelineResult> Task { get; }
@@ -35,6 +46,11 @@ namespace MiiAsset.Runtime
 		/// 未卸载的Bundle
 		/// </summary>
 		bool IsLoaded { get; }
+
+		/// <summary>
+		/// 未卸载的Bundle
+		/// </summary>
+		bool IsUnLoaded { get; }
 
 		/// <summary>
 		/// 引用计数>0
@@ -71,6 +87,7 @@ namespace MiiAsset.Runtime
 
 		public Task<PipelineResult> Task { get; set; } = null;
 		public int RefCount { get; set; }
+		public AssetBundleLoadState LoadState = AssetBundleLoadState.None;
 
 		internal ILoadAssetBundlePipeline LoadPipeline;
 		internal IDisposable Disposable;
@@ -230,12 +247,22 @@ namespace MiiAsset.Runtime
 				await unloadTask;
 			}
 
+			if (autoLoad)
+			{
+				LoadState = AssetBundleLoadState.Loading;
+			}
+			else
+			{
+				LoadState = AssetBundleLoadState.Donwloading;
+			}
+
 			if (!autoLoad && IOManager.LocalIOProto.ExistsBundle(this.BundleName))
 			{
 				MyLogger.Log($"AssetBundle-ExistExternal: {BundleName}");
 				IsDownloaded = 1;
 				_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
 				Result.SetOk();
+				LoadState = AssetBundleLoadState.Downloaded;
 				return Result;
 			}
 
@@ -251,6 +278,7 @@ namespace MiiAsset.Runtime
 					IsDownloaded = 2;
 					_downloadProgress = new PipelineProgress().SetDownloadedProgress(Result.IsOk);
 					Result.SetOk();
+					LoadState = AssetBundleLoadState.Downloaded;
 					return Result;
 				}
 			}
@@ -386,6 +414,7 @@ namespace MiiAsset.Runtime
 				this.LoadPipeline = null;
 
 				loadAssetBundlePipeline.Dispose();
+				LoadState = AssetBundleLoadState.Loaded;
 			}
 			else
 			{
@@ -443,6 +472,8 @@ namespace MiiAsset.Runtime
 					}
 				}
 
+				LoadState = AssetBundleLoadState.Downloaded;
+
 				return downloadResult;
 			}
 
@@ -456,6 +487,12 @@ namespace MiiAsset.Runtime
 
 		internal Task UnloadTask;
 
+		async Task UnloadAssetBundle()
+		{
+			await AssetBundle.UnloadAsync(true).GetTask();
+			LoadState = AssetBundleLoadState.Unloaded;
+		}
+
 		public async Task UnLoad()
 		{
 			Debug.Assert(RefCount == 0);
@@ -464,12 +501,14 @@ namespace MiiAsset.Runtime
 				await Task;
 			}
 
+			LoadState = AssetBundleLoadState.Unloading;
+
 			LoadedAssetMap.Clear();
 			LoadingAssetMap.Clear();
 
 			if (AssetBundle != null)
 			{
-				UnloadTask ??= this.AssetBundle.UnloadAsync(true).GetTask();
+				UnloadTask ??= UnloadAssetBundle();
 				if (Disposable != null)
 				{
 					Disposable.Dispose();
@@ -667,6 +706,7 @@ namespace MiiAsset.Runtime
 		}
 
 		public bool IsLoaded => this.AssetBundle != null;
+		public bool IsUnLoaded => this.UnloadTask == null;
 
 		public bool IsRefered => this.RefCount > 0;
 		public bool IsUsing => IsLoaded || IsRefered;
