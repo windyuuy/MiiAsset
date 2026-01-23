@@ -284,8 +284,7 @@ namespace MiiAsset.Runtime
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
 			await CatalogStatus.GetLoadingBundlesTasks(deps, CatalogInfo);
 			await UnloadAssetJust(address);
-			// await CatalogStatus.UnLoadBundles(deps);
-			// TODO: 确定是否释放资源
+			await CatalogStatus.UnLoadBundles(deps);
 		}
 
 		public string GetAddressFromGuid(string guid)
