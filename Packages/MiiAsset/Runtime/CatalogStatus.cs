@@ -491,22 +491,30 @@ namespace MiiAsset.Runtime
 
 		public IAssetBundleStatus GetOrCreateLoadStatusByAddress(string address, CatalogInfo catalogInfo)
 		{
-			if (catalogInfo.AddressBundleMap.TryGetValue(address, out var fileName))
+			if (address != null)
 			{
-				var bundleLoadStatus = this.GetOrCreateStatus(fileName);
-				return bundleLoadStatus;
-			}
-			else
-			{
-				if (catalogInfo.ExtraAddressInfoMap.ContainsKey(address))
+				if (catalogInfo.AddressBundleMap.TryGetValue(address, out var fileName))
 				{
-					MyLogger.LogError($"cannot load asset with extra-address3: {address}");
+					var bundleLoadStatus = this.GetOrCreateStatus(fileName);
+					return bundleLoadStatus;
 				}
 				else
 				{
-					MyLogger.LogError($"asset not exist in any bundle3: {address}");
-				}
+					if (catalogInfo.ExtraAddressInfoMap.ContainsKey(address))
+					{
+						MyLogger.LogError($"cannot load asset with extra-address3: {address}");
+					}
+					else
+					{
+						MyLogger.LogError($"asset not exist in any bundle3: {address}");
+					}
 
+					return null;
+				}
+			}
+			else
+			{
+				// MyLogger.LogError($"address is null-2: {address}");
 				return null;
 			}
 		}

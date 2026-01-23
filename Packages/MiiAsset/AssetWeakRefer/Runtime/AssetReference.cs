@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using MiiAsset.Runtime;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -38,7 +39,21 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		// ReSharper disable once InconsistentNaming
 		public string AssetGUID => guid;
 
-		public string Address => !string.IsNullOrEmpty(guid) ? AssetLoader.GetAddressFromGuid(guid) : null;
+		public string Address
+		{
+			get
+			{
+				var addressFromGuid = !string.IsNullOrEmpty(guid) ? AssetLoader.GetAddressFromGuid(guid) : null;
+				if (string.IsNullOrWhiteSpace(addressFromGuid))
+				{
+					var tip = addressFromGuid == null ? "null" : "";
+					MyLogger.LogError($"invalid guid2address: [{guid}] -> [{tip}]");
+				}
+
+				return addressFromGuid;
+			}
+		}
+
 		public object RuntimeKey => Address ?? guid;
 		public string DisplayInfo => $"Address: {Address}, Guid: {AssetGUID}";
 
@@ -299,10 +314,9 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		{
 		}
 	}
-	
+
 	[Serializable]
 	public class SceneAssetReference : AssetReference
 	{
-		
 	}
 }

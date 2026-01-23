@@ -309,7 +309,7 @@ namespace MiiAsset.Runtime
 		{
 			if (string.IsNullOrEmpty(address))
 			{
-				MyLogger.LogError($"address is null or empty(可能catalog为空,或者检查是否isremote选项不正确)");
+				MyLogger.LogError($"address is null or empty(可能catalog为空/未加载,或者检查是否isremote选项不正确)");
 			}
 		}
 
