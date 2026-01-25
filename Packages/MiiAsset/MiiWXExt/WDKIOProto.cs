@@ -279,12 +279,16 @@ namespace MiiAsset.Runtime.IOManagers
 			return files;
 		}
 
-		public Task<byte[]> ReadAllBytesAsync(string uri)
+		public Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler)
 		{
-			var ts = new TaskCompletionSource<byte[]>();
+			var ts = new TaskCompletionSource<T>();
 			FileSystemManager.ReadFileBytes(new()
 			{
-				success = (resp) => { ts.SetResult(resp.binData); },
+				success = (resp) =>
+				{
+					var result = handler(resp.binData);
+					ts.SetResult(result);
+				},
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
@@ -488,7 +492,8 @@ namespace MiiAsset.Runtime.IOManagers
 
 			try
 			{
-				UserAPI.Instance.FileSystem.GetFileSystemManager().CleanAllFileCache((ret) => { ts.TrySetResult(ret); });
+				UserAPI.Instance.FileSystem.GetFileSystemManager()
+					.CleanAllFileCache((ret) => { ts.TrySetResult(ret); });
 			}
 			catch (Exception exception)
 			{

@@ -17,10 +17,12 @@ namespace MiiAsset.Runtime.IOManagers
 		public string InternalDir { get; set; }
 		public string ExternalDir { get; set; }
 		public string CatalogName { get; set; }
+
 		/// <summary>
 		/// 秒
 		/// </summary>
 		public int Timeout { get; set; }
+
 		public bool IsInternalDirUpdating => false;
 
 		public Task<bool> Init(IIOProtoInitOptions options)
@@ -151,9 +153,9 @@ namespace MiiAsset.Runtime.IOManagers
 			return filePathInfos;
 		}
 
-		public Task<byte[]> ReadAllBytesAsync(string uri)
+		public Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler)
 		{
-			return Task.FromResult(File.ReadAllBytes(uri));
+			return Task.FromResult(handler(File.ReadAllBytes(uri)));
 		}
 
 		public Task WriteAllBytesAsync(string uri, byte[] bytes)
