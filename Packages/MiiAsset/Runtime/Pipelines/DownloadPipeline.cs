@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.IOStreams;
 using UnityEngine;
@@ -69,7 +70,7 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (OperationCanceledException cancelException)
 				{
-					Debug.LogException(cancelException);
+					MyLogger.LogException(cancelException);
 					result = new PipelineResult
 					{
 						IsOk = false,

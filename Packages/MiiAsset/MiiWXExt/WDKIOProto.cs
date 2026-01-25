@@ -35,10 +35,12 @@ namespace MiiAsset.Runtime.IOManagers
 		public string InternalDir { get; set; }
 		public string ExternalDir { get; set; }
 		public string CatalogName { get; set; }
+
 		/// <summary>
 		/// 秒
 		/// </summary>
 		public int Timeout { get; set; }
+
 		public bool IsInternalDirUpdating => true;
 		public static string StreamingCacheAssetPath;
 		public static string StreamingRemoteAssetPath;
@@ -490,10 +492,10 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 			catch (Exception exception)
 			{
-				Debug.LogException(exception);
+				MyLogger.LogException(exception);
 				ts.TrySetResult(false);
 			}
-			
+
 			return ts.Task;
 		}
 	}

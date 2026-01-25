@@ -141,7 +141,7 @@ namespace MiiAsset.Runtime.Pipelines
 			var internalHash = loadInternalHashPipeline?.Text;
 			var remoteHash = loadRemoteHashPipeline?.Text;
 			var externalHash = loadExternalHashPipeline?.Text;
-			Debug.Log(
+			MyLogger.Log(
 				$"UpdateCatalog: internalHash:{internalHash}, remoteHash:{remoteHash}, externalHash:{externalHash}");
 			var needUpdateCatalog = false;
 

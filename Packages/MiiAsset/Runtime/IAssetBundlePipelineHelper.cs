@@ -1,4 +1,5 @@
 ﻿using System;
+using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Pipelines;
 using UnityEngine;
@@ -73,14 +74,14 @@ namespace MiiAsset.Runtime
 			var exist = IOManager.LocalIOProto.Exists(localUri);
 			if (exist)
 			{
-				Debug.LogError($"delete invalid assetbundle {localUri}");
+				MyLogger.LogError($"delete invalid assetbundle {localUri}");
 				try
 				{
 					IOManager.LocalIOProto.Delete(localUri);
 				}
 				catch (Exception exception)
 				{
-					Debug.LogError($"cannot remove invalid assetbundle file: {localUri}");
+					MyLogger.LogError($"cannot remove invalid assetbundle file: {localUri}");
 					RemoteUriHandler.EmitException(exception);
 				}
 			}

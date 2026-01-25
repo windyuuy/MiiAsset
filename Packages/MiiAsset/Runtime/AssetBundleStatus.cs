@@ -315,7 +315,7 @@ namespace MiiAsset.Runtime
 					}
 					catch (Exception exception)
 					{
-						Debug.LogException(exception);
+						MyLogger.LogException(exception);
 						result = new PipelineResult
 						{
 							IsOk = false,
@@ -385,7 +385,7 @@ namespace MiiAsset.Runtime
 							++retryTimes;
 							if (retryTimes == 1)
 							{
-								Debug.Log($"AutoTryReloadAsset: {BundleName}");
+								MyLogger.Log($"AutoTryReloadAsset: {BundleName}");
 								continue;
 							}
 							else
@@ -397,7 +397,7 @@ namespace MiiAsset.Runtime
 								}
 								else
 								{
-									Debug.LogError($"无视资源异常, 继续流程: {BundleName}");
+									MyLogger.LogError($"无视资源异常, 继续流程: {BundleName}");
 								}
 							}
 						}

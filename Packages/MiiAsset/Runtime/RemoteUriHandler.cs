@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
 namespace MiiAsset.Runtime
@@ -56,7 +57,7 @@ namespace MiiAsset.Runtime
 
 		public static void DefaultExceptionHandler(Exception exception)
 		{
-			Debug.LogException(exception);
+			MyLogger.LogException(exception);
 		}
 	}
 }

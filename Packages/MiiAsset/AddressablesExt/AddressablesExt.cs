@@ -23,12 +23,12 @@ namespace MiiAsset.AddressablesExt
 					{
 						success = (resp) =>
 						{
-							Debug.Log("清理AA缓存成功");
+							MyLogger.Log("清理AA缓存成功");
 							ts.SetResult(true);
 						},
 						fail = (resp) =>
 						{
-							Debug.LogError($"remove aa-cache failed, errCode: {resp.ErrCode}, errMsg: {resp.ErrMsg}");
+							MyLogger.LogError($"remove aa-cache failed, errCode: {resp.ErrCode}, errMsg: {resp.ErrMsg}");
 							ts.SetResult(false);
 						},
 						dirPath = dir,
@@ -41,7 +41,7 @@ namespace MiiAsset.AddressablesExt
 					// }
 					// catch (Exception exception)
 					// {
-					// 	Debug.LogException(exception);
+					// 	MyLogger.LogException(exception);
 					// }
 				}
 				else
@@ -52,7 +52,7 @@ namespace MiiAsset.AddressablesExt
 			}
 			catch (Exception exception)
 			{
-				Debug.LogException(exception);
+				MyLogger.LogException(exception);
 				ts.SetResult(false);
 			}
 
@@ -67,7 +67,7 @@ namespace MiiAsset.AddressablesExt
 				}
 				catch (Exception exception)
 				{
-					Debug.LogException(exception);
+					MyLogger.LogException(exception);
 				}
 
 			#if !UNITY_WEBGL || UNITY_EDITOR
@@ -78,7 +78,7 @@ namespace MiiAsset.AddressablesExt
 				}
 				catch (Exception exception)
 				{
-					Debug.LogException(exception);
+					MyLogger.LogException(exception);
 					return Task.FromResult(false);
 				}
 			#else
