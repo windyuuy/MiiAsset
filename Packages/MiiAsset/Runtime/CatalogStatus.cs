@@ -176,7 +176,7 @@ namespace MiiAsset.Runtime
 			var isAllowed = AllowedTags.TryGetValue(bundleName, out var refCount) && refCount > 0;
 			if (!isAllowed)
 			{
-				Debug.LogError($"Bundle is not allowed: {bundleName}");
+				MyLogger.LogError($"Bundle is not allowed: {bundleName}");
 			}
 		}
 

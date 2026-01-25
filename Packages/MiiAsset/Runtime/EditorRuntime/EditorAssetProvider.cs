@@ -37,7 +37,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				Debug.Log("EditorAssetProvider Catalog Loaded Already");
+				MyLogger.Log("EditorAssetProvider Catalog Loaded Already");
 			}
 
 			return Task.FromResult(new PipelineResult
@@ -244,7 +244,7 @@ namespace MiiAsset.Runtime
 
 		public Task<bool> CleanAllCaches()
 		{
-			Debug.Log("编辑器清理缓存");
+			MyLogger.Log("编辑器清理缓存");
 			return Task.FromResult(true);
 		}
 
