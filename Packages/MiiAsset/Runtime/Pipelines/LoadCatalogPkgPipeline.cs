@@ -58,8 +58,11 @@ namespace MiiAsset.Runtime.Pipelines
 					bool isMatched;
 					if (ExternalHash != null)
 					{
-						var bytes = await IOManager.LocalIOProto.ReadAllBytesAsync(CatalogUri);
-						isMatched = CheckBytesContentHash(bytes, ExternalHash);
+						isMatched = await IOManager.LocalIOProto.ReadAllBytesAsync(CatalogUri, bytes =>
+						{
+							var isMatched1 = CheckBytesContentHash(bytes, ExternalHash);
+							return isMatched1;
+						});
 						if (!isMatched)
 						{
 							MyLogger.LogError($"File hash not matched, auto Invalidate: {CatalogUri}, {ExternalHash}");

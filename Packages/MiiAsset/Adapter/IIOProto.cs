@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine.Networking;
@@ -12,6 +13,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public string BundleCacheDir { get; }
 		public string CatalogName { get; }
 		public string CatalogExt { get; }
+
 		/// <summary>
 		/// 秒
 		/// </summary>
@@ -95,7 +97,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public FilePathInfo[] ReadDir(string readDir);
 
-		public Task<byte[]> ReadAllBytesAsync(string uri);
+		public Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler);
 		public Task WriteAllBytesAsync(string uri, byte[] bytes);
 		public void WriteAllBytes(string uri, byte[] bytes);
 
