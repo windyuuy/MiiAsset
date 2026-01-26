@@ -24,16 +24,28 @@ namespace MiiAsset.Runtime
 		// record bundles cleaned before update
 		public readonly List<string> BundlesToClean = new();
 
+		/// <summary>
+		/// 观测用
+		/// </summary>
+		/// <returns></returns>
 		public string[] GetAllBundleFileNames()
 		{
 			return NameBundleMap.Keys.ToArray();
 		}
 
+		/// <summary>
+		/// 观测用
+		/// </summary>
+		/// <returns></returns>
 		public string[] GetAllBundleNames()
 		{
 			return NameBundleMap.Values.Select(v => v.bundleName).ToArray();
 		}
 
+		/// <summary>
+		/// 观测用
+		/// </summary>
+		/// <returns></returns>
 		public AssetBundleInfo[] GetAllAssetBundleInfos()
 		{
 			return NameBundleMap.Values.ToArray();
