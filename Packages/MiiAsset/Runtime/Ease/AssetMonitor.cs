@@ -26,6 +26,8 @@ namespace MiiAsset.Runtime
 			}
 		}
 
+		public string[] AllBundleNames => GetAllBundleNames();
+
 		/// <summary>
 		/// 获取所有bundle名
 		/// </summary>
@@ -43,6 +45,8 @@ namespace MiiAsset.Runtime
 			}
 		}
 
+		public string[] AllBundleFileNames => GetAllBundleFileNames();
+
 		/// <summary>
 		/// 获取所有bundle文件名
 		/// </summary>
@@ -59,6 +63,8 @@ namespace MiiAsset.Runtime
 				return null;
 			}
 		}
+
+		public AssetBundleInfo[] AssetBundleInfos => GetAllAssetBundleInfos();
 
 		public AssetBundleInfo[] GetAllAssetBundleInfos()
 		{
@@ -81,16 +87,45 @@ namespace MiiAsset.Runtime
 		/// 获取所有AssetBundle加载状态(包括已卸载的)
 		/// </summary>
 		/// <returns></returns>
-		public Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatus()
+		public Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatusMap()
 		{
 			var provider = GetBundledAssetProvider();
 			if (provider != null)
 			{
-				return new Dictionary<string, IAssetBundleStatus>(provider.GetAllBundleLoadStatus());
+				return new Dictionary<string, IAssetBundleStatus>(provider.GetAllBundleLoadStatusesMap());
 			}
 
 			return null;
 		}
+
+		public Dictionary<string, IAssetBundleStatus> AllBundleLoadStatusMap => GetAllBundleLoadStatusMap();
+
+		public IAssetBundleStatus[] GetAllBundleLoadStatuses()
+		{
+			var provider = GetBundledAssetProvider();
+			if (provider != null)
+			{
+				return provider.GetAllBundleLoadStatuses();
+			}
+
+			return null;
+		}
+
+		public IAssetBundleStatus[] AllBundleLoadStatuses => GetAllBundleLoadStatuses();
+
+		public AssetBundle[] GetAllLoadedAssetBundles()
+		{
+			var provider = GetBundledAssetProvider();
+			if (provider != null)
+			{
+				return provider.GetAllLoadedAssetBundles();
+			}
+
+			return null;
+		}
+
+		public AssetBundle[] AllLoadedAssetBundles => GetAllLoadedAssetBundles();
+
 
 		/// <summary>
 		/// 正在使用中的AssetBundle加载状态
@@ -105,7 +140,7 @@ namespace MiiAsset.Runtime
 		private Dictionary<string, IAssetBundleStatus> GetUsingBundleLoadStatus()
 		{
 			var dictionary = new Dictionary<string, IAssetBundleStatus>();
-			foreach (var (key, value) in GetAllBundleLoadStatus())
+			foreach (var (key, value) in GetAllBundleLoadStatusMap())
 			{
 				if (value.IsUsing)
 				{
@@ -119,7 +154,7 @@ namespace MiiAsset.Runtime
 		/// <summary>
 		/// 所有bundle加载状态
 		/// </summary>
-		public Dictionary<string, IAssetBundleStatus> AllBundleLoadStatus => GetAllBundleLoadStatus();
+		public Dictionary<string, IAssetBundleStatus> AllBundleLoadStatus => GetAllBundleLoadStatusMap();
 
 		/// <summary>
 		/// 仅用于开发时观测加载状态, 正式版本要移除

@@ -572,9 +572,22 @@ namespace MiiAsset.Runtime
 			return deps;
 		}
 
-		public Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatus()
+		public Dictionary<string, IAssetBundleStatus> GetAllBundleLoadStatusesMap()
 		{
 			return CatalogStatus.BundleLoadStatus;
+		}
+
+		public IAssetBundleStatus[] GetAllBundleLoadStatuses()
+		{
+			return CatalogStatus.BundleLoadStatus.Values.ToArray();
+		}
+
+		public AssetBundle[] GetAllLoadedAssetBundles()
+		{
+			return CatalogStatus.BundleLoadStatus
+				.Select(p => p.Value.AssetBundle)
+				.Where(assetBundle => assetBundle != null)
+				.ToArray();
 		}
 
 		public void RunDelayedTasks()
