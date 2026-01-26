@@ -13,6 +13,7 @@ using MonoExtLib.AsyncExt;
 
 #if UNITY_WEBGL && SUPPORT_WDK
 using Lang.Encoding;
+using MiiAsset.Runtime.Utils;
 
 namespace MiiAsset.Runtime.IOManagers
 {
@@ -147,8 +148,8 @@ namespace MiiAsset.Runtime.IOManagers
 			var ts = new TaskCompletionSource<bool>();
 			FileSystemManager.WriteFileText(new()
 			{
-				success = (resp) => { ts.SetResult(true); },
-				fail = (resp) => { ts.SetResult(false); },
+				success = (resp) => { JsDelay.DelayExec(() =>ts.SetResult(true)); },
+				fail = (resp) => { JsDelay.DelayExec(() =>ts.SetResult(false)); },
 				filePath = cacheUri,
 				data = text,
 				encoding = "utf-8",
@@ -181,13 +182,13 @@ namespace MiiAsset.Runtime.IOManagers
 					success = (resp) =>
 					{
 						var data = resp.stringData;
-						ts.SetResult(data);
+						JsDelay.DelayExec(() =>ts.SetResult(data));
 					},
 					fail = (resp) =>
 					{
 						var exception = new IOException(resp.GetExceptionDesc($"read-file-failed: {uri}"));
 						MyLogger.LogException(exception);
-						ts.SetException(exception);
+						JsDelay.DelayExec(() =>ts.SetException(exception));
 					},
 					filePath = uri,
 					encoding = "utf-8",
@@ -287,13 +288,13 @@ namespace MiiAsset.Runtime.IOManagers
 				success = (resp) =>
 				{
 					var result = handler(resp.binData);
-					ts.SetResult(result);
+					JsDelay.DelayExec(() => ts.SetResult(result));
 				},
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
 					MyLogger.LogException(exception);
-					ts.SetException(exception);
+					JsDelay.DelayExec(() => ts.SetException(exception));
 				},
 				filePath = uri,
 			});
@@ -305,12 +306,12 @@ namespace MiiAsset.Runtime.IOManagers
 			var ts = new TaskCompletionSource<bool>();
 			FileSystemManager.WriteFileBytes(new()
 			{
-				success = (resp) => { ts.SetResult(true); },
+				success = (resp) => { JsDelay.DelayExec(() => ts.SetResult(true)); },
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("write-file-failed"));
 					MyLogger.LogException(exception);
-					ts.SetException(exception);
+					JsDelay.DelayExec(() => ts.SetException(exception));
 				},
 				data = bytes,
 				filePath = uri,
