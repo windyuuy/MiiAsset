@@ -134,14 +134,14 @@ namespace MiiAsset.Runtime
 				}
 				catch (Exception exception2)
 				{
-					MyLogger.LogException(exception2);
+					MyLogger.LogException(exception2, "e1");
 				}
 
 				return result;
 			}
 			catch (Exception exception)
 			{
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e2");
 
 				_loadCatalogTaskSource?.SetResult(false);
 				_loadCatalogTaskSource = null;
@@ -161,14 +161,14 @@ namespace MiiAsset.Runtime
 				}
 				catch (Exception exception2)
 				{
-					MyLogger.LogException(exception2);
+					MyLogger.LogException(exception2, "e3");
 				}
 
 				return result;
 			}
 			catch (Exception exception)
 			{
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e4");
 				_loadCatalogTaskSource?.SetResult(false);
 				_loadCatalogTaskSource = null;
 				throw;
@@ -477,7 +477,7 @@ namespace MiiAsset.Runtime
 			}
 			catch (Exception exception)
 			{
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e5");
 				_ = IOManager.Widget.ShowToast(exception.Message, 5);
 				throw;
 			}
@@ -504,7 +504,7 @@ namespace MiiAsset.Runtime
 			catch (Exception exception)
 			{
 				MyLogger.LogError($"Unexpected Error loading {address}");
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e6");
 				TimeoutMap.Remove(node);
 				_ = IOManager.Widget.ShowToast(exception.Message, 5);
 				throw;
@@ -558,7 +558,7 @@ namespace MiiAsset.Runtime
 			}
 			catch (Exception exception)
 			{
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e7");
 				_ = IOManager.Widget.ShowToast(exception.Message, 5);
 				throw;
 			}
@@ -587,7 +587,7 @@ namespace MiiAsset.Runtime
 			catch (Exception exception)
 			{
 				MyLogger.LogError($"Unexpected Error loading {sceneAddress}");
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e8");
 				TimeoutMap.Remove(node);
 				_ = IOManager.Widget.ShowToast(exception.Message, 5);
 				throw;

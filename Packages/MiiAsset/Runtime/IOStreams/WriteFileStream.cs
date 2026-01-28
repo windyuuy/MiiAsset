@@ -66,7 +66,7 @@ namespace MiiAsset.Runtime.IOStreams
 					catch (Exception exception)
 					{
 						// Result.ErrorType = PipelineErrorType.FileSystemError;
-						MyLogger.LogException(exception);
+						MyLogger.LogException(exception, "e32");
 					}
 				}
 				else
@@ -89,7 +89,7 @@ namespace MiiAsset.Runtime.IOStreams
 						Result.Exception = exception;
 						Result.ErrorType = PipelineErrorType.FileSystemError;
 						Result.IsOk = false;
-						// MyLogger.LogException(exception);
+						// MyLogger.LogException(exception, "e33");
 					}
 				}
 

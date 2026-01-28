@@ -51,11 +51,19 @@ namespace MiiAsset.Runtime.Adapter
 			}
 		}
 
-		public static void LogException(Exception exception)
+		public static void LogException(Exception exception, string tip)
 		{
 			if (Level >= LogLevel.Error)
 			{
-				Debug.LogException(exception);
+				// Debug.LogError(tip);
+				if (exception == null)
+				{
+					Debug.LogError("exception is null");
+				}
+				else
+				{
+					Debug.LogException(exception);
+				}
 			}
 		}
 

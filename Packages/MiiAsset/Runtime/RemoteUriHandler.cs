@@ -57,7 +57,7 @@ namespace MiiAsset.Runtime
 
 		public static void DefaultExceptionHandler(Exception exception)
 		{
-			MyLogger.LogException(exception);
+			MyLogger.LogException(exception, "e46");
 		}
 	}
 }

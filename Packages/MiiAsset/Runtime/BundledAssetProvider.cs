@@ -482,7 +482,7 @@ namespace MiiAsset.Runtime
 						}
 						catch (Exception exception)
 						{
-							MyLogger.LogException(exception);
+							MyLogger.LogException(exception, "e24");
 							failedList.Add(filePath);
 						}
 					}
@@ -497,7 +497,7 @@ namespace MiiAsset.Runtime
 						}
 						catch (Exception exception)
 						{
-							MyLogger.LogException(exception);
+							MyLogger.LogException(exception, "e25");
 							failedList.Add(filePath);
 						}
 					}
@@ -530,7 +530,7 @@ namespace MiiAsset.Runtime
 						}
 						catch (Exception exception)
 						{
-							MyLogger.LogException(exception);
+							MyLogger.LogException(exception, "e26");
 							failedList.Add(filePath);
 						}
 					}

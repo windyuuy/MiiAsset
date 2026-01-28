@@ -63,7 +63,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogException(new NotInTagsBundleSetException($"{address}"));
+				MyLogger.LogException(new NotInTagsBundleSetException($"{address}"), "e47");
 				return default;
 			}
 		}
@@ -82,7 +82,7 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
-				MyLogger.LogException(new NotInTagsBundleSetException($"{sceneAddress}"));
+				MyLogger.LogException(new NotInTagsBundleSetException($"{sceneAddress}"), "e48");
 				return default;
 			}
 		}

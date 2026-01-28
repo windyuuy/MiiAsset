@@ -70,7 +70,7 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (OperationCanceledException cancelException)
 				{
-					MyLogger.LogException(cancelException);
+					MyLogger.LogException(cancelException, "e35");
 					result = new PipelineResult
 					{
 						IsOk = false,

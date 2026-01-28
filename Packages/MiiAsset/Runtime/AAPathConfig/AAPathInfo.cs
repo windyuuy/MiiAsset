@@ -178,9 +178,9 @@ namespace MiiAsset.Runtime
 					groupInfo.IsEncrypt = isEncryptAll || config.isEncrypt;
 					return groupInfo;
 				}
-				catch (Exception e)
+				catch (Exception exception)
 				{
-					MyLogger.LogException(e);
+					MyLogger.LogException(exception, "e22");
 				}
 			}
 

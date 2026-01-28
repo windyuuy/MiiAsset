@@ -53,7 +53,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 			catch (Exception exception)
 			{
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e29");
 				return false;
 			}
 		}
@@ -113,7 +113,11 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<string> ReadAllTextAsync(string uri, Encoding encoding)
 		{
+		#if UNITY_WEBGL
+			return Task.FromResult(File.ReadAllText(uri, encoding));
+		#else
 			return File.ReadAllTextAsync(uri, encoding);
+		#endif
 		}
 
 		public void Move(string from, string uri)
@@ -188,6 +192,10 @@ namespace MiiAsset.Runtime.IOManagers
 				uwr.disposeCertificateHandlerOnDispose = false;
 				uwr.timeout = this.Timeout;
 			}
+
+			// MyLogger.Log("Access-Control-Allow-Origin: *");
+			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "*");
+			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "http://127.0.0.1:8080");
 		}
 
 		public Task<bool> CleanAllFileCaches()
@@ -204,7 +212,7 @@ namespace MiiAsset.Runtime.IOManagers
 				catch (Exception e)
 				{
 					succeed = false;
-					MyLogger.LogException(e);
+					MyLogger.LogException(e, "e30");
 				}
 			}
 

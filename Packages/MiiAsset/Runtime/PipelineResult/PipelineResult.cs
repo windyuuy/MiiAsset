@@ -66,7 +66,7 @@ namespace MiiAsset.Runtime
 
 				if (this.Exception != null)
 				{
-					MyLogger.LogException(this.Exception);
+					MyLogger.LogException(this.Exception, "e34");
 				}
 			}
 			else

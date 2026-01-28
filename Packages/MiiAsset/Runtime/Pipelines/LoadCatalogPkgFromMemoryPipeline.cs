@@ -58,7 +58,7 @@ namespace MiiAsset.Runtime.Pipelines
 					}
 					catch (Exception exception)
 					{
-						MyLogger.LogException(exception);
+						MyLogger.LogException(exception, "e38");
 					}
 
 					if (string.IsNullOrWhiteSpace(Text))
@@ -72,12 +72,12 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (Exception exception)
 				{
-					MyLogger.LogException(exception);
+					MyLogger.LogException(exception, "e39");
 				}
 			}
 			catch (Exception ex)
 			{
-				MyLogger.LogException(ex);
+				MyLogger.LogException(ex, "e40");
 				Result.ErrorType = PipelineErrorType.DataIncorrect;
 				Result.Exception = ex;
 			}

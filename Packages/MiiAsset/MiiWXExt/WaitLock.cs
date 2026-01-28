@@ -48,7 +48,7 @@
 					else
 					{
 						var ioException = new IOException(reason);
-						MyLogger.LogException(ioException);
+						MyLogger.LogException(ioException, "e21");
 						_tcs.SetException(ioException);
 					}
 				}

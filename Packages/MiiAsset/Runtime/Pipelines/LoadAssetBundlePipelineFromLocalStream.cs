@@ -134,7 +134,7 @@ namespace MiiAsset.Runtime.Pipelines
 							catch (Exception exception)
 							{
 								MyLogger.LogError("assetBundle.Unload(false)-failed");
-								MyLogger.LogException(exception);
+								MyLogger.LogException(exception, "e37");
 							}
 						}
 

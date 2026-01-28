@@ -315,7 +315,7 @@ namespace MiiAsset.Runtime
 					}
 					catch (Exception exception)
 					{
-						MyLogger.LogException(exception);
+						MyLogger.LogException(exception, "e23");
 						result = new PipelineResult
 						{
 							IsOk = false,

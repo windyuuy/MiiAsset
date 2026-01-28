@@ -112,7 +112,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 			catch (Exception exception)
 			{
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e13");
 				return false;
 			}
 		}
@@ -148,8 +148,8 @@ namespace MiiAsset.Runtime.IOManagers
 			var ts = new TaskCompletionSource<bool>();
 			FileSystemManager.WriteFileText(new()
 			{
-				success = (resp) => { JsDelay.DelayExec(() =>ts.SetResult(true)); },
-				fail = (resp) => { JsDelay.DelayExec(() =>ts.SetResult(false)); },
+				success = (resp) => { JsDelay.DelayExec(() => ts.SetResult(true)); },
+				fail = (resp) => { JsDelay.DelayExec(() => ts.SetResult(false)); },
 				filePath = cacheUri,
 				data = text,
 				encoding = "utf-8",
@@ -182,13 +182,13 @@ namespace MiiAsset.Runtime.IOManagers
 					success = (resp) =>
 					{
 						var data = resp.stringData;
-						JsDelay.DelayExec(() =>ts.SetResult(data));
+						JsDelay.DelayExec(() => ts.SetResult(data));
 					},
 					fail = (resp) =>
 					{
 						var exception = new IOException(resp.GetExceptionDesc($"read-file-failed: {uri}"));
-						MyLogger.LogException(exception);
-						JsDelay.DelayExec(() =>ts.SetException(exception));
+						MyLogger.LogException(exception, "e14");
+						JsDelay.DelayExec(() => ts.SetException(exception));
 					},
 					filePath = uri,
 					encoding = "utf-8",
@@ -293,7 +293,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("read-file-failed"));
-					MyLogger.LogException(exception);
+					MyLogger.LogException(exception, "e15");
 					JsDelay.DelayExec(() => ts.SetException(exception));
 				},
 				filePath = uri,
@@ -310,7 +310,7 @@ namespace MiiAsset.Runtime.IOManagers
 				fail = (resp) =>
 				{
 					var exception = new IOException(resp.GetExceptionDesc("write-file-failed"));
-					MyLogger.LogException(exception);
+					MyLogger.LogException(exception, "e16");
 					JsDelay.DelayExec(() => ts.SetException(exception));
 				},
 				data = bytes,
@@ -429,6 +429,10 @@ namespace MiiAsset.Runtime.IOManagers
 				uwr.disposeCertificateHandlerOnDispose = false;
 				uwr.timeout = this.Timeout;
 			}
+
+			// MyLogger.Log("Access-Control-Allow-Origin: *");
+			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "*");
+			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "http://127.0.0.1:8080");
 		}
 
 		public Task<bool> CleanAllFileCaches()
@@ -445,7 +449,7 @@ namespace MiiAsset.Runtime.IOManagers
 				}
 				catch (Exception exception3)
 				{
-					MyLogger.LogException(exception3);
+					MyLogger.LogException(exception3, "e17");
 					MyLogger.LogError($"ReaddirSync failed: {this.ExternalDir}");
 				}
 
@@ -457,7 +461,7 @@ namespace MiiAsset.Runtime.IOManagers
 				}
 				catch (Exception exception4)
 				{
-					MyLogger.LogException(exception4);
+					MyLogger.LogException(exception4, "e18");
 					MyLogger.LogError($"ReaddirSync failed: {this.CacheDir}");
 				}
 
@@ -473,7 +477,7 @@ namespace MiiAsset.Runtime.IOManagers
 						}
 						catch (Exception exception2)
 						{
-							MyLogger.LogException(exception2);
+							MyLogger.LogException(exception2, "e20");
 							MyLogger.LogError($"delete file failed: {file}");
 						}
 					}
@@ -488,7 +492,7 @@ namespace MiiAsset.Runtime.IOManagers
 			catch (Exception exception1)
 			{
 				MyLogger.LogError("read dirs failed");
-				MyLogger.LogException(exception1);
+				MyLogger.LogException(exception1, "e20");
 			}
 
 			try
@@ -498,7 +502,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 			catch (Exception exception)
 			{
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e20");
 				ts.TrySetResult(false);
 			}
 

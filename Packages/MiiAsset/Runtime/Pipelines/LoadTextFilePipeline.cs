@@ -37,7 +37,7 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (Exception ex)
 				{
-					MyLogger.LogException(ex);
+					MyLogger.LogException(ex, "e43");
 					Result.ErrorType = PipelineErrorType.FileSystemError;
 					Result.Exception = ex;
 				}

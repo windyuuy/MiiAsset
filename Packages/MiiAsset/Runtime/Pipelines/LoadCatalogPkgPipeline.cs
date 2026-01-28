@@ -97,7 +97,7 @@ namespace MiiAsset.Runtime.Pipelines
 				}
 				catch (Exception ex)
 				{
-					MyLogger.LogException(ex);
+					MyLogger.LogException(ex, "e3");
 					Result.ErrorType = PipelineErrorType.DataIncorrect;
 					Result.Exception = ex;
 				}

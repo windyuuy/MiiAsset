@@ -142,7 +142,7 @@ namespace MiiAsset.Runtime
 						result.Exception ??= exception;
 						result.IsOk = false;
 						result.ErrorType = PipelineErrorType.CatalogIncorrect;
-						MyLogger.LogException(exception);
+						MyLogger.LogException(exception, "e27");
 					}
 				}
 			}

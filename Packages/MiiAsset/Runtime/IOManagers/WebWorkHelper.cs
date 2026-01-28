@@ -41,7 +41,7 @@ namespace MiiAsset.Runtime.IOManagers
 				}
 				catch (Exception exception)
 				{
-					MyLogger.LogException(exception);
+					MyLogger.LogException(exception, "e31");
 				}
 			}
 

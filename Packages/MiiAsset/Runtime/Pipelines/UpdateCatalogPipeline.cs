@@ -242,7 +242,7 @@ namespace MiiAsset.Runtime.Pipelines
 				{
 					var errMsg = $"{invalidJsonFormat}{internalCatalogUri}";
 					MyLogger.LogError(errMsg);
-					MyLogger.LogException(exception);
+					MyLogger.LogException(exception, "e44");
 					Result = new()
 					{
 						IsOk = false,
@@ -271,7 +271,7 @@ namespace MiiAsset.Runtime.Pipelines
 				{
 					var errMsg = $"{invalidJsonFormat}{externalCatalogUri}";
 					MyLogger.LogError(errMsg);
-					MyLogger.LogException(exception);
+					MyLogger.LogException(exception, "e45");
 					Result = new()
 					{
 						IsOk = false,

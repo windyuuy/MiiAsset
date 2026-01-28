@@ -103,7 +103,7 @@ namespace MiiAsset.Runtime.Pipelines
 					{
 						Result.Exception = exception;
 						MyLogger.LogError($"download-failed: {UnescapeUri}");
-						MyLogger.LogException(exception);
+						MyLogger.LogException(exception, "e42");
 					}
 
 					if (!Result.IsOk)

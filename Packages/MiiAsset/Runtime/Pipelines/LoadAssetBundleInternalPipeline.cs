@@ -96,7 +96,7 @@ namespace MiiAsset.Runtime.Pipelines
 			catch (Exception exception)
 			{
 				Result.ErrorType = PipelineErrorType.NetError;
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e36");
 			}
 
 			return Result;

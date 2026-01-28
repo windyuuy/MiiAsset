@@ -41,7 +41,7 @@ namespace MiiAsset.AddressablesExt
 					// }
 					// catch (Exception exception)
 					// {
-					// 	MyLogger.LogException(exception);
+					// 	MyLogger.LogException(exception, "e9");
 					// }
 				}
 				else
@@ -52,7 +52,7 @@ namespace MiiAsset.AddressablesExt
 			}
 			catch (Exception exception)
 			{
-				MyLogger.LogException(exception);
+				MyLogger.LogException(exception, "e10");
 				ts.SetResult(false);
 			}
 
@@ -67,7 +67,7 @@ namespace MiiAsset.AddressablesExt
 				}
 				catch (Exception exception)
 				{
-					MyLogger.LogException(exception);
+					MyLogger.LogException(exception, "e11");
 				}
 
 			#if !UNITY_WEBGL || UNITY_EDITOR
@@ -78,7 +78,7 @@ namespace MiiAsset.AddressablesExt
 				}
 				catch (Exception exception)
 				{
-					MyLogger.LogException(exception);
+					MyLogger.LogException(exception, "e12");
 					return Task.FromResult(false);
 				}
 			#else

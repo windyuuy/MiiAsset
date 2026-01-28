@@ -18,7 +18,7 @@ namespace MiiAsset.Runtime.Adapter
 			#if SUPPORT_WDK
 			this.Adapt(new WDKAdapter());
 			#else
-			MyLogger.LogError($"not sdk adapter for webgl platform: {UnityEngine.Application.platform}");
+			MyLogger.LogError($"no sdk adapter for webgl platform: {UnityEngine.Application.platform}");
 			#endif
 		#endif
 		}
