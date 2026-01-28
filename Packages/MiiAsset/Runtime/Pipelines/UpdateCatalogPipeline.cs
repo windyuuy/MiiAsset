@@ -192,8 +192,9 @@ namespace MiiAsset.Runtime.Pipelines
 				if (loadInternalCatalogTask != null)
 				{
 					// await Task.WhenAll(loadInternalCatalogTask, loadExternalCatalogPipeline.Run());
+					var loadExternalCatalogTask = loadExternalCatalogPipeline.Run();
 					await loadInternalCatalogTask;
-					await loadExternalCatalogPipeline.Run();
+					await loadExternalCatalogTask;
 				}
 				else
 				{
