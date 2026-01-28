@@ -94,9 +94,16 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public async Task<string> ReadCatalog(string uri)
 		{
-			await using var fileStream = File.OpenRead(uri);
+		#if UNITY_WEBGL
+			// WebGL不支持异步API
+			// ReSharper disable once MethodHasAsyncOverload
+			var bytes = File.ReadAllBytes(uri);
+			using var readBytesStream = new MemoryStream(bytes);
+		#else
+			await using var readBytesStream = File.OpenRead(uri);
+		#endif
 			using var reader = new StreamReader(
-				new BrotliStream(fileStream, CompressionMode.Decompress));
+				new BrotliStream(readBytesStream, CompressionMode.Decompress));
 			var text = await reader.ReadToEndAsync();
 			return text;
 		}
