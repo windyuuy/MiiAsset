@@ -114,6 +114,7 @@ namespace MiiAsset.Runtime.Pipelines
 			var loadInternalCatalogTask = loadInternalCatalogPipeline?.Run();
 
 			await loadHashPipelinesTask;
+			MyLogger.Log($"loadHashPipelinesTask-done");
 
 			IsHashLoaded = true;
 
@@ -180,10 +181,11 @@ namespace MiiAsset.Runtime.Pipelines
 				return loadExternalCatalogPipeline;
 			}
 
-
 			using var loadExternalCatalogPipeline = DetermineLoadExternalHashPipeline();
 
 			LoadExternalCatalogPipeline = loadExternalCatalogPipeline;
+
+			MyLogger.Log($"DetermineLoadExternalHashPipeline: {loadExternalCatalogPipeline?.GetType()?.FullName}");
 
 			if (loadExternalCatalogPipeline != null)
 			{
@@ -215,6 +217,8 @@ namespace MiiAsset.Runtime.Pipelines
 				};
 				return Result;
 			}
+
+			MyLogger.Log($"LoadCatalogPipelines-done");
 
 			if (loadInternalCatalogPipeline != null && loadInternalCatalogPipeline.Result.IsOk == false)
 			{
@@ -288,6 +292,8 @@ namespace MiiAsset.Runtime.Pipelines
 				externalCatalog = null;
 			}
 
+			MyLogger.Log($"LoadCatalogJsons-done");
+
 			// update hash file
 			if (needUpdateCatalog)
 			{
@@ -295,8 +301,11 @@ namespace MiiAsset.Runtime.Pipelines
 					EncodingExt.UTF8WithoutBom);
 			}
 
+			MyLogger.Log($"WriteCatalogHash-done");
+
 			this.HandleCatalog(internalCatalog, externalCatalog, remoteBaseUri);
 
+			MyLogger.Log($"HandleCatalog-done");
 			// loadExternalHashPipeline?.Dispose();
 			// loadExternalCatalogPipeline?.Dispose();
 
