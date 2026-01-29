@@ -55,7 +55,7 @@ namespace MiiAsset.Runtime.Adapter
 		{
 			if (Level >= LogLevel.Error)
 			{
-				// Debug.LogError(tip);
+				Debug.LogError($"exception-tip: {tip}");
 				if (exception == null)
 				{
 					Debug.LogError("exception is null");

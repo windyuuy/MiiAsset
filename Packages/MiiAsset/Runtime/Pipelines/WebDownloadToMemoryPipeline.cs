@@ -42,7 +42,7 @@ namespace MiiAsset.Runtime.IOStreams
 					await op.GetTask();
 					var code = (int)uwr.responseCode;
 					var uwrError = uwr.error;
-					var uwrResult = uwr.result;
+					var uwrResult = uwr.GetUwrResult();
 
 					Bytes = uwr.downloadHandler.data;
 

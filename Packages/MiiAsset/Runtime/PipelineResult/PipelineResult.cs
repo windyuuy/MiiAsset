@@ -88,30 +88,30 @@ namespace MiiAsset.Runtime
 		public void SetWithUwr(UnityWebRequest uwr)
 		{
 			// TODO: uwr.result 获取抛异常
-			bool isOk = false;
-			try
-			{
-				isOk = uwr.result == UnityWebRequest.Result.Success;
-			}
-			catch (ArgumentNullException exception3)
-			{
-				isOk = false;
-				MyLogger.LogException(exception3, "e49");
-				// 此处可能下载已经完成, 但是内部状态异常, 先算作失败
-			}
+			bool isOk = uwr.IsUwrOk();
 
 			this.IsOk = isOk;
-			var uwrError = uwr.error;
-			var code = (int)uwr.responseCode;
-			this.Exception = isOk ? null : new Exception(uwrError ?? "null");
-			this.Code = code;
-			this.Msg = uwrError;
-			this.ErrorType = PipelineErrorType.NetError;
-			this.Status = PipelineStatus.Done;
 
-			if (!isOk)
+			try
 			{
-				MyLogger.LogError($"download-failed: {code}, {uwrError}");
+				var uwrError = uwr.error;
+				var code = (int)uwr.responseCode;
+				this.Exception = isOk ? null : new Exception(uwrError ?? "null");
+				this.Code = code;
+				this.Msg = uwrError;
+				this.ErrorType = PipelineErrorType.NetError;
+				this.Status = PipelineStatus.Done;
+
+				if (!isOk)
+				{
+					MyLogger.LogError($"download-failed: {code}, {uwrError}");
+				}
+			}
+			catch (Exception exception)
+			{
+				this.Exception = exception;
+				this.ErrorType = PipelineErrorType.DataIncorrect;
+				MyLogger.LogException(exception, "e51");
 			}
 		}
 

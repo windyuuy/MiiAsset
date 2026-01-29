@@ -256,6 +256,8 @@ namespace MiiAsset.Runtime
 				LoadState = AssetBundleLoadState.Donwloading;
 			}
 
+			// MyLogger.Log(
+				// $"AssetBundle-ExistExternal: {IOManager.LocalIOProto.ExistsBundle(this.BundleName)}, {BundleName}");
 			if (!autoLoad && IOManager.LocalIOProto.ExistsBundle(this.BundleName))
 			{
 				MyLogger.Log($"AssetBundle-ExistExternal: {BundleName}");
@@ -271,7 +273,7 @@ namespace MiiAsset.Runtime
 			{
 				// try load from internal
 				var result = await IOManager.LocalIOProto.EnsureStreamingBundles(this.BundleName);
-				isInternalBundleExist = result == EnsureStreamingBundlesResult.Exist;
+				isInternalBundleExist = result is EnsureStreamingBundlesResult.Exist or EnsureStreamingBundlesResult.Downloaded;
 				if (isInternalBundleExist && !autoLoad)
 				{
 					MyLogger.Log($"AssetBundle-ExistInternal: {BundleName}");

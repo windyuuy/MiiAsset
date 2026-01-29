@@ -30,7 +30,7 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 	}
 
-	public class WDKIOProto : IIOProto
+	public sealed class WDKIOProto : IIOProto
 	{
 		public string CacheDir { get; set; }
 		public string InternalDir { get; set; }
@@ -228,26 +228,26 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 		}
 
-		public bool ExistsBundle(string bundleName)
+		public bool ExistsBundle(string bundleFileName)
 		{
 			InitBundleExistMap();
-			return BundleExistMap.ContainsKey(bundleName);
+			return BundleExistMap.ContainsKey(bundleFileName);
 		}
 
-		public bool EnsureBundle(string bundleName)
+		public bool EnsureBundle(string bundleFileName)
 		{
 			InitBundleExistMap();
 			// MyLogger.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
-			if (BundleExistMap.TryGetValue(bundleName, out var exist))
+			if (BundleExistMap.TryGetValue(bundleFileName, out var exist))
 			{
 				return exist;
 			}
 			else
 			{
-				var exists = Exists(CacheDir + bundleName) || Exists(InternalDir + bundleName);
+				var exists = Exists(CacheDir + bundleFileName) || Exists(InternalDir + bundleFileName);
 				if (exists)
 				{
-					BundleExistMap.Add(bundleName, true);
+					BundleExistMap.Add(bundleFileName, true);
 				}
 
 				return false;
@@ -319,11 +319,6 @@ namespace MiiAsset.Runtime.IOManagers
 			return ts.Task;
 		}
 
-		public void WriteAllBytes(string uri, byte[] bytes)
-		{
-			FileSystemManager.WriteFileBytesSync(uri, bytes);
-		}
-
 		public bool IsWebUri(string uri)
 		{
 			return (!uri.StartsWith(UserAPI.Instance.GameInfo.UserDataPath)) && uri.Contains("://");
@@ -345,7 +340,7 @@ namespace MiiAsset.Runtime.IOManagers
 			var uwr = UnityWebRequest.Get(uri2);
 			var op = uwr.SendWebRequest();
 			await op.GetTask();
-			var isOk = uwr.result == UnityWebRequest.Result.Success;
+			var isOk = uwr.IsUwrOk();
 			if (!isOk)
 			{
 				MyLogger.Log($"EnsureStreamingAssets-failed: {uri2}, {(int)uwr.responseCode}, {uwr.error}");
@@ -369,17 +364,17 @@ namespace MiiAsset.Runtime.IOManagers
 			return isOk;
 		}
 
-		public async Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleName)
+		public async Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleFileName)
 		{
-			var existsBundle = ExistsBundle(bundleName);
+			var existsBundle = ExistsBundle(bundleFileName);
 			if (!existsBundle)
 			{
-				var uri2 = $"{StreamingRemoteAssetPath}{bundleName}";
+				var uri2 = $"{StreamingRemoteAssetPath}{bundleFileName}";
 				MyLogger.Log($"EnsureStreamingBundles: {uri2}");
 				var uwr = UnityWebRequest.Get(uri2);
 				var op = uwr.SendWebRequest();
 				await op.GetTask();
-				var isOk = uwr.result == UnityWebRequest.Result.Success;
+				var isOk = uwr.IsUwrOk();
 				var uwrResponseCode = uwr.responseCode;
 				var uwrError = uwr.error;
 				uwr.Dispose();
@@ -399,7 +394,7 @@ namespace MiiAsset.Runtime.IOManagers
 							return true;
 						}
 
-						return EnsureBundle(bundleName);
+						return EnsureBundle(bundleFileName);
 						;
 					});
 				}
@@ -440,7 +435,7 @@ namespace MiiAsset.Runtime.IOManagers
 			var ts = new TaskCompletionSource<bool>();
 			try
 			{
-				MyLogger.Log("clean miiasset begin");
+				MyLogger.Log("clean MiiAsset begin");
 				MyLogger.Log("read ExternalDir");
 				var externalFiles = Array.Empty<string>();
 				try
@@ -487,7 +482,7 @@ namespace MiiAsset.Runtime.IOManagers
 				CleanFiles(this.ExternalDir, externalFiles);
 				MyLogger.Log("clean CacheDir");
 				CleanFiles(this.CacheDir, cacheFiles);
-				MyLogger.Log("clean miiasset done");
+				MyLogger.Log("clean MiiAsset done");
 			}
 			catch (Exception exception1)
 			{

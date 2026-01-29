@@ -76,7 +76,7 @@ namespace MiiAsset.Runtime.Pipelines
 						await op.GetTask();
 						var code = (int)Uwr.responseCode;
 						var msg = Uwr.error;
-						var uwrResult = Uwr.result;
+						var uwrResult = Uwr.GetUwrResult();
 						Text = DownloadHandler.text;
 
 						DownloadHandler.Dispose();

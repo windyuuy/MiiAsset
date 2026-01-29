@@ -17,6 +17,8 @@ namespace MiiAsset.Runtime.Adapter
 		#if UNITY_WEBGL && !UNITY_EDITOR
 			#if SUPPORT_WDK
 			this.Adapt(new WDKAdapter());
+			#elif SUPPORT_WEBGL_LOCAL_STORAGE
+			this.Adapt(new WebAdapter());
 			#else
 			MyLogger.LogError($"no sdk adapter for webgl platform: {UnityEngine.Application.platform}");
 			#endif

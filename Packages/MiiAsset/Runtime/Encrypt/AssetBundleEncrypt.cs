@@ -12,26 +12,31 @@ namespace MiiAsset.Runtime.Encrypt
 		{
 			return (IsEncryptEnabled || isEncrypt) ? _sharedKey : null;
 		}
+
 		public static bool IsEncrypt(bool isEncrypt)
 		{
 			return !string.IsNullOrEmpty(AssetBundleEncryptor.GetSharedKey(isEncrypt));
 		}
+
 		private static readonly string _sharedKey = "wjfowihi-wlfknsdlkf=owihefo4nfoh";
 
 		public static readonly AssetBundleEncryptor SharedEncryptor = new();
+
 		// public static string SharedKey = null;
 		protected byte[] KeyBytes;
 		protected int KeyLength;
 
 		private bool _isInited = false;
+
 		public void Init(string key)
 		{
 			if (_isInited)
 			{
 				return;
 			}
+
 			_isInited = true;
-			
+
 			var keyLen = key.Length;
 			KeyBytes = new byte[keyLen];
 			Encoding.UTF8.GetBytes(key, 0, keyLen, KeyBytes, 0);
@@ -43,6 +48,7 @@ namespace MiiAsset.Runtime.Encrypt
 		{
 			EncryptFile(path, path, 4096 * 8);
 		}
+
 		public void EncryptFile(string pathIn, string pathOut, int chunkSize)
 		{
 			using var fsWrite = new FileStream(pathOut, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
@@ -64,8 +70,13 @@ namespace MiiAsset.Runtime.Encrypt
 			}
 
 			fsWrite.Flush();
-			fsRead.Close(); 
+			fsRead.Close();
 			fsWrite.Close();
+		}
+
+		public void Encrypt(byte[] array)
+		{
+			Encrypt(array, 0, 0, array.Length);
 		}
 
 		public void Encrypt(byte[] array, long position, int offset, int count)
@@ -82,7 +93,7 @@ namespace MiiAsset.Runtime.Encrypt
 			{
 				array[iSeg + offset] ^= 0xDF;
 			}
-			
+
 			if (segStage1 <= iPos && iPos < segStage2 && iSeg < count)
 			{
 				var segStep = 4;
@@ -94,7 +105,7 @@ namespace MiiAsset.Runtime.Encrypt
 					array[iSeg + offset] ^= KeyBytes[iPos % KeyLength];
 				}
 			}
-			
+
 			if (segStage2 <= iPos && iSeg < count)
 			{
 				var segStep = 256;

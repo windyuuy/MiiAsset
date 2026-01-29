@@ -36,6 +36,8 @@ namespace MiiAsset.Runtime
 				#else
 					// 正常webgl从包内加载, 直接使用内置方式, 暂不支持加密
 					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+					// pipeline = new LoadAssetBundleCustomInternalPipeline().Init(remoteUri, null, crc, hash128, isEncrypt, predictFileSize);
+					// pipeline = new LoadAssetBundleFromRemoteMemoryPipeline().Init(remoteUri, crc, isEncrypt);
 				#endif
 				}
 				else
@@ -55,6 +57,7 @@ namespace MiiAsset.Runtime
 				#else
 					// 正常webgl从包内加载, 直接使用内置方式, 暂不支持加密
 					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+					// pipeline = new LoadAssetBundleCustomInternalPipeline().Init(remoteUri, cacheUri, crc, hash128, isEncrypt, predictFileSize);pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
 				#endif
 				}
 				else

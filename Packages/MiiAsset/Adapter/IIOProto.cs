@@ -89,9 +89,9 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public void Move(string from, string uri);
 
-		public bool ExistsBundle(string bundleName);
+		public bool ExistsBundle(string bundleFileName);
 
-		public bool EnsureBundle(string bundleName);
+		public bool EnsureBundle(string bundleFileName);
 
 		public void Delete(string filePath);
 
@@ -99,12 +99,11 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler);
 		public Task WriteAllBytesAsync(string uri, byte[] bytes);
-		public void WriteAllBytes(string uri, byte[] bytes);
 
 		public bool IsWebUri(string uri);
 
 		public Task<string> ReadCatalog(string uri);
-		public Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleName);
+		public Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleFileName);
 		public void RegisterCertificateHandler(CertificateHandler certificateHandler);
 		public void SetUwr(UnityWebRequest uwr);
 		public Task<bool> CleanAllFileCaches();

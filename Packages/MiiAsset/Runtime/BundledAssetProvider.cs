@@ -9,6 +9,7 @@ using MiiAsset.Runtime.Pipelines;
 using MiiAsset.Runtime.Status;
 using MonoExtLib.AsyncExt;
 using UnityEngine;
+using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
 
 namespace MiiAsset.Runtime
@@ -460,7 +461,7 @@ namespace MiiAsset.Runtime
 
 		public Task<PipelineResult> CleanUpOldVersionFiles()
 		{
-			var failedList = new List<string>();
+			var failedList = ListPool<string>.Get();
 			{
 				var cacheDir = IOManager.LocalIOProto.CacheDir;
 				var files = IOManager.LocalIOProto.ExistsDir(cacheDir)
@@ -545,6 +546,10 @@ namespace MiiAsset.Runtime
 			}
 
 			result.Status = PipelineStatus.Done;
+
+			failedList.Clear();
+			ListPool<string>.Release(failedList);
+
 			return Task.FromResult(result);
 		}
 

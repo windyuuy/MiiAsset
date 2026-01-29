@@ -73,7 +73,7 @@ namespace MiiAsset.Runtime.IOStreams
 
 					var code = (int)Uwr.responseCode;
 					var uwrError = Uwr.error;
-					var uwrResult = Uwr.result;
+					var uwrResult = Uwr.GetUwrResult();
 
 					var evt = new StreamCtrlEvent()
 					{

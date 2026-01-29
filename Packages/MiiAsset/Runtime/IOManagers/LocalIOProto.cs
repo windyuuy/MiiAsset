@@ -11,64 +11,19 @@ using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime.IOManagers
 {
-	public class LocalIOProto : IIOProto
+	public sealed class LocalIOProto : IOProtoBase
 	{
-		public string CacheDir { get; set; }
-		public string InternalDir { get; set; }
-		public string ExternalDir { get; set; }
-		public string CatalogName { get; set; }
-
-		/// <summary>
-		/// 秒
-		/// </summary>
-		public int Timeout { get; set; }
-
-		public bool IsInternalDirUpdating => false;
-
-		public Task<bool> Init(IIOProtoInitOptions options)
-		{
-		#if UNITY_EDITOR
-			this.InternalDir = AssetHelper.GetInternalBuildPath();
-		#else
-			this.InternalDir = Application.streamingAssetsPath + "/" + options.InternalBaseUri;
-		#endif
-			var persistentDataPath = Application.persistentDataPath;
-			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
-			this.ExternalDir = persistentDataPath + "/" + options.ExternalBaseUri;
-			this.CatalogName = options.CatalogName;
-			this.Timeout = options.Timeout;
-
-			var ret = EnsurePersistDirs();
-
-			return Task.FromResult(ret);
-		}
-
-		private bool EnsurePersistDirs()
-		{
-			try
-			{
-				EnsureDirectory(this.CacheDir);
-				EnsureDirectory(this.ExternalDir);
-				return true;
-			}
-			catch (Exception exception)
-			{
-				MyLogger.LogException(exception, "e29");
-				return false;
-			}
-		}
-
-		public bool Exists(string uri)
+		public override bool Exists(string uri)
 		{
 			return File.Exists(uri);
 		}
 
-		public bool ExistsDir(string dir)
+		public override bool ExistsDir(string dir)
 		{
 			return Directory.Exists(dir);
 		}
 
-		public void EnsureDirectory(string dir)
+		public override void EnsureDirectory(string dir)
 		{
 			if (!Directory.Exists(dir))
 			{
@@ -76,49 +31,47 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 		}
 
-		public void EnsureFileDirectory(string uri)
-		{
-			var dir = Path.GetDirectoryName(uri);
-			EnsureDirectory(dir);
-		}
-
-		public Task WriteAllTextAsync(string cacheUri, string text, Encoding encoding)
+		public override Task WriteAllTextAsync(string cacheUri, string text, Encoding encoding)
 		{
 			return File.WriteAllTextAsync(cacheUri, text, encoding);
 		}
 
-		public Stream OpenRead(string uri)
+		public override Stream OpenRead(string uri)
 		{
 			return File.OpenRead(uri);
 		}
 
-		public async Task<string> ReadCatalog(string uri)
+		public override async Task<string> ReadCatalog(string uri)
 		{
 		#if UNITY_WEBGL
 			// WebGL不支持异步API
 			// ReSharper disable once MethodHasAsyncOverload
 			var bytes = File.ReadAllBytes(uri);
 			using var readBytesStream = new MemoryStream(bytes);
+			using var reader = new StreamReader(
+				new BrotliStream(readBytesStream, CompressionMode.Decompress));
+			// ReSharper disable once MethodHasAsyncOverload
+			var text = reader.ReadToEnd();
 		#else
 			await using var readBytesStream = File.OpenRead(uri);
-		#endif
 			using var reader = new StreamReader(
 				new BrotliStream(readBytesStream, CompressionMode.Decompress));
 			var text = await reader.ReadToEndAsync();
+		#endif
 			return text;
 		}
 
-		public Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleName)
+		public override Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleFileName)
 		{
 			return Task.FromResult(EnsureStreamingBundlesResult.Exist);
 		}
 
-		public Stream OpenWrite(string filePath)
+		public override Stream OpenWrite(string filePath)
 		{
 			return File.OpenWrite(filePath);
 		}
 
-		public Task<string> ReadAllTextAsync(string uri, Encoding encoding)
+		public override Task<string> ReadAllTextAsync(string uri, Encoding encoding)
 		{
 		#if UNITY_WEBGL
 			return Task.FromResult(File.ReadAllText(uri, encoding));
@@ -127,7 +80,7 @@ namespace MiiAsset.Runtime.IOManagers
 		#endif
 		}
 
-		public void Move(string from, string uri)
+		public override void Move(string from, string uri)
 		{
 			if (File.Exists(uri))
 			{
@@ -137,26 +90,26 @@ namespace MiiAsset.Runtime.IOManagers
 			File.Move(from, uri);
 		}
 
-		public bool ExistsBundle(string bundleName)
+		public override bool ExistsBundle(string bundleFileName)
 		{
 		#if UNITY_ANDROID
 			return File.Exists(CacheDir + bundleName);
 		#else
-			return File.Exists(CacheDir + bundleName) || File.Exists(InternalDir + bundleName);
+			return File.Exists(CacheDir + bundleFileName) || File.Exists(InternalDir + bundleFileName);
 		#endif
 		}
 
-		public bool EnsureBundle(string bundleName)
+		public override bool EnsureBundle(string bundleFileName)
 		{
-			return true;
+			return ExistsBundle(bundleFileName);
 		}
 
-		public void Delete(string filePath)
+		public override void Delete(string filePath)
 		{
 			File.Delete(filePath);
 		}
 
-		public FilePathInfo[] ReadDir(string readDir)
+		public override FilePathInfo[] ReadDir(string readDir)
 		{
 			var filePathInfos = Directory.GetFiles(readDir)
 				.Select(filePath => new FilePathInfo(filePath, null, readDir))
@@ -164,48 +117,17 @@ namespace MiiAsset.Runtime.IOManagers
 			return filePathInfos;
 		}
 
-		public Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler)
+		public override Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler)
 		{
 			return Task.FromResult(handler(File.ReadAllBytes(uri)));
 		}
 
-		public Task WriteAllBytesAsync(string uri, byte[] bytes)
+		public override Task WriteAllBytesAsync(string uri, byte[] bytes)
 		{
 			return File.WriteAllBytesAsync(uri, bytes);
 		}
 
-		public void WriteAllBytes(string uri, byte[] bytes)
-		{
-			File.WriteAllBytes(uri, bytes);
-		}
-
-		public bool IsWebUri(string uri)
-		{
-			return uri.Contains("://");
-		}
-
-		protected CertificateHandler CertificateHandler;
-
-		public void RegisterCertificateHandler(CertificateHandler certificateHandler)
-		{
-			CertificateHandler = certificateHandler;
-		}
-
-		public void SetUwr(UnityWebRequest uwr)
-		{
-			if (CertificateHandler != null)
-			{
-				uwr.certificateHandler = CertificateHandler;
-				uwr.disposeCertificateHandlerOnDispose = false;
-				uwr.timeout = this.Timeout;
-			}
-
-			// MyLogger.Log("Access-Control-Allow-Origin: *");
-			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "*");
-			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "http://127.0.0.1:8080");
-		}
-
-		public Task<bool> CleanAllFileCaches()
+		public override Task<bool> CleanAllFileCaches()
 		{
 			var succeed = true;
 			var externalDir = this.ExternalDir;
