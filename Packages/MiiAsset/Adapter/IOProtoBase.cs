@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
@@ -10,7 +11,7 @@ using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime.IOManagers
 {
-	public abstract class IOProtoBase: IIOProto
+	public abstract class IOProtoBase : IIOProto
 	{
 		public virtual string CacheDir { get; private set; }
 		public virtual string InternalDir { get; private set; }
@@ -19,6 +20,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public virtual bool IsInternalDirUpdating => false;
 		public static string StreamingRemoteAssetPath;
+
 		/// <summary>
 		/// 秒
 		/// </summary>
@@ -61,7 +63,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public abstract bool Exists(string uri);
 		public abstract bool ExistsDir(string dir);
 		public abstract void EnsureDirectory(string dir);
-		
+
 		public virtual void EnsureFileDirectory(string uri)
 		{
 			var dir = Path.GetDirectoryName(uri);
@@ -79,7 +81,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public abstract FilePathInfo[] ReadDir(string readDir);
 		public abstract Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler);
 		public abstract Task WriteAllBytesAsync(string uri, byte[] bytes);
-		
+
 		public virtual bool IsWebUri(string uri)
 		{
 			return uri.Contains("://");
@@ -94,21 +96,29 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public virtual void SetUwr(UnityWebRequest uwr)
 		{
-			if (CertificateHandler != null)
+			SetUwrStatic(uwr, CertificateHandler, Timeout);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void SetUwrStatic(UnityWebRequest uwr, CertificateHandler certificateHandler, int timeout)
+		{
+			MyLogger.Log($"request-begin: {uwr.url}, {timeout}");
+
+			if (certificateHandler != null)
 			{
-				uwr.certificateHandler = CertificateHandler;
+				uwr.certificateHandler = certificateHandler;
 				uwr.disposeCertificateHandlerOnDispose = false;
-				uwr.timeout = this.Timeout;
+				uwr.timeout = timeout;
 			}
 
 			// MyLogger.Log("Access-Control-Allow-Origin: *");
-			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "*");
+			uwr.SetRequestHeader("Access-Control-Allow-Origin", "*");
 			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "http://127.0.0.1:8080");
 		}
 
 		public abstract Task<string> ReadCatalog(string uri);
 		public abstract Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleFileName);
-		
+
 		protected virtual async Task<EnsureStreamingBundlesResult> EnsureStreamingBundlesWithUwr(string bundleFileName)
 		{
 			var existsBundle = ExistsBundle(bundleFileName);

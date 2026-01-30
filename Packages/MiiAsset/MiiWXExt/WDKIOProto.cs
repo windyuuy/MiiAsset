@@ -416,18 +416,7 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public void SetUwr(UnityWebRequest uwr)
 		{
-			MyLogger.Log($"request-begin: {uwr.url}, {this.Timeout}");
-
-			if (CertificateHandler != null)
-			{
-				uwr.certificateHandler = CertificateHandler;
-				uwr.disposeCertificateHandlerOnDispose = false;
-				uwr.timeout = this.Timeout;
-			}
-
-			// MyLogger.Log("Access-Control-Allow-Origin: *");
-			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "*");
-			// uwr.SetRequestHeader("Access-Control-Allow-Origin", "http://127.0.0.1:8080");
+			IOProtoBase.SetUwrStatic(uwr, CertificateHandler, Timeout);
 		}
 
 		public Task<bool> CleanAllFileCaches()

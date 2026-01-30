@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_WEBGL && SUPPORT_WDK
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -7,7 +8,6 @@ using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
 
-#if UNITY_WEBGL && SUPPORT_WDK
 using WDK;
 
 namespace MiiAsset.Runtime.IOManagers
