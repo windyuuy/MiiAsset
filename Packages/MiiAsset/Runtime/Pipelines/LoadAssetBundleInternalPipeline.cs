@@ -88,8 +88,8 @@ namespace MiiAsset.Runtime.Pipelines
 
 			try
 			{
-				var sendWebRequest = Uwr.SendWebRequest();
 				Result.Status = PipelineStatus.Running;
+				var sendWebRequest = Uwr.SendWebRequest();
 				await sendWebRequest.GetTask();
 				Result.SetWithUwr(Uwr);
 			}

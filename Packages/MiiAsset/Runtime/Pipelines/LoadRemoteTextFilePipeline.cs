@@ -91,18 +91,18 @@ namespace MiiAsset.Runtime.Pipelines
 
 						if (Result.IsOk)
 						{
-							MyLogger.Log($"download-done: {UnescapeUri}, {Result.IsOk}, {Result.Code}, {Result.Msg}");
+							MyLogger.Log($"download-done1: {UnescapeUri}, {Result.IsOk}, {Result.Code}, {Result.Msg}");
 						}
 						else
 						{
 							MyLogger.LogError(
-								$"download-failed: {UnescapeUri}, {Result.IsOk}, {Result.Code}, {Result.Msg}, {Text}");
+								$"download-failed1: {UnescapeUri}, {Result.IsOk}, {Result.Code}, {Result.Msg}, {Text}");
 						}
 					}
 					catch (Exception exception)
 					{
 						Result.Exception = exception;
-						MyLogger.LogError($"download-failed: {UnescapeUri}");
+						MyLogger.LogError($"download-failed2: {UnescapeUri}");
 						MyLogger.LogException(exception, "e42");
 					}
 

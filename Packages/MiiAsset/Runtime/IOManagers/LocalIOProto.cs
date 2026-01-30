@@ -93,7 +93,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public override bool ExistsBundle(string bundleFileName)
 		{
 		#if UNITY_ANDROID
-			return File.Exists(CacheDir + bundleName);
+			return File.Exists(CacheDir + bundleFileName);
 		#else
 			return File.Exists(CacheDir + bundleFileName) || File.Exists(InternalDir + bundleFileName);
 		#endif

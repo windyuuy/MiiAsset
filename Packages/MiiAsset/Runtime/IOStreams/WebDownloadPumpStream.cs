@@ -91,7 +91,7 @@ namespace MiiAsset.Runtime.IOStreams
 					if (!Result.IsOk)
 					{
 						Result.ErrorType = PipelineErrorType.NetError;
-						MyLogger.LogError($"download-failed: {code}, {uwrError}");
+						MyLogger.LogError($"download-failed3: {code}, {uwrError}");
 					}
 
 					Result.Status = PipelineStatus.Done;

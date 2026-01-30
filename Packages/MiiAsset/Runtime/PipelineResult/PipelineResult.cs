@@ -104,7 +104,11 @@ namespace MiiAsset.Runtime
 
 				if (!isOk)
 				{
-					MyLogger.LogError($"download-failed: {code}, {uwrError}");
+					MyLogger.LogError($"download-failed5: {code}, {uwrError}");
+				}
+				else
+				{
+					MyLogger.Log($"download-done2: {uwr.uri}, {this.IsOk}, {this.Code}, {this.Msg}");
 				}
 			}
 			catch (Exception exception)

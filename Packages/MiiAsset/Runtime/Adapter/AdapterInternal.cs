@@ -20,7 +20,7 @@ namespace MiiAsset.Runtime.Adapter
 			#elif SUPPORT_WEBGL_LOCAL_STORAGE
 			this.Adapt(new WebAdapter());
 			#else
-			MyLogger.LogError($"no sdk adapter for webgl platform: {UnityEngine.Application.platform}");
+			MyLogger.Log($"use default sdk adapter for webgl platform: {UnityEngine.Application.platform}");
 			#endif
 		#endif
 		}

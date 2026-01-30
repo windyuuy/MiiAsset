@@ -56,7 +56,7 @@ namespace MiiAsset.Runtime.IOStreams
 					}
 
 					MyLogger.LogError(
-						$"Download-Failed: {Uri}, {evt.GetReason()}, size:({fileStreamLength}, {evt.Capability}, {PredictFileSize})");
+						$"download-failed4: {Uri}, {evt.GetReason()}, size:({fileStreamLength}, {evt.Capability}, {PredictFileSize})");
 					FileStream.Close();
 					FileStream = null;
 					try
