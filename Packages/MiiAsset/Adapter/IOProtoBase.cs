@@ -13,32 +13,35 @@ namespace MiiAsset.Runtime.IOManagers
 {
 	public abstract class IOProtoBase : IIOProto
 	{
-		public virtual string CacheDir { get; private set; }
-		public virtual string InternalDir { get; private set; }
-		public virtual string ExternalDir { get; private set; }
-		public virtual string CatalogName { get; private set; }
+		public virtual string CacheDir { get; protected set; }
+		public virtual string InternalDir { get; protected set; }
+		public virtual string ExternalDir { get; protected set; }
+		public virtual string CatalogName { get; protected set; }
 
 		public virtual bool IsInternalDirUpdating => false;
-		public static string StreamingRemoteAssetPath;
+		public virtual string StreamingRemoteAssetPath { get; set; }
 
 		/// <summary>
 		/// 秒
 		/// </summary>
-		public virtual int Timeout { get; private set; }
+		public virtual int Timeout { get; protected set; }
 
 		public virtual Task<bool> Init(IIOProtoInitOptions options)
 		{
 		#if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 		#else
-			this.InternalDir = Application.streamingAssetsPath + "/" + options.InternalBaseUri;
+			this.InternalDir = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
 		#endif
 			var persistentDataPath = Application.persistentDataPath;
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
-			this.ExternalDir = persistentDataPath + "/" + options.ExternalBaseUri;
+			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
 			StreamingRemoteAssetPath = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
 			this.CatalogName = options.CatalogName;
 			this.Timeout = options.Timeout;
+
+			MyLogger.Log(
+				$"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
 
 			var ret = EnsurePersistDirs();
 
@@ -61,6 +64,12 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 
 		public abstract bool Exists(string uri);
+
+		public virtual Task<bool> ExistsAsync(string uri)
+		{
+			return Task.FromResult(Exists(uri));
+		}
+
 		public abstract bool ExistsDir(string dir);
 		public abstract void EnsureDirectory(string dir);
 
@@ -78,6 +87,13 @@ namespace MiiAsset.Runtime.IOManagers
 		public abstract bool ExistsBundle(string bundleFileName);
 		public abstract bool EnsureBundle(string bundleFileName);
 		public abstract void Delete(string filePath);
+
+		public virtual Task DeleteAsync(string filePath)
+		{
+			Delete(filePath);
+			return Task.CompletedTask;
+		}
+
 		public abstract FilePathInfo[] ReadDir(string readDir);
 		public abstract Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler);
 		public abstract Task WriteAllBytesAsync(string uri, byte[] bytes);

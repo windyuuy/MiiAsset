@@ -30,25 +30,11 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 	}
 
-	public sealed class WDKIOProto : IIOProto
+	public sealed class WDKIOProto : IOProtoBase
 	{
-		public string CacheDir { get; set; }
-		public string InternalDir { get; set; }
-		public string ExternalDir { get; set; }
-		public string CatalogName { get; set; }
-
-		/// <summary>
-		/// 秒
-		/// </summary>
-		public int Timeout { get; set; }
-
-		public bool IsInternalDirUpdating => true;
-		public static string StreamingCacheAssetPath;
-		public static string StreamingRemoteAssetPath;
-
 		protected IFileSystemManager FileSystemManager;
 
-		public async Task<bool> Init(IIOProtoInitOptions options)
+		public override async Task<bool> Init(IIOProtoInitOptions options)
 		{
 			if (!SDKManager.Instance.IsInited())
 			{
@@ -67,42 +53,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		protected Task<bool> InitInternal(IIOProtoInitOptions options)
 		{
-			StreamingCacheAssetPath = $"{UserAPI.Instance.GameInfo.UserDataPath}/__GAME_FILE_CACHE/StreamingAssets/";
-
-		#if UNITY_EDITOR
-			this.InternalDir = AssetHelper.GetInternalBuildPath();
-		#else
-			this.InternalDir = $"{StreamingCacheAssetPath}{options.InternalBaseUri}";
-		#endif
-			var persistentDataPath = UserAPI.Instance.GameInfo.UserDataPath;
-			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
-			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
-			StreamingRemoteAssetPath = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
-			this.CatalogName = options.CatalogName;
-			this.Timeout = options.Timeout;
-
-			MyLogger.Log(
-				$"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
-
 			FileSystemManager = UserAPI.Instance.FileSystem.GetFileSystemManager();
 
-			// var catalogHashName = this.CatalogName
-			// 	.Replace(".json", ".hash")
-			// 	.Replace(".zip", ".hash");
-			// var results = await Task.WhenAll(
-			// 	EnsureStreamingAssets(catalogHashName),
-			// 	EnsureStreamingAssets(CatalogName)
-			// );
-			//
-			// var isOk = results.All(r => r);
-			// return isOk;
-
-			var ret = EnsurePersistDirs();
-
-			return Task.FromResult(ret);
+			return base.Init(options);
 		}
 
-		private bool EnsurePersistDirs()
+		protected override bool EnsurePersistDirs()
 		{
 			try
 			{
@@ -117,17 +73,17 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 		}
 
-		public bool Exists(string uri)
+		public override bool Exists(string uri)
 		{
 			return FileSystemManager.AccessSync(uri).Exist;
 		}
 
-		public bool ExistsDir(string dir)
+		public override bool ExistsDir(string dir)
 		{
 			return Exists(dir);
 		}
 
-		public void EnsureDirectory(string dir)
+		public override void EnsureDirectory(string dir)
 		{
 			if (!ExistsDir(dir))
 			{
@@ -135,14 +91,14 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 		}
 
-		public void EnsureFileDirectory(string uri)
+		public override void EnsureFileDirectory(string uri)
 		{
 			var pos = uri.LastIndexOf('/');
 			var dir = uri.Substring(0, pos);
 			EnsureDirectory(dir);
 		}
 
-		public Task WriteAllTextAsync(string cacheUri, string text, Encoding encoding)
+		public override Task WriteAllTextAsync(string cacheUri, string text, Encoding encoding)
 		{
 			Debug.Assert(Equals(encoding, Encoding.UTF8) || Equals(encoding, EncodingExt.UTF8WithoutBom));
 			var ts = new TaskCompletionSource<bool>();
@@ -157,20 +113,20 @@ namespace MiiAsset.Runtime.IOManagers
 			return ts.Task;
 		}
 
-		public Stream OpenRead(string uri)
+		public override Stream OpenRead(string uri)
 		{
 			var content = FileSystemManager.ReadFileBytesSync(uri);
 			var memoryStream = new MemoryStream(content);
 			return memoryStream;
 		}
 
-		public Stream OpenWrite(string filePath)
+		public override Stream OpenWrite(string filePath)
 		{
 			var writeFileStream = new WDKWriteFileStream(FileSystemManager, filePath);
 			return writeFileStream;
 		}
 
-		public Task<string> ReadAllTextAsync(string uri, Encoding encoding)
+		public override Task<string> ReadAllTextAsync(string uri, Encoding encoding)
 		{
 			Debug.Assert(Equals(encoding, Encoding.UTF8) || Equals(encoding, EncodingExt.UTF8WithoutBom));
 
@@ -202,7 +158,7 @@ namespace MiiAsset.Runtime.IOManagers
 			return ts.Task;
 		}
 
-		public void Move(string from, string uri)
+		public override void Move(string from, string uri)
 		{
 			FileSystemManager.RenameSync(from, uri);
 		}
@@ -228,13 +184,13 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 		}
 
-		public bool ExistsBundle(string bundleFileName)
+		public override bool ExistsBundle(string bundleFileName)
 		{
 			InitBundleExistMap();
 			return BundleExistMap.ContainsKey(bundleFileName);
 		}
 
-		public bool EnsureBundle(string bundleFileName)
+		public override bool EnsureBundle(string bundleFileName)
 		{
 			InitBundleExistMap();
 			// MyLogger.Log($"EnsureBundle: {bundleName}, {BundleExistMap.Count}");
@@ -254,7 +210,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 		}
 
-		public void Delete(string filePath)
+		public override void Delete(string filePath)
 		{
 			if (Exists(filePath))
 			{
@@ -266,7 +222,7 @@ namespace MiiAsset.Runtime.IOManagers
 			}
 		}
 
-		public FilePathInfo[] ReadDir(string readDir)
+		public override FilePathInfo[] ReadDir(string readDir)
 		{
 			if (!readDir.EndsWith("/"))
 			{
@@ -280,7 +236,7 @@ namespace MiiAsset.Runtime.IOManagers
 			return files;
 		}
 
-		public Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler)
+		public override Task<T> ReadAllBytesAsync<T>(string uri, Func<byte[], T> handler)
 		{
 			var ts = new TaskCompletionSource<T>();
 			FileSystemManager.ReadFileBytes(new()
@@ -301,7 +257,7 @@ namespace MiiAsset.Runtime.IOManagers
 			return ts.Task;
 		}
 
-		public Task WriteAllBytesAsync(string uri, byte[] bytes)
+		public override Task WriteAllBytesAsync(string uri, byte[] bytes)
 		{
 			var ts = new TaskCompletionSource<bool>();
 			FileSystemManager.WriteFileBytes(new()
@@ -319,12 +275,12 @@ namespace MiiAsset.Runtime.IOManagers
 			return ts.Task;
 		}
 
-		public bool IsWebUri(string uri)
+		public override bool IsWebUri(string uri)
 		{
 			return (!uri.StartsWith(UserAPI.Instance.GameInfo.UserDataPath)) && uri.Contains("://");
 		}
 
-		public Task<string> ReadCatalog(string uri)
+		public override Task<string> ReadCatalog(string uri)
 		{
 			var text = FileSystemManager.ReadCompressedFileTextSync(new WDK.ReadCompressedFileSyncOption
 			{
@@ -364,7 +320,7 @@ namespace MiiAsset.Runtime.IOManagers
 			return isOk;
 		}
 
-		public async Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleFileName)
+		public override async Task<EnsureStreamingBundlesResult> EnsureStreamingBundles(string bundleFileName)
 		{
 			var existsBundle = ExistsBundle(bundleFileName);
 			if (!existsBundle)
@@ -409,17 +365,12 @@ namespace MiiAsset.Runtime.IOManagers
 
 		protected CertificateHandler CertificateHandler;
 
-		public void RegisterCertificateHandler(CertificateHandler certificateHandler)
+		public override void RegisterCertificateHandler(CertificateHandler certificateHandler)
 		{
 			CertificateHandler = certificateHandler;
 		}
 
-		public void SetUwr(UnityWebRequest uwr)
-		{
-			IOProtoBase.SetUwrStatic(uwr, CertificateHandler, Timeout);
-		}
-
-		public Task<bool> CleanAllFileCaches()
+		public override Task<bool> CleanAllFileCaches()
 		{
 			var ts = new TaskCompletionSource<bool>();
 			try

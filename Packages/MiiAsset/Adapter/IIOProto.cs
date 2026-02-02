@@ -75,6 +75,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public Task<bool> Init(IIOProtoInitOptions options);
 
 		public bool Exists(string uri);
+		public Task<bool> ExistsAsync(string uri);
 		public bool ExistsDir(string dir);
 		public void EnsureDirectory(string dir);
 
@@ -94,6 +95,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public bool EnsureBundle(string bundleFileName);
 
 		public void Delete(string filePath);
+		public Task DeleteAsync(string filePath);
 
 		public FilePathInfo[] ReadDir(string readDir);
 

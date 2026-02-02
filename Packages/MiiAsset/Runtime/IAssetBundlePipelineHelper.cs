@@ -32,17 +32,20 @@ namespace MiiAsset.Runtime
 				{
 				#if SUPPORT_WDK
 					// 为了应对微信小游戏读文件片段次数过多会崩溃的bug
-					pipeline = new LoadAssetBundleFromLocalBytesPipeline().Init(remoteUri, crc, isEncrypt, predictFileSize);
+					pipeline = new LoadAssetBundleFromLocalBytesPipeline().Init(remoteUri, crc, isEncrypt,
+						predictFileSize);
 				#else
 					// 正常webgl从包内加载, 直接使用内置方式, 暂不支持加密
-					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
-					// pipeline = new LoadAssetBundleCustomInternalPipeline().Init(remoteUri, null, crc, hash128, isEncrypt, predictFileSize);
+					// pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+					pipeline =
+ new LoadAssetBundleCustomInternalPipeline().Init(remoteUri, null, crc, hash128, isEncrypt, predictFileSize);
 					// pipeline = new LoadAssetBundleFromRemoteMemoryPipeline().Init(remoteUri, crc, isEncrypt);
 				#endif
 				}
 				else
 				{
-					pipeline = new LoadAssetBundlePipelineFromLocalStream().Init(remoteUri, crc, isEncrypt, predictFileSize);
+					pipeline = new LoadAssetBundlePipelineFromLocalStream().Init(remoteUri, crc, isEncrypt,
+						predictFileSize);
 				}
 			}
 			else
@@ -56,8 +59,10 @@ namespace MiiAsset.Runtime
 						.Init(remoteUri, cacheUri, crc, isEncrypt, predictFileSize);
 				#else
 					// 正常webgl从包内加载, 直接使用内置方式, 暂不支持加密
-					pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
-					// pipeline = new LoadAssetBundleCustomInternalPipeline().Init(remoteUri, cacheUri, crc, hash128, isEncrypt, predictFileSize);pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+					// pipeline = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
+					pipeline =
+ new LoadAssetBundleCustomInternalPipeline().Init(remoteUri, cacheUri, crc, hash128, isEncrypt, predictFileSize);pipeline
+ = new LoadAssetBundleInternalPipeline().Init(remoteUri, crc, hash128);
 				#endif
 				}
 				else
