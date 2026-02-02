@@ -10,7 +10,8 @@ namespace MiiAsset.Runtime.IOManagers
 		public IIOProto GetIOProto()
 		{
 			MyLogger.Log("use-WebAdapter::GetIOProto");
-			return new WebIOProtoWithLocalStorage();
+			// return new WebIOProtoWithLocalStorage();
+			return new WebIOProtoWithIndexedDB();
 		}
 
 		public IWidget GetWidget()

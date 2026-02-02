@@ -15,13 +15,13 @@ namespace MiiAsset.Runtime.Adapter
 
 			IsAdaptDefaultDone = true;
 		#if UNITY_WEBGL && !UNITY_EDITOR
-			#if SUPPORT_WDK
+		#if SUPPORT_WDK
 			this.Adapt(new WDKAdapter());
-			#elif SUPPORT_WEBGL_LOCAL_STORAGE
+		#elif SUPPORT_WEBGL_LOCAL_STORAGE
 			this.Adapt(new WebAdapter());
-			#else
+		#else
 			MyLogger.Log($"use default sdk adapter for webgl platform: {UnityEngine.Application.platform}");
-			#endif
+		#endif
 		#endif
 		}
 

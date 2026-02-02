@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if SUPPORT_WEBGL_LOCAL_STORAGE
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -135,3 +136,4 @@ namespace MiiAsset.Runtime.IOManagers
 		}
 	}
 }
+#endif

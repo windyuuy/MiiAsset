@@ -1,3 +1,4 @@
+#if SUPPORT_WEBGL_LOCAL_STORAGE
 using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
@@ -340,3 +341,4 @@ namespace WebGLIndexedDB
 		}
 	}
 }
+#endif
