@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace TrackableResourceManager.Runtime
 {
-	[CreateAssetMenu(fileName = "资源分组.asset", menuName = "UISys/资源分组")]
+	[CreateAssetMenu(fileName = "资源分组.asset", menuName = "Mii/资源分组")]
 	public class AssetGroupConfig : ScriptableObject
 	{
 		[Header("命名空间")] public string ns = "SharedResIds";

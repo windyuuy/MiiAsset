@@ -11,7 +11,7 @@ using MiiAsset.AssetWeakRefer.Runtime;
 
 namespace TrackableResourceManager.Runtime
 {
-	[CreateAssetMenu(fileName = "资源清单.asset", menuName = "UISys/资源清单")]
+	[CreateAssetMenu(fileName = "资源清单.asset", menuName = "Mii/资源清单")]
 	public class ResourceManifestConfig : ScriptableObject
 	{
 		[Serializable]
