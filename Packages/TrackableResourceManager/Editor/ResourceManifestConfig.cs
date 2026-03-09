@@ -19,7 +19,7 @@ namespace TrackableResourceManager.Runtime
 		{
 			[Header("分组范围内唯一Key")]
 			// 唯一性范围？？
-			public string key;
+			public string key = "default";
 
 			// [Header("引用资源")] 
 			public AssetReference resRefer;
@@ -88,8 +88,7 @@ namespace TrackableResourceManager.Runtime
 		[Serializable]
 		public class ResourceScanRule
 		{
-			[Header("标题")]
-			[Tooltip("标题，任意文本，自己看看")]
+			[Header("标题")] [Tooltip("标题，任意文本，自己看看")]
 			public string title;
 
 			[Header("路径匹配规则(正则表达式)")] public string pathRegex;
@@ -124,8 +123,7 @@ namespace TrackableResourceManager.Runtime
 				return p;
 			}
 
-			[Header("遍历根节点")]
-			[Tooltip("限制遍历根节点, 提高遍历速度")]
+			[Header("遍历根节点")] [Tooltip("限制遍历根节点, 提高遍历速度")]
 			public string scanRoot;
 
 			public string GetScanRoot(string assetPath)
@@ -145,14 +143,14 @@ namespace TrackableResourceManager.Runtime
 		{
 			public string setName = "default";
 
-#if UNITY_EDITOR
+		#if UNITY_EDITOR
 			/// <summary>
 			/// 零散资源
 			/// </summary>
 			public EnumResourceItem[] enumItems;
 
 			public ResourceScanRule[] scanRules;
-#endif
+		#endif
 			/// <summary>
 			/// 汇总清单
 			/// </summary>
@@ -168,18 +166,22 @@ namespace TrackableResourceManager.Runtime
 				{
 					return false;
 				}
+
 				var asset2 = AssetDatabase.LoadAssetAtPath<ResourceManifestConfig>(uri);
 				if (asset2 != null)
 				{
 					return false;
 				}
+
 				var asset3 = AssetDatabase.LoadAssetAtPath<MonoScript>(uri);
 				if (asset3 != null)
 				{
 					return false;
 				}
+
 				return true;
 			}
+
 			public IEnumerable<ResourceItem> SearchMatchedResources(string assetCurPath)
 			{
 				// guid - key
@@ -256,8 +258,7 @@ namespace TrackableResourceManager.Runtime
 			}
 		}
 
-		[Header("作为代码清单")]
-		[Tooltip("选中此项，则资源key优先级降低，能够被未选中此项的覆盖")]
+		[Header("作为代码清单")] [Tooltip("选中此项，则资源key优先级降低，能够被未选中此项的覆盖")]
 		public bool isForCoder = true;
 
 		public int SortOrder => isForCoder ? 0 : 1;
@@ -381,8 +382,16 @@ namespace TrackableResourceManager.Runtime
 			var groupNameMembered = FormatMemberName(groupName);
 
 			var setClassesCode = string.Join('\n', itemSets
-				.Where(itemSet => string.IsNullOrWhiteSpace(itemSet.setName) == false && itemSet.outputItems.Length > 0)
-				.GroupBy(itemSet => itemSet.setName)
+				.Where(itemSet => itemSet.outputItems.Length > 0)
+				.GroupBy(itemSet =>
+				{
+					if (string.IsNullOrEmpty(itemSet.setName))
+					{
+						return "default";
+					}
+
+					return itemSet.setName;
+				})
 				.Where(setGroup => setGroup.Any())
 				.Select(setGroup =>
 				{
@@ -402,10 +411,10 @@ namespace TrackableResourceManager.Runtime
 								.Select(item =>
 								{
 									var fieldCode = @"		public static readonly ResourceKey " +
-													$"{ToFieldName(item.key, groupNameMembered, setName, setNameFormat)}" +
-													@" = ResourceKey.ParseFromLiteral(" +
-													$"\"{ToAddress(groupName, setName, item.key, groupJoinKey, joinKey)}\"" +
-													@");
+									                $"{ToFieldName(item.key, groupNameMembered, setName, setNameFormat)}" +
+									                @" = ResourceKey.ParseFromLiteral(" +
+									                $"\"{ToAddress(groupName, setName, item.key, groupJoinKey, joinKey)}\"" +
+									                @");
 ";
 									return fieldCode;
 								}));
@@ -449,7 +458,9 @@ namespace " + ns + @"
 
 			return joinKey;
 		}
-		public static string ToAddress(string groupName, string setName, string itemKey, string groupJoinKey, string joinKey)
+
+		public static string ToAddress(string groupName, string setName, string itemKey, string groupJoinKey,
+			string joinKey)
 		{
 			if (setName == "default")
 			{
@@ -457,7 +468,8 @@ namespace " + ns + @"
 			}
 			else
 			{
-				return $"@{FormatKey(groupName)}{GetJoinKey(groupJoinKey)}{FormatKey(setName)}{GetJoinKey(joinKey)}{FormatKey(itemKey)}";
+				return
+					$"@{FormatKey(groupName)}{GetJoinKey(groupJoinKey)}{FormatKey(setName)}{GetJoinKey(joinKey)}{FormatKey(itemKey)}";
 			}
 		}
 
@@ -531,7 +543,8 @@ namespace " + ns + @"
 			{
 				if (!string.IsNullOrWhiteSpace(itemOut.key))
 				{
-					uKey = ToAddress(this.group.groupName, itemSet.setName, itemOut.key, this.group.joinKey, itemSet.joinKey);
+					uKey = ToAddress(this.group.groupName, itemSet.setName, itemOut.key, this.group.joinKey,
+						itemSet.joinKey);
 					return true;
 				}
 			}
