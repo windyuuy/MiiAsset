@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Web;
+using System.Net;
 using UnityEngine.Networking;
 
 namespace MiiAsset.Runtime.IOStreams
@@ -9,7 +9,7 @@ namespace MiiAsset.Runtime.IOStreams
 		public ulong TotalBytes = 0;
 		protected bool IsTotalBytesUnkown = true;
 		public string Uri;
-		protected string UnescapeUri => HttpUtility.UrlDecode(Uri);
+		protected string UnescapeUri => WebUtility.UrlDecode(Uri);
 
 		public Func<byte[], int, int, int> OnReceivedData { get; set; }
 

@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Net;
 using System.Threading.Tasks;
-using System.Web;
 using Lang.Encoding;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
@@ -16,7 +16,7 @@ namespace MiiAsset.Runtime.Pipelines
 		protected TaskCompletionSource<PipelineResult> Ts;
 
 		protected string Uri;
-		protected string UnescapeUri => HttpUtility.UrlDecode(Uri);
+		protected string UnescapeUri => WebUtility.UrlDecode(Uri);
 		protected string CacheUri;
 
 		public LoadRemoteTextFilePipeline Init(string uri, string cacheUri)

@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Net;
 using System.Threading.Tasks;
-using System.Web;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MonoExtLib.AsyncExt;
@@ -15,7 +15,7 @@ namespace MiiAsset.Runtime.IOStreams
 		protected TaskCompletionSource<PipelineResult> Ts;
 
 		protected string Uri;
-		protected string UnescapeUri => HttpUtility.UrlDecode(Uri);
+		protected string UnescapeUri => WebUtility.UrlDecode(Uri);
 		public PipelineResult Result;
 		protected ulong PredictFileSize;
 

@@ -1,11 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.Net;
 using System.Text.RegularExpressions;
-using System.Web;
-using Lang.Time;
 using MiiAsset.Runtime.Adapter;
-using UnityEditor;
-using UnityEngine;
 
 namespace YueCloudCdnAdapter
 {
@@ -53,7 +50,7 @@ namespace YueCloudCdnAdapter
 			//                         DateTime.Parse("1970/01/01 00:00:00")).TotalSeconds).ToString("x");
 			var timestamp = ((long)(dateTime - new DateTime(1970, 01, 01, 0, 0, 0)).TotalSeconds).ToString("x");
 			// pKey = "m85elvswafo1zbdygdtmqru2mdgsv7e4";//test
-			var fileName2 = HttpUtility.UrlEncode(fileName);
+			var fileName2 = WebUtility.UrlEncode(fileName);
 			var pkeyuritimestamp = $"{pKey}{keyPart}{fileName2}{timestamp}";
 			// var pkeyuritimestamp = $"{pKey}/test.jpg{timestamp}";
 			if (MonoUtils.Encrypt.Md5Utils.TryComputeMd5Hash4096(pkeyuritimestamp, out var md5hash))
