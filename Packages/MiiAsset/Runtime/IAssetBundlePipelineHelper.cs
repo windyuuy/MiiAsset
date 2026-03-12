@@ -61,7 +61,7 @@ namespace MiiAsset.Runtime
 					}
 					else
 					{
-						MyLogger.LogError($"加载uri为null: {assetBundleInfo.bundleName}");
+						throw new Exception($"加载uri为null: {assetBundleInfo.bundleName}");
 					}
 				}
 			}
