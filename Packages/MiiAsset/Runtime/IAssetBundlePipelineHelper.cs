@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Pipelines;
@@ -9,6 +10,7 @@ namespace MiiAsset.Runtime
 {
 	public static class AssetBundlePipelineHelper
 	{
+		private static readonly Regex HttpsProto = new Regex(@"^https?\://");
 		public static ILoadAssetBundlePipeline GetLoadAssetBundlePipeline(this AssetBundleInfo assetBundleInfo,
 			IResourceLoadSource loadSource, uint crc, Hash128 hash128, bool isEncrypt, ulong predictFileSize)
 		{
@@ -44,8 +46,23 @@ namespace MiiAsset.Runtime
 				}
 				else
 				{
-					pipeline = new LoadAssetBundlePipelineFromLocalStream().Init(remoteUri, crc, isEncrypt,
-						predictFileSize);
+					if (remoteUri != null)
+					{
+						if (HttpsProto.IsMatch(remoteUri))
+						{
+							MyLogger.LogError($"检测到正在使用远程uri作为本地资源路径: {assetBundleInfo.bundleName}, {remoteUri}");
+							pipeline = new LoadAssetBundleFromRemoteMemoryPipeline().Init(remoteUri, crc, isEncrypt);
+						}
+						else
+						{
+							pipeline = new LoadAssetBundlePipelineFromLocalStream().Init(remoteUri, crc, isEncrypt,
+								predictFileSize);
+						}
+					}
+					else
+					{
+						MyLogger.LogError($"加载uri为null: {assetBundleInfo.bundleName}");
+					}
 				}
 			}
 			else
