@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using MiiAsset.Runtime;
 using UnityEditor;
+using UnityEngine;
 
 namespace MiiAsset.Editor.Optimization
 {
@@ -31,7 +32,7 @@ namespace MiiAsset.Editor.Optimization
 				var guid = AssetDatabase.AssetPathToGUID(path);
 				if (!singleFileItems.TryAdd(guid, singleFile))
 				{
-					throw new Exception($"重复的资源: {path}, {guid}");
+					Debug.LogException(new Exception($"重复的零散资源: {path}, {guid}"));
 				}
 			}
 

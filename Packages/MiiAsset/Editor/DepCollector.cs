@@ -74,7 +74,18 @@ namespace MiiAsset.Editor.Build
 			};
 			if (!ExtraAddressInfoMap.TryAdd(address, extraAddressInfo))
 			{
-				throw new Exception($"重复的资源: {address}");
+				if (ExtraAddressInfoMap.TryGetValue(address, out var extraAtlasInfo))
+				{
+					Debug.LogException(
+						new Exception(
+							$"重复的资源: {address}, 可能在不同的 .spriteatlas 文件中引用了同一个纹理资源: {extraAtlasInfo.address}, {atlasAddress}"));
+				}
+				else
+				{
+					Debug.LogException(
+						new Exception(
+							$"重复的资源: {address}, 可能在不同的 .spriteatlas 文件中引用了同一个纹理资源: 未发现现有spriteatlas资源, {atlasAddress}"));
+				}
 			}
 		}
 
@@ -100,7 +111,7 @@ namespace MiiAsset.Editor.Build
 			{
 				if (!SingleFileMap.TryAdd(value.key, value))
 				{
-					var exception = new Exception($"重复的资源: {value.key}");
+					var exception = new Exception($"重复的零散资源: {value.key}");
 					if (Application.isPlaying)
 					{
 						throw exception;
