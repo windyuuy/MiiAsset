@@ -58,7 +58,7 @@
 
 1. 编辑器模式下运行游戏，每到一个阶段都使用菜单 `PushIndex`，记录每个阶段所需的资源清单，保存在文件 `Assets/Bundles/GameConfigs/AALoaderConfigs/AALoadConfig.json.txt` 中。之后可手动调整该配置。
 2. 构建时，会自动按照配置文件 `Assets/Bundles/GameConfigs/AALoaderConfigs/AALoadConfig.json.txt` 中的配置，给对应资源加分批tag，格式为 `batch{index}`。
-3. 使用 `AssetLoader.DownloadBatch(${批次数字})` 方法下载对应阶段的资源，0为第一阶段。
+3. 使用 `AssetLoader.DownloadBatch({index})` 方法下载对应阶段的资源，0为第一阶段。
 
 ## 其他API
 
