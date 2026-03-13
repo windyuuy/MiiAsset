@@ -280,14 +280,33 @@ namespace MiiAsset.Runtime
 			return Consumer.UnLoadTags(tags);
 		}
 
+		/// <summary>
+		/// 获取指定tag的资源的下载尺寸(不包括已下载的资源)(单位: 字节/B)
+		/// </summary>
+		/// <param name="tags"></param>
+		/// <returns></returns>
 		public static long GetDownloadSize(IEnumerable<string> tags)
 		{
 			return Consumer.GetDownloadSize(tags);
 		}
 
+		/// <summary>
+		/// 获取指定tag的资源的下载尺寸(不包括已下载的资源)(单位: 字节/B)
+		/// </summary>
+		/// <param name="tags"></param>
+		/// <returns></returns>
 		public static long GetDownloadSize(params string[] tags)
 		{
 			return Consumer.GetDownloadSize(tags);
+		}
+
+		/// <summary>
+		/// 获取所有资源的下载尺寸(不包括已下载的资源)(单位: 字节/B)
+		/// </summary>
+		/// <returns></returns>
+		public static long GetDownloadSize()
+		{
+			return GetDownloadSize("all");
 		}
 
 		public static bool IsAddressInTags(string address, IEnumerable<string> tags)
