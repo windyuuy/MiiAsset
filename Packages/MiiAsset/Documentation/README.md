@@ -23,13 +23,6 @@
       1. LoadFromEditor: 直接通过编辑器加载资源
       2. LoadFromBundle: 从发布的AssetBundle加载资源，用于模拟测试复现问题
 
-## 分批下载
-
-该模式主要基于菜单工具: `Tools/MiiAsset/BundleBatchTools`
-
-1. 运行游戏，每到一个阶段都使用菜单 `PushIndex`，记录每个阶段所需的资源清单。
-2. 使用 `AssetLoader.DownloadBatch()` 方法下载对应阶段的资源，0为第一阶段。
-
 ## 常用资源引用模式
 
 1. 半自由管理模式
@@ -58,6 +51,14 @@
       1. AssetLoader.LoadSceneByReferWrapped
    6. 释放场景
       1. AssetLoader.UnLoadSceneByReferWrapped
+
+## 分批下载模式
+
+该模式主要基于菜单工具: `Tools/MiiAsset/BundleBatchTools`
+
+1. 编辑器模式下运行游戏，每到一个阶段都使用菜单 `PushIndex`，记录每个阶段所需的资源清单，保存在文件 `Assets/Bundles/GameConfigs/AALoaderConfigs/AALoadConfig.json.txt` 中。之后可手动调整该配置。
+2. 构建时，会自动按照配置文件 `Assets/Bundles/GameConfigs/AALoaderConfigs/AALoadConfig.json.txt` 中的配置，给对应资源加分批tag，格式为 `batch{index}`。
+3. 使用 `AssetLoader.DownloadBatch(${批次数字})` 方法下载对应阶段的资源，0为第一阶段。
 
 ## 其他API
 
