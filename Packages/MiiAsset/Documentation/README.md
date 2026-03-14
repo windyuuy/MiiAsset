@@ -38,9 +38,6 @@
 ### 手动构建资源，发布热更
 1. 点击菜单 `Tools/MiiAsset/BuildAssetBundlesWithPathInfo` 会自动构建资源到 `AssetBundles` 目录下，通过上传工具上传热更资源。
 
-## 代码热更方案
-1. 待补充。
-
 ## 常用资源引用模式
 
 1. 半自由管理模式
