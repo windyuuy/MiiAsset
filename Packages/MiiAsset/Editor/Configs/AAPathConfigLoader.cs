@@ -13,14 +13,20 @@ namespace MiiAsset.Editor.Optimization
 		public static AAPathInfo LoadConfig(AAPathInfo pathInfo, string configPath)
 		{
 			var aaPathConfig = AssetDatabase.LoadAssetAtPath<AAPathConfig>(configPath);
-			var paths = aaPathConfig.paths.ToList();
+			var excludePaths = aaPathConfig.excludePaths.Where(path => !path.isDisabled).ToArray();
+			foreach (var excludePathConfig in excludePaths)
+			{
+				excludePathConfig.pathRegex = new Regex(excludePathConfig.path);
+			}
+
+			var paths = aaPathConfig.paths.Where(path => !path.isDisabled).ToList();
 			paths.Sort((p1, p2) => p2.scanRoot.Length - p1.scanRoot.Length);
 			paths.ForEach((item) => { item.pathRegex = new Regex(item.path); });
 
 			pathInfo.IsEncryptAll = pathInfo.IsEncryptAll || aaPathConfig.isEncryptAll;
 			pathInfo.IsEncryptBuiltin = pathInfo.IsEncryptBuiltin || aaPathConfig.isEncryptBuiltin;
 			pathInfo.Paths.AddRange(paths);
-			pathInfo.ExcludePaths.AddRange(aaPathConfig.excludePaths);
+			pathInfo.ExcludePaths.AddRange(excludePaths);
 			pathInfo.ExcludeExtensions.AddRange(aaPathConfig.excludeExtensions);
 			pathInfo.IsShaderGroupOffline = pathInfo.IsShaderGroupOffline || aaPathConfig.isShaderGroupOffline;
 			pathInfo.IsMyBuiltinShaderGroupOffline =

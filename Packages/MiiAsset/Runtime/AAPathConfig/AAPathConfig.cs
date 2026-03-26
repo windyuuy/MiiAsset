@@ -28,6 +28,8 @@ namespace MiiAsset.Runtime
 		// split with ;
 		public string tags;
 
+		public bool isDisabled = false;
+
 		public bool isEncrypt = false;
 
 		/// <summary>
@@ -120,7 +122,7 @@ namespace MiiAsset.Runtime
 		public bool isEncryptBuiltin = false;
 	}
 
-	public class GroupNameInfo
+	public class AssetGroupNameInfo
 	{
 		public string GroupName;
 		public string GroupRoot;
