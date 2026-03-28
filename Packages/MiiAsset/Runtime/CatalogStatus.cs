@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace MiiAsset.Runtime
 {
@@ -240,34 +241,36 @@ namespace MiiAsset.Runtime
 
 		public Task UnloadTags(IEnumerable<string> tags, CatalogInfo catalogInfo)
 		{
-			var tasks = new List<Task>();
-			foreach (var tag in tags)
+			using (ListPool<Task>.Get(out var tasks))
 			{
-				var bundleNames = catalogInfo.GetTagDependBundles(tag);
-				if (bundleNames != null)
+				foreach (var tag in tags)
 				{
-					foreach (var bundleName in bundleNames)
+					var bundleNames = catalogInfo.GetTagDependBundles(tag);
+					if (bundleNames != null)
 					{
-						var loadStatus = GetOrCreateStatus(bundleName);
-						if (loadStatus.RefCount > 0)
+						foreach (var bundleName in bundleNames)
 						{
-							--loadStatus.RefCount;
-						}
-						else
-						{
-							MyLogger.LogError($"bundle referCount invalid: {bundleName}");
-						}
+							var loadStatus = GetOrCreateStatus(bundleName);
+							if (loadStatus.RefCount > 0)
+							{
+								--loadStatus.RefCount;
+							}
+							else
+							{
+								MyLogger.LogError($"bundle referCount invalid: {bundleName}");
+							}
 
-						if (loadStatus.RefCount == 0)
-						{
-							var task = TryDelayUnload(loadStatus);
-							tasks.Add(task);
+							if (loadStatus.RefCount == 0)
+							{
+								var task = TryDelayUnload(loadStatus);
+								tasks.Add(task);
+							}
 						}
 					}
 				}
-			}
 
-			return Task.WhenAll(tasks);
+				return Task.WhenAll(tasks);
+			}
 		}
 
 		const bool EnableDelayUnloadBundles = true;
@@ -374,18 +377,20 @@ namespace MiiAsset.Runtime
 		{
 			if (deps != null)
 			{
-				var tasks = new List<Task>();
-				foreach (var dep in deps)
+				using (ListPool<Task>.Get(out var tasks))
 				{
-					var loadStatus = GetOrCreateStatus(dep);
-					--loadStatus.RefCount;
-					if (loadStatus.RefCount == 0)
+					foreach (var dep in deps)
 					{
-						tasks.Add(TryDelayUnload(loadStatus));
+						var loadStatus = GetOrCreateStatus(dep);
+						--loadStatus.RefCount;
+						if (loadStatus.RefCount == 0)
+						{
+							tasks.Add(TryDelayUnload(loadStatus));
+						}
 					}
-				}
 
-				return Task.WhenAll(tasks);
+					return Task.WhenAll(tasks);
+				}
 			}
 			else
 			{
