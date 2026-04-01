@@ -218,7 +218,7 @@ namespace MiiAsset.Editor.Build
 			foreach (var scanInfo in pathInfo.GetScanRootInfos(true))
 			{
 				var guids = AssetDatabase.FindAssets("", new[] { scanInfo.ScanRoot });
-				var validGroupNameInfo = guids
+				var validAssetGroupNameInfo = guids
 					.Select(guid => (guid, assetPath: AssetDatabase.GUIDToAssetPath(guid)))
 					.Where(item =>
 						!filterMap.Contains(item.assetPath) && AAPathInfo.IsValidAsset(pathInfo, item.assetPath))
@@ -233,48 +233,50 @@ namespace MiiAsset.Editor.Build
 
 						return null;
 					})
-					.Where(item => item != null);
-				foreach (var groupNameInfo in validGroupNameInfo)
+					.Where(item => item != null)
+					.Where(item => !IsExcludeItem(pathInfo, item, scanInfo));
+				foreach (var assetGroupNameInfo in validAssetGroupNameInfo)
 				{
-					if (singleFileItems.ContainsKey(groupNameInfo.Guid))
+					if (singleFileItems.ContainsKey(assetGroupNameInfo.Guid))
 					{
 						continue;
 					}
 
-					if (GuidBundleMap.ContainsKey(groupNameInfo.Guid))
+					if (GuidBundleMap.ContainsKey(assetGroupNameInfo.Guid))
 					{
 						continue;
 					}
 
-					groupNameInfo.Tags = groupNameInfo.Tags
+					assetGroupNameInfo.Tags = assetGroupNameInfo.Tags
 						.Select(tag => tag.ToLower())
 						.ToArray();
-					if (groupNameInfo.AssetPath.EndsWith(".unity"))
+					if (assetGroupNameInfo.AssetPath.EndsWith(".unity"))
 					{
-						groupNameInfo.Tags = groupNameInfo.Tags.Append("scene").ToArray();
+						assetGroupNameInfo.Tags = assetGroupNameInfo.Tags.Append("scene").ToArray();
 					}
 
-					var tagsKey = ToTagsKey(groupNameInfo.Tags);
+					var tagsKey = ToTagsKey(assetGroupNameInfo.Tags);
 					if (!TagBundleMap.TryGetValue(tagsKey, out var tagBundle))
 					{
 						tagBundle = new TagBundle()
 						{
-							Tags = groupNameInfo.Tags,
+							Tags = assetGroupNameInfo.Tags,
 							TagsAdditional = Array.Empty<string>(),
 							TagsUKey = tagsKey,
 							// SingleFileItems = pathInfo.SingleFileItems,
-							IsEncrypt = pathInfo.IsEncryptAll || groupNameInfo.IsEncrypt,
+							IsEncrypt = pathInfo.IsEncryptAll || assetGroupNameInfo.IsEncrypt,
 							IsKeepInMemory = pathInfo.IsKeepInMemory,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
 					}
 
-					if (GuidBundleMap.TryAdd(groupNameInfo.Guid, tagBundle))
+					if (GuidBundleMap.TryAdd(assetGroupNameInfo.Guid, tagBundle))
 					{
-						tagBundle.IsOffline = tagBundle.IsOffline || !groupNameInfo.IsRemote;
-						tagBundle.IsEncrypt = pathInfo.IsEncryptAll || tagBundle.IsEncrypt || groupNameInfo.IsEncrypt;
+						tagBundle.IsOffline = tagBundle.IsOffline || !assetGroupNameInfo.IsRemote;
+						tagBundle.IsEncrypt =
+							pathInfo.IsEncryptAll || tagBundle.IsEncrypt || assetGroupNameInfo.IsEncrypt;
 						tagBundle.IsKeepInMemory = pathInfo.IsKeepInMemory;
-						tagBundle.Guids.Add(groupNameInfo.Guid);
+						tagBundle.Guids.Add(assetGroupNameInfo.Guid);
 
 						// Debug.LogError($"conflict item: {groupNameInfo.AssetPath}");
 					}
@@ -292,7 +294,9 @@ namespace MiiAsset.Editor.Build
 					groupName,
 				};
 				var tagsKey = ToTagsKey(tags);
-				var items = group.Where(item => { return false == GuidBundleMap.ContainsKey(item.GetGuid()); })
+				var items = group
+					.Where(item => { return false == GuidBundleMap.ContainsKey(item.GetGuid()); })
+					.Where(item => !IsExcludeItem(pathInfo, item.GetLoadPath()))
 					.ToArray();
 				if (items.Length > 0)
 				{
@@ -312,17 +316,61 @@ namespace MiiAsset.Editor.Build
 
 					foreach (var item in items)
 					{
-						tagBundle.Guids.Add(item.GetGuid());
-						tagBundle.AddressMap.Add(item.GetGuid(), item.key);
 						tagBundle.IsEncrypt = tagBundle.IsEncrypt || item.isEncrypt;
 						tagBundle.IsOffline = tagBundle.IsOffline || item.isOffline;
 						tagBundle.IsKeepInMemory = tagBundle.IsKeepInMemory;
+						tagBundle.Guids.Add(item.GetGuid());
+
+						tagBundle.AddressMap.Add(item.GetGuid(), item.key);
 						GuidBundleMap.Add(item.GetGuid(), tagBundle);
 					}
 				}
 			}
 
 			return;
+		}
+
+		private bool IsExcludeItem(AAPathInfo pathInfo, AssetGroupNameInfo item, GroupScanInfo scanInfo)
+		{
+			var assetPath = item.AssetPath;
+			var excludePaths = pathInfo.ExcludePaths;
+			foreach (var excludeItem in excludePaths)
+			{
+				// 子目录或者更长的路径优先包含或排除, 路径相同则优先排除
+				if (excludeItem.scanRoot.StartsWith(scanInfo.ScanRoot))
+				{
+					// 需要满足 scanRoot 前缀
+					if (assetPath.StartsWith(excludeItem.scanRoot))
+					{
+						// 匹配表达式, 则需排除
+						if (excludeItem.pathRegex.IsMatch(assetPath))
+						{
+							return true;
+						}
+					}
+				}
+			}
+
+			return false;
+		}
+
+		private bool IsExcludeItem(AAPathInfo pathInfo, string assetPath)
+		{
+			var excludePaths = pathInfo.ExcludePaths;
+			foreach (var excludeItem in excludePaths)
+			{
+				// 需要满足 scanRoot 前缀
+				if (assetPath.StartsWith(excludeItem.scanRoot))
+				{
+					// 匹配表达式, 则需排除
+					if (excludeItem.pathRegex.IsMatch(assetPath))
+					{
+						return true;
+					}
+				}
+			}
+
+			return false;
 		}
 
 		private void Reset()

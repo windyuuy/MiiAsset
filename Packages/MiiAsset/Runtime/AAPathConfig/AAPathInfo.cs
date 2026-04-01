@@ -83,7 +83,7 @@ namespace MiiAsset.Runtime
 			return isNotSpecialFolder;
 		}
 
-		public static GroupNameInfo ParseGroupName(AAPathInfo pathInfo, string assetPath, string guid)
+		public static AssetGroupNameInfo ParseGroupName(AAPathInfo pathInfo, string assetPath, string guid)
 		{
 			if (!IsValidAsset(pathInfo, assetPath))
 			{
@@ -91,22 +91,22 @@ namespace MiiAsset.Runtime
 				return null;
 			}
 
-			GroupNameInfo groupNameInfo = null;
+			AssetGroupNameInfo assetGroupNameInfo = null;
 			foreach (var item in pathInfo.Paths)
 			{
-				groupNameInfo = ParseGroupName(item, assetPath, guid, pathInfo.IsEncryptAll);
-				if (groupNameInfo != null)
+				assetGroupNameInfo = ParseGroupName(item, assetPath, guid, pathInfo.IsEncryptAll);
+				if (assetGroupNameInfo != null)
 				{
 					break;
 				}
 			}
 
-			if (groupNameInfo == null)
+			if (assetGroupNameInfo == null)
 			{
 				MyLogger.LogError($"loading asset not exist in any bundle: {assetPath}");
 			}
 
-			return groupNameInfo;
+			return assetGroupNameInfo;
 		}
 
 		/// <summary>
@@ -117,7 +117,7 @@ namespace MiiAsset.Runtime
 		/// <param name="guid"></param>
 		/// <param name="pathInfoIsEncryptAll"></param>
 		/// <returns></returns>
-		public static GroupNameInfo ParseGroupName(AAPathConfigItem config, string assetPath, string guid,
+		public static AssetGroupNameInfo ParseGroupName(AAPathConfigItem config, string assetPath, string guid,
 			bool isEncryptAll)
 		{
 			if (string.IsNullOrEmpty(config.path))
@@ -133,7 +133,7 @@ namespace MiiAsset.Runtime
 
 			if (m.Success)
 			{
-				var groupInfo = new GroupNameInfo();
+				var groupInfo = new AssetGroupNameInfo();
 				groupInfo.Guid = guid;
 				groupInfo.AssetPath = assetPath;
 				var ss = m.Groups.Select(g => g.Value).ToArray();

@@ -15,9 +15,9 @@ namespace MiiAsset.Editor.Build
 		/// <param name="aaPathConfigs"></param>
 		/// <param name="assetPath"></param>
 		/// <returns></returns>
-		public static GroupNameInfo ParseGroupName(List<AAPathConfigItem> aaPathConfigs, string assetPath)
+		public static AssetGroupNameInfo ParseGroupName(List<AAPathConfigItem> aaPathConfigs, string assetPath)
 		{
-			var groupInfo = new GroupNameInfo();
+			var groupInfo = new AssetGroupNameInfo();
 
 			{
 				foreach (var config in aaPathConfigs)
