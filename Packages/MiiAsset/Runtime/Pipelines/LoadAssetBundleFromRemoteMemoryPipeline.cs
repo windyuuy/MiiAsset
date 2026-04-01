@@ -45,7 +45,10 @@ namespace MiiAsset.Runtime.Pipelines
 			if (Result.IsOk)
 			{
 				var bytes = DownloadToMemoryPipeline.Bytes;
-				SharedEncrypt.Encryptor.Encrypt(bytes, 0, 0, bytes.Length);
+				if (IsEncrypt)
+				{
+					SharedEncrypt.Encryptor.Encrypt(bytes, 0, 0, bytes.Length);
+				}
 				this.AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
 
 				if (this.AssetBundle == null)
@@ -75,8 +78,16 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public PipelineProgress GetProgress()
 		{
-			return DownloadToMemoryPipeline.GetProgress()
-				.Combine(new PipelineProgress().SetDownloadedProgress(Result.IsOk));
+			var downloadPipelineProgress = DownloadToMemoryPipeline.GetProgress();
+			if (Result != null)
+			{
+				return downloadPipelineProgress
+					.Combine(new PipelineProgress().SetDownloadedProgress(Result?.IsOk??false));
+			}
+			else
+			{
+				return downloadPipelineProgress;
+			}
 		}
 
 		public AssetBundle AssetBundle { get; set; }
