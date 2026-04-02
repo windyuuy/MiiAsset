@@ -23,6 +23,7 @@ namespace MiiAsset.Editor.Optimization
 			paths.Sort((p1, p2) => p2.scanRoot.Length - p1.scanRoot.Length);
 			paths.ForEach((item) => { item.pathRegex = new Regex(item.path); });
 
+			pathInfo.IsOfflineAll = pathInfo.IsOfflineAll || aaPathConfig.isOfflineAll;
 			pathInfo.IsEncryptAll = pathInfo.IsEncryptAll || aaPathConfig.isEncryptAll;
 			pathInfo.IsEncryptBuiltin = pathInfo.IsEncryptBuiltin || aaPathConfig.isEncryptBuiltin;
 			pathInfo.Paths.AddRange(paths);

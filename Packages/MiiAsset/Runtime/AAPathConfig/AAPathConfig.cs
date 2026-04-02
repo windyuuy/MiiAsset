@@ -118,6 +118,11 @@ namespace MiiAsset.Runtime
 		/// 加密所有文件
 		/// </summary>
 		public bool isEncryptAll = false;
+		
+		/// <summary>
+		/// 是否所有文件都打进包内
+		/// </summary>
+		public bool isOfflineAll = false;
 
 		public bool isEncryptBuiltin = false;
 	}

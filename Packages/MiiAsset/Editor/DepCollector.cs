@@ -227,7 +227,7 @@ namespace MiiAsset.Editor.Build
 						if (string.IsNullOrEmpty(scanInfo.ScanRoot) || item.assetPath.StartsWith(scanInfo.ScanRoot))
 						{
 							var groupNameInfo = AAPathInfo.ParseGroupName(scanInfo.Item, item.assetPath, item.guid,
-								pathInfo.IsEncryptAll);
+								pathInfo.IsEncryptAll, pathInfo.IsOfflineAll);
 							return groupNameInfo;
 						}
 
@@ -265,6 +265,7 @@ namespace MiiAsset.Editor.Build
 							TagsUKey = tagsKey,
 							// SingleFileItems = pathInfo.SingleFileItems,
 							IsEncrypt = pathInfo.IsEncryptAll || assetGroupNameInfo.IsEncrypt,
+							IsOffline = pathInfo.IsOfflineAll || !assetGroupNameInfo.IsRemote,
 							IsKeepInMemory = pathInfo.IsKeepInMemory,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
@@ -309,6 +310,7 @@ namespace MiiAsset.Editor.Build
 							TagsUKey = tagsKey,
 							// SingleFileItems = pathInfo.SingleFileItems,
 							IsEncrypt = pathInfo.IsEncryptAll,
+							IsOffline = pathInfo.IsOfflineAll,
 							IsKeepInMemory = pathInfo.IsKeepInMemory,
 						};
 						TagBundleMap.Add(tagsKey, tagBundle);
