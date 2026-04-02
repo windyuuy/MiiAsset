@@ -101,52 +101,34 @@ namespace MiiAsset.Runtime
 	[CreateAssetMenu(fileName = "AAPathConfig", menuName = "AppConfig/AAPathConfig", order = 0)]
 	public class AAPathConfig : ScriptableObject
 	{
-		/// <summary>
-		/// 包含的路径
-		/// </summary>
-		/// <returns></returns>
+		[Header("包含的路径")]
 		public List<AAPathConfigItem> paths = new List<AAPathConfigItem>();
 
-		/// <summary>
-		/// 排除的文件扩展名
-		/// </summary>
-		/// <returns></returns>
+		[Header("排除的文件扩展名")]
 		public List<string> excludeExtensions = new List<string>();
 
-		/// <summary>
-		/// 排除的路径
-		/// </summary>
-		/// <returns></returns>
+		[Header("排除的路径")]
 		public List<AAPathConfigItem> excludePaths = new List<AAPathConfigItem>();
+
+		[Header("零散文件包")]
+		public List<AASingleFileItem> singleFiles = new List<AASingleFileItem>();
+
+		[Header("此分包打进包内")]
+		public bool isOffline;
+
+		[Header("此分包加密")]
+		public bool isEncrypt;
+
+		[Header("是否所有文件都打进包内")]
+		public bool isOfflineAll = false;
 
 		public bool isShaderGroupOffline = true;
 		public bool isMyBuiltinShaderGroupOffline = true;
 
-		public List<AASingleFileItem> singleFiles = new List<AASingleFileItem>();
-
-		/// <summary>
-		/// 是否此包文件打进包内
-		/// </summary>
-		public bool isOffline;
-
-		/// <summary>
-		/// 是否所有文件都打进包内
-		/// </summary>
-		public bool isOfflineAll = false;
-
-		/// <summary>
-		/// 此包加密
-		/// </summary>
-		public bool isEncrypt;
-		
-		/// <summary>
-		/// 加密所有文件
-		/// </summary>
+		[Header("加密所有文件")]
 		public bool isEncryptAll = false;
 
-		/// <summary>
-		/// 加密所有内置包
-		/// </summary>
+		[Header("加密所有内置包")]
 		public bool isEncryptBuiltin = false;
 	}
 
