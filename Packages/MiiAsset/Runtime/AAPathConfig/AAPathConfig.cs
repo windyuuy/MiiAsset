@@ -70,6 +70,11 @@ namespace MiiAsset.Runtime
 				return scanRoot;
 			}
 		}
+
+		public AAPathConfigItem Clone()
+		{
+			return (AAPathConfigItem)MemberwiseClone();
+		}
 	}
 
 	[Serializable]
@@ -85,6 +90,11 @@ namespace MiiAsset.Runtime
 		public string GetGroupName()
 		{
 			return group.Replace("/", "_").ToLower();
+		}
+
+		public AASingleFileItem Clone()
+		{
+			return (AASingleFileItem)MemberwiseClone();
 		}
 	}
 
@@ -115,15 +125,28 @@ namespace MiiAsset.Runtime
 		public List<AASingleFileItem> singleFiles = new List<AASingleFileItem>();
 
 		/// <summary>
-		/// 加密所有文件
+		/// 是否此包文件打进包内
 		/// </summary>
-		public bool isEncryptAll = false;
-		
+		public bool isOffline;
+
 		/// <summary>
 		/// 是否所有文件都打进包内
 		/// </summary>
 		public bool isOfflineAll = false;
 
+		/// <summary>
+		/// 此包加密
+		/// </summary>
+		public bool isEncrypt;
+		
+		/// <summary>
+		/// 加密所有文件
+		/// </summary>
+		public bool isEncryptAll = false;
+
+		/// <summary>
+		/// 加密所有内置包
+		/// </summary>
 		public bool isEncryptBuiltin = false;
 	}
 

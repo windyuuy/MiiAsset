@@ -19,9 +19,16 @@ namespace MiiAsset.Editor.Optimization
 				excludePathConfig.pathRegex = new Regex(excludePathConfig.path);
 			}
 
-			var paths = aaPathConfig.paths.Where(path => !path.isDisabled).ToList();
+			var paths = aaPathConfig.paths.Where(path => !path.isDisabled)
+				.Select(path=>path.Clone())
+				.ToList();
 			paths.Sort((p1, p2) => p2.scanRoot.Length - p1.scanRoot.Length);
-			paths.ForEach((item) => { item.pathRegex = new Regex(item.path); });
+			paths.ForEach((item) =>
+			{
+				item.pathRegex = new Regex(item.path);
+				item.isOffline = item.isOffline || aaPathConfig.isOffline;
+				item.isEncrypt = item.isEncrypt || aaPathConfig.isEncrypt;
+			});
 
 			pathInfo.IsOfflineAll = pathInfo.IsOfflineAll || aaPathConfig.isOfflineAll;
 			pathInfo.IsEncryptAll = pathInfo.IsEncryptAll || aaPathConfig.isEncryptAll;
@@ -33,8 +40,11 @@ namespace MiiAsset.Editor.Optimization
 			pathInfo.IsMyBuiltinShaderGroupOffline =
 				pathInfo.IsMyBuiltinShaderGroupOffline || aaPathConfig.isMyBuiltinShaderGroupOffline;
 			var singleFileItems = pathInfo.SingleFileItems;
-			foreach (var singleFile in aaPathConfig.singleFiles)
+			foreach (var singleFile0 in aaPathConfig.singleFiles)
 			{
+				var singleFile = singleFile0.Clone();
+				singleFile.isOffline = singleFile.isOffline || aaPathConfig.isOffline;
+				singleFile.isEncrypt = singleFile.isEncrypt || aaPathConfig.isEncrypt;
 				var path = AssetDatabase.GetAssetPath(singleFile.asset);
 				var guid = AssetDatabase.AssetPathToGUID(path);
 				if (!singleFileItems.TryAdd(guid, singleFile))
