@@ -55,7 +55,12 @@ namespace MiiAsset.Runtime.IOManagers
 		{
 			FileSystemManager = UserAPI.Instance.FileSystem.GetFileSystemManager();
 
-			return base.Init(options);
+			var persistentDataPath = UserAPI.Instance.GameInfo.UserDataPath;
+			var streamingAssetsCachePath =
+				$"{UserAPI.Instance.GameInfo.UserDataPath}/__GAME_FILE_CACHE/StreamingAssets";
+			var streamingAssetsPath = Application.streamingAssetsPath;
+
+			return SetupDirs(options, persistentDataPath, streamingAssetsCachePath, streamingAssetsPath);
 		}
 
 		protected override bool EnsurePersistDirs()

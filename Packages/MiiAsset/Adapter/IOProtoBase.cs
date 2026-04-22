@@ -28,20 +28,31 @@ namespace MiiAsset.Runtime.IOManagers
 
 		public virtual Task<bool> Init(IIOProtoInitOptions options)
 		{
+			var persistentDataPath = Application.persistentDataPath;
+			var streamingAssetsCachePath = Application.streamingAssetsPath;
+			var streamingAssetsPath = Application.streamingAssetsPath;
+
+			return this.SetupDirs(options, persistentDataPath, streamingAssetsCachePath, streamingAssetsPath);
+		}
+
+		protected virtual Task<bool> SetupDirs(IIOProtoInitOptions options, string persistentDataPath,
+			string streamingAssetsCachePath, string streamingAssetsPath)
+		{
 		#if UNITY_EDITOR
 			this.InternalDir = AssetHelper.GetInternalBuildPath();
 		#else
-			this.InternalDir = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
+			this.InternalDir = $"{streamingAssetsCachePath}/{options.InternalBaseUri}";
 		#endif
-			var persistentDataPath = Application.persistentDataPath;
+
 			this.CacheDir = $"{persistentDataPath}/{options.BundleCacheDir}";
 			this.ExternalDir = $"{persistentDataPath}/{options.ExternalBaseUri}";
-			StreamingRemoteAssetPath = $"{Application.streamingAssetsPath}/{options.InternalBaseUri}";
-			this.CatalogName = options.CatalogName;
-			this.Timeout = options.Timeout;
+			StreamingRemoteAssetPath = $"{streamingAssetsPath}/{options.InternalBaseUri}";
 
 			MyLogger.Log(
-				$"iopaths: {this.InternalDir}, {this.CacheDir}, {this.ExternalDir}, {StreamingRemoteAssetPath}");
+				$"iopaths: internal={this.InternalDir}, cache={this.CacheDir}, external={this.ExternalDir}, streaming={StreamingRemoteAssetPath}");
+
+			this.CatalogName = options.CatalogName;
+			this.Timeout = options.Timeout;
 
 			var ret = EnsurePersistDirs();
 

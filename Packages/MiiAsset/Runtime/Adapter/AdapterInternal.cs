@@ -30,7 +30,7 @@ namespace MiiAsset.Runtime.Adapter
 			var localIOProto = adapter.GetIOProto();
 			if (localIOProto != null)
 			{
-				MyLogger.LogInfo($"use {adapter.Name}.LocalIOProto");
+				MyLogger.LogInfo($"use {adapter.Name}.IOProto");
 				IOManager.LocalIOProto = localIOProto;
 			}
 

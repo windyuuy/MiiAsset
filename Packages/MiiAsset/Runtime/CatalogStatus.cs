@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+#if USE_MIITASK
+using MonoExtLib.MiiTask;
+#else
 using System.Threading.Tasks;
+#endif
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
