@@ -18,6 +18,7 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 	public class AssetReference
 	{
 		[SerializeField] protected string guid;
+
 		[SerializeField] protected Object asset;
 
 		/// <summary>
@@ -152,14 +153,10 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 			return true;
 		}
 
-		public bool SetEditorSubObject(Object subObject)
-		{
-			return true;
-		}
 	#endif
 
 	#if !DISABLE_NOREFERCOUNT_API
-		public Task<T> Load<T>(AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		public virtual Task<T> Load<T>(AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
 		{
 			if (Address == null)
 			{
@@ -176,7 +173,7 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 			}
 		}
 
-		public Task UnLoad()
+		public virtual Task UnLoad()
 		{
 			return AssetLoader.UnLoadAsset(Address);
 		}
@@ -192,6 +189,81 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		public Task UnLoadScene(UnloadSceneOptions options = UnloadSceneOptions.None)
 		{
 			return AssetLoader.UnLoadScene(Address, options);
+		}
+	#endif
+	}
+
+	[Serializable]
+	public class SubAssetReference : AssetReference
+	{
+		[SerializeField] public string subguid;
+
+		public SubAssetReference()
+		{
+		}
+
+		public SubAssetReference(string guid, string subguid) : base(guid)
+		{
+			this.subguid = subguid;
+		}
+
+
+	#if UNITY_EDITOR
+		public string EditorSubAssetGuid
+		{
+			get
+			{
+				return subguid;
+			}
+		}
+
+		public bool SetEditorSubObject(Object mainAsset, Object subAsset)
+		{
+			SetEditorAsset(mainAsset);
+
+			subguid = subAsset?.name ?? "";
+			return true;
+		}
+	#endif
+
+	#if !DISABLE_NOREFERCOUNT_API
+		public Task<T> LoadMainAsset<T>(AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		{
+			return base.Load<T>(loadStatus);
+		}
+
+		public async Task<T> LoadSubAsset<T>(AssetLoadStatusGroup loadStatus = null) where T : UnityEngine.Object
+		{
+			if (typeof(T) == typeof(Sprite))
+			{
+				var mainAsset = await LoadMainAsset<SpriteAtlas>();
+				if (mainAsset != null)
+				{
+					var subAsset = mainAsset.GetSprite(subguid);
+					return (T)(object)subAsset;
+				}
+				else
+				{
+					return null;
+				}
+			}
+			else
+			{
+				MyLogger.LogError($"sub asset type not implemented");
+				return null;
+			}
+		}
+	#endif
+	}
+
+	[Serializable]
+	public class SubAssetReferenceT<TSubObject> : SubAssetReference
+		where TSubObject : Object
+	{
+	#if !DISABLE_NOREFERCOUNT_API
+		public Task<TSubObject> LoadSubAsset(AssetLoadStatusGroup loadStatus = null)
+		{
+			return base.LoadSubAsset<TSubObject>(loadStatus);
 		}
 	#endif
 	}
