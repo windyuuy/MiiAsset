@@ -133,6 +133,7 @@ namespace MiiAsset.Runtime
 						// merge internal catalog
 						if (internalCatalog != null)
 						{
+							// cacheUri == null, 表示内部资源无需缓存
 							var internalSource = new ResourceLoadSource(InternalBaseUri, null);
 							foreach (var bundleInfo in internalCatalog.bundleInfos)
 							{
@@ -152,8 +153,9 @@ namespace MiiAsset.Runtime
 							sourceUri = IOManager.LocalIOProto.InternalDir;
 						}
 
-						var loadSource = new ResourceLoadSource(sourceUri, null);
-						LoadCatalogInfo(internalCatalog, loadSource, Result);
+						// cacheUri == null, 表示内部资源无需缓存
+						var internalSource2 = new ResourceLoadSource(sourceUri, null);
+						LoadCatalogInfo(internalCatalog, internalSource2, Result);
 					}
 
 					if (Result.Exception == null)
@@ -165,6 +167,12 @@ namespace MiiAsset.Runtime
 				{
 					Result.Exception = exception;
 					Result.ErrorType = PipelineErrorType.DataIncorrect;
+				}
+
+				foreach (var resourceLoadSource in CatalogInfo.BundleLoadSourceMap)
+				{
+					// Debug.Log(
+					// 	$"resourceLoadSource: {resourceLoadSource.Key}, {resourceLoadSource.Value.GetSourceUri(resourceLoadSource.Key)}, {resourceLoadSource.Value.GetCacheUri(resourceLoadSource.Key)};");
 				}
 			}
 		}
