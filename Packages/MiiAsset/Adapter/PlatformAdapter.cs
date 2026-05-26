@@ -136,7 +136,7 @@ namespace MiiAsset.Runtime.Adapter
 	#if UNITY_EDITOR
 		public static string GetBuildTargetSubFolder(UnityEditor.BuildTarget target)
 		{
-			return MiiAssetPlatformPathInternal(UnityEditor.EditorUserBuildSettings.activeBuildTarget);
+			return MiiAssetPlatformPathInternal(target);
 		}
 	#endif
 

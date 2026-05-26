@@ -1,0 +1,10 @@
+﻿{
+  "name": "windy.miiasset.dotnethotloader",
+  "displayName": "DotnetHotLoader",
+  "version": "1.0.1",
+  "unity": "2019.4",
+  "description": "Unity Code hot update",
+  "dependencies": {
+    "windy.gamelibs.all": "1.0.5"
+  }
+}

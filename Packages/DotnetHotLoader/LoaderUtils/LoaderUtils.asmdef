@@ -1,0 +1,17 @@
+{
+    "name": "LoaderUtils",
+    "rootNamespace": "",
+    "references": [
+        "GUID:81ac9086448917948963e24f41f70c1f",
+        "GUID:890b253146385e54b9b4cff5c8dea58b"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
