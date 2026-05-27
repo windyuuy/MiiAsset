@@ -104,7 +104,7 @@ namespace HatNetwork
 				if (retry && !netState.success && uwr.url.StartsWith("http"))
 				{
 					Debug.LogError($"Http-ABD-Failed: {uwr.url}: {uwr.error}");
-					MyAddressablesUtils.ShowNetError($"path:/version/get/latest, code:{uwr.responseCode}, msg:{uwr.error}", () =>
+					MyAddressablesUtils.ShowNetError($"检查更新游戏失败(1), code:{uwr.responseCode}, msg:{uwr.error}", () =>
 					{
 						netState.needRetry = true;
 						DownloadTaskSource.SetResult(netState);

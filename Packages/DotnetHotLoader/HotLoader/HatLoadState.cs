@@ -11,7 +11,7 @@ namespace HatNetwork
 		/// <summary>
 		/// 远端新版资源加载完毕
 		/// </summary>
-		public bool IsRemoteLoaded => IsPreLoaded && IsHotLoaded;
+		public bool IsRemoteLoaded => (IsPreLoaded||IsPreRemoteLoaded) && IsHotLoaded;
 
 		public long LocalVersionCode = -1;
 		public long RemoteVersionCode = -1;

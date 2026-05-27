@@ -149,8 +149,11 @@ namespace HatNetwork
 				if (uwr.result != UnityWebRequest.Result.Success && uwr.url.StartsWith("http"))
 				{
 					MyAddressablesUtils.ShowNetError(
-						$"path:/version/get/latest, code:{uwr.responseCode}, msg:{uwr.error}",
-						() => { taskSource.SetResult(uwr.result); });
+						$"检查更新游戏失败(2), code:{uwr.responseCode}, msg:{uwr.error}",
+						() =>
+						{
+							taskSource.SetResult(uwr.result);
+						});
 				}
 				else
 				{

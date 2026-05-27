@@ -16,8 +16,14 @@ namespace HatNetwork
 	public class HatLoader : MonoBehaviour
 	{
 		protected LoadTool loadTool = new LoadTool();
+
 		protected virtual void Awake()
 		{
+			var go = GameObject.FindWithTag("HotCodeLoader");
+			if (go != null)
+			{
+				go.SendMessage("OnRemoteCodeLoaded", 101);
+			}
 			HotUpdate();
 		}
 
@@ -49,9 +55,11 @@ namespace HatNetwork
 		{
 			return MainResPreloader.Inst.GetRemoteVersionCode(comp);
 		}
+
 		protected Task<MyAddressablesUtils.GetVersionResp> GetRemoteVersionCodeCompat(MonoBehaviour comp)
 		{
-			var fModuleVersion=typeof(LocalLoader).GetField("ModuleVersion", BindingFlags.Instance | BindingFlags.Public);
+			var fModuleVersion =
+				typeof(LocalLoader).GetField("ModuleVersion", BindingFlags.Instance | BindingFlags.Public);
 			if (fModuleVersion != null)
 			{
 				return GetRemoteVersionCodeNew(comp);
@@ -91,6 +99,7 @@ namespace HatNetwork
 							break;
 						}
 					}
+
 					HatUpdateState.Inst.RemoteVersionCode = versionCode;
 					HatUpdateState.Inst.RemoteResourceUrl = resourceUrl;
 				}
@@ -105,7 +114,7 @@ namespace HatNetwork
 				// 强制更新逻辑更新包
 				Debug.Log("检查强制加载prehatill");
 				var neetLoadPrehatill = HatUpdateState.Inst.RemoteVersionCode != HatUpdateState.Inst.LocalVersionCode &&
-				                false == HatUpdateState.Inst.IsPreRemoteLoaded;
+				                        false == HatUpdateState.Inst.IsPreRemoteLoaded;
 				if (neetLoadPrehatill)
 				{
 					while (true)
@@ -119,7 +128,7 @@ namespace HatNetwork
 							if (!netState1.success)
 							{
 								Debug.Log("强制加载prehatill失败");
-								Debug.LogException(netState1.exception??new Exception("unkown"));
+								Debug.LogException(netState1.exception ?? new Exception("unkown"));
 							}
 							else
 							{
@@ -142,14 +151,17 @@ namespace HatNetwork
 						hotLoadState.IsHotLoaded = netState2.success;
 						if (!netState2.success)
 						{
-							Debug.LogException(netState2.exception??new Exception("unkown"));
+							Debug.LogException(netState2.exception ?? new Exception("unkown"));
 						}
 						else
 						{
 							onProgress(hotUpdateSize, hotUpdateSize);
 						}
+
 						break;
-					}else{
+					}
+					else
+					{
 						Debug.Log("retring load hatill");
 					}
 				}
@@ -165,7 +177,6 @@ namespace HatNetwork
 				// 	}
 				// 	MyAddressablesUtils.SaveLocalVersionCode(versionCode);
 				// }
-
 			}
 			catch (Exception e)
 			{
@@ -180,10 +191,15 @@ namespace HatNetwork
 				hotLoadState.IsPreRemoteLoaded = HatUpdateState.Inst.IsPreRemoteLoaded;
 				hotLoadState.IsNeedRestart = HatUpdateState.Inst.IsNeedRestart;
 			}
+
+			var isOk = hotLoadState.IsRemoteLoaded;
+			var go = GameObject.FindWithTag("HotCodeLoader");
+			go.SendMessage("OnRemoteCodeLoaded", isOk ? 201 : 202);
+
 			var sResult = JsonUtility.ToJson(hotLoadState);
 			Debug.Log($"返回更新结果-HUResult: {sResult}");
 
-#if TEST_HYBRIDCLR
+		#if TEST_HYBRIDCLR
 			Debug.Log($"是否需要重启: {hotLoadState.IsNeedRestartIndeed()}");
 
 			Debug.Log("加载testhot");
@@ -195,12 +211,8 @@ namespace HatNetwork
 			{
 				Debug.LogException(e);
 			}
-#endif
+		#endif
 
-			var isOk = hotLoadState.IsRemoteLoaded;
-			var go = GameObject.FindWithTag("HotCodeLoader");
-			go.SendMessage("OnRemoteCodeLoaded", isOk);
-			
 			return sResult;
 		}
 	}
