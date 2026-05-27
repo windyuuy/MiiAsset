@@ -2,7 +2,7 @@ using System;
 using MiiAsset.Runtime;
 using UnityEngine;
 
-public class JKLJWF : MonoBehaviour
+public class SimpleTest : MonoBehaviour
 {
 	public Canvas canvas;
 

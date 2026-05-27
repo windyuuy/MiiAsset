@@ -52,7 +52,7 @@ public class NewBehaviourScript : MonoBehaviour
 			var address = "Assets/Bundles/BB/Capsule.prefab";
 			var capsulePrefab = await AssetLoader.LoadAssetByRefer<GameObject>(address);
 			var capsule = GameObject.Instantiate(capsulePrefab);
-			await AssetLoader.UnLoadAssetByRefer(address);
+			await AssetLoader.UnLoadAssetByRefer<GameObject>(address);
 			Debug.Log("done");
 		}
 		else
@@ -129,7 +129,7 @@ public class NewBehaviourScript : MonoBehaviour
 			Debug.Log("unload scene");
 			await AssetLoader.UnLoadSceneByRefer(sceneAddress);
 			Debug.Log("unload asset");
-			await AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
+			await AssetLoader.UnLoadAssetByRefer<GameObject>("Assets/Bundles/BB/Capsule.prefab");
 			Debug.Log("done");
 		}
 		else
@@ -154,7 +154,7 @@ public class NewBehaviourScript : MonoBehaviour
 			Debug.Log("unload scene");
 			var task1 = AssetLoader.UnLoadSceneByRefer(sceneAddress);
 			Debug.Log("unload asset");
-			var task2 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
+			var task2 = AssetLoader.UnLoadAssetByRefer<GameObject>("Assets/Bundles/BB/Capsule.prefab");
 			Debug.Log("unload all");
 			await Task.WhenAll(task1, task2);
 			Debug.Log("done");
@@ -185,7 +185,7 @@ public class NewBehaviourScript : MonoBehaviour
 
 			_ = Load1();
 			var task1 = AssetLoader.UnLoadSceneByRefer(sceneAddress);
-			var task2 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
+			var task2 = AssetLoader.UnLoadAssetByRefer<GameObject>("Assets/Bundles/BB/Capsule.prefab");
 			_ = Load1();
 			Debug.Log("done");
 		}
@@ -265,11 +265,11 @@ public class NewBehaviourScript : MonoBehaviour
 			var unloadTask1 = Load1();
 			var dt7 = Date.Now();
 			var task1 = AssetLoader.UnLoadSceneByRefer(sceneAddress);
-			var task2 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
+			var task2 = AssetLoader.UnLoadAssetByRefer<GameObject>("Assets/Bundles/BB/Capsule.prefab");
 			var dt8 = Date.Now();
 			var unloadTask2 = Load1();
 			var dt9 = Date.Now();
-			var task3 = AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
+			var task3 = AssetLoader.UnLoadAssetByRefer<GameObject>("Assets/Bundles/BB/Capsule.prefab");
 			var dt10 = Date.Now();
 			Debug.Log(
 				$"done: {dt2 - dt1}, {dt3 - dt2}, {dt4 - dt3}, {dt5 - dt4}, {dt6 - dt5}, {dt7 - dt6}, {dt8 - dt7}, {dt9 - dt8}, {dt10 - dt9}");
@@ -277,12 +277,12 @@ public class NewBehaviourScript : MonoBehaviour
 			await Task.WhenAll(task1, task2, task3, unloadTask1, unloadTask2);
 
 			await Load1();
-			await AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/Capsule.prefab");
+			await AssetLoader.UnLoadAssetByRefer<GameObject>("Assets/Bundles/BB/Capsule.prefab");
 
 			var atlas = await AssetLoader.LoadAssetByRefer<SpriteAtlas>("Assets/Bundles/BB/jfew/FVE.spriteatlasv2");
 			var sprite = atlas.GetSprite("login_btn_kanjian1");
 			Debug.Assert(sprite != null);
-			await AssetLoader.UnLoadAssetByRefer("Assets/Bundles/BB/jfew/FVE.spriteatlasv2");
+			await AssetLoader.UnLoadAssetByRefer<GameObject>("Assets/Bundles/BB/jfew/FVE.spriteatlasv2");
 		}
 		else
 		{

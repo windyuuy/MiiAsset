@@ -33,7 +33,7 @@ namespace TrackableResourceManager.Runtime
 					}
 					else
 					{
-						AssetLoader.UnLoadAsset(cacheKey.Key);
+						AssetLoader.UnLoadAsset(cacheKey.Key, cacheKey.T);
 					}
 				}
 			}
@@ -46,7 +46,7 @@ namespace TrackableResourceManager.Runtime
 				}
 				else
 				{
-					AssetLoader.UnLoadAssetByRefer(item.Key.Key);
+					AssetLoader.UnLoadAssetByRefer(item.Key.Key, item.Key.T);
 				}
 			}
 		#endif
@@ -144,14 +144,14 @@ namespace TrackableResourceManager.Runtime
 				if (SharedCached.TryGetValue(key, out var op) && op.ReferCount == 1)
 				{
 					op.ReferCount--;
-					return AssetLoader.UnLoadAsset(resUri);
+					return AssetLoader.UnLoadAsset(resUri, typeof(T));
 				}
 				else
 				{
 					Debug.LogError($"resource not in set0: {resUri}");
 				}
 			#else
-				return AssetLoader.UnLoadAssetByRefer(resUri);
+				return AssetLoader.UnLoadAssetByRefer(resUri, typeof(T));
 			#endif
 			}
 			else

@@ -175,12 +175,12 @@ namespace MiiAsset.Runtime
 		/// 仅用于开发时观测加载状态, 正式版本要移除
 		/// </summary>
 		/// <returns></returns>
-		public LoadAddressStatus GetAddressStatus(string address)
+		public LoadAddressStatus GetAddressStatus<T>(string address) where T : UnityEngine.Object
 		{
 			var provider = GetBundledAssetProvider();
 			if (provider != null)
 			{
-				return provider.GetAddressStatus(address);
+				return provider.GetAddressStatus<T>(address);
 			}
 
 			return null;

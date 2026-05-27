@@ -39,8 +39,8 @@ namespace EaseRecycle.Tests
 			var image3 = recyclePool.Get("Image-bbeb2f9a174ba2e4dae9d493cc9e236e");
 			Debug.Assert(image.GetComponent<RecycleMark>().Uid == image3.GetComponent<RecycleMark>().Uid);
 
-			_ = AssetLoader.UnLoadAsset(assetmanifestkey);
-			_ = testAssets.UnrecycleSingle.UnLoad();
+			_ = AssetLoader.UnLoadAsset<GameObject>(assetmanifestkey);
+			_ = testAssets.UnrecycleSingle.UnLoad<GameObject>();
 		}
 
 		[UnityTest]
@@ -64,8 +64,8 @@ namespace EaseRecycle.Tests
 			var image3 = recyclePool.Get("Image-bbeb2f9a174ba2e4dae9d493cc9e236e");
 			Debug.Assert(image.GetComponent<RecycleMark>().Uid == image3.GetComponent<RecycleMark>().Uid);
 
-			_ = AssetLoader.UnLoadAsset(assetmanifestkey);
-			_ = testAssets.UnrecycleSingle.UnLoad();
+			_ = AssetLoader.UnLoadAsset<GameObject>(assetmanifestkey);
+			_ = testAssets.UnrecycleSingle.UnLoad<GameObject>();
 		}
 
 		[UnityTest]
@@ -89,8 +89,8 @@ namespace EaseRecycle.Tests
 			var image3 = recyclePool.Get("Image-bbeb2f9a174ba2e4dae9d493cc9e236e");
 			Debug.Assert(image.GetComponent<RecycleMark>().Uid == image3.GetComponent<RecycleMark>().Uid);
 
-			_ = AssetLoader.UnLoadAsset(assetmanifestkey);
-			_ = testAssets.UnrecycleSingle.UnLoad();
+			_ = AssetLoader.UnLoadAsset<GameObject>(assetmanifestkey);
+			_ = testAssets.UnrecycleSingle.UnLoad<GameObject>();
 		}
 
 		[UnityTest]
@@ -114,8 +114,8 @@ namespace EaseRecycle.Tests
 			var image3 = recyclePool.Get("uid1_4");
 			Debug.Assert(image.GetComponent<RecycleMark>().Uid == image3.GetComponent<RecycleMark>().Uid);
 
-			_ = AssetLoader.UnLoadAsset(assetmanifestkey);
-			_ = testAssets.UnrecycleSingle.UnLoad();
+			_ = AssetLoader.UnLoadAsset<GameObject>(assetmanifestkey);
+			_ = testAssets.UnrecycleSingle.UnLoad<GameObject>();
 		}
 
 		[UnityTest]
@@ -139,8 +139,8 @@ namespace EaseRecycle.Tests
 			var image3 = recyclePool.Get("RecycleSingle-1a1365e071cc9e3468bfeae4849f9ed7");
 			Debug.Assert(image.GetComponent<RecycleMark>().Uid == image3.GetComponent<RecycleMark>().Uid);
 
-			_ = AssetLoader.UnLoadAsset(assetmanifestkey);
-			_ = testAssets.UnrecycleSingle.UnLoad();
+			_ = AssetLoader.UnLoadAsset<GameObject>(assetmanifestkey);
+			_ = testAssets.UnrecycleSingle.UnLoad<GameObject>();
 		}
 
 		[UnityTest]
@@ -158,8 +158,8 @@ namespace EaseRecycle.Tests
 			recyclePool.LoadPrefab(asset);
 			Debug.Assert(recyclePool.NodePools.Count == 0);
 
-			_ = AssetLoader.UnLoadAsset(assetmanifestkey);
-			_ = testAssets.UnrecycleSingle.UnLoad();
+			_ = AssetLoader.UnLoadAsset<GameObject>(assetmanifestkey);
+			_ = testAssets.UnrecycleSingle.UnLoad<GameObject>();
 		}
 
 		[UnityTest]
@@ -183,8 +183,8 @@ namespace EaseRecycle.Tests
 			var image3 = recyclePool.Get("uid3_2");
 			Debug.Assert(image3 != null);
 
-			_ = AssetLoader.UnLoadAsset(assetmanifestkey);
-			_ = testAssets.UnrecycleSingle.UnLoad();
+			_ = AssetLoader.UnLoadAsset<GameObject>(assetmanifestkey);
+			_ = testAssets.UnrecycleSingle.UnLoad<GameObject>();
 		}
 
 		[UnityTest]
@@ -202,8 +202,8 @@ namespace EaseRecycle.Tests
 			recyclePool.LoadPrefab(asset);
 			Debug.Assert(recyclePool.NodePools.Count == 0);
 
-			_ = AssetLoader.UnLoadAsset(assetmanifestkey);
-			_ = testAssets.UnrecycleSingle.UnLoad();
+			_ = AssetLoader.UnLoadAsset<GameObject>(assetmanifestkey);
+			_ = testAssets.UnrecycleSingle.UnLoad<GameObject>();
 		}
 #endif
 	}

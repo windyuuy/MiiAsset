@@ -10,6 +10,38 @@ using Object = UnityEngine.Object;
 
 namespace MiiAsset.Runtime
 {
+	public struct AACacheKey
+	{
+		public string Address;
+		public Type ResType;
+
+		public AACacheKey(string address, Type resType)
+		{
+			Address = address;
+			ResType = resType;
+		}
+
+		public override int GetHashCode()
+		{
+			return Address.GetHashCode() ^ ResType.GetHashCode();
+		}
+
+		public override bool Equals(object obj)
+		{
+			if (obj is AACacheKey other)
+			{
+				return Address == other.Address && ResType == other.ResType;
+			}
+
+			return false;
+		}
+
+		public override string ToString()
+		{
+			return $"{Address}<{ResType.Name}>";
+		}
+	}
+
 	public class LoadOneAssetStatus
 	{
 		public Task<UnityEngine.Object> Task => Op.GetTask();
@@ -40,7 +72,7 @@ namespace MiiAsset.Runtime
 		Task UnLoad();
 		Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : Object;
 		Task<T> LoadAssetJustSync<T>(string address, SyncOperationStatus loadStatus) where T : Object;
-		Task UnLoadAssetJust(string address);
+		Task UnLoadAssetJust(string address, Type type);
 
 		/// <summary>
 		/// 未卸载的Bundle
@@ -257,7 +289,7 @@ namespace MiiAsset.Runtime
 			}
 
 			// MyLogger.Log(
-				// $"AssetBundle-ExistExternal: {IOManager.LocalIOProto.ExistsBundle(this.BundleName)}, {BundleName}");
+			// $"AssetBundle-ExistExternal: {IOManager.LocalIOProto.ExistsBundle(this.BundleName)}, {BundleName}");
 			if (!autoLoad && IOManager.LocalIOProto.ExistsBundle(this.BundleName))
 			{
 				MyLogger.Log($"AssetBundle-ExistExternal: {BundleName}");
@@ -273,7 +305,8 @@ namespace MiiAsset.Runtime
 			{
 				// try load from internal
 				var result = await IOManager.LocalIOProto.EnsureStreamingBundles(this.BundleName);
-				isInternalBundleExist = result is EnsureStreamingBundlesResult.Exist or EnsureStreamingBundlesResult.Downloaded;
+				isInternalBundleExist =
+					result is EnsureStreamingBundlesResult.Exist or EnsureStreamingBundlesResult.Downloaded;
 				if (isInternalBundleExist && !autoLoad)
 				{
 					MyLogger.Log($"AssetBundle-ExistInternal: {BundleName}");
@@ -541,10 +574,11 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		protected readonly Dictionary<string, UnityEngine.Object> LoadedAssetMap = new();
+		protected readonly Dictionary<AACacheKey, UnityEngine.Object> LoadedAssetMap = new();
 
-		protected readonly Dictionary<string, (AssetBundleRequest op, Task<UnityEngine.Object> task)> LoadingAssetMap =
-			new();
+		protected readonly Dictionary<AACacheKey, (AssetBundleRequest op, Task<UnityEngine.Object> task)>
+			LoadingAssetMap =
+				new();
 
 		public async Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : Object
 		{
@@ -583,18 +617,19 @@ namespace MiiAsset.Runtime
 
 			// var t1 = Date.Now();
 			// var fc1 = Time.frameCount;
-			if (LoadedAssetMap.TryGetValue(address, out var assetObj))
+			var cacheKey = new AACacheKey(address, typeof(T));
+			if (LoadedAssetMap.TryGetValue(cacheKey, out var assetObj))
 			{
 				loadStatus?.SetCompleted(true);
 			}
 			else
 			{
-				if (!LoadingAssetMap.TryGetValue(address, out var item))
+				if (!LoadingAssetMap.TryGetValue(cacheKey, out var item))
 				{
 					var op0 = AssetBundle.LoadAssetAsync<T>(address);
 					var task0 = op0.GetTask();
 					item = (op0, task0);
-					LoadingAssetMap.Add(address, item);
+					LoadingAssetMap.Add(cacheKey, item);
 				}
 
 				if (loadStatus != null)
@@ -604,11 +639,11 @@ namespace MiiAsset.Runtime
 
 				assetObj = await item.task;
 				// 如果 address unloaded, 那么 LoadingAssetMap 不存在 address, 无需在 LoadedAssetMap add address
-				if (LoadingAssetMap.Remove(address))
+				if (LoadingAssetMap.Remove(cacheKey))
 				{
-					if (!LoadedAssetMap.TryAdd(address, assetObj))
+					if (!LoadedAssetMap.TryAdd(cacheKey, assetObj))
 					{
-						MyLogger.LogError($"duplicate asset: {address}");
+						MyLogger.LogError($"duplicate asset: {cacheKey}");
 					}
 				}
 				// var t2 = Date.Now();
@@ -622,9 +657,19 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
+				InvalidCastException exception;
+				if (assetObj != null)
+				{
+					exception = new InvalidCastException($"unmatched asset Type<{nameof(T)}> to load: {address}");
+				}
+				else
+				{
+					exception = new InvalidCastException($"invalid asset with Type<{nameof(T)}> to load: {address}");
+				}
+				MyLogger.LogException(exception, "e50");
+
 				if (loadStatus != null)
 				{
-					var exception = new InvalidCastException($"invalid asset Type<{nameof(T)}> to load: {address}");
 					loadStatus.Exception = exception;
 				}
 
@@ -669,15 +714,16 @@ namespace MiiAsset.Runtime
 
 			// var t1 = Date.Now();
 			// var fc1 = Time.frameCount;
+			var cacheKey = new AACacheKey(address, typeof(T));
 			T asset;
-			if (LoadedAssetMap.TryGetValue(address, out var assetObj))
+			if (LoadedAssetMap.TryGetValue(cacheKey, out var assetObj))
 			{
 				asset = assetObj as T;
 			}
 			else
 			{
 				asset = AssetBundle.LoadAsset<T>(address);
-				LoadedAssetMap.Add(address, asset);
+				LoadedAssetMap.Add(cacheKey, asset);
 			}
 
 			loadStatus?.Set(asset);
@@ -700,10 +746,11 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public Task UnLoadAssetJust(string address)
+		public Task UnLoadAssetJust(string address, Type type)
 		{
-			LoadedAssetMap.Remove(address);
-			LoadingAssetMap.Remove(address);
+			var cacheKey = new AACacheKey(address, type);
+			LoadedAssetMap.Remove(cacheKey);
+			LoadingAssetMap.Remove(cacheKey);
 			return System.Threading.Tasks.Task.CompletedTask;
 		}
 

@@ -16,7 +16,10 @@ namespace MiiAsset.Runtime.Pipelines
 		{
 			Uri = uri;
 			Crc = crc;
-			Result = new();
+			Result = new()
+			{
+				Uri = uri,
+			};
 			this.Build();
 			return this;
 		}

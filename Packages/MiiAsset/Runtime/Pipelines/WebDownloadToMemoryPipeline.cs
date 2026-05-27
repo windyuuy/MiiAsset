@@ -52,6 +52,7 @@ namespace MiiAsset.Runtime.IOStreams
 					Result.Code = (int)code;
 					Result.IsOk = uwrResult == UnityWebRequest.Result.Success;
 					Result.Msg = uwrError;
+					Result.Uri = Uri;
 					if (!Result.IsOk)
 					{
 						Result.ErrorType = PipelineErrorType.NetError;
