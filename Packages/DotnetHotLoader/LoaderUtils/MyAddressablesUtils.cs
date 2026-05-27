@@ -92,7 +92,7 @@ namespace HatNetwork
 					return rlocalPath;
 				}
 
-				var localVT = ConvFileUrlToLocal($"{StreamingAssetsPath}/HLtLib/version.txt");
+				var localVT = ConvFileUrlToLocal(VersionTextFilePath);
 				var localVersion = int.Parse(File.ReadAllText(localVT));
 				var rlocalPath2 = GetDllABStreamPath(name, localVersion);
 				var localPath2 = ConvFileUrlToLocal(rlocalPath2);
@@ -150,10 +150,7 @@ namespace HatNetwork
 				{
 					MyAddressablesUtils.ShowNetError(
 						$"检查更新游戏失败(2), code:{uwr.responseCode}, msg:{uwr.error}",
-						() =>
-						{
-							taskSource.SetResult(uwr.result);
-						});
+						() => { taskSource.SetResult(uwr.result); });
 				}
 				else
 				{
@@ -326,6 +323,21 @@ namespace HatNetwork
 			}
 		}
 
+		public static string VersionTextFilePath => $"{StreamingAssetsPath}/HLtLib/version.txt";
+
+		public static bool SkipLoadHotCode
+		{
+			get
+			{
+			#if UNITY_EDITOR
+				var existHotCodeRes = File.Exists(VersionTextFilePath);
+				return !existHotCodeRes;
+			#else
+				return false;
+			#endif
+			}
+		}
+
 		// TODO: compat app-v1.6.x 之后的版本强更后, 才能使用
 		public static string GetHLtLibDir()
 		{
@@ -396,7 +408,7 @@ namespace HatNetwork
 				}
 			}
 
-			var localPath = $"{StreamingAssetsPath}/HLtLib/version.txt";
+			var localPath = VersionTextFilePath;
 			var localUWP = UnityWebRequest.Get(localPath);
 			var result = await GetUWRRequestTask(localUWP, comp);
 
