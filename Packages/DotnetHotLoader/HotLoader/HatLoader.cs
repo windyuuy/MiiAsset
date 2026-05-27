@@ -19,6 +19,11 @@ namespace HatNetwork
 
 		protected virtual void Awake()
 		{
+			if (MyAddressablesUtils.SkipLoadHotCode)
+			{
+				return;
+			}
+			
 			var go = GameObject.FindWithTag("HotCodeLoader");
 			if (go != null)
 			{
