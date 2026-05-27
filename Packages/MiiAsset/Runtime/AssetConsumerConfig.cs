@@ -49,10 +49,12 @@ namespace MiiAsset.Runtime
 		public string CatalogExt => catalogType;
 		public int InitDownloadCoCount => initDownloadCoCount;
 		public int MaxDownloadCoCount => maxDownloadCoCount;
+
 		/// <summary>
 		/// 秒
 		/// </summary>
 		public int Timeout => timeout;
+
 		/// <summary>
 		/// 秒
 		/// </summary>
@@ -62,6 +64,12 @@ namespace MiiAsset.Runtime
 		{
 			var config = Resources.Load<AssetConsumerConfig>("MiiConfig/AssetConsumerConfig") ??
 			             Resources.Load<AssetConsumerConfig>("MiiConfig/BuiltinAssetConsumerConfig");
+		#if !UNITY_EDITOR
+			if (config.loadType == LoadType.LoadFromEditor)
+			{
+				config.loadType = LoadType.LoadFromBundle;
+			}
+		#endif
 			return config;
 		}
 
