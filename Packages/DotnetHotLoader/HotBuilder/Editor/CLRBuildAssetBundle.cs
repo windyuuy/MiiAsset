@@ -294,6 +294,7 @@ namespace HatNetwork.Editor
 				"mscorlib.dll",
 				"Google.Protobuf.dll",
 				"MemoryPack.Core.dll",
+				"SDKAdapter.Common.dll",
 			}.Where(dll => !hotDlls.Contains(dll)).ToArray();
 			// var preDlls = new string[]
 			// {
