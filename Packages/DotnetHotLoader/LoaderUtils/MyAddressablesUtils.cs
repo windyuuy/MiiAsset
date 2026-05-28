@@ -325,10 +325,15 @@ namespace HatNetwork
 
 		public static string VersionTextFilePath => $"{StreamingAssetsPath}/HLtLib/version.txt";
 
+		public static bool SkipLoadHotCodeForce = false;
 		public static bool SkipLoadHotCode
 		{
 			get
 			{
+				if (SkipLoadHotCodeForce)
+				{
+					return true;
+				}
 			#if UNITY_EDITOR
 				var existHotCodeRes = File.Exists(VersionTextFilePath);
 				return !existHotCodeRes;
@@ -474,6 +479,12 @@ namespace HatNetwork
 		public static IGetVersionNetClient NetClient { get; set; }
 
 		public static async Task<GetVersionResp> GetRemoteVersionCode(MonoBehaviour comp)
+		{
+			var versionCode = await GetRemoteVersionCodeInternal(comp);
+			Debug.Log($"RemoteCodeVersion: {versionCode}");
+			return versionCode;
+		}
+		private static async Task<GetVersionResp> GetRemoteVersionCodeInternal(MonoBehaviour comp)
 		{
 			var version = await NetClient.GetVersion();
 			try
