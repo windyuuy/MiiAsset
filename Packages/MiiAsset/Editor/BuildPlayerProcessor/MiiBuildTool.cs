@@ -30,6 +30,8 @@ namespace MiiAsset.Editor.Build
 				MyLogger.Log("RebuildHotDllDefault Begin.");
 				CLRPreBuildPipeline.RebuildHotDllDefault();
 				MyLogger.Log("RebuildHotDllDefault Done.");
+			#else
+				MyLogger.Log("RebuildHotDllDefault Skip - 未开启 SUPPORT_HYBRIDCLR 宏.");
 			#endif
 				return true;
 			}

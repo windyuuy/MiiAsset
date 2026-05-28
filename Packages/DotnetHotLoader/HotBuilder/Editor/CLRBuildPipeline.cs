@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEditor.Android;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEngine;
 
 namespace HatNetwork.Editor
 {
@@ -74,6 +75,7 @@ namespace HatNetwork.Editor
 		#if SUPPORT_HYBRIDCLR
 			if (!HybridCLR.Editor.Settings.HybridCLRSettings.Instance.enable)
 			{
+				Debug.Log("未启用 HybridCLR, 跳过代码热更包构建");
 				return;
 			}
 		#else
@@ -113,6 +115,7 @@ namespace HatNetwork.Editor
 				HybridCLR.Editor.Commands.CompileDllCommand.CompileDllActiveBuildTarget();
 			}
 		#else
+			Debug.Log("未启用 SUPPORT_HYBRIDCLR 宏");
 			return;
 		#endif
 
