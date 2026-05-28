@@ -626,10 +626,18 @@ namespace MiiAsset.Runtime
 			{
 				if (!LoadingAssetMap.TryGetValue(cacheKey, out var item))
 				{
+					// Debug.Log($"AssetBundle.LoadAsset-Begin: {address}");
+					// var obj = AssetBundle.LoadAsset<T>(address);	// aaaaaaaaa
+					// Debug.Log($"AssetBundle.LoadAsset-Ended: {address}");
+					
 					var op0 = AssetBundle.LoadAssetAsync<T>(address);
 					var task0 = op0.GetTask();
 					item = (op0, task0);
 					LoadingAssetMap.Add(cacheKey, item);
+					// Debug.Log($"AssetBundle.LoadAsset-Begin: {address}");
+					// var obj = AssetBundle.LoadAssetAsync<T>(address);	// aaaaaaaaa
+					// Debug.Log($"AssetBundle.LoadAsset-Ended: {address}");
+					// LoadedAssetMap.TryAdd(cacheKey, obj);
 				}
 
 				if (loadStatus != null)

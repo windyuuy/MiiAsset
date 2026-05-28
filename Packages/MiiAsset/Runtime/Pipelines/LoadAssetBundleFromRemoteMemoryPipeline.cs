@@ -49,7 +49,9 @@ namespace MiiAsset.Runtime.Pipelines
 				{
 					SharedEncrypt.Encryptor.Encrypt(bytes, 0, 0, bytes.Length);
 				}
-				this.AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc);
+				// Debug.Log($"AssetBundle.LoadFromMemory-Begin: {RemoteUri}");
+				this.AssetBundle = AssetBundle.LoadFromMemory(bytes, Crc); // aaaaaaaaa
+				// Debug.Log($"AssetBundle.LoadFromMemory-Ended: {RemoteUri}");
 
 				if (this.AssetBundle == null)
 				{
