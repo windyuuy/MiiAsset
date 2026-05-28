@@ -1,4 +1,5 @@
 using System.IO;
+using Editor.BuildPlayerProcessor;
 using HybridCLR.Editor;
 using HybridCLR.Editor.Commands;
 using HybridCLR.Editor.Settings;
@@ -57,7 +58,20 @@ namespace HatNetwork.Editor
 
 		public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
 		{
-			RebuildHotDllForCurrentTarget(buildPlayerContext.BuildPlayerOptions);
+			bool buildCodeBundleInBuilding;
+			if (BuildAssetBundleConfig.Load(out var buildOptions))
+			{
+				buildCodeBundleInBuilding = buildOptions.buildCodeBundleInBuilding;
+			}
+			else
+			{
+				buildCodeBundleInBuilding = true;
+			}
+
+			if (buildCodeBundleInBuilding)
+			{
+				RebuildHotDllForCurrentTarget(buildPlayerContext.BuildPlayerOptions);
+			}
 		}
 
 		private static void RebuildHotDllForCurrentTarget(BuildPlayerOptions buildPlayerOptions)

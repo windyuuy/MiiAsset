@@ -22,17 +22,17 @@ namespace MiiAsset.Editor.BuildPlayerProcessor
 
 		public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
 		{
-			bool buildBundleInBuilding;
+			bool buildResBundleInBuilding;
 			if (BuildAssetBundleConfig.Load(out var buildOptions))
 			{
-				buildBundleInBuilding = buildOptions.buildBundleInBuilding;
+				buildResBundleInBuilding = buildOptions.buildResBundleInBuilding;
 			}
 			else
 			{
-				buildBundleInBuilding = true;
+				buildResBundleInBuilding = true;
 			}
 
-			if (buildBundleInBuilding)
+			if (buildResBundleInBuilding)
 			{
 				MiiBuildTool.BuildAssetBundlesWithPathInfo();
 			}
