@@ -59,7 +59,7 @@ namespace HatNetwork.Editor
 		public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
 		{
 			bool buildCodeBundleInBuilding;
-			if (BuildAssetBundleConfig.Load(out var buildOptions))
+			if (CLRBuildConfig.Load(out var buildOptions))
 			{
 				buildCodeBundleInBuilding = buildOptions.buildCodeBundleInBuilding;
 			}
@@ -90,7 +90,7 @@ namespace HatNetwork.Editor
 			RebuildHotDlls(versionCode, buildPlayerOptions);
 		}
 
-		[MenuItem("Tools/DotnetHotLoader/RebuildHotDllDefault")]
+		[MenuItem("Tools/DotnetHotLoader/构建代码热更包")]
 		public static void RebuildHotDllDefault()
 		{
 			var buildPlayerOptions = new BuildPlayerOptions()

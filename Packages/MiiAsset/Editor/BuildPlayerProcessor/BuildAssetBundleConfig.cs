@@ -8,7 +8,6 @@ namespace Editor.BuildPlayerProcessor
 	public class BuildAssetBundleConfig : ScriptableObject
 	{
 		[Header("构建安装包时构建AssetBundle")] public bool buildResBundleInBuilding = true;
-		[Header("构建安装包时构建代码包")] public bool buildCodeBundleInBuilding = true;
 
 		public static bool Load(out BuildAssetBundleConfig config)
 		{
