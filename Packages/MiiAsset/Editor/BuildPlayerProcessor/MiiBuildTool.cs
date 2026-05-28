@@ -27,7 +27,9 @@ namespace MiiAsset.Editor.Build
 			try
 			{
 			#if SUPPORT_HYBRIDCLR
+				MyLogger.Log("RebuildHotDllDefault Begin.");
 				CLRPreBuildPipeline.RebuildHotDllDefault();
+				MyLogger.Log("RebuildHotDllDefault Done.");
 			#endif
 				return true;
 			}
