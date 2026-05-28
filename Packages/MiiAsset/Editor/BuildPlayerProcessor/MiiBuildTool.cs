@@ -1,5 +1,5 @@
-﻿using MiiAsset.Editor;
-using MiiAsset.Editor.Build;
+﻿using System;
+using HatNetwork.Editor;
 using MiiAsset.Runtime.Adapter;
 using UnityEditor;
 using UnityEngine;
@@ -20,6 +20,22 @@ namespace MiiAsset.Editor.Build
 			var ret = AADepBuilder.BuildAssetBundlesWithPathInfo();
 			MyLogger.Log("BuildAssetBundlesWithPathInfo Done.");
 			return ret;
+		}
+
+		public static bool BuildCodeBundles()
+		{
+			try
+			{
+			#if SUPPORT_HYBRIDCLR
+				CLRPreBuildPipeline.RebuildHotDllDefault();
+			#endif
+				return true;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+				return false;
+			}
 		}
 	}
 }

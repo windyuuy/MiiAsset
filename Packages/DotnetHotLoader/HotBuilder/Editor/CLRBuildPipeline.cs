@@ -1,10 +1,3 @@
-using System.IO;
-using Editor.BuildPlayerProcessor;
-using HybridCLR.Editor;
-using HybridCLR.Editor.Commands;
-using HybridCLR.Editor.Settings;
-using U3DUdpater;
-using U3DUdpater.Editor.BuildPipeline;
 using UnityEditor;
 using UnityEditor.Android;
 using UnityEditor.Build;
@@ -58,6 +51,7 @@ namespace HatNetwork.Editor
 
 		public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
 		{
+		#if SUPPORT_HYBRIDCLR
 			bool buildCodeBundleInBuilding;
 			if (CLRBuildConfig.Load(out var buildOptions))
 			{
@@ -72,14 +66,19 @@ namespace HatNetwork.Editor
 			{
 				RebuildHotDllForCurrentTarget(buildPlayerContext.BuildPlayerOptions);
 			}
+		#endif
 		}
 
 		private static void RebuildHotDllForCurrentTarget(BuildPlayerOptions buildPlayerOptions)
 		{
-			if (!HybridCLRSettings.Instance.enable)
+		#if SUPPORT_HYBRIDCLR
+			if (!HybridCLR.Editor.Settings.HybridCLRSettings.Instance.enable)
 			{
 				return;
 			}
+		#else
+			return;
+		#endif
 		#if TEST_HYBRIDCLR
 			// TODO: simulate local settings
 			long versionCode = 1;
@@ -104,14 +103,18 @@ namespace HatNetwork.Editor
 		public static void RebuildHotDlls(long versionCode, BuildPlayerOptions buildPlayerOptions)
 		{
 			var fastBuild = true;
+		#if SUPPORT_HYBRIDCLR
 			if (!fastBuild)
 			{
-				PrebuildCommand.GenerateAll();
+				HybridCLR.Editor.Commands.PrebuildCommand.GenerateAll();
 			}
 			else
 			{
-				CompileDllCommand.CompileDllActiveBuildTarget();
+				HybridCLR.Editor.Commands.CompileDllCommand.CompileDllActiveBuildTarget();
 			}
+		#else
+			return;
+		#endif
 
 			CLRBuildAssetBundle.CleanDllBundles();
 
