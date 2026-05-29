@@ -9,6 +9,7 @@ namespace HatNetwork.Editor
 	{
 		[Header("构建安装包时构建代码包")] public bool buildCodeBundleInBuilding = true;
 		[Header("补充AOT程序集")] public string[] aotAssemblies = Array.Empty<string>();
+		[Header("构建安装包后检查AssetBundle")] public bool checkAssetBundlesAfterBuild = true;
 
 		public static bool Load(out CLRBuildConfig config)
 		{

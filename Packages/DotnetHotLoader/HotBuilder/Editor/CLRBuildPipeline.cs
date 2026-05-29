@@ -1,3 +1,5 @@
+using System;
+using MiiAsset.Editor.Build;
 using UnityEditor;
 using UnityEditor.Android;
 using UnityEditor.Build;
@@ -54,19 +56,35 @@ namespace HatNetwork.Editor
 		{
 		#if SUPPORT_HYBRIDCLR
 			bool buildCodeBundleInBuilding;
+			bool checkAssetBundlesAfterBuild;
 			if (CLRBuildConfig.Load(out var buildOptions))
 			{
 				buildCodeBundleInBuilding = buildOptions.buildCodeBundleInBuilding;
+				checkAssetBundlesAfterBuild = buildOptions.checkAssetBundlesAfterBuild;
 			}
 			else
 			{
 				buildCodeBundleInBuilding = true;
+				checkAssetBundlesAfterBuild = true;
 			}
 
 			if (buildCodeBundleInBuilding)
 			{
 				RebuildHotDllForCurrentTarget(buildPlayerContext.BuildPlayerOptions);
 			}
+
+			if (checkAssetBundlesAfterBuild)
+			{
+				try
+				{
+					CodeBundleTester.TestLoadAssetBundle();
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+				}
+			}
+
 		#endif
 		}
 
@@ -100,6 +118,15 @@ namespace HatNetwork.Editor
 				targetGroup = EditorUserBuildSettings.selectedBuildTargetGroup,
 			};
 			RebuildHotDllForCurrentTarget(buildPlayerOptions);
+
+			try
+			{
+				CodeBundleTester.TestLoadAssetBundle();
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+			}
 		}
 
 		public static void RebuildHotDlls(long versionCode, BuildPlayerOptions buildPlayerOptions)

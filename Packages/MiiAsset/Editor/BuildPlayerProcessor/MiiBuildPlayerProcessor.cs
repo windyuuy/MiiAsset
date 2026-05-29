@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using Editor.BuildPlayerProcessor;
 using MiiAsset.Runtime.AssetUtils;
@@ -23,18 +24,33 @@ namespace MiiAsset.Editor.BuildPlayerProcessor
 		public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
 		{
 			bool buildResBundleInBuilding;
+			bool checkAssetBundlesAfterBuild;
 			if (BuildAssetBundleConfig.Load(out var buildOptions))
 			{
 				buildResBundleInBuilding = buildOptions.buildResBundleInBuilding;
+				checkAssetBundlesAfterBuild = buildOptions.checkAssetBundlesAfterBuild;
 			}
 			else
 			{
 				buildResBundleInBuilding = true;
+				checkAssetBundlesAfterBuild = true;
 			}
 
 			if (buildResBundleInBuilding)
 			{
 				MiiBuildTool.BuildAssetBundlesWithPathInfo();
+			}
+
+			if (checkAssetBundlesAfterBuild)
+			{
+				try
+				{
+					AssetBundleTester.TestLoadAssetBundle();
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+				}
 			}
 
 			var internalBuildPath = AssetHelper.GetInternalBuildPath();

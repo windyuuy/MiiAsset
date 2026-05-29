@@ -18,6 +18,16 @@ namespace MiiAsset.Editor.Build
 		{
 			MyLogger.Log("BuildAssetBundlesWithPathInfo Begin.");
 			var ret = AADepBuilder.BuildAssetBundlesWithPathInfo();
+
+			try
+			{
+				AssetBundleTester.TestLoadAssetBundle();
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+			}
+
 			MyLogger.Log("BuildAssetBundlesWithPathInfo Done.");
 			return ret;
 		}
