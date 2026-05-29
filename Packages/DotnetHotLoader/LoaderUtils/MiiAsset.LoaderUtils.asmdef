@@ -1,5 +1,5 @@
 {
-    "name": "LoaderUtils",
+    "name": "MiiAsset.LoaderUtils",
     "rootNamespace": "",
     "references": [
         "GUID:81ac9086448917948963e24f41f70c1f",

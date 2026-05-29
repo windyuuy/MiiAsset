@@ -1,5 +1,5 @@
 {
-    "name": "HatLoader",
+    "name": "MiiAsset.HatLoader",
     "rootNamespace": "",
     "references": [
         "GUID:7270df17c2a88c846a29a3cb8d200d40",
