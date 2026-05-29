@@ -259,12 +259,12 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public Task UnloadAssetJust(string address)
+		public Task UnloadAssetJust(string address, Type type)
 		{
 			var bundleLoadStatus = CatalogStatus.GetOrCreateLoadStatusByAddress(address, CatalogInfo);
 			if (bundleLoadStatus != null)
 			{
-				return bundleLoadStatus.UnLoadAssetJust(address);
+				return bundleLoadStatus.UnLoadAssetJust(address, type);
 			}
 			else
 			{
@@ -296,11 +296,11 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public async Task UnLoadAsset(string address)
+		public async Task UnLoadAsset(string address, Type type)
 		{
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
 			await CatalogStatus.GetLoadingBundlesTasks(deps, CatalogInfo);
-			await UnloadAssetJust(address);
+			await UnloadAssetJust(address, type);
 			await CatalogStatus.UnLoadBundles(deps);
 		}
 
@@ -354,7 +354,7 @@ namespace MiiAsset.Runtime
 			if (op != null)
 			{
 				await op.GetTask();
-				await UnLoadAsset(sceneAddress);
+				await UnLoadAsset(sceneAddress, typeof(Scene));
 			}
 			else
 			{
@@ -415,13 +415,13 @@ namespace MiiAsset.Runtime
 			return asset;
 		}
 
-		public async Task UnLoadAssetByRefer(string address)
+		public async Task UnLoadAssetByRefer(string address, Type type)
 		{
 			CatalogInfo.GetAssetDependBundles(address, out var deps);
-			var needUnloadAssetJust = await AddressReferStatus.UnRegisterAsset(address);
+			var needUnloadAssetJust = await AddressReferStatus.UnRegisterAsset(address, type);
 			if (needUnloadAssetJust)
 			{
-				UnloadAssetJust(address);
+				UnloadAssetJust(address, type);
 			}
 
 			await CatalogStatus.UnLoadBundlesByRefer(address, deps);
@@ -458,10 +458,10 @@ namespace MiiAsset.Runtime
 			var opStand = SceneManager.UnloadSceneAsync(sceneAddress, options);
 			await opStand.GetTask();
 			// await UnLoadAssetByRefer(sceneAddress);
-			var needUnloadAssetJust = await AddressReferStatus.UnRegisterAsset(sceneAddress);
+			var needUnloadAssetJust = await AddressReferStatus.UnRegisterAsset(sceneAddress, typeof(Scene));
 			if (needUnloadAssetJust)
 			{
-				UnloadAssetJust(sceneAddress);
+				UnloadAssetJust(sceneAddress, typeof(Scene));
 			}
 
 			await CatalogStatus.UnLoadBundlesByRefer(sceneAddress, deps);
@@ -574,9 +574,9 @@ namespace MiiAsset.Runtime
 			return this.CatalogStatus.GetStatus(bundleName);
 		}
 
-		public LoadAddressStatus GetAddressStatus(string address)
+		public LoadAddressStatus GetAddressStatus<T>(string address) where T : UnityEngine.Object
 		{
-			return AddressReferStatus.GetAddressStatus(address);
+			return AddressReferStatus.GetAddressStatus<T>(address);
 		}
 
 		public HashSet<string> GetAssetDependBundles(string address)

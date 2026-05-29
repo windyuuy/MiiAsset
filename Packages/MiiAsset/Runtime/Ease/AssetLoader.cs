@@ -352,10 +352,10 @@ namespace MiiAsset.Runtime
 		/// </summary>
 		/// <param name="address"></param>
 		/// <returns></returns>
-		public static Task UnloadAssetJust(string address)
+		public static Task UnloadAssetJust(string address, Type type)
 		{
 			CheckAddress(address);
-			return Consumer.UnloadAssetJust(address);
+			return Consumer.UnloadAssetJust(address, type);
 		}
 
 		/// <summary>
@@ -377,11 +377,13 @@ namespace MiiAsset.Runtime
 		/// </summary>
 		/// <param name="address"></param>
 		/// <returns></returns>
-		public static Task UnLoadAsset(string address)
+		public static Task UnLoadAsset(string address, Type type)
 		{
 			CheckAddress(address);
-			return Consumer.UnLoadAsset(address);
+			return Consumer.UnLoadAsset(address, type);
 		}
+
+		public static Task UnLoadAsset<T>(string address) => UnLoadAsset(address, typeof(T));
 
 		/// <summary>
 		/// 不带引用计数加载场景,老项目误用
@@ -637,7 +639,7 @@ namespace MiiAsset.Runtime
 		/// <returns></returns>
 		public static Task UnLoadAssetByReferWrapped<T>(AsyncLoadingStatus<T> status)
 		{
-			return UnLoadAssetByRefer(status.Address);
+			return UnLoadAssetByRefer(status.Address, typeof(T));
 		}
 
 		/// <summary>
@@ -657,11 +659,13 @@ namespace MiiAsset.Runtime
 		/// </summary>
 		/// <param name="address"></param>
 		/// <returns></returns>
-		public static Task UnLoadAssetByRefer(string address)
+		public static Task UnLoadAssetByRefer(string address, Type type)
 		{
 			CheckAddress(address);
-			return Consumer.UnLoadAssetByRefer(address);
+			return Consumer.UnLoadAssetByRefer(address, type);
 		}
+
+		public static Task UnLoadAssetByRefer<T>(string address) => UnLoadAssetByRefer(address, typeof(T));
 
 		/// <summary>
 		/// 带引用计数卸载资源
@@ -741,7 +745,7 @@ namespace MiiAsset.Runtime
 				GameObject.Destroy(gameObject);
 			}
 
-			UnLoadAssetByRefer(key);
+			UnLoadAssetByRefer(key, typeof(GameObject));
 			return true;
 		}
 

@@ -40,11 +40,11 @@ namespace MiiAsset.Runtime
 
 		public Task<T> LoadAssetJust<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
 
-		public Task UnloadAssetJust(string address);
+		public Task UnloadAssetJust(string address, Type type);
 
 		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object;
 
-		public Task UnLoadAsset(string address);
+		public Task UnLoadAsset(string address, Type type);
 
 		public string GetAddressFromGuid(string guid);
 
@@ -57,7 +57,7 @@ namespace MiiAsset.Runtime
 		public Task<T> LoadAssetByReferSync<T>(string address, AssetLoadStatusGroup loadStatus)
 			where T : UnityEngine.Object;
 
-		public Task UnLoadAssetByRefer(string address);
+		public Task UnLoadAssetByRefer(string address, Type type);
 
 		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters,
 			AssetLoadStatusGroup loadStatus);

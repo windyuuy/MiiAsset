@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
+using Editor.BuildPlayerProcessor;
 using MiiAsset.Runtime.AssetUtils;
 using MiiAsset.Editor.Build;
 using UnityEditor;
@@ -9,7 +11,7 @@ using UnityEngine;
 
 namespace MiiAsset.Editor.BuildPlayerProcessor
 {
-	public class MiiBuildPlayerProcessor : UnityEditor.Build.BuildPlayerProcessor,IPostprocessBuildWithReport
+	public class MiiBuildPlayerProcessor : UnityEditor.Build.BuildPlayerProcessor, IPostprocessBuildWithReport
 	{
 		/// <summary>
 		/// Returns the player build processor callback order.
@@ -21,7 +23,35 @@ namespace MiiAsset.Editor.BuildPlayerProcessor
 
 		public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
 		{
-			MiiBuildTool.BuildAssetBundlesWithPathInfo();
+			bool buildResBundleInBuilding;
+			bool checkAssetBundlesAfterBuild;
+			if (BuildAssetBundleConfig.Load(out var buildOptions))
+			{
+				buildResBundleInBuilding = buildOptions.buildResBundleInBuilding;
+				checkAssetBundlesAfterBuild = buildOptions.checkAssetBundlesAfterBuild;
+			}
+			else
+			{
+				buildResBundleInBuilding = true;
+				checkAssetBundlesAfterBuild = true;
+			}
+
+			if (buildResBundleInBuilding)
+			{
+				MiiBuildTool.BuildAssetBundlesWithPathInfo();
+			}
+
+			if (checkAssetBundlesAfterBuild)
+			{
+				try
+				{
+					AssetBundleTester.TestLoadAssetBundle();
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+				}
+			}
 
 			var internalBuildPath = AssetHelper.GetInternalBuildPath();
 			buildPlayerContext.AddAdditionalPathToStreamingAssets(internalBuildPath, "mii");
@@ -37,7 +67,8 @@ namespace MiiAsset.Editor.BuildPlayerProcessor
 			{
 				string projectPath = GetLinkPath(true);
 				File.Copy(buildPath, projectPath, true);
-				AssetDatabase.ImportAsset(projectPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.DontDownloadFromCacheServer);
+				AssetDatabase.ImportAsset(projectPath,
+					ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.DontDownloadFromCacheServer);
 			}
 		}
 

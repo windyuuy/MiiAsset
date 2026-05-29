@@ -68,9 +68,9 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public Task UnLoadAsset(string address)
+		public Task UnLoadAsset(string address, Type type)
 		{
-			return AssetProvider.UnLoadAsset(address);
+			return AssetProvider.UnLoadAsset(address, type);
 		}
 
 		public Task LoadScene(string sceneAddress, LoadSceneParameters parameters = new(),

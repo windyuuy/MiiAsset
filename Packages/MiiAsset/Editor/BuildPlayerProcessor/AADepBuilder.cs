@@ -515,6 +515,7 @@ namespace MiiAsset.MiiAssetHint
 				BuildGuids = config.buildGuids,
 				BuildHintCode = config.buildCodeHint,
 			});
+
 			return buildAssetBundlesResult;
 		}
 	}

@@ -16,8 +16,12 @@ namespace MiiAsset.Runtime
 		{
 			ILoadAssetBundlePipeline pipeline;
 
-			var remoteUri = loadSource.GetSourceUri(assetBundleInfo.fileName);
-			var cacheUri = loadSource.GetCacheUri(assetBundleInfo.fileName);
+			var bundleName = assetBundleInfo.fileName;
+			var remoteUri = loadSource.GetSourceUri(bundleName);
+			var cacheUri = loadSource.GetCacheUri(bundleName);
+			
+			Debug.Log(
+				$"loadSource2: {bundleName}, {remoteUri}, {cacheUri}, {cacheUri==""}, {cacheUri==null};");
 			// if (!IsWebUri(remoteUri))
 			// {
 			// 	remoteUri = "file://" + remoteUri;

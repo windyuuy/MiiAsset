@@ -21,7 +21,10 @@ namespace MiiAsset.Runtime.Pipelines
 			Crc = crc;
 			IsEncrypt = isEncrypt;
 			PredictFileSize = predictFileSize;
-			Result = new();
+			Result = new()
+			{
+				Uri = uri,
+			};
 			this.Build();
 			return this;
 		}

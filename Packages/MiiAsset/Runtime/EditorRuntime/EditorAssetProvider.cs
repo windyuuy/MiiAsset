@@ -131,7 +131,7 @@ namespace MiiAsset.Runtime
 			return true;
 		}
 
-		public Task UnloadAssetJust(string address)
+		public Task UnloadAssetJust(string address, Type type)
 		{
 			return Task.CompletedTask;
 		}
@@ -141,7 +141,7 @@ namespace MiiAsset.Runtime
 			return LoadAssetJust<T>(address, loadStatus);
 		}
 
-		public Task UnLoadAsset(string address)
+		public Task UnLoadAsset(string address, Type type)
 		{
 			return Task.CompletedTask;
 		}
@@ -182,7 +182,7 @@ namespace MiiAsset.Runtime
 			return LoadAssetJust<T>(address, loadStatus);
 		}
 
-		public Task UnLoadAssetByRefer(string address)
+		public Task UnLoadAssetByRefer(string address, Type type)
 		{
 			return Task.CompletedTask;
 		}

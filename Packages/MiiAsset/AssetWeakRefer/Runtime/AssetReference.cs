@@ -173,9 +173,14 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 			}
 		}
 
-		public virtual Task UnLoad()
+		public virtual Task UnLoad<T>()
 		{
-			return AssetLoader.UnLoadAsset(Address);
+			return UnLoad(typeof(T));
+		}
+
+		public virtual Task UnLoad(Type type)
+		{
+			return AssetLoader.UnLoadAsset(Address, type);
 		}
 
 		public Task<Scene> LoadScene(LoadSceneMode mode, AssetLoadStatusGroup loadStatus = null)
@@ -286,6 +291,11 @@ namespace MiiAsset.AssetWeakRefer.Runtime
 		public Task<TObject> Load(AssetLoadStatusGroup loadStatus = null)
 		{
 			return AssetLoader.LoadAsset<TObject>(Address, loadStatus);
+		}
+
+		public Task UnLoad()
+		{
+			return base.UnLoad<TObject>();
 		}
 	#endif
 	}

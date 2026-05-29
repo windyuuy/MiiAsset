@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Status;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace MiiAsset.Runtime
 {
@@ -84,9 +86,9 @@ namespace MiiAsset.Runtime
 			return Provider.LoadAssetJust<T>(address, loadStatus);
 		}
 
-		public Task UnloadAssetJust(string address)
+		public Task UnloadAssetJust(string address, Type type)
 		{
-			return Provider.UnloadAssetJust(address);
+			return Provider.UnloadAssetJust(address, type);
 		}
 
 		public Task<T> LoadAsset<T>(string address, AssetLoadStatusGroup loadStatus) where T : UnityEngine.Object
@@ -94,9 +96,9 @@ namespace MiiAsset.Runtime
 			return Provider.LoadAsset<T>(address, loadStatus);
 		}
 
-		public Task UnLoadAsset(string address)
+		public Task UnLoadAsset(string address, Type type)
 		{
-			return Provider.UnLoadAsset(address);
+			return Provider.UnLoadAsset(address, type);
 		}
 
 		public string GetAddressFromGuid(string guid)
@@ -124,9 +126,9 @@ namespace MiiAsset.Runtime
 			return Provider.LoadAssetByReferSync<T>(address, loadStatus);
 		}
 
-		public Task UnLoadAssetByRefer(string address)
+		public Task UnLoadAssetByRefer(string address, Type type)
 		{
-			return Provider.UnLoadAssetByRefer(address);
+			return Provider.UnLoadAssetByRefer(address, type);
 		}
 
 		public Task<Scene> LoadScene(string sceneAddress, LoadSceneParameters parameters,

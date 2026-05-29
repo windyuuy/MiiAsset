@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using MiiAsset.Runtime.Adapter;
 using UnityEngine;
@@ -15,16 +16,18 @@ namespace MiiAsset.Runtime
 
 	public class AddressReferStatus
 	{
-		public Dictionary<string, LoadAddressStatus> AddressLoadMap = new();
+		public Dictionary<AACacheKey, LoadAddressStatus> AddressLoadMap = new();
 
-		public LoadAddressStatus GetAddressStatus(string address)
+		public LoadAddressStatus GetAddressStatus<T>(string address) where T : UnityEngine.Object
 		{
-			return AddressLoadMap[address];
+			var key = new AACacheKey(address, typeof(T));
+			return AddressLoadMap[key];
 		}
 
 		public void RegisterAddress<T>(string address, Task<T> task)
 		{
-			if (!AddressLoadMap.TryGetValue(address, out var status))
+			var key = new AACacheKey(address, typeof(T));
+			if (!AddressLoadMap.TryGetValue(key, out var status))
 			{
 				status = new()
 				{
@@ -33,7 +36,7 @@ namespace MiiAsset.Runtime
 					Asset = null,
 					ReferCount = 1
 				};
-				AddressLoadMap.Add(address, status);
+				AddressLoadMap.Add(key, status);
 			}
 			else
 			{
@@ -46,7 +49,8 @@ namespace MiiAsset.Runtime
 		{
 			if (asset != null)
 			{
-				if (AddressLoadMap.TryGetValue(address, out var status))
+				var key = new AACacheKey(address, typeof(T));
+				if (AddressLoadMap.TryGetValue(key, out var status))
 				{
 					status.Asset = asset;
 				}
@@ -61,9 +65,10 @@ namespace MiiAsset.Runtime
 			}
 		}
 
-		public async Task<bool> UnRegisterAsset(string address)
+		public async Task<bool> UnRegisterAsset(string address, Type type)
 		{
-			if (AddressLoadMap.TryGetValue(address, out var status))
+			var key = new AACacheKey(address, type);
+			if (AddressLoadMap.TryGetValue(key, out var status))
 			{
 				// if (status.ReferCount <= 0)
 				{
@@ -72,7 +77,7 @@ namespace MiiAsset.Runtime
 					if (status.ReferCount <= 0)
 					{
 						Debug.Assert(status.ReferCount == 0, "status.ReferCount==0");
-						return AddressLoadMap.Remove(address);
+						return AddressLoadMap.Remove(key);
 					}
 					// var asset = status.Asset;
 				}

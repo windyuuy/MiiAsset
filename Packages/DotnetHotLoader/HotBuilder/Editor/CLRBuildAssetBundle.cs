@@ -286,16 +286,24 @@ namespace HatNetwork.Editor
 		{
 			var hotDlls = SettingsUtil.HotUpdateAssemblyFilesExcludePreserved.ToArray();
 			hotDlls = ResortAssemblyOrders(hotDlls, true);
-			var aotDlls = new string[]
+			// var atoDlls0 = new string[]
+			// {
+			// 	"System.Core.dll",
+			// 	"System.dll",
+			// 	"UnityEngine.AndroidJNIModule.dll",
+			// 	"mscorlib.dll",
+			// 	"Google.Protobuf.dll",
+			// 	"MemoryPack.Core.dll",
+			// 	"SDKAdapter.Common.dll",
+			// 	"UnityEngine.CoreModule.dll",
+			// };
+			var aotDlls0 = Array.Empty<string>();
+			if (CLRBuildConfig.Load(out var config))
 			{
-				"System.Core.dll",
-				"System.dll",
-				"UnityEngine.AndroidJNIModule.dll",
-				"mscorlib.dll",
-				"Google.Protobuf.dll",
-				"MemoryPack.Core.dll",
-				"SDKAdapter.Common.dll",
-			}.Where(dll => !hotDlls.Contains(dll)).ToArray();
+				aotDlls0 = config.aotAssemblies;
+			}
+
+			var aotDlls = aotDlls0.Where(dll => !hotDlls.Contains(dll)).ToArray();
 			// var preDlls = new string[]
 			// {
 			// 	// "HatLoader.dll",

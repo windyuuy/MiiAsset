@@ -41,7 +41,7 @@ namespace UnityEngine.AddressableAssets.MyExt
 				// if (asset != null)
 			{
 				await UniAsyncUtils.WaitForEndOfFrame();
-				await uiActionSelf.UnLoad();
+				await uiActionSelf.UnLoad(asset.GetType());
 				// Addressables.Release(asset);
 			}
 		}

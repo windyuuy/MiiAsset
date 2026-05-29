@@ -1,5 +1,5 @@
-﻿using MiiAsset.Editor;
-using MiiAsset.Editor.Build;
+﻿using System;
+using HatNetwork.Editor;
 using MiiAsset.Runtime.Adapter;
 using UnityEditor;
 using UnityEngine;
@@ -18,8 +18,38 @@ namespace MiiAsset.Editor.Build
 		{
 			MyLogger.Log("BuildAssetBundlesWithPathInfo Begin.");
 			var ret = AADepBuilder.BuildAssetBundlesWithPathInfo();
+
+			try
+			{
+				AssetBundleTester.TestLoadAssetBundle();
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+			}
+
 			MyLogger.Log("BuildAssetBundlesWithPathInfo Done.");
 			return ret;
+		}
+
+		public static bool BuildCodeBundles()
+		{
+			try
+			{
+			#if SUPPORT_HYBRIDCLR
+				MyLogger.Log("RebuildHotDllDefault Begin.");
+				CLRPreBuildPipeline.RebuildHotDllDefault();
+				MyLogger.Log("RebuildHotDllDefault Done.");
+			#else
+				MyLogger.Log("RebuildHotDllDefault Skip - 未开启 SUPPORT_HYBRIDCLR 宏.");
+			#endif
+				return true;
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+				return false;
+			}
 		}
 	}
 }

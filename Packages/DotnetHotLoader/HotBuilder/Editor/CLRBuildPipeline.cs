@@ -1,13 +1,10 @@
-using System.IO;
-using HybridCLR.Editor;
-using HybridCLR.Editor.Commands;
-using HybridCLR.Editor.Settings;
-using U3DUdpater;
-using U3DUdpater.Editor.BuildPipeline;
+using System;
+using MiiAsset.Editor.Build;
 using UnityEditor;
 using UnityEditor.Android;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEngine;
 
 namespace HatNetwork.Editor
 {
@@ -57,15 +54,51 @@ namespace HatNetwork.Editor
 
 		public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
 		{
-			RebuildHotDllForCurrentTarget(buildPlayerContext.BuildPlayerOptions);
+		#if SUPPORT_HYBRIDCLR
+			bool buildCodeBundleInBuilding;
+			bool checkAssetBundlesAfterBuild;
+			if (CLRBuildConfig.Load(out var buildOptions))
+			{
+				buildCodeBundleInBuilding = buildOptions.buildCodeBundleInBuilding;
+				checkAssetBundlesAfterBuild = buildOptions.checkAssetBundlesAfterBuild;
+			}
+			else
+			{
+				buildCodeBundleInBuilding = true;
+				checkAssetBundlesAfterBuild = true;
+			}
+
+			if (buildCodeBundleInBuilding)
+			{
+				RebuildHotDllForCurrentTarget(buildPlayerContext.BuildPlayerOptions);
+			}
+
+			if (checkAssetBundlesAfterBuild)
+			{
+				try
+				{
+					CodeBundleTester.TestLoadAssetBundle();
+				}
+				catch (Exception exception)
+				{
+					Debug.LogException(exception);
+				}
+			}
+
+		#endif
 		}
 
 		private static void RebuildHotDllForCurrentTarget(BuildPlayerOptions buildPlayerOptions)
 		{
-			if (!HybridCLRSettings.Instance.enable)
+		#if SUPPORT_HYBRIDCLR
+			if (!HybridCLR.Editor.Settings.HybridCLRSettings.Instance.enable)
 			{
+				Debug.Log("未启用 HybridCLR, 跳过代码热更包构建");
 				return;
 			}
+		#else
+			return;
+		#endif
 		#if TEST_HYBRIDCLR
 			// TODO: simulate local settings
 			long versionCode = 1;
@@ -76,7 +109,7 @@ namespace HatNetwork.Editor
 			RebuildHotDlls(versionCode, buildPlayerOptions);
 		}
 
-		[MenuItem("Tools/DotnetHotLoader/RebuildHotDllDefault")]
+		[MenuItem("Tools/DotnetHotLoader/构建代码热更包")]
 		public static void RebuildHotDllDefault()
 		{
 			var buildPlayerOptions = new BuildPlayerOptions()
@@ -85,19 +118,33 @@ namespace HatNetwork.Editor
 				targetGroup = EditorUserBuildSettings.selectedBuildTargetGroup,
 			};
 			RebuildHotDllForCurrentTarget(buildPlayerOptions);
+
+			try
+			{
+				CodeBundleTester.TestLoadAssetBundle();
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+			}
 		}
 
 		public static void RebuildHotDlls(long versionCode, BuildPlayerOptions buildPlayerOptions)
 		{
 			var fastBuild = true;
+		#if SUPPORT_HYBRIDCLR
 			if (!fastBuild)
 			{
-				PrebuildCommand.GenerateAll();
+				HybridCLR.Editor.Commands.PrebuildCommand.GenerateAll();
 			}
 			else
 			{
-				CompileDllCommand.CompileDllActiveBuildTarget();
+				HybridCLR.Editor.Commands.CompileDllCommand.CompileDllActiveBuildTarget();
 			}
+		#else
+			Debug.Log("未启用 SUPPORT_HYBRIDCLR 宏");
+			return;
+		#endif
 
 			CLRBuildAssetBundle.CleanDllBundles();
 

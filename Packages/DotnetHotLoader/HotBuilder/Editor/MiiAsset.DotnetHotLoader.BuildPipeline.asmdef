@@ -1,0 +1,22 @@
+{
+    "name": "MiiAsset.DotnetHotLoader.BuildPipeline",
+    "rootNamespace": "",
+    "references": [
+        "GUID:1b495ff940d424d4cbd2ae8aa31c1ea1",
+        "GUID:62258f1fe9eec664cb4317fe3c24cc6f",
+        "GUID:2373f786d14518f44b0f475db77ba4de",
+        "GUID:c5ecc461727906345a35491a0440694f",
+        "GUID:890b253146385e54b9b4cff5c8dea58b"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
