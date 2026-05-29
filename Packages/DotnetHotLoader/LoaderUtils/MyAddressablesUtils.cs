@@ -481,7 +481,7 @@ namespace HatNetwork
 		public static async Task<GetVersionResp> GetRemoteVersionCode(MonoBehaviour comp)
 		{
 			var versionCode = await GetRemoteVersionCodeInternal(comp);
-			Debug.Log($"RemoteCodeVersion: {versionCode}");
+			Debug.Log($"RemoteCodeVersion: {versionCode.versionCode}");
 			return versionCode;
 		}
 		private static async Task<GetVersionResp> GetRemoteVersionCodeInternal(MonoBehaviour comp)
