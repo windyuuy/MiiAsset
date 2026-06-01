@@ -148,7 +148,7 @@ namespace MiiAsset.Runtime
 					}
 					else
 					{
-						if (sourceUri == null)
+						if (sourceUri == null || IOManager.LocalIOProto.IsInternalAssetsValid)
 						{
 							sourceUri = IOManager.LocalIOProto.InternalDir;
 						}

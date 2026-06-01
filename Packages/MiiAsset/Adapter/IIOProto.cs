@@ -71,6 +71,10 @@ namespace MiiAsset.Runtime.IOManagers
 		public string ExternalDir { get; }
 		public string CatalogName { get; }
 		public bool IsInternalDirUpdating { get; }
+		/// <summary>
+		/// 内部资源是否有效
+		/// </summary>
+		public bool IsInternalAssetsValid { get; }
 
 		public Task<bool> Init(IIOProtoInitOptions options);
 

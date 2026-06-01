@@ -32,6 +32,18 @@ namespace MiiAsset.Runtime.IOManagers
 
 	public sealed class WDKIOProto : IOProtoBase
 	{
+		public override bool IsInternalAssetsValid
+		{
+			get
+			{
+			#if UNITY_WEBGL
+				return false;
+			#else
+				return true;
+			#endif
+			}
+		}
+
 		protected IFileSystemManager FileSystemManager;
 
 		public override async Task<bool> Init(IIOProtoInitOptions options)

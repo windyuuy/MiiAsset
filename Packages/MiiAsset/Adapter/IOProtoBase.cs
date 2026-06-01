@@ -19,6 +19,7 @@ namespace MiiAsset.Runtime.IOManagers
 		public virtual string CatalogName { get; protected set; }
 
 		public virtual bool IsInternalDirUpdating => false;
+		public virtual bool IsInternalAssetsValid => true;
 		public virtual string StreamingRemoteAssetPath { get; set; }
 
 		/// <summary>
