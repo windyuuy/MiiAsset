@@ -208,20 +208,6 @@ namespace HatNetwork
 			}
 		}
 
-		public static string AccountServerUrl
-		{
-			get
-			{
-			#if TEST_HYBRIDCLR
-		// TODO: 替换为配置中的地址
-		var remoteAddress = "https://api-ms-test.meta.youdao.com/v1";
-			#else
-				var remoteAddress = AppConfigBase.AccountHttpUrl;
-			#endif
-				return remoteAddress;
-			}
-		}
-
 		public static string HotUpdateTunnelPrefix
 		{
 			get
