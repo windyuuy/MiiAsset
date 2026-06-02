@@ -81,7 +81,7 @@
 				{
 					if (file.EndsWith("_hatill") || file.EndsWith("_prehatill"))
 					{
-						Debug.Log($"test bundle: {file}");
+						Debug.Log($"test code bundle: {file}");
 						var bytes0 = File.ReadAllBytes(file);
 						var mainBundle = AssetBundle.LoadFromMemory(bytes0);
 						// var asset = mainBundle.LoadAsset<GameObject>("@机缘卡界面:机缘选择UI.prefab");

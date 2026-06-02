@@ -79,9 +79,9 @@
 				var ls = new List<AssetBundle>();
 				foreach (var file in files)
 				{
-					if (file.EndsWith("_hatill") || file.EndsWith("_prehatill"))
+					if (file.EndsWith(".bundle"))
 					{
-						Debug.Log($"test bundle: {file}");
+						Debug.Log($"test res bundle: {file}");
 						var bytes0 = File.ReadAllBytes(file);
 						var mainBundle = AssetBundle.LoadFromMemory(bytes0);
 						// var asset = mainBundle.LoadAsset<GameObject>("@机缘卡界面:机缘选择UI.prefab");
