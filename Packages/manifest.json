@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.code-philosophy.hybridclr": "https://gitee.com/focus-creative-games/hybridclr_unity.git#4feac30cb2e105992986c737f7f54992b8300e1a",
     "com.bytedance.starksdk": "https://gitee.com/windyuuy/com.bytedance.all.git?path=com.bytedance.starksdk#4c1dc34c712514cdaeb3ff8922481d43e23e396b",
 	  "com.qq.weixin.minigame": "https://gitee.com/windyuuy/minigame-tuanjie-transform-sdk.git#45e7581c92543239ae221a274fa5b96339301168",
     "com.unity.2d.sprite": "1.0.0",
