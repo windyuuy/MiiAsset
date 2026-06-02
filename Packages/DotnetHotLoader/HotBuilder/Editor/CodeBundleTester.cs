@@ -7,7 +7,7 @@
 	{
 		public class CodeBundleTester
 		{
-			[UnityEditor.MenuItem("Tools/MiiAsset/测试AssetBundles")]
+			[UnityEditor.MenuItem("Tools/DotnetHotLoader/测试CodeBundles")]
 			public static void TestLoadAssetBundle()
 			{
 				Debug.Log("开始测试AssetBundles");
