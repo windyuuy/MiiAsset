@@ -13,6 +13,7 @@
     "com.unity.ugui": "1.0.0",
     "windy.gamelibs.all": "https://gitee.com/windyuuy/UnityGameLibs.git?path=Packages/GameLibs#87a523593867d174c9d1ad98ff3cd7419dbab530",
     "windy.gamelibs.miitask": "https://gitee.com/windyuuy/UnityGameLibs.git?path=Packages/MiiTask#87a523593867d174c9d1ad98ff3cd7419dbab530",
+    "windy.shellutils": "https://gitee.com/windyuuy/CSShellUtils.git?path=Packages/ShellUtils#de93f43787386b480fd6f8789b9fbaad82784881",
 	  "windy.sdkadapter.core": "https://gitee.com/windyuuy/UnitySDKAdapter.git?path=Packages/SDKAdapter#da5dd7149188877fabed5012c3bdd0d85876eddc",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
