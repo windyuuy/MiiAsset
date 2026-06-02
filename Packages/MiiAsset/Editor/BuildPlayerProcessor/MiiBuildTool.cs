@@ -1,4 +1,5 @@
 ﻿using System;
+using Editor.BuildPlayerProcessor;
 using HatNetwork.Editor;
 using MiiAsset.Runtime.Adapter;
 using UnityEditor;
@@ -21,7 +22,20 @@ namespace MiiAsset.Editor.Build
 
 			try
 			{
-				AssetBundleTester.TestLoadAssetBundle();
+				bool checkAssetBundlesAfterBuild;
+				if (BuildAssetBundleConfig.Load(out var buildOptions))
+				{
+					checkAssetBundlesAfterBuild = buildOptions.checkAssetBundlesAfterBuild;
+				}
+				else
+				{
+					checkAssetBundlesAfterBuild = true;
+				}
+
+				if (checkAssetBundlesAfterBuild)
+				{
+					AssetBundleTester.TestLoadAssetBundle();
+				}
 			}
 			catch (Exception exception)
 			{

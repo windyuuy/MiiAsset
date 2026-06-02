@@ -121,7 +121,20 @@ namespace HatNetwork.Editor
 
 			try
 			{
-				CodeBundleTester.TestLoadAssetBundle();
+				bool checkAssetBundlesAfterBuild;
+				if (CLRBuildConfig.Load(out var buildOptions))
+				{
+					checkAssetBundlesAfterBuild = buildOptions.checkAssetBundlesAfterBuild;
+				}
+				else
+				{
+					checkAssetBundlesAfterBuild = true;
+				}
+
+				if (checkAssetBundlesAfterBuild)
+				{
+					CodeBundleTester.TestLoadAssetBundle();
+				}
 			}
 			catch (Exception exception)
 			{
