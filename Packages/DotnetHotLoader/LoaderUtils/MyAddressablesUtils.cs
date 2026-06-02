@@ -242,6 +242,7 @@ namespace HatNetwork
 			var localPath = await GetDllABLocalPath(name, versionCode, comp);
 			if (localPath != null)
 			{
+				Debug.Log($"dll-useLocalPath: {localPath}");
 				return localPath;
 			}
 
@@ -260,6 +261,8 @@ namespace HatNetwork
 			}
 		#endif
 
+			Debug.Log($"dll-useRemotePath: {localPath}");
+			
 			return remotePath;
 		}
 
