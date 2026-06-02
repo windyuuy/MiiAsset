@@ -180,7 +180,7 @@ namespace HatNetwork.Editor
 			var copyDest = $"AssetBundles/{platform}/";
 			UnityEngine.Debug.Log($"CopyDest -> {copyDest}");
 			CLRBuildAssetBundle.CopyDest(copyDest, ResUpdateTunnel, versionCode);
-			// CLRBuildAssetBundle.AdaptAppV1(copyDest, ResUpdateTunnel, versionCode);
+			CLRBuildAssetBundle.AdaptAppV1(copyDest, ResUpdateTunnel, versionCode);
 		#endif
 
 			UnityEngine.Debug.Log("CLRPreBuildPipeline done");
