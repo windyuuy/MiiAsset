@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using MiiAsset.Runtime;
+using MiiAsset.Runtime.Adapter;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -62,14 +63,30 @@ namespace MiiAsset.Runtime.Optimization
         }
     }
 
-    public class AssetsOrderRecorder
+    public class AssetsOrderRecorder: IDisposable
     {
         public bool IsRecording = false;
         public AssetsOrderRecorder()
         {
+        #if UNITY_EDITOR
             BundleStatusNotify.OnBundleLoad -= OnBundleLoad;
             BundleStatusNotify.OnBundleLoad += OnBundleLoad;
+        #endif
         }
+
+        public void Dispose()
+        {
+            BundleStatusNotify.OnBundleLoad -= OnBundleLoad;
+        }
+        
+        #if UNITY_EDITOR
+        [InitializeOnEnterPlayMode]
+        public static void InitOnLoadInEditorMode()
+        {
+            var hashCode = AssetsOrderRecorder.Inst.GetHashCode();
+            MyLogger.Log($"StartRecord: {hashCode}");
+        }
+        #endif
 
         public void OnBundleLoad(AssetBundleStatus status)
         {
@@ -122,6 +139,7 @@ namespace MiiAsset.Runtime.Optimization
 
         public void SaveRecords()
         {
+            MyLogger.Log("SaveRecords-Begin");
             AALoadOrderConfig.batches[0].batch = AALoadOrderConfig.batches[0].batch.OrderBy(s => s).ToArray();
             var jsonStr = JsonUtility.ToJson(AALoadOrderConfig, true);
             var directoryName = Path.GetDirectoryName(AssetsOrderLoader.LoadPath);
@@ -134,6 +152,7 @@ namespace MiiAsset.Runtime.Optimization
 #if UNITY_EDITOR
             AssetDatabase.Refresh();
 #endif
+            MyLogger.Log("SaveRecords-Done");
         }
 
         public void ResetIndex()
@@ -174,6 +193,8 @@ namespace MiiAsset.Runtime.Optimization
         {
             AssetsOrderRecorder.Inst.PushIndex();
             AssetsOrderRecorder.Inst.IsRecording = true;
+            
+            MyLogger.Log($"PushRecord: {AssetsOrderRecorder.Inst.RecordIndex}");
         }
 
 #if UNITY_EDITOR
@@ -184,6 +205,8 @@ namespace MiiAsset.Runtime.Optimization
         {
             AssetsOrderRecorder.Inst.LoadRecords();
             AssetsOrderRecorder.Inst.IsRecording = true;
+            
+            MyLogger.Log("LoadRecords");
         }
 
 #if UNITY_EDITOR
@@ -194,6 +217,8 @@ namespace MiiAsset.Runtime.Optimization
         {
             AssetsOrderRecorder.Inst.ResetIndex();
             AssetsOrderRecorder.Inst.IsRecording = true;
+            
+            MyLogger.Log("ResetIndex");
         }
 
 #if UNITY_EDITOR
@@ -204,6 +229,8 @@ namespace MiiAsset.Runtime.Optimization
         {
             AssetsOrderRecorder.Inst.Clear();
             AssetsOrderRecorder.Inst.IsRecording = true;
+            
+            MyLogger.Log("ClearRecords");
         }
     }
 }
