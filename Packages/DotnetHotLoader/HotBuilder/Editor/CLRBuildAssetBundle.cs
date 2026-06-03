@@ -124,10 +124,10 @@ namespace HatNetwork.Editor
 
 			// Player Scripts
 			// buildTasks.Add(new BuildPlayerScripts());
-			// buildTasks.Add(new PostScriptsCallback());
+			buildTasks.Add(new PostScriptsCallback());
 
 			// Dependency
-			// buildTasks.Add(new CalculateSceneDependencyData());
+			buildTasks.Add(new CalculateSceneDependencyData());
 // #if UNITY_2019_3_OR_NEWER
 // 			buildTasks.Add(new CalculateCustomDependencyData());
 // #endif
@@ -136,8 +136,9 @@ namespace HatNetwork.Editor
 
 			// Packing
 			buildTasks.Add(new GenerateBundlePacking());
+			buildTasks.Add(new UpdateBundleObjectLayout());
 			buildTasks.Add(new GenerateBundleCommands());
-			// buildTasks.Add(new GenerateSubAssetPathMaps());
+			buildTasks.Add(new GenerateSubAssetPathMaps());
 			buildTasks.Add(new GenerateBundleMaps());
 			buildTasks.Add(new PostPackingCallback());
 
