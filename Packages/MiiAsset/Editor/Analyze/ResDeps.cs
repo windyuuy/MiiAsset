@@ -23,8 +23,8 @@ namespace MiiAsset.Editor.Analyze
 				return;
 			}
 
-			BuildTargetGroup buildTargetGroup = BuildTargetGroup.WebGL;
-			BuildTarget buildTarget = BuildTarget.WebGL;
+			BuildTargetGroup buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+			BuildTarget buildTarget = EditorUserBuildSettings.activeBuildTarget;
 			ScriptCompilationSettings scriptCompilationSettings = new ScriptCompilationSettings();
 			scriptCompilationSettings.group = buildTargetGroup;
 			scriptCompilationSettings.target = buildTarget;
