@@ -421,8 +421,8 @@ namespace MiiAsset.Runtime.Pipelines
 
 		public async Task<PipelineResult> Run()
 		{
-			var updateCatalog = this.RunUpdateCatalog(RemoteBaseUri, CatalogName);
-			return await updateCatalog;
+			var result = await this.RunUpdateCatalog(RemoteBaseUri, CatalogName);
+			return result;
 		}
 
 		public bool IsCached()

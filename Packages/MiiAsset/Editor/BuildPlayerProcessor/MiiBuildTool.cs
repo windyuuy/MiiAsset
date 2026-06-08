@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Editor.BuildPlayerProcessor;
 using HatNetwork.Editor;
 using MiiAsset.Runtime.Adapter;
@@ -64,6 +65,57 @@ namespace MiiAsset.Editor.Build
 				Debug.LogException(exception);
 				return false;
 			}
+		}
+
+		[MenuItem("Tools/MiiAsset/清理代码构建缓存", false, 10018)]
+		public static void CleanBuildCodeCache()
+		{
+			try
+			{
+				if (Directory.Exists("Library/BurstCache"))
+				{
+					Directory.Delete("Library/BurstCache", true);
+				}
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+			}
+		}
+
+		[MenuItem("Tools/MiiAsset/清理资源构建缓存", false, 10018)]
+		public static void CleanBuildAssetCache()
+		{
+			try
+			{
+				if (Directory.Exists("Library/BuildCache"))
+				{
+					Directory.Delete("Library/BuildCache", true);
+				}
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+			}
+
+			try
+			{
+				if (Directory.Exists("Library/ShaderCache"))
+				{
+					Directory.Delete("Library/ShaderCache", true);
+				}
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+			}
+		}
+
+		[MenuItem("Tools/MiiAsset/清理构建缓存", false, 10018)]
+		public static void CleanBuildCache()
+		{
+			CleanBuildCodeCache();
+			CleanBuildAssetCache();
 		}
 	}
 }

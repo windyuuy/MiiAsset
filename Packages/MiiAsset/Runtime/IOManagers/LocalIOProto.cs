@@ -56,7 +56,7 @@ namespace MiiAsset.Runtime.IOManagers
 			await using var readBytesStream = File.OpenRead(uri);
 			using var reader = new StreamReader(
 				new BrotliStream(readBytesStream, CompressionMode.Decompress));
-			var text = await reader.ReadToEndAsync();
+			var text = reader.ReadToEnd();
 		#endif
 			return text;
 		}

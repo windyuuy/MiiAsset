@@ -286,11 +286,11 @@ namespace HatNetwork.Editor
 		/// <summary>
 		/// 此程序集必须热更
 		/// </summary>
-		const string HatLoaderAssemblyName = "MiiAsset.HatLoader";
+		const string HatLoaderAssemblyName = "MiiAsset.HatLoader.dll";
 
 		public static void BuildDllsAB(BuildPlayerOptions BuildPlayerOptions, string ResUpdateTunnel, long versionCode)
 		{
-			var hotDlls = SettingsUtil.HotUpdateAssemblyFilesExcludePreserved.Append(HatLoaderAssemblyName).ToArray();
+			var hotDlls = SettingsUtil.HotUpdateAssemblyFilesExcludePreserved.Append(HatLoaderAssemblyName).Distinct().ToArray();
 			hotDlls = ResortAssemblyOrders(hotDlls, true);
 			// var atoDlls0 = new string[]
 			// {

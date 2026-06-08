@@ -539,7 +539,7 @@ namespace MiiAsset.Runtime
 			LoadState = AssetBundleLoadState.Unloading;
 
 			LoadedAssetMap.Clear();
-			LoadingAssetMap.Clear();
+			// LoadingAssetMap.Clear();
 
 			if (AssetBundle != null)
 			{
@@ -576,9 +576,7 @@ namespace MiiAsset.Runtime
 
 		protected readonly Dictionary<AACacheKey, UnityEngine.Object> LoadedAssetMap = new();
 
-		protected readonly Dictionary<AACacheKey, (AssetBundleRequest op, Task<UnityEngine.Object> task)>
-			LoadingAssetMap =
-				new();
+		// protected readonly Dictionary<AACacheKey, (AssetBundleRequest op, Task<UnityEngine.Object> task)> LoadingAssetMap = new();
 
 		public async Task<T> LoadAssetJust<T>(string address, AsyncOperationStatus loadStatus) where T : Object
 		{
@@ -624,6 +622,8 @@ namespace MiiAsset.Runtime
 			}
 			else
 			{
+				// 优化性能
+			#if false
 				if (!LoadingAssetMap.TryGetValue(cacheKey, out var item))
 				{
 					// Debug.Log($"AssetBundle.LoadAsset-Begin: {address}");
@@ -645,9 +645,17 @@ namespace MiiAsset.Runtime
 					loadStatus.Set(item.op);
 				}
 
-				assetObj = await item.task;
+				assetObj = await item.task;s
+			#endif
+				assetObj = AssetBundle.LoadAsset<T>(address);
+				if (loadStatus != null)
+				{
+					loadStatus.SetCompleted(true);
+				}
+			#if false
 				// 如果 address unloaded, 那么 LoadingAssetMap 不存在 address, 无需在 LoadedAssetMap add address
 				if (LoadingAssetMap.Remove(cacheKey))
+			#endif
 				{
 					if (!LoadedAssetMap.TryAdd(cacheKey, assetObj))
 					{
@@ -758,7 +766,7 @@ namespace MiiAsset.Runtime
 		{
 			var cacheKey = new AACacheKey(address, type);
 			LoadedAssetMap.Remove(cacheKey);
-			LoadingAssetMap.Remove(cacheKey);
+			// LoadingAssetMap.Remove(cacheKey);
 			return System.Threading.Tasks.Task.CompletedTask;
 		}
 
@@ -794,7 +802,7 @@ namespace MiiAsset.Runtime
 			}
 
 			LoadedAssetMap.Clear();
-			LoadingAssetMap.Clear();
+			// LoadingAssetMap.Clear();
 			if (this.AssetBundle != null)
 			{
 				this.AssetBundle.UnloadAsync(true);

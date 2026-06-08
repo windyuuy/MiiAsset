@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using MiiAsset.Editor.BuildPipelineUtilities;
 using MonoExtLib.LinqExt;
+using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Player;
@@ -13,15 +14,78 @@ namespace MiiAsset.Editor.Analyze
 {
 	public class ResDeps
 	{
-		[MenuItem("Tools/MiiAsset/PrintDeps", false, 10001)]
+		[MenuItem("Tools/MiiAsset/PrintDeps _F12", false, 10001)]
 		public static void PrintDeps()
 		{
-			var assetGUIDs = Selection.assetGUIDs;
-			if (assetGUIDs.Length == 0)
+			var assetGUIDs0 = Selection.assetGUIDs;
+			if (assetGUIDs0.Length == 0)
 			{
 				Debug.LogError("请选择分析对象");
 				return;
 			}
+
+			var assetPaths = assetGUIDs0.Select(g => AssetDatabase.GUIDToAssetPath(g)).ToArray();
+			var uniquePaths = new List<string>();
+			foreach (var assetPath in assetPaths)
+			{
+				var assetPath2 = assetPath + "/";
+				var exist = false;
+				for (var index = 0; index < uniquePaths.Count; index++)
+				{
+					var uniquePath = uniquePaths[index];
+					if (uniquePath.StartsWith(assetPath2))
+					{
+						uniquePaths.RemoveAt(index);
+						index--;
+						exist = true;
+						continue;
+					}
+
+					if (assetPath.StartsWith(uniquePath + "/"))
+					{
+						exist = true;
+						break;
+					}
+				}
+
+				if (!exist)
+				{
+					uniquePaths.Add(assetPath);
+				}
+			}
+
+			var guidFiles = new List<string>();
+			var guids = new List<string>();
+			foreach (var uniquePath in uniquePaths)
+			{
+				if (Directory.Exists(uniquePath))
+				{
+					var files = Directory.GetFiles(uniquePath, "*", SearchOption.AllDirectories);
+					foreach (var file in files)
+					{
+						var guid = AssetDatabase.AssetPathToGUID(file);
+						if (false == string.IsNullOrEmpty(guid))
+						{
+							guids.Add(guid);
+							guidFiles.Add(file);
+						}
+					}
+				}
+				else
+				{
+					var guid = AssetDatabase.AssetPathToGUID(uniquePath);
+					guids.Add(guid);
+					guidFiles.Add(uniquePath);
+				}
+			}
+
+			if (guids.Count == 0)
+			{
+				Debug.LogError("请选择分析对象");
+				return;
+			}
+
+			var assetGUIDs = guids.ToArray();
 
 			BuildTargetGroup buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
 			BuildTarget buildTarget = EditorUserBuildSettings.activeBuildTarget;
@@ -95,6 +159,11 @@ namespace MiiAsset.Editor.Analyze
 
 			CollectDeps(assetGUIDs);
 
+			foreach (var assetGUID in assetGUIDs)
+			{
+				depGuids.Remove(assetGUID);
+			}
+
 			var depPaths = depGuids
 				.Select(guid => AssetDatabase.GUIDToAssetPath(guid))
 				.Distinct()
@@ -105,7 +174,8 @@ namespace MiiAsset.Editor.Analyze
 				.Where(p => p.StartsWith("Assets"))
 				.OrderBy(p => p)
 				.ToArray();
-			Debug.Log(string.Join(",\n", mainAssetsPaths));
+			Debug.Log($"deps-for [{string.Join(",\n", guidFiles)}] is \n\n" +
+			          $"[{string.Join(",\n", mainAssetsPaths)}]");
 		}
 	}
 }

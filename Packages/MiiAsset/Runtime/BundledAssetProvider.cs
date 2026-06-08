@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Lang.Time;
 using MiiAsset.Runtime.Adapter;
 using MiiAsset.Runtime.IOManagers;
 using MiiAsset.Runtime.Pipelines;
@@ -10,6 +11,7 @@ using MiiAsset.Runtime.Status;
 using MonoExtLib.AsyncExt;
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
 
 namespace MiiAsset.Runtime
@@ -48,13 +50,20 @@ namespace MiiAsset.Runtime
 
 				async Task<PipelineResult> LoadCatalogInternal()
 				{
+					var t1 = Date.Now();
 					using var pipeline = new UpdateCatalogPipeline()
 						.Init(CatalogName, CatalogExt, InternalBaseUri, ExternalBaseUri, RemoteBaseUri);
+					var t2 = Date.Now();
 					Result = await pipeline.Run();
+					var t3 = Date.Now();
 					if (Result.IsOk)
 					{
+							Profiler.BeginSample("HandleCatalogTimeCost");
 						HandleCatalog(pipeline.InternalCatalog, pipeline.ExternalCatalog, pipeline.SourceUri);
+						Profiler.EndSample();
 					}
+					var t4 = Date.Now();
+					Debug.Log($"LoadCatalogInternal-TimeCost: {t2-t1}, {t3-t2}, {t4-t3}");
 
 					return Result;
 				}

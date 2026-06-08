@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using MiiAsset.Runtime.Adapter;
+using UnityEngine;
 
 namespace MiiAsset.Runtime
 {
@@ -127,23 +128,33 @@ namespace MiiAsset.Runtime
 		void ParseDeps(AssetBundleInfo bundleInfo, HashSet<string> deps, PipelineResult result)
 		{
 			var bundleInfoDeps = bundleInfo.deps;
-			var bundleInfoDeps2 = bundleInfoDeps.Append(bundleInfo.fileName);
-			foreach (var dep in bundleInfoDeps2)
+			foreach (var bundleInfoDep in bundleInfoDeps)
 			{
-				if (deps.Add(dep))
+				deps.Add(bundleInfoDep);
+			}
+			// var bundleInfoDeps2 = bundleInfoDeps.Append(bundleInfo.fileName);
+			// foreach (var dep in bundleInfoDeps)
+			// {
+			// 	HandleDep(dep, deps, result);
+			// }
+			// HandleDep(bundleInfo.fileName, deps, result);
+		}
+
+		private void HandleDep(string dep, HashSet<string> deps, PipelineResult result)
+		{
+			if (deps.Add(dep))
+			{
+				if (this.NameBundleMap.TryGetValue(dep, out var depAssetBundleInfo))
 				{
-					if (this.NameBundleMap.TryGetValue(dep, out var depAssetBundleInfo))
-					{
-						ParseDeps(depAssetBundleInfo, deps, result);
-					}
-					else
-					{
-						var exception = new KeyNotFoundException($"AssetBundle-Dependence-Missing: {dep}");
-						result.Exception ??= exception;
-						result.IsOk = false;
-						result.ErrorType = PipelineErrorType.CatalogIncorrect;
-						MyLogger.LogException(exception, "e27");
-					}
+					ParseDeps(depAssetBundleInfo, deps, result);
+				}
+				else
+				{
+					var exception = new KeyNotFoundException($"AssetBundle-Dependence-Missing: {dep}");
+					result.Exception ??= exception;
+					result.IsOk = false;
+					result.ErrorType = PipelineErrorType.CatalogIncorrect;
+					MyLogger.LogException(exception, "e27");
 				}
 			}
 		}
@@ -179,6 +190,25 @@ namespace MiiAsset.Runtime
 				if (bundleInfo.deps.Length > 0)
 				{
 					ParseDeps(bundleInfo, deps, result);
+					
+					// var dict = new Dictionary<string, bool>();
+					// foreach (var dep in bundleInfo.deps)
+					// {
+					// 	dict.Add(dep, true);
+					// }
+					//
+					// dict[bundleInfo.fileName] = true;
+					// foreach (var dep in deps)
+					// {
+					// 	if (!dict.ContainsKey(dep))
+					// 	{
+					// 		Debug.Log("lkwjelkfj");
+					// 	}
+					// }
+					// if (deps.Count != bundleInfo.deps.Length + 1)
+					// {
+					// 	Debug.Log("lkwej");
+					// }
 				}
 			}
 
