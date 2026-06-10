@@ -26,9 +26,9 @@ namespace HatNetwork.Editor
 			}
 			else
 			{
-				MyLogger.LogError("no consumer config found");
-				config = null;
-				return false;
+				MyLogger.LogInfo("no CLRBuildConfig found, use default config");
+				config = new CLRBuildConfig();
+				return true;
 			}
 		}
 	}

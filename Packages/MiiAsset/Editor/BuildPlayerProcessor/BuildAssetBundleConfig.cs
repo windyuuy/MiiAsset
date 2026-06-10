@@ -25,9 +25,9 @@ namespace Editor.BuildPlayerProcessor
 			}
 			else
 			{
-				MyLogger.LogError("no consumer config found");
-				config = null;
-				return false;
+				MyLogger.LogInfo("no BuildAssetBundleConfig found, use default");
+				config = new BuildAssetBundleConfig();
+				return true;
 			}
 		}
 	}
