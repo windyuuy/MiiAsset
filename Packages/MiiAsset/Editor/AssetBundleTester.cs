@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 	using System.Collections.Generic;
 	using System.IO;
+	using MiiAsset.Runtime.Adapter;
 	using UnityEngine;
 
 	namespace MiiAsset.Editor.Build
@@ -74,7 +75,7 @@
 				// 	}
 				// }
 
-				var dir = "AssetBundles/Android/";
+				var dir = $"AssetBundles/{PlatformAdapter.GetPlatformPathSubFolder()}/";
 				var files = Directory.GetFiles(dir);
 				var ls = new List<AssetBundle>();
 				foreach (var file in files)
