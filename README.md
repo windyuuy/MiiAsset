@@ -5,4 +5,4 @@ windy.miiasset.core, 请勿用于商业用途, 得到作者同意后, 其次必�
 
 目录:
 - [说明文档](./Packages/MiiAsset/Documentation/README.md)
-- [开发计划](./Packages/MiiAsset/Documentation/Plan.md):
+- [开发计划](./Packages/MiiAsset/Documentation/Plan.md)
