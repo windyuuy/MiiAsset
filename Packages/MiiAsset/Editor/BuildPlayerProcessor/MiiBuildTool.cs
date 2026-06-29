@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
 using Editor.BuildPlayerProcessor;
+#if SUPPORT_HYBRIDCLR
 using HatNetwork.Editor;
+#endif
 using MiiAsset.Runtime.Adapter;
 using UnityEditor;
 using UnityEngine;
